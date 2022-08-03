@@ -12,6 +12,7 @@ Actions = [
     Transition(3, "FindData",0.5,0.9,2,0.1),
     Transition(4, "ExecuteCodeInService",0.3,0.3,0.1,0.3),
     Transition(5, "ExfiltrateData",0.8,0.8,1000,0.1),
+    Transition(6, "LeaveHost",None,None,None,None)
 ]
 
 """
@@ -19,7 +20,7 @@ Game state represents the states in the game state space.
 
 """
 class GameState(object):
-    def __init__(self, id:float, controled_hosts:list, known_hosts:list, know_services:dict, defender_nodes:list=[]) -> None:
+    def __init__(self, id:float, controled_hosts:list=[], known_hosts:list=[], know_services:dict={}, defender_nodes:list=[]) -> None:
         self.id = id
         self.controled_hosts = controled_hosts
         self.known_hosts = known_hosts
@@ -29,3 +30,6 @@ class GameState(object):
     
     def str(self) ->str:
         return "Node {self.id}"
+    
+    def get_actions(self):
+        raise NotImplementedError
