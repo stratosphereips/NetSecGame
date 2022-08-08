@@ -1,3 +1,4 @@
+import ipaddress
 from multiprocessing import connection
 from random import random
 from tkinter.tix import Tree
@@ -25,6 +26,7 @@ class Environment(object):
         self._nodes = {}
         self._connections = {}
         self._networks = {}
+        self._ips = {}
         
         self._defender = None
         self._attacker = None
@@ -57,7 +59,8 @@ class Environment(object):
                                 if item["net"]["cls_type"] == "IPNetwork":
                                     if item["net"]["value"] not in self._networks.keys():
                                         self._networks[item["net"]["value"]] = []
-                                self._networks[item["net"]["value"]].append((item["ip"]["value"], v['id']))    
+                                self._networks[item["net"]["value"]].append((item["ip"]["value"], v['id']))
+                                self._ips[item["ip"]["value"]] = v['id']  
                     elif v['cls_type'] in "ConnectionConfig": # TODO
                         self._connections[v["src_id"]].append(v["dst_id"])
                         self._connections[v["dst_id"]].append(v["src_id"])
@@ -80,14 +83,32 @@ class Environment(object):
         #scan services
         for host in state.known_hosts-state.controlled_hosts:
             pass
-        
+    def get_services_from_host(self, host_ip):
+        #check if IP is correct
+        try:
+            ipaddress.ip_address(host_ip)
+            if host_ip in self._ips:
+                host = self._ips[host_ip]
+                services = {"passive":[], "active":[]}
+                for s in self._nodes[host]["active_services"]:
+                    services["active"].append(s["type"])
+                for s in self._nodes[host]["passive_services"]:
+                    if s["authentication_providers"][0]["ip"]["value"] == host_ip: #TODO DO this better!
+                        services["passive"].append((s["type"], s["version"]))
+                return {host: services}
+            return None
+        except ValueError:
+            print("HostIP is invalid")
+            return None
+    
     def execute_action(self, current:GameState, action:Action)-> GameState:
         if current.valid_action(action):
             if action.transition.type == "ScanNetwork":
-                extended_networks = current.known_networks + [host[0] for host in self._networks[action.parameters["target_network"]]]
-                return GameState(0,current.controlled_hosts, current.known_hosts,current.known_services, current._known_data, extended_networks)
+                extended_hosts = current.known_hosts + [host[0] for host in self._networks[action.parameters["target_network"]]]
+                return GameState(current.controlled_hosts, extended_hosts,current.known_services, current.known_data, current.known_networks)
             elif action.transition.type == "FindServices":
-                raise NotImplementedError
+                extended_services = current.known_services.update(self.get_services_from_host(action.parameters["target_host"]))
+                return GameState(current.controlled_hosts, current.known_hosts, extended_services, current.known_data, current.known_networks)
             elif action.transition.type == "FindData":
                 raise NotImplementedError
             elif action.transition.type == "ExecuteCodeInService":
@@ -109,6 +130,6 @@ class Environment(object):
 if __name__ == "__main__":
     env = Environment()
     env.read_topology("test.yaml")
-
+    print(env.get_services_from_host("192.168.0.21"))
     #for x in env.get_all_states():
     #    print(x)
