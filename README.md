@@ -6,6 +6,8 @@ A python tool to generate the states of the game in AiDojo project.
 * We work with close world assumntion - only entities defined exist in the simulation
 * No actions have delete effect (attacker does not give up ownership of nodes, does not forget nodes and services and when data is transfered we assume its copied - present in both nodes)
 * Scan Network action means scan COMPLETE given network
+* Access to Data is represented as a pair of host_ip:path_to_data
+* Find Data action finds all available data if successful
 
 ## ACTIONS
 | Action name          | Description                                                              | Preconditions                         | Effects                                          |
