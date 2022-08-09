@@ -1,14 +1,15 @@
 import ipaddress
 from random import random
+from re import S
 from xml.sax.handler import property_dom_node
 
 from game_components import *
 import yaml
 import itertools
-from random import random
+from random import random, choice
 
 class Environment(object):
-    def __init__(self, max_steps=0) -> None:
+    def __init__(self) -> None:
         self._nodes = {}
         self._connections = {}
         self._networks = {}
@@ -71,34 +72,54 @@ class Environment(object):
         self._src_file = filename
     
     def get_all_states(self)->list:
-        states = sum([list(map(list, itertools.combinations(self._nodes.keys(), i))) for i in range(1, len(self._nodes.keys()) + 1)], [])
-        if self._attacker_start:
-            #remove all states where the initial attacker state is not present
-            states = [x for x in states if self._attacker_start in x]
-        return states
+        # states = sum([list(map(list, itertools.combinations(self._nodes.keys(), i))) for i in range(1, len(self._nodes.keys()) + 1)], [])
+        # if self._attacker_start:
+        #     #remove all states where the initial attacker state is not present
+        #     states = [x for x in states if self._attacker_start in x]
+        # return states
+        raise NotImplementedError
     
     def get_valid_actions(self, state:GameState, transitions:dict)->list:
         actions = []
-        for x in transitions:
-            print(x)
-    
-    def _get_services_from_host(self, host_ip)-> dict:
+        #Scan network
+        for net in state.known_networks:
+            actions.append(Action("ScanNetwork",{"target_network":net}))
+        #Find services
+        for host in state.known_hosts:
+            actions.append(Action("FindServices", {"target_host":host}))
+        #Find Data
+        for host in state.known_hosts+state.controlled_hosts:
+            a = Action("FindData", {"target_host":host})
+            if a not in actions:
+                actions.append(a)
+        #ExecuteCodeInService
+        for host, services in state.known_services.items():
+            for s in services:
+                actions.append(Action("ExecuteCodeInService", {"target_host":host, "target_service":s.name}))
+        #ExfiltrateData
+        for source, data in state.known_data.items():
+            for target in state.known_hosts:
+                if source != target:
+                    actions.append(Action("ExfiltrateData", {"target_host":target, "data":data, "source_host":source}))
+        return actions
+
+    def _get_services_from_host(self, host_ip)-> set:
         #check if IP is correct
         try:
             ipaddress.ip_address(host_ip)
             if host_ip in self._ips:
                 host = self._ips[host_ip]
-                services = {"passive":[], "active":[]}
-                for s in self._nodes[host]["active_services"]:
-                    services["active"].append(s["type"])
-                for s in self._nodes[host]["passive_services"]:
-                    if s["authentication_providers"][0]["ip"]["value"] == host_ip: #TODO DO this better!
-                        services["passive"].append((s["type"], s["version"]))
-                return {host: services}
-            return None
+                services = set()
+                #TODO fix active services
+                #TODO add more info about services
+                if "passive_services" in self._nodes[host].keys():
+                    for s in self._nodes[host]["passive_services"]:
+                        #if s["authentication_providers"][0]["ip"]["value"] == host_ip: #TODO check if the IP matches
+                        services.add(Service(s["type"], "passive", s["version"]))
+                    return services
+            return {}
         except ValueError:
             print("HostIP is invalid")
-            return None
     
     def _get_networks_from_host(self, host_ip)->set:
         try:
@@ -111,20 +132,38 @@ class Environment(object):
                 networks.add(interface["net"]["value"])
         return networks
     
+    def _get_data_in_host(self, host_ip)->list:
+        return []
+        #TODO
+
     def _execute_action(self, current:GameState, action:Action)-> GameState:
         if action.transition.type == "ScanNetwork":
-            extended_hosts = current.known_hosts + [host[0] for host in self._networks[action.parameters["target_network"]]]
+            extended_hosts = list(set(current.known_hosts + [host[0] for host in self._networks[action.parameters["target_network"]]]))
             return GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)
         elif action.transition.type == "FindServices":
-            extended_services = current.known_services.update(self._get_services_from_host(action.parameters["target_host"]))
+            found_services =  self._get_services_from_host(action.parameters["target_host"])
+            extended_services = current.known_services
+            if len(found_services) > 0:
+                if action.parameters["target_host"] not in extended_services.keys():
+                    extended_services[action.parameters["target_host"]] = found_services
+                else:
+                    extended_services[action.parameters["target_host"]] = set(extended_services[action.parameters["target_host"]]).union(found_services)
             return GameState(current.controlled_hosts, current.known_hosts, extended_services, current.known_data, current.known_networks)
         elif action.transition.type == "FindData":
             extended_data = current.known_data
-            extended_data.update({action.parameters["target_host"]:self.get_data_in_host(action.parameters["target_host"])})
+            new_data = self._get_data_in_host(action.parameters["target_host"])
+            if len(new_data) > 0:
+                if action.parameters["target_host"] not in extended_data.keys():
+                    extended_data[action.parameters["target_host"]] = new_data
+                else:
+                    extended_data[action.parameters["target_host"]] += new_data
             return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
         elif action.transition.type == "ExecuteCodeInService":
-            extended_controlled_hosts = current.controlled_hosts + [action.parameters["target_host"]]
-            extended_networks = set(current.known_networks) + self._get_networks_from_host(action.parameters["target_host"])
+            extended_controlled_hosts = current.controlled_hosts
+            if action.parameters["target_host"] not in current.controlled_hosts:
+                extended_controlled_hosts += [action.parameters["target_host"]]
+            new_networks = self._get_networks_from_host(action.parameters["target_host"])
+            extended_networks = set(current.known_networks).union(new_networks)
             return GameState(extended_controlled_hosts, current.known_hosts, current.known_services, current.known_data, list(extended_networks))
         elif action.transition.type == "ExfiltrateData":
             extended_data = current.known_data()
@@ -138,18 +177,18 @@ class Environment(object):
             return action.parameters["target_network"] in self._networks
         elif action.transition.type == "FindServices":
             target = ipaddress.ip_address(action.parameters["target_host"])
-            accessible = [target in ipaddress.ip_network(n) for n in state.known_networks]
-            return action.parameters["target_host"] in self._ips and accessible.any()
+            accessible = [target in ipaddress.ip_interface(n).network for n in state.known_networks]
+            return action.parameters["target_host"] in self._ips and any(accessible)
         elif action.transition.type == "FindData":
             return action.parameters["target_host"] in state.controlled_hosts or action.parameters["target_host"] in state.known_hosts
         elif action.transition.type == "ExecuteCodeInService":
-            return action.parameters["target_host"] in state.known_services and action.parameters["target_service"] in [x["name"] for x in state.known_services[action.parameters["target_host"]]]
+            return action.parameters["target_host"] in state.known_services and action.parameters["target_service"] in [x.name for x in state.known_services[action.parameters["target_host"]]]
         elif action.transition.type == "ExfiltrateData":
             if action.parameters["source_host"] in state.controlled_hosts or action.parameters["source_host"] in state.known_hosts:
                 try:
                     data_accessible = action.parameters["data"] in state.known_data[action.parameters["source_host"]]
                     target = ipaddress.ip_address(action.parameters["target_host"])
-                    target_acessible = [target in ipaddress.ip_network(n) for n in state.known_networks].any()
+                    target_acessible = any([target in ipaddress.ip_interface(n).network for n in state.known_networks])
                     return data_accessible and target_acessible
                 except KeyError as e:
                     print(e)
@@ -177,7 +216,7 @@ class Environment(object):
             data = False
         return networks and known_hosts and controlled_hosts and services and data
     
-    def _is_detected(state, action:Action)->bool:
+    def _is_detected(self, state, action:Action)->bool:
         return False #TODO
         raise NotImplementedError
     
@@ -189,12 +228,12 @@ class Environment(object):
     def step(self, action:Action)-> Observation:
         if not self._done:
             #check if action is valid
-            if self.validate_action(self._current_state, action):
+            if self.valid_action(self._current_state, action):
                 self._step_counter +=1
                 #Roll the dice on success
                 successful = random() <= action.transition.default_success_p         
                 #Action is valid execute it
-                if successful:
+                if successful: #TODO REMOVE LATER
                     next_state = self._execute_action(self._current_state, action)
                     reward = action.transition.default_reward - action.transition.default_cost
                 else: #unsuccessful - pay the cost but no reward, no change in game state
@@ -203,25 +242,38 @@ class Environment(object):
                 
                 is_terminal = self.is_goal(next_state) or self._is_detected(self._current_state, action)
                 
-                self._done = self._step_counter >= self._timeout or is_terminal
+                
+                done = self._step_counter >= self._timeout or is_terminal
+                self._done = done
                 #move environment to the next stae
                 self._current_state = next_state
-                return Observation(next_state, reward, is_terminal, self._done, {})
+                return Observation(next_state, reward, is_terminal, done, {})
             else:
                 raise ValueError(f"Invalid action {action}")
         else:
-            print("Interaction over! No more steps can be made in the environment")
+            raise ValueError("Interaction over! No more steps can be made in the environment")
 
 
 if __name__ == "__main__":
+    
     #create environment
-    env = Environment(max_steps=10)
+    env = Environment()
+    
     #read topology from the dummy file
     env.read_topology("test.yaml")
-    #goal condition
-    goal = {"known_networks":[], "known_hosts":[], "controlled_hosts":["192.168.0.4"], "known_services":{}, "known_data":{}}
+    
+    #define winning conditions and starting position
+    goal = {"known_networks":[], "known_hosts":[], "controlled_hosts":["192.168.0.6"], "known_services":{}, "known_data":{}}
     attacker_start = {"known_networks":[], "known_hosts":["192.168.0.5"], "controlled_hosts":["192.168.0.5"], "known_services":{}, "known_data":{}}
+    
     #initialize the game
-    env.initialize(win_conditons=goal, defender_positions={}, attacker_start_position=attacker_start)
-    print("Current state", env.current_state, env.is_goal(env.current_state))
-    env.get_valid_actions(env.current_state, transitions)
+    state = env.initialize(win_conditons=goal, defender_positions={}, attacker_start_position=attacker_start, max_steps=50)
+
+    while not state.done:
+        print(state.observation)
+        actions = env.get_valid_actions(state.observation, transitions)
+        a = choice(actions)
+        print("Playing", a)
+        state = env.step(a)
+
+
