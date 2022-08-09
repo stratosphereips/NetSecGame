@@ -1,6 +1,8 @@
 #Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 from collections import namedtuple
 
+from matplotlib.pyplot import cla
+
 #Transition between nodes
 """
 Transition represents generic actions for attacker in the game. Each transition has a default probabilities
@@ -27,7 +29,25 @@ Actions are composed of the transition type (see Transition) and additional para
  - ExecuteCodeInService {"target_host": "X.X.X.X" (string), "target_service":"service_name" (string)}
  - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"path_to_data" (string)}
 """
-Action = namedtuple("Action", ["transition", "parameters"])
+#Action = namedtuple("Action", ["transition", "parameters"])
+class Action(object):
+    
+    def __init__(self, transition:str, params:list) -> None:
+        self._transition_name = transition
+        self._parameters = params
+    
+    @property
+    def transition(self) -> Transition:
+        return transitions[self._transition_name]
+    @property
+    def parameters(self)->dict:
+        return self._parameters
+    def __str__(self) -> str:
+        return f"Action <{self._transition_name}|{self.parameters}>"
+    def __eq__(self, __o: object) -> bool:
+        if isinstance(__o, Action):
+            return self.transition == __o.transition and self.parameters == __o.parameters
+        return False
 
 #Observation - given to agent after taking an action
 """
@@ -40,11 +60,16 @@ Observations are given when making a step in the environment.
 """
 Observation = namedtuple("Observation", ["observation", "reward", "is_terminal", "done", "info"])
 
+
+#Service
+Service = namedtuple("Service", ["name", "type", "version"])
+
 """
 Game state represents the states in the game state space.
 
 """
 class GameState(object):
+
     def __init__(self, controlled_hosts:list=[], known_hosts:list=[], know_services:dict={},
     known_data:dict={}, known_networks=[]) -> None:
         self._controlled_hosts = controlled_hosts
