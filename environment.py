@@ -1,12 +1,9 @@
 import ipaddress
 from random import random
-from re import S
-from xml.sax.handler import property_dom_node
-
 from game_components import *
 import yaml
-import itertools
 from random import random, choice
+import copy
 
 class Environment(object):
     def __init__(self) -> None:
@@ -24,11 +21,16 @@ class Environment(object):
     def current_state(self) -> GameState:
         return self._current_state
 
+    @property
+    def timestamp(self)->int:
+        return self._step_counter
+
     def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10)-> Observation:
         if self._src_file:
             self._win_conditions = win_conditons
-            self._attacker_start = attacker_start_position
+            self._attacker_start = self._create_starting_state(attacker_start_position)
             self._timeout = max_steps
+            
             #position defensive measure
             self._place_defences(defender_positions)
             return self.reset()
@@ -36,9 +38,9 @@ class Environment(object):
             print("Please load a topology file before initializing the environment!")
             return None
     
-    def _create_starting_state(self) -> GameState:
-        l = [self._get_networks_from_host(h) for h in self._attacker_start["controlled_hosts"]]
-        return GameState(self._attacker_start["controlled_hosts"], self._attacker_start["known_hosts"],{},{},list(set().union(*l)))
+    def _create_starting_state(self, attacker_start_position:dict) -> GameState:
+        l = [self._get_networks_from_host(h) for h in attacker_start_position["controlled_hosts"]]
+        return GameState(attacker_start_position["controlled_hosts"], attacker_start_position["known_hosts"],{},{},list(set().union(*l)))
     
     def _place_defences(self, placements:dict)->None:
         assert self._defender_placements ==  None
@@ -99,8 +101,9 @@ class Environment(object):
         #ExfiltrateData
         for source, data in state.known_data.items():
             for target in state.known_hosts:
-                if source != target:
-                    actions.append(Action("ExfiltrateData", {"target_host":target, "data":data, "source_host":source}))
+                if source != target and len(data) > 0:
+                    for d in data:
+                        actions.append(Action("ExfiltrateData", {"target_host":target, "data":d, "source_host":source}))
         return actions
 
     def _get_services_from_host(self, host_ip)-> set:
@@ -133,8 +136,7 @@ class Environment(object):
         return networks
     
     def _get_data_in_host(self, host_ip)->list:
-        return []
-        #TODO
+        return [] #TODO
 
     def _execute_action(self, current:GameState, action:Action)-> GameState:
         if action.transition.type == "ScanNetwork":
@@ -152,11 +154,10 @@ class Environment(object):
         elif action.transition.type == "FindData":
             extended_data = current.known_data
             new_data = self._get_data_in_host(action.parameters["target_host"])
-            if len(new_data) > 0:
-                if action.parameters["target_host"] not in extended_data.keys():
-                    extended_data[action.parameters["target_host"]] = new_data
-                else:
-                    extended_data[action.parameters["target_host"]] += new_data
+            if action.parameters["target_host"] not in extended_data.keys():
+                extended_data[action.parameters["target_host"]] = new_data
+            else:
+                extended_data[action.parameters["target_host"]] += new_data
             return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
         elif action.transition.type == "ExecuteCodeInService":
             extended_controlled_hosts = current.controlled_hosts
@@ -167,7 +168,11 @@ class Environment(object):
             return GameState(extended_controlled_hosts, current.known_hosts, current.known_services, current.known_data, list(extended_networks))
         elif action.transition.type == "ExfiltrateData":
             extended_data = current.known_data()
-            extended_data.update({action.parameters["target_host"]:action.parameters["data"]})
+            if len(action.parameters["data"]) > 0:
+                if action.parameters["target_host"] not in current.known_data.keys():
+                    extended_data[action.parameters["target_host"]] = [action.parameters["data"]]
+                else:
+                    extended_data[action.parameters["target_host"]] += [action.parameters["data"]]
             return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
         else:
             raise ValueError(f"Unknown Action type: '{action.transition.type}'")
@@ -189,7 +194,7 @@ class Environment(object):
                     data_accessible = action.parameters["data"] in state.known_data[action.parameters["source_host"]]
                     target = ipaddress.ip_address(action.parameters["target_host"])
                     target_acessible = any([target in ipaddress.ip_interface(n).network for n in state.known_networks])
-                    return data_accessible and target_acessible
+                    return data_accessible and target_acessible and len(action.parameters["data"]) > 0
                 except KeyError as e:
                     print(e)
                     return False
@@ -221,7 +226,8 @@ class Environment(object):
         raise NotImplementedError
     
     def reset(self)->Observation:
-        self._current_state = self._create_starting_state()
+        self._done = False
+        self._current_state = copy.deepcopy(self._attacker_start)
         self._step_counter = 0
         return Observation(self.current_state, 0, self.is_goal(self.current_state), self._done, {})
     
@@ -231,17 +237,14 @@ class Environment(object):
             if self.valid_action(self._current_state, action):
                 self._step_counter +=1
                 #Roll the dice on success
-                successful = random() <= action.transition.default_success_p         
-                #Action is valid execute it
-                if successful: #TODO REMOVE LATER
+                if random() <= action.transition.default_success_p:
                     next_state = self._execute_action(self._current_state, action)
                     reward = action.transition.default_reward - action.transition.default_cost
                 else: #unsuccessful - pay the cost but no reward, no change in game state
                     next_state = self._current_state
                     reward = - action.transition.default_cost
-                
+                    print("Action unsuccessful")
                 is_terminal = self.is_goal(next_state) or self._is_detected(self._current_state, action)
-                
                 
                 done = self._step_counter >= self._timeout or is_terminal
                 self._done = done
@@ -263,17 +266,26 @@ if __name__ == "__main__":
     env.read_topology("test.yaml")
     
     #define winning conditions and starting position
-    goal = {"known_networks":[], "known_hosts":[], "controlled_hosts":["192.168.0.6"], "known_services":{}, "known_data":{}}
+    goal = {"known_networks":[], "known_hosts":[], "controlled_hosts":["192.168.0.4"], "known_services":{}, "known_data":{}}
     attacker_start = {"known_networks":[], "known_hosts":["192.168.0.5"], "controlled_hosts":["192.168.0.5"], "known_services":{}, "known_data":{}}
     
     #initialize the game
-    state = env.initialize(win_conditons=goal, defender_positions={}, attacker_start_position=attacker_start, max_steps=50)
-
-    while not state.done:
-        print(state.observation)
-        actions = env.get_valid_actions(state.observation, transitions)
-        a = choice(actions)
-        print("Playing", a)
-        state = env.step(a)
+    state = env.initialize(win_conditons=goal, defender_positions={}, attacker_start_position=attacker_start, max_steps=100)
 
 
+    #Dummy RANDOM attacker
+    reward = 0
+    length = 0
+    for _ in range(3):
+        state = env.reset()
+        print("Cleared state:", state)
+        while not state.done:
+            #print(state.observation)
+            reward += state.reward
+            actions = env.get_valid_actions(state.observation, transitions)
+            a = choice(actions)
+            print("Playing", a)
+            state = env.step(a)
+        print(f"Done in {env.timestamp} steps")
+        print("--------------------------------")
+    print(f"Average rewards per game={reward/10}")
