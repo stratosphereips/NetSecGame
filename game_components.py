@@ -1,5 +1,4 @@
 #Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
-from asyncio import protocols
 from collections import namedtuple
 
 #Transition between nodes
@@ -73,3 +72,6 @@ class GameState(object):
     @property
     def known_data(self):
         return self._known_data
+    
+    def __str__(self) -> str:
+        return f"State<nets:{self.known_networks}, known:{self.known_hosts}, owned:{self.controlled_hosts}, services:{self.known_services}, data:{self.known_data}>"
