@@ -18,11 +18,12 @@ class Environment(object):
         self._current_state = None
         self._done = False
         self._src_file = None
+    
     @property
-    def current_state(self):
+    def current_state(self) -> GameState:
         return self._current_state
 
-    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10)-> GameState:
+    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10)-> Observation:
         if self._src_file:
             self._win_conditions = win_conditons
             self._attacker_start = attacker_start_position
@@ -34,7 +35,7 @@ class Environment(object):
             print("Please load a topology file before initializing the environment!")
             return None
     
-    def _create_starting_state(self):
+    def _create_starting_state(self) -> GameState:
         l = [self._get_networks_from_host(h) for h in self._attacker_start["controlled_hosts"]]
         return GameState(self._attacker_start["controlled_hosts"], self._attacker_start["known_hosts"],{},{},list(set().union(*l)))
     
@@ -78,12 +79,8 @@ class Environment(object):
     
     def get_valid_actions(self, state:GameState, transitions:dict)->list:
         actions = []
-        #scan network actions
-        for network in state.known_networks:
-            actions.append(Action(transitions["ScanNetwork"], network))
-        #scan services
-        for host in state.known_hosts-state.controlled_hosts:
-            pass
+        for x in transitions:
+            print(x)
     
     def _get_services_from_host(self, host_ip)-> dict:
         #check if IP is correct
@@ -184,10 +181,10 @@ class Environment(object):
         return False #TODO
         raise NotImplementedError
     
-    def reset(self)->GameState:
+    def reset(self)->Observation:
         self._current_state = self._create_starting_state()
         self._step_counter = 0
-        return self.current_state
+        return Observation(self.current_state, 0, self.is_goal(self.current_state), self._done, {})
     
     def step(self, action:Action)-> Observation:
         if not self._done:
@@ -225,5 +222,6 @@ if __name__ == "__main__":
     goal = {"known_networks":[], "known_hosts":[], "controlled_hosts":["192.168.0.4"], "known_services":{}, "known_data":{}}
     attacker_start = {"known_networks":[], "known_hosts":["192.168.0.5"], "controlled_hosts":["192.168.0.5"], "known_services":{}, "known_data":{}}
     #initialize the game
-    env.initialize(goal,{},attacker_start)
+    env.initialize(win_conditons=goal, defender_positions={}, attacker_start_position=attacker_start)
     print("Current state", env.current_state, env.is_goal(env.current_state))
+    env.get_valid_actions(env.current_state, transitions)
