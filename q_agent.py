@@ -145,6 +145,7 @@ if __name__ == '__main__':
     goal = {"known_networks":set(), "known_hosts":{"192.168.1.4"}, "controlled_hosts":set(), "known_services":{}, "known_data":{}}
     attacker_start = {"known_networks":set(), "known_hosts":set(), "controlled_hosts":{"213.47.23.195", "192.168.2.2"}, "known_services":{}, "known_data":{}}
 
+    #TRAINING
     state = env.initialize(win_conditons=goal, defender_positions={}, attacker_start_position=attacker_start, max_steps=50)
     agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
     for i in range(args.epochs):
@@ -152,15 +153,13 @@ if __name__ == '__main__':
         ret, win,_,_ = agent.play(state)
     agent.store_q_table(args.filename)
 
-    agent2 = QAgent(env)
-
-    agent2.load_q_table(args.filename)
+    #EVALUATION
     wins = 0
     detected = 0
     rewards = 0 
     for i in range(500):
         state = env.reset()
-        ret, win, detection, steps = agent2.evaluate(state)
+        ret, win, detection, steps = agent.evaluate(state)
         if win:
             wins += 1
         if detection:
