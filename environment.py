@@ -27,6 +27,7 @@ class Environment(object):
         self._done = False
         self._src_file = None
         self.verbosity = verbosity
+        self._detected = False
     
     @property
     def current_state(self) -> GameState:
@@ -36,7 +37,16 @@ class Environment(object):
     def timestamp(self)->int:
         return self._step_counter
 
+    @property
+    def done(self):
+        return self._done
     
+    @property
+    def detected(self):
+        if self.done: #Only tell if detected when the interaction ends
+            return self._detected
+        else: return False
+        
     def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10,topology=False)-> Observation:
         """
         Initializes the environment with start and goal configuraions.
@@ -155,7 +165,7 @@ class Environment(object):
         #exploits
         self._exploits = exploits   
     
-    def get_valid_actions(self, state:GameState, transitions:dict)->list:
+    def get_valid_actions(self, state:GameState)->list:
         """
         Returns list of valid actions in a given state.
         """
@@ -326,12 +336,14 @@ class Environment(object):
         return networks and known_hosts and controlled_hosts and services and data
     
     def _is_detected(self, state, action:Action)->bool:
+        #return False
         return random() < action.transition.default_detection_p
     
     def reset(self)->Observation:
         self._done = False
         self._current_state = copy.deepcopy(self._attacker_start)
         self._step_counter = 0
+        self._detected = False
         return Observation(self.current_state, 0, self.is_goal(self.current_state), self._done, {})
     
     def step(self, action:Action)-> Observation:
@@ -356,7 +368,7 @@ class Environment(object):
                 is_terminal = self.is_goal(next_state) or detected
                 if detected:
                     reward -= 50
-                
+                    self._detected = True
                 done = self._step_counter >= self._timeout or is_terminal
                 self._done = done
                 #move environment to the next stae
@@ -378,7 +390,7 @@ if __name__ == "__main__":
     env.process_cyst_config(configuration_objects)
 
     #define winning conditions and starting position
-    goal = {"known_networks":{}, "known_hosts":{}, "controlled_hosts":{}, "known_services":{'213.47.23.195': Service(name='listener', type='passive', version='1.0.0')}, "known_data":{}}
+    goal = {"known_networks":{}, "known_hosts":{"192.168.1.4"}, "controlled_hosts":{}, "known_services":{}, "known_data":{}}
     attacker_start = {"known_networks":{}, "known_hosts":set(), "controlled_hosts":{"213.47.23.195", "192.168.1.2"}, "known_services":{}, "known_data":{}}
     alpha = 0.2
     gamma = 0.9
@@ -411,36 +423,7 @@ if __name__ == "__main__":
     #     print("-------------------------------")
     #     #print(f"Finished in {env.timestamp} steps")
     # print(f"Average rewards per game={reward/iterations}")
-    # print(f"Average game length={length/iterations}")
-
-    #Q-learning attacker
-    attacker =  BasicQLearningAgent(env)
-    
-    reward = 0
-    length = 0
-    iterations = 5000
-    for _ in range(iterations):
-        state = env.reset()
-        actions = env.get_valid_actions(state.observation, transitions)
-        #print("Cleared state:", state)
-        while not state.done:
-            a = attacker.select_action(state.observation, actions)
-            next_state = env.step(a)
-            actions = env.get_valid_actions(next_state.observation, transitions)
-            #update_q values
-            new_q = attacker.get_q_value(state.observation, a) + alpha*(next_state.reward + gamma*attacker.get_max_q_for_state(next_state.observation, actions) - attacker.get_q_value(state.observation, a))
-            attacker.set_q_value(state.observation, a,new_q)
-            reward += next_state.reward
-            state = next_state
-        length += env.timestamp
-        print(f"Finished in {env.timestamp} steps. Goal:{state.reward}")
-    print(f"Average rewards per game={reward/iterations}")
-    print(f"Average game length={length/iterations}")
-    for (s, a), v in attacker.q_values.items():
-        if v != 0:
-            print(f"q({s}, {a}) = {v}")
-    
-    
+    # print(f"Average game length={length/iterations}")  
     
     
     #env.process_cyst_config(configuration_objects)
