@@ -69,7 +69,7 @@ class QAgent:
     def move(self, state:GameState, testing=False) -> Action:
         state = state.observation
         actions = self.env.get_valid_actions(state)
-        if random.uniform(0, 1) > self.epsilon and not testing:
+        if random.uniform(0, 1) <= self.epsilon and not testing:
             a = choice(actions)
             if (state, a) not in self.q_values:
                 self.q_values[state,a] = 0
@@ -130,27 +130,41 @@ class QAgent:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", help="Sets number of training epochs", default=1000, type=int)
-    parser.add_argument("--epsilon", help="Sets epsilon for exploration", default=0.1, type=float)
+    parser.add_argument("--epsilon", help="Sets epsilon for exploration", default=0.15, type=float)
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
-    parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.1, type=float)
+    parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.2, type=float)
+    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=10, type=int)
     args = parser.parse_args()
     args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()))) + ".pickle"
 
     
-    env = Environment()
+    env = Environment(verbosity=0)
     #print(env)
     env.process_cyst_config(configuration_objects)
 
     # define attacker goal and initial location
-    goal = {"known_networks":set(), "known_hosts":{"192.168.1.4"}, "controlled_hosts":set(), "known_services":{}, "known_data":{}}
+    goal = {"known_networks":set(), "known_hosts":{}, "controlled_hosts":set("192.168.1.2"), "known_services":{}, "known_data":{}}
     attacker_start = {"known_networks":set(), "known_hosts":set(), "controlled_hosts":{"213.47.23.195", "192.168.2.2"}, "known_services":{}, "known_data":{}}
 
     #TRAINING
-    state = env.initialize(win_conditons=goal, defender_positions={}, attacker_start_position=attacker_start, max_steps=50)
+    state = env.initialize(win_conditons=goal, defender_positions={}, attacker_start_position=attacker_start, max_steps=args.max_steps)
     agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
     for i in range(args.epochs):
         state = env.reset()
         ret, win,_,_ = agent.play(state)
+        if i % 500 == 0:
+            wins = 0
+            detected = 0
+            rewards = 0 
+            for j in range(100):
+                state = env.reset()
+                ret, win, detection, steps = agent.evaluate(state)
+                if win:
+                    wins += 1
+                if detection:
+                    detected +=1
+                rewards += ret
+            print(f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={(rewards/(j+1))}")
     agent.store_q_table(args.filename)
 
     #EVALUATION
@@ -165,4 +179,4 @@ if __name__ == '__main__':
         if detection:
             detected +=1
         rewards += ret
-    print(f"Evaluated {i+1} episodes: Winrate={(wins/(i+1))*100}%, detection_rate={(detected/(i+1))*100}%, average_return={(rewards/(i+1))}")
+    print(f"Final evaluation ({i+1} episodes): Winrate={(wins/(i+1))*100}%, detection_rate={(detected/(i+1))*100}%, average_return={(rewards/(i+1))}")
