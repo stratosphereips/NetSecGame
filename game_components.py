@@ -15,7 +15,7 @@ transitions = {
     "ScanNetwork": Transition("ScanNetwork",0.9,0.5,1,0.1), #In the beginning we artificially add 3 more networks in both directions
     "FindServices": Transition("FindServices",0.9,0.6,1,0.1),
     "FindData": Transition("FindData",0.5,0.9,2,0.1),
-    "ExecuteCodeInService": Transition("ExecuteCodeInService",0.3,0.3,0.1,0.3),
+    "ExecuteCodeInService": Transition("ExecuteCodeInService",0.3,0.3,20,0.3),
     "ExfiltrateData": Transition("ExfiltrateData",0.8,0.8,1000,0.1),
 }
 
