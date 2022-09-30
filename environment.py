@@ -69,7 +69,10 @@ class Environment(object):
             self._win_conditions = win_conditons
             self._attacker_start = self._create_starting_state(attacker_start_position)
             self._timeout = max_steps
-            self._place_defences(defender_positions)
+            if not defender_positions:
+                self._defender_placements = False
+            else:
+                self._place_defences(defender_positions)
             return self.reset()
     
     def _create_starting_state(self, attacker_start_position:dict) -> GameState:
@@ -236,7 +239,8 @@ class Environment(object):
                 for d in host.private_data:
                     data.add((d.owner, d.description))
         except AttributeError:
-            print(f"Host {host_ip} has no 'private_data' attribute")
+            if self.verbosity >= 1:
+                print(f"Host {host_ip} has no 'private_data' attribute")
             pass #host has no data attribute
         return data
 
@@ -336,9 +340,10 @@ class Environment(object):
         return networks and known_hosts and controlled_hosts and services and data
     
     def _is_detected(self, state, action:Action)->bool:
-        #return False
-        return random() < action.transition.default_detection_p
-    
+        if self._defender_placements:
+            return random() < action.transition.default_detection_p
+        else: #no defender
+            return False 
     def reset(self)->Observation:
         self._done = False
         self._current_state = copy.deepcopy(self._attacker_start)
@@ -392,12 +397,13 @@ if __name__ == "__main__":
     #define winning conditions and starting position
     goal = {"known_networks":{}, "known_hosts":{"192.168.1.4"}, "controlled_hosts":{}, "known_services":{}, "known_data":{}}
     attacker_start = {"known_networks":{}, "known_hosts":set(), "controlled_hosts":{"213.47.23.195", "192.168.1.2"}, "known_services":{}, "known_data":{}}
+    defender = False
     alpha = 0.2
     gamma = 0.9
     epsilon = 0.75
 
     #initialize the game
-    state = env.initialize(win_conditons=goal, defender_positions={}, attacker_start_position=attacker_start, max_steps=50)
+    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50)
     
     # actions = env.get_valid_actions(state.observation, transitions)
     # for a in actions:
