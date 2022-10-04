@@ -1,18 +1,17 @@
-
+from timeit import timeit
 import netaddr
 from random import random
 from game_components import *
 import yaml
 from random import random, choice
 import copy
-import sys
-sys.path.append("..\scenarios\scenario_1")
 from cyst.api.configuration import *
-from scenario_configuration import * 
-
 import numpy as np
-from frozendict import frozendict
-from basic_agent import BasicQLearningAgent
+import scenario_configuration
+import smaller_scenario_configuration
+import tiny_scenario_configuration
+
+
 
 class Environment(object):
     def __init__(self, verbosity=0) -> None:
@@ -92,11 +91,16 @@ class Environment(object):
                     if net.is_private():
                         known_networks.add(str(net))
         known_hosts = attacker_start_position["known_hosts"].union(attacker_start_position["controlled_hosts"])
-        return GameState(attacker_start_position["controlled_hosts"], known_hosts,{},{},known_networks)
+        return GameState(attacker_start_position["controlled_hosts"], known_hosts,attacker_start_position["known_services"],{},known_networks)
     
     def _place_defences(self, placements:dict)->None:
-        assert self._defender_placements ==  None
-        self._defender_placements = placements
+        # TODO
+        if placements:
+            self._defender_placements = True
+        else:
+            self._defender_placements = False
+        # assert self._defender_placements ==  None
+        # self._defender_placements = placements
     
     def read_topology(self, filename) -> None:
         """
@@ -239,7 +243,7 @@ class Environment(object):
                 for d in host.private_data:
                     data.add((d.owner, d.description))
         except AttributeError:
-            if self.verbosity >= 1:
+            if self.verbosity >= 2:
                 print(f"Host {host_ip} has no 'private_data' attribute")
             pass #host has no data attribute
         return data
@@ -324,26 +328,52 @@ class Environment(object):
     
     def is_goal(self, state:GameState)->bool:
         #check if all netoworks are known
-        networks = set(self._win_conditions["known_networks"]).issubset(set(state.known_networks))
-        known_hosts = set(self._win_conditions["known_hosts"]).issubset(set(state.known_hosts))
-        controlled_hosts = set(self._win_conditions["controlled_hosts"]).issubset(set(state.controlled_hosts))
+        networks = set(self._win_conditions["known_networks"]) <= set(state.known_networks) 
+        known_hosts = set(self._win_conditions["known_hosts"]) <= set(state.known_hosts)
+        controlled_hosts = set(self._win_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
         try:
-            services = [(k,v) for k,v in self._win_conditions["known_services"].items() if state.known_services[k]!=v]
-            services = len(services) == 0
+            services = True
+            keys_services = [k for k in self._win_conditions["known_services"].keys() if k not in state.known_services]
+            if len(keys_services) == 0:
+                for k in self._win_conditions["known_services"].keys():
+                    for s in self._win_conditions["known_services"][k]:
+                        if s not in state.known_services[k]:
+                            services = False
+                            break
+
+            else:
+                services = False
         except KeyError:
             services = False
+        
         try:
-            data = [(k,v) for k,v in self._win_conditions["known_data"].items() if state.known_data[k]!=v]
-            data = len(data) == 0
+            data = True
+            keys_data = [k for k in self._win_conditions["known_data"].keys() if k not in state.known_data]
+            if len(keys_data) == 0:
+                for k in self._win_conditions["known_data"].keys():
+                    for s in self._win_conditions["known_data"][k]:
+                        if s not in state.known_data[k]:
+                            services = False
+                            break
+
+            else:
+                services = False
         except KeyError:
             data = False
+        if self.verbosity > 1:
+            print("networks", networks)
+            print("known", known_hosts)
+            print("controlled", controlled_hosts)
+            print("services", services)
+            print("data", data)
         return networks and known_hosts and controlled_hosts and services and data
     
     def _is_detected(self, state, action:Action)->bool:
         if self._defender_placements:
-            return random() < action.transition.default_detection_p
+            return random() < action.transition.default_detection_p     
         else: #no defender
             return False 
+    
     def reset(self)->Observation:
         self._done = False
         self._current_state = copy.deepcopy(self._attacker_start)
@@ -353,83 +383,65 @@ class Environment(object):
     
     def step(self, action:Action)-> Observation:
         if not self._done:
-            #check if action is valid
-            if self.is_valid_action(self._current_state, action):
-                self._step_counter +=1
-                #Roll the dice on success
-                if random() <= action.transition.default_success_p:
-                    next_state = self._execute_action(self._current_state, action)
-                    reward = action.transition.default_reward - action.transition.default_cost
-                    if self.is_goal(next_state):
-                        if self.verbosity >=1:
-                            print("Goal Reached")
-                        reward += 100
-                else: #unsuccessful - pay the cost but no reward, no change in game state
-                    next_state = self._current_state
-                    reward = - action.transition.default_cost
-                    if self.verbosity >=1:
-                        print("Action unsuccessful")
-                detected = self._is_detected(self._current_state, action)
-                is_terminal = self.is_goal(next_state) or detected
-                if detected:
-                    reward -= 50
-                    self._detected = True
-                done = self._step_counter >= self._timeout or is_terminal
-                self._done = done
-                #move environment to the next stae
-                self._current_state = next_state
-                return Observation(next_state, reward, is_terminal, done, {})
-            else:
-                raise ValueError(f"Invalid action {action}")
+            self._step_counter +=1
+            #Roll the dice on success
+            if random() <= action.transition.default_success_p:
+                next_state = self._execute_action(self._current_state, action)
+                reward = -1     #action.transition.default_reward - action.transition.default_cost
+            else: #unsuccessful - pay the cost but no reward, no change in game state
+                next_state = self._current_state
+                reward = -1 #action.transition.default_cost
+                if self.verbosity >=1:
+                    print("Action unsuccessful")
+            is_goal = self.is_goal(next_state)
+            if is_goal:
+                if self.verbosity >=1:
+                    print("Goal Reached")
+                reward += 100  
+            detected = self._is_detected(self._current_state, action)
+            if detected:
+                reward -= 50
+                self._detected = True
+                if self.verbosity >=1:
+                    print("Detection")
+            done = self._step_counter >= self._timeout or is_goal or detected
+            self._done = done
+            #move environment to the next stae
+            self._current_state = next_state
+            return Observation(next_state, reward, is_goal or detected, done, {})
         else:
             raise ValueError("Interaction over! No more steps can be made in the environment")
 
+    def set_timeout(self, timeout):
+        self._timeout = timeout
 
 if __name__ == "__main__":
     
     #create environment
-    env = Environment(verbosity=1)
+    env = Environment(verbosity=2)
     
     #read topology from the dummy file
     #env.read_topology("test.yaml")
-    env.process_cyst_config(configuration_objects)
-
+    env.process_cyst_config(tiny_scenario_configuration.configuration_objects)
     #define winning conditions and starting position
-    goal = {"known_networks":{}, "known_hosts":{"192.168.1.4"}, "controlled_hosts":{}, "known_services":{}, "known_data":{}}
-    attacker_start = {"known_networks":{}, "known_hosts":set(), "controlled_hosts":{"213.47.23.195", "192.168.1.2"}, "known_services":{}, "known_data":{}}
+    goal = {"known_networks":set(), "known_hosts":{}, "controlled_hosts":{"192.168.1.2"}, "known_services":{'192.168.1.2': frozenset({Service(name='lanman server', type='passive', version='10.0.19041')})}, "known_data":{}}
+    #goal = {"known_networks":{}, "known_hosts":{"192.168.1.4"}, "controlled_hosts":{}, "known_services":{}, "known_data":{}}
+    #attacker_start = {"known_networks":{}, "known_hosts":set(), "controlled_hosts":{"213.47.23.195", "192.168.1.2"}, "known_services":{}, "known_data":{}}
+    attacker_start = {
+        "known_networks":{'192.168.1.0/24', '192.168.2.0/24', '192.168.3.0/24'},
+        "known_hosts":{'192.168.1.1', '192.168.2.2', '192.168.1.2'},
+        "controlled_hosts":{"192.168.2.2", "192.168.1.2"},
+        "known_services":{'192.168.1.2':{
+            Service(name='remote desktop service', type='passive', version='10.0.19041'),
+            Service(name='lanman server', type='passive', version='10.0.19041')}},
+        "known_data":{}
+    }
     defender = False
-    alpha = 0.2
-    gamma = 0.9
-    epsilon = 0.75
 
     #initialize the game
     state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50)
-    
-    # actions = env.get_valid_actions(state.observation, transitions)
-    # for a in actions:
-    #     print(a)
-    # next_state = env.step(actions[4])
-    # print(next_state.observation)
-    
-    #Dummy RANDOM attacker
-    # reward = 0
-    # length = 0
-    # iterations = 100
-    # for _ in range(iterations):
-    #     state = env.reset()
-    #     #print("Cleared state:", state)
-    #     while not state.done:
-    #         #print(state.observation)
-    #         reward += state.reward
-    #         actions = env.get_valid_actions(state.observation, transitions)
-    #         a = choice(actions)
-    #         print(a)
-    #         state = env.step(a)
-    #     length += env.timestamp
-    #     print("-------------------------------")
-    #     #print(f"Finished in {env.timestamp} steps")
-    # print(f"Average rewards per game={reward/iterations}")
-    # print(f"Average game length={length/iterations}")  
-    
-    
-    #env.process_cyst_config(configuration_objects)
+    print(goal)
+    print("-----------------------")
+    print(state.observation, state.observation == state.observation)
+    print("-----------------------")
+    print(env.is_goal(state.observation))
