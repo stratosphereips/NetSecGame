@@ -1,9 +1,9 @@
-from timeit import timeit
+#Author: Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import netaddr
 from random import random
 from game_components import *
 import yaml
-from random import random, choice
+from random import random, choice, seed
 import copy
 from cyst.api.configuration import *
 import numpy as np
@@ -11,6 +11,7 @@ import scenario_configuration
 import smaller_scenario_configuration
 import tiny_scenario_configuration
 
+seed(42)
 
 
 class Environment(object):
@@ -91,7 +92,7 @@ class Environment(object):
                     if net.is_private():
                         known_networks.add(str(net))
         known_hosts = attacker_start_position["known_hosts"].union(attacker_start_position["controlled_hosts"])
-        return GameState(attacker_start_position["controlled_hosts"], known_hosts,attacker_start_position["known_services"],{},known_networks)
+        return GameState(attacker_start_position["controlled_hosts"], known_hosts,attacker_start_position["known_services"],attacker_start_position["known_data"],known_networks)
     
     def _place_defences(self, placements:dict)->None:
         # TODO
@@ -194,7 +195,7 @@ class Environment(object):
                 actions.append(Action("ExecuteCodeInService", {"target_host":host, "target_service":s.name}))
         #ExfiltrateData
         for source, data in state.known_data.items():
-            for target in state.known_hosts:
+            for target in state.controlled_hosts:
                 if source != target and len(data) > 0:
                     for d in data:
                         actions.append(Action("ExfiltrateData", {"target_host":target, "data":d, "source_host":source}))
@@ -237,15 +238,16 @@ class Environment(object):
     
     def _get_data_in_host(self, host_ip)->list:
         data = set()
-        try:
-            if host_ip in self._ips:
-                host = self._nodes[self._ips[host_ip]]
-                for d in host.private_data:
-                    data.add((d.owner, d.description))
-        except AttributeError:
-            if self.verbosity >= 2:
-                print(f"Host {host_ip} has no 'private_data' attribute")
-            pass #host has no data attribute
+        if host_ip in self._ips:
+            host = self._nodes[self._ips[host_ip]]
+            if isinstance(host, NodeConfig):
+                for service in host.passive_services:
+                    try:
+                        for d in service.private_data:
+                            data.add((d.owner, d.description))
+                    except AttributeError:
+                        pass
+                        #service does not contain any data
         return data
 
     def _execute_action(self, current:GameState, action:Action)-> GameState:
@@ -285,12 +287,12 @@ class Environment(object):
             return GameState(extended_controlled_hosts, current.known_hosts, current.known_services, current.known_data, extended_networks)
         
         elif action.transition.type == "ExfiltrateData":
-            extended_data = set([x for x in current.known_data()])
+            extended_data = {k:v for k,v in current.known_data.items()}
             if len(action.parameters["data"]) > 0:
                 if action.parameters["target_host"] not in current.known_data.keys():
-                    extended_data[action.parameters["target_host"]] = [action.parameters["data"]]
+                    extended_data[action.parameters["target_host"]] = {action.parameters["data"]}
                 else:
-                    extended_data[action.parameters["target_host"]] += [action.parameters["data"]]
+                    extended_data[action.parameters["target_host"]].union(action.parameters["data"])
             return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
         else:
             raise ValueError(f"Unknown Action type: '{action.transition.type}'")
@@ -351,13 +353,12 @@ class Environment(object):
             keys_data = [k for k in self._win_conditions["known_data"].keys() if k not in state.known_data]
             if len(keys_data) == 0:
                 for k in self._win_conditions["known_data"].keys():
-                    for s in self._win_conditions["known_data"][k]:
-                        if s not in state.known_data[k]:
-                            services = False
-                            break
+                    if not set(self._win_conditions["known_data"][k]) <= set(state.known_data[k]):
+                        data = False
+                        break
 
             else:
-                services = False
+                data = False
         except KeyError:
             data = False
         if self.verbosity > 1:
@@ -418,30 +419,48 @@ class Environment(object):
 if __name__ == "__main__":
     
     #create environment
-    env = Environment(verbosity=2)
+    env = Environment(verbosity=0)
     
-    #read topology from the dummy file
-    #env.read_topology("test.yaml")
+    #read network setup from CYST configuration
     env.process_cyst_config(tiny_scenario_configuration.configuration_objects)
     #define winning conditions and starting position
-    goal = {"known_networks":set(), "known_hosts":{}, "controlled_hosts":{"192.168.1.2"}, "known_services":{'192.168.1.2': frozenset({Service(name='lanman server', type='passive', version='10.0.19041')})}, "known_data":{}}
+    goal = {
+        "known_networks":set(),
+        "known_hosts":{},
+        "controlled_hosts":{"192.168.1.2"},
+        "known_services":{'192.168.1.2': frozenset({Service(name='lanman server', type='passive', version='10.0.19041')})},
+        "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
+    }
+
+    #goal = {"known_networks":set(), "known_hosts":{}, "controlled_hosts":{"192.168.1.2"}, "known_services":{'192.168.1.2': frozenset({Service(name='lanman server', type='passive', version='10.0.19041')})}, "known_data":{}}
     #goal = {"known_networks":{}, "known_hosts":{"192.168.1.4"}, "controlled_hosts":{}, "known_services":{}, "known_data":{}}
     #attacker_start = {"known_networks":{}, "known_hosts":set(), "controlled_hosts":{"213.47.23.195", "192.168.1.2"}, "known_services":{}, "known_data":{}}
     attacker_start = {
-        "known_networks":{'192.168.1.0/24', '192.168.2.0/24', '192.168.3.0/24'},
-        "known_hosts":{'192.168.1.1', '192.168.2.2', '192.168.1.2'},
-        "controlled_hosts":{"192.168.2.2", "192.168.1.2"},
-        "known_services":{'192.168.1.2':{
-            Service(name='remote desktop service', type='passive', version='10.0.19041'),
-            Service(name='lanman server', type='passive', version='10.0.19041')}},
+        "known_networks":set(),
+        "known_hosts":set(),
+        "controlled_hosts":{"192.168.2.2",'213.47.23.195'},
+        "known_services":{},
         "known_data":{}
     }
+    
     defender = False
 
     #initialize the game
     state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50)
-    print(goal)
-    print("-----------------------")
-    print(state.observation, state.observation == state.observation)
-    print("-----------------------")
-    print(env.is_goal(state.observation))
+    
+    #scan netwokr
+    next_state = env.step(Action("ScanNetwork", {"target_network":"192.168.1.0/24"}))
+    print(next_state.observation)
+    print("---------------")
+    next_state = env.step(Action("FindServices", {"target_host":"192.168.1.2"}))
+    print(next_state.observation)
+    print("---------------")
+    next_state = env.step(Action("ExecuteCodeInService", {"target_host":"192.168.1.2","target_service":Service(name='lanman server', type='passive', version='10.0.19041')}))
+    print(next_state.observation)
+    print("---------------")
+    next_state = env.step(Action("FindData",{"target_host":"192.168.1.2"}))
+    print(next_state.observation)
+    print("---------------")
+    next_state = env.step(Action("ExfiltrateData", {"target_host": '213.47.23.195', "source_host":"192.168.1.2", "data":("User1", "DataFromServer1")}))
+    print(next_state.observation, env.is_goal(next_state.observation))
+    print("---------------")
