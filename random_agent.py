@@ -1,7 +1,7 @@
 #Author: Ondrej Lukas, ondrej.lukas@aic.cvut.cz
 from environment import *
 from game_components import *
-from random import choice
+from random import choice, seed
 import argparse
 
 class RandomAgent:
@@ -39,8 +39,10 @@ class RandomAgent:
 
 
 if __name__ == '__main__':
+    # set seed 
+    seed(42)
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=15, type=int)
+    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
     parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_small", type=str)
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
@@ -57,9 +59,20 @@ if __name__ == '__main__':
         print("unknown scenario")
         exit(1)
     # define attacker goal and initial location
-    goal = {"known_networks":set(), "known_hosts":{}, "controlled_hosts":{"192.168.1.2"}, "known_services":{'192.168.1.2': frozenset({Service(name='lanman server', type='passive', version='10.0.19041')})}, "known_data":{"}}
-    attacker_start = {"known_networks":set(), "known_hosts":set(), "controlled_hosts":{"192.168.2.2", "213.47.23.195"}, "known_services":{}, "known_data":{}}
-    
+    goal = {
+        "known_networks":set(),
+        "known_hosts":set(),
+        "controlled_hosts":set(),
+        "known_services":{},
+        "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
+    }
+    attacker_start = {
+        "known_networks":set(),
+        "known_hosts":set(),
+        "controlled_hosts":{"213.47.23.195","192.168.2.2"},
+        "known_services":{},
+        "known_data":{}
+    }
     #TRAINING
     state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
     agent = RandomAgent(env)
