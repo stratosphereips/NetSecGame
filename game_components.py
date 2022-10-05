@@ -11,12 +11,19 @@ Net reward can be computed as follows net_reward = sucess*default_reward - defau
 Transition = namedtuple("Transition", ["type", "default_success_p", "default_detection_p", "default_reward", "default_cost"])
 
 #List of transitions available for attacker with default parameters
+# transitions = {
+#     "ScanNetwork": Transition("ScanNetwork",0.9,0.5,1,0.1), #In the beginning we artificially add 3 more networks in both directions
+#     "FindServices": Transition("FindServices",0.9,0.6,1,0.1),
+#     "FindData": Transition("FindData",0.5,0.9,2,0.1),
+#     "ExecuteCodeInService": Transition("ExecuteCodeInService",0.3,0.3,20,0.3),
+#     "ExfiltrateData": Transition("ExfiltrateData",0.8,0.8,1000,0.1),
+# }
 transitions = {
-    "ScanNetwork": Transition("ScanNetwork",0.9,0.5,1,0.1), #In the beginning we artificially add 3 more networks in both directions
-    "FindServices": Transition("FindServices",0.9,0.6,1,0.1),
-    "FindData": Transition("FindData",0.5,0.9,2,0.1),
-    "ExecuteCodeInService": Transition("ExecuteCodeInService",0.3,0.3,20,0.3),
-    "ExfiltrateData": Transition("ExfiltrateData",0.8,0.8,1000,0.1),
+    "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2, 1,0.1), #In the beginning we artificially add 3 more networks in both directions
+    "FindServices": Transition("FindServices",0.9, 0.3,1,0.1),
+    "FindData": Transition("FindData",0.8, 0.05, 2, 0.1),
+    "ExecuteCodeInService": Transition("ExecuteCodeInService",0.70, 0.4, 20, 0.3),
+    "ExfiltrateData": Transition("ExfiltrateData",0.8, 0.1, 1000, 0.1),
 }
 
 #Actions
@@ -76,7 +83,7 @@ class GameState(object):
         self._known_networks = frozenset(known_networks)
         self._known_hosts = frozenset(known_hosts)
         self._known_services = frozendict(know_services)
-        self._known_data = frozendict(known_data)
+        self._known_data = frozendict({k:frozenset([x for x in v]) for k,v in known_data.items()})
     
     @property
     def controlled_hosts(self):
@@ -99,7 +106,7 @@ class GameState(object):
         return self._known_data
     
     def __str__(self) -> str:
-        return f"State<nets:{self.known_networks}, known:{self.known_hosts}, owned:{self.controlled_hosts}, services:{self.known_services}, data:{self.known_data}>"
+        return f"State<nets:{self.known_networks}; known:{self.known_hosts}; owned:{self.controlled_hosts}; services:{self._known_services}; data:{self._known_data}>"
     
     def __eq__(self, other: object) -> bool:
         if isinstance(other, GameState):
@@ -140,14 +147,14 @@ if __name__ == '__main__':
     # # print(a1, a2, a1==a2)
     s1 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': frozenset([Service(name='bash', type='passive', version='5.0.0'), Service(name='listener', type='passive', version='1.0.0')])},{},{})
     #print(hash(s1))
-    s2 = GameState({"192.168.1.1"}, {}, {}, {},{})
+    s2 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': frozenset([Service(name='listener', type='passive', version='1.0.0'), Service(name='bash', type='passive', version='5.0.0')])}, {},{})
     s3 = GameState({"192.168.1.1"}, {}, {}, {},{})
     #print(s1, s2, s1 == s2)
     q = {}
     if (a,s1) not in q.keys():
         print("missing")
     q[(a,s1)] = 0
-    q[a,s2] = 1
+    q[(a,s2)] = 1
     print(q)
-    q[a,s3] = 2
+    q[(a,s3)] = 2
     print(q)
