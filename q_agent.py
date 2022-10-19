@@ -1,5 +1,6 @@
 # Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 #           Arti       
+from environment_v2 import EnvironmentV2
 from environment import *
 from game_components import *
 import numpy as np
@@ -90,17 +91,18 @@ if __name__ == '__main__':
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
     parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.3, type=float)
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
+    parser.add_argument("--defender", help="Is defender present", default=True, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--evaluate", help="Do not train, only run evaluation", default=False, action="store_true")
     parser.add_argument("--eval_each", help="Sets periodic evaluation during training", default=500, type=int)
+    parser.add_argument("--eval_for", help="Sets evaluation length", default=1000, type=int)
+    parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
     args = parser.parse_args()
-    args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each"])) + ".pickle"
+    args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
     #set random seed
-    seed(42)
     
-    env = Environment(verbosity=0)
+    env = EnvironmentV2(random_start=args.random_start, verbosity=0)
     if args.scenario == "scenario1":
         env.process_cyst_config(scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":
@@ -165,7 +167,7 @@ if __name__ == '__main__':
     detected = 0
     rewards = []
     num_steps = [] 
-    for i in range(1000):
+    for i in range(args.eval_for):
         state = env.reset()
         ret, win, detection, steps = agent.evaluate(state)
         if win:
@@ -175,6 +177,3 @@ if __name__ == '__main__':
         rewards += [ret]
         num_steps += [steps]
     print(f"Final evaluation ({i+1} episodes): Winrate={(wins/(i+1))*100}%, detection_rate={(detected/(i+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}")
-    # with open("q_agent_full_game.csv", "w") as f:
-    #     for (s,a),v in agent.q_values.items():
-    #         print(f"{s};{a};{v}", file=f)

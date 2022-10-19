@@ -31,7 +31,15 @@ smb_server = NodeConfig(
             private_data=[
                 DataConfig(
                     owner="User1",
-                    description="Mighty secret data"
+                    description="DataFromServer1"
+                ),
+                DataConfig(
+                    owner="User2",
+                    description="Data2FromServer1"
+                ),
+                DataConfig(
+                    owner="User1",
+                    description="Data3FromServer1"
                 )
             ],
             access_level=AccessLevel.LIMITED,
@@ -147,6 +155,11 @@ db_server = NodeConfig(
             type="postgresql",
             owner="postgresql",
             version="14.3.0",
+            private_data=[
+                DataConfig(
+                    owner="User1",
+                    description="DatabaseData"
+            )],
             local=False,
             access_level=AccessLevel.LIMITED
         ),
@@ -182,6 +195,16 @@ web_server = NodeConfig(
             owner="lighttpd",
             version="1.4.54",
             local=False,
+            private_data=[
+                DataConfig(
+                    owner="User2",
+                    description="WebServerData"
+            ),
+            DataConfig(
+                    owner="User1",
+                    description="DataFromServer1"
+                )
+            ],
             access_level=AccessLevel.LIMITED,
             authentication_providers=[],
             parameters=[],
