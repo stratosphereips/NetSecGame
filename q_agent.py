@@ -113,28 +113,37 @@ if __name__ == '__main__':
         print("unknown scenario")
         exit(1)
     # define attacker goal and initial location
-    #goal = {"known_networks":set(), "known_hosts":{}, "controlled_hosts":{"192.168.1.2"}, "known_services":{'192.168.1.2': frozenset({Service(name='lanman server', type='passive', version='10.0.19041')})}, "known_data":{}}
-    goal = {
-        "known_networks":set(),
-        "known_hosts":set(),
-        "controlled_hosts":set(),
-        "known_services":{},
-        "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
-    }
-    # goal = {
-    #     "known_networks":set(),
-    #     "known_hosts":set(),
-    #     "controlled_hosts":{"192.168.1.2"},
-    #     "known_services":{},
-    #     "known_data":{}
-    # }
-    attacker_start = {
-        "known_networks":set(),
-        "known_hosts":set(),
-        "controlled_hosts":{"213.47.23.195","192.168.2.2"},
-        "known_services":{},
-        "known_data":{}
-    }
+    if args.random_start:
+        goal = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":set(),
+            "known_services":{},
+            "known_data":{"213.47.23.195":"random"}
+        }
+        attacker_start = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":{"213.47.23.195","192.168.2.0/24"},
+            "known_services":{},
+            "known_data":{}
+        }
+    else:
+        goal = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":set(),
+            "known_services":{},
+            "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
+        }
+
+        attacker_start = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":{"213.47.23.195","192.168.2.2"},
+            "known_services":{},
+            "known_data":{}
+        }
     
     #TRAINING
     state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
