@@ -1,5 +1,6 @@
 #Author: Ondrej Lukas, ondrej.lukas@aic.cvut.cz
 from environment import *
+from environment_v2 import EnvironmentV2
 from game_components import *
 from random import choice, seed
 import argparse
@@ -48,7 +49,7 @@ if __name__ == '__main__':
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     args = parser.parse_args()
 
-    env = Environment(verbosity=args.verbosity)
+    env = EnvironmentV2(verbosity=args.verbosity)
     if args.scenario == "scenario1":
         env.process_cyst_config(scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     attacker_start = {
         "known_networks":set(),
         "known_hosts":set(),
-        "controlled_hosts":{"213.47.23.195","192.168.2.2"},
+        "controlled_hosts":{"213.47.23.195","192.168.2.2/24"},
         "known_services":{},
         "known_data":{}
     }
