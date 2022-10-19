@@ -31,7 +31,7 @@ smb_server = NodeConfig(
             private_data=[
                 DataConfig(
                     owner="User1",
-                    description="Mighty secret data"
+                    description="DataFromServer1"
                 )
             ],
             access_level=AccessLevel.LIMITED,
