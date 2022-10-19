@@ -9,6 +9,7 @@ import pickle
 import sys
 import argparse
 from timeit import default_timer as timer
+from environment_v2 import EnvironmentV2
 
 class DoubleQAgent:
 
@@ -122,13 +123,15 @@ if __name__ == '__main__':
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--evaluate", help="Do not train, only run evaluation", default=False, action="store_true")
     parser.add_argument("--eval_each", help="Sets periodic evaluation during training", default=500, type=int)
+    parser.add_argument("--eval_for", help="Sets evaluation length", default=1000, type=int)
+    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action="store_true")
     args = parser.parse_args()
     args.filename = "DoubleQAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in["evaluate", "eval_each"])) + ".pickle"
 
     #set random seed
-    random.seed(42)
+    #random.seed(42)
     
-    env = Environment(verbosity=0)
+    env = EnvironmentV2(verbosity=1, random_start=args.random_start)
     if args.scenario == "scenario1":
         env.process_cyst_config(scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":
@@ -138,34 +141,53 @@ if __name__ == '__main__':
     else:
         print("unknown scenario")
         exit(1)
-    # define attacker goal and initial location
-    goal = {
-        "known_networks":set(),
-        "known_hosts":set(),
-        "controlled_hosts":set(),
-        "known_services":{},
-        "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
-    }
-    attacker_start = {
-        "known_networks":set(),
-        "known_hosts":set(),
-        "controlled_hosts":{"213.47.23.195","192.168.2.2"},
-        "known_services":{},
-        "known_data":{}
-    }
     
+    # define attacker goal and initial location
+    if args.random_start:
+        goal = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":set(),
+            "known_services":{},
+            "known_data":{"213.47.23.195":"random"}
+        }
+        attacker_start = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":{"213.47.23.195","192.168.2.0/24"},
+            "known_services":{},
+            "known_data":{}
+        }
+    else:
+        goal = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":set(),
+            "known_services":{},
+            "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
+        }
+
+        attacker_start = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":{"213.47.23.195","192.168.2.2"},
+            "known_services":{},
+            "known_data":{}
+        }
+    
+    alphas = np.linspace(0.25, 0.1, args.epochs)
     #TRAINING
     state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
     agent = DoubleQAgent(env, args.alpha, args.gamma, args.epsilon)
     try:
-        agent.load_q_table(args.filename)
+        agent.load_q_table('DoubleQAgent_alpha=0.25,defender=True,epochs=10000,epsilon=0.1,gamma=0.9,max_steps=25,scenario=scenario1.pickle')
     except FileNotFoundError:
         print("No file found, starting from zeros")
     if not args.evaluate:
         for i in range(args.epochs):
             state = env.reset()
             ret, win,_,_ = agent.play(state)
-            if i % args.eval_each == 0:
+            if i % args.eval_each == 0 and i != 0:
                 wins = 0
                 detected = 0
                 rewards = [] 
@@ -177,6 +199,7 @@ if __name__ == '__main__':
                     if detection:
                         detected +=1
                     rewards += [ret]
+                agent.alpha = alphas[i]
                 print(f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}")
         agent.store_q_table(args.filename)
 
@@ -185,7 +208,7 @@ if __name__ == '__main__':
     detected = 0
     rewards = [] 
     start_t = timer()
-    for i in range(500):
+    for i in range(args.eval_for):
         state = env.reset()
         ret, win, detection, steps = agent.evaluate(state)
         if win:
