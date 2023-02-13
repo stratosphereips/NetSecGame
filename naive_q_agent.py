@@ -100,6 +100,10 @@ if __name__ == '__main__':
     args.filename = "NaiveQAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
     #set random seed
+    #random.seed(42)
+    #random.seed(1234)
+    #random.seed(10)
+    random.seed(19)
     
     env = EnvironmentV2(verbosity=0)
     if args.scenario == "scenario1":
