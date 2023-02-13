@@ -1,5 +1,27 @@
 # Game States Maker
-A python tool to generate the states of the game in AiDojo project.
+A python tool to design, generate, train, compare and plot a network security game in AiDojo project.
+
+The game states maker allows you to:
+- Define how you want your network to look like and which services are running. This is done using Cyst configuration of services.
+
+
+## Dependencies
+To run this code you need an environment and access to cyst code. 
+
+- The environment can be activated with
+
+    source ai-dojo-venv/bin/activate
+
+- Cyst libraries are installed in 
+
+    cyst-core
+    cyst-models-aif
+
+- Scenarios
+
+This is a folder with some scenarios (not sure if we are using or not)
+
+    scenarios
 
 
 ## Assumptions:
