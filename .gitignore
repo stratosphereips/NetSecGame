@@ -131,3 +131,5 @@ dmypy.json
 
 #dont track pickle files by default
 *.pickle
+
+images
