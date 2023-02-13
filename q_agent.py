@@ -101,7 +101,12 @@ if __name__ == '__main__':
     args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
     #set random seed
-    
+    #random.seed(42)
+    #random.seed(1234)
+    #random.seed(10)
+    random.seed(19)
+
+
     env = EnvironmentV2(random_start=args.random_start, verbosity=0)
     if args.scenario == "scenario1":
         env.process_cyst_config(scenario_configuration.configuration_objects)
