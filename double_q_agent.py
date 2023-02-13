@@ -114,10 +114,10 @@ class DoubleQAgent:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", help="Sets number of training epochs", default=5000, type=int)
+    parser.add_argument("--epochs", help="Sets number of training epochs", default=10000, type=int)
     parser.add_argument("--epsilon", help="Sets epsilon for exploration", default=0.2, type=float)
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
-    parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.3, type=float)
+    parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.2, type=float)
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
     parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
@@ -126,12 +126,10 @@ if __name__ == '__main__':
     parser.add_argument("--eval_for", help="Sets evaluation length", default=1000, type=int)
     parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action="store_true")
     args = parser.parse_args()
-    args.filename = "DoubleQAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in["evaluate", "eval_each"])) + ".pickle"
+    args.filename = "DoubleQAgent_2goal_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in["evaluate", "eval_each"])) + ".pickle"
 
-    #set random seed
-    #random.seed(42)
     
-    env = EnvironmentV2(verbosity=1, random_start=args.random_start)
+    env = EnvironmentV2(verbosity=0, random_start=args.random_start)
     if args.scenario == "scenario1":
         env.process_cyst_config(scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":
@@ -164,7 +162,7 @@ if __name__ == '__main__':
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
+            "known_data":{"213.47.23.195":{("User1", "DataFromServer1"), ("User1", "DatabaseData")}}
         }
 
         attacker_start = {
@@ -175,7 +173,7 @@ if __name__ == '__main__':
             "known_data":{}
         }
     
-    alphas = np.linspace(0.25, 0.1, args.epochs)
+    #alphas = np.linspace(0.25, 0.1, args.epochs)
     #TRAINING
     state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
     agent = DoubleQAgent(env, args.alpha, args.gamma, args.epsilon)
@@ -199,7 +197,7 @@ if __name__ == '__main__':
                     if detection:
                         detected +=1
                     rewards += [ret]
-                agent.alpha = alphas[i]
+                #agent.alpha = alphas[i]
                 print(f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}")
         agent.store_q_table(args.filename)
 
