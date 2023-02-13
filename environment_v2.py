@@ -431,7 +431,7 @@ class EnvironmentV2(object):
                 reward += 100  
             detected = self._is_detected(self._current_state, action)
             if detected:
-                reward -= 50
+                #reward -= 50
                 self._detected = True
                 if self.verbosity >=1:
                     print("Detection")
@@ -457,9 +457,9 @@ if __name__ == "__main__":
     goal = {
         "known_networks":set(),
         "known_hosts":{},
-        "controlled_hosts":{"192.168.1.2"},
-        "known_services":{'192.168.1.2': frozenset({Service(name='lanman server', type='passive', version='10.0.19041')})},
-        "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
+        "controlled_hosts":{},
+        "known_services":{},
+        "known_data":{"213.47.23.195":{("User1", "DataFromServer1"),("User1", "DatabaseData")}}
     }
 
     #goal = {"known_networks":set(), "known_hosts":{}, "controlled_hosts":{"192.168.1.2"}, "known_services":{'192.168.1.2': frozenset({Service(name='lanman server', type='passive', version='10.0.19041')})}, "known_data":{}}
@@ -470,14 +470,14 @@ if __name__ == "__main__":
         "known_hosts":set(),
         "controlled_hosts":{"192.168.2.2",'213.47.23.195'},
         "known_services":{},
-        "known_data":{}
+        "known_data":{"213.47.23.195":{("User1", "DataFromServer1"),("User1", "DatabaseData")}}
     }
     
     defender = False
 
     #initialize the game
     state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50)
-    
+    print(env.is_goal(state.observation))
     #scan netwokr
     # next_state = env.step(Action("ScanNetwork", {"target_network":"192.168.1.0/24"}))
     # print(next_state.observation)
@@ -495,6 +495,6 @@ if __name__ == "__main__":
     # print(next_state.observation, env.is_goal(next_state.observation))
     # print("---------------")
     
-    for _ in range(5):
-        print(env.reset().observation)
+    # for _ in range(5):
+    #     print(env.reset().observation)
 
