@@ -23,6 +23,10 @@ To run this code you need an environment and access to cyst code. However, the v
 
 - Scenarios
 
+## Environment
+Be careful of which python environment are you using. If using the venv here you may need to install pagackes as
+
+    ai-dojo-venv-sebas/bin/pip install frozendict
 
 ## Run
 
