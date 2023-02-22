@@ -7,9 +7,9 @@ from random import random, choice, seed
 import copy
 from cyst.api.configuration import *
 import numpy as np
-import scenarios/scenario_configuration
-import scenarios/smaller_scenario_configuration
-import scenarios/tiny_scenario_configuration
+from scenarios.scenario_configuration import *
+#import scenarios.smaller_scenario_configuration
+#import scenarios.tiny_scenario_configuration
 
 class EnvironmentV2(object):
     def __init__(self, random_start=True, verbosity=0) -> None:
@@ -452,7 +452,7 @@ if __name__ == "__main__":
     env = EnvironmentV2(random_start=False, verbosity=0)
     
     #read network setup from CYST configuration
-    env.process_cyst_config(scenario_configuration.configuration_objects)
+    env.process_cyst_config(configuration_objects)
     #define winning conditions and starting position
     goal = {
         "known_networks":set(),
