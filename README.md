@@ -6,11 +6,15 @@ The game states maker allows you to:
 
 
 ## Dependencies
-To run this code you need an environment and access to cyst code. 
+To run this code you need an environment and access to cyst code. However, the venv needs to be created for your own user
+
+- If you don't have your environment
+
+    python -m venv ai-dojo-venv-<yourusername>
 
 - The environment can be activated with
 
-    source ai-dojo-venv/bin/activate
+    source ai-dojo-venv<yourusername>/bin/activate
 
 - Cyst libraries are installed in 
 
@@ -19,10 +23,12 @@ To run this code you need an environment and access to cyst code.
 
 - Scenarios
 
+
+## Run
+
+The game is defined in the topogoly of the network and the rules, services and actions. This can be found in file `sfzlllll`.
+
 This is a folder with some scenarios (not sure if we are using or not)
-
-    scenarios
-
 
 ## Assumptions:
 * We work with close world assumntion - only entities defined exist in the simulation
