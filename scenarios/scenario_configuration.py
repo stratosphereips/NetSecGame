@@ -1,4 +1,5 @@
 from cyst.api.configuration import *
+from cyst.api.configuration.network.elements import RouteConfig
 from cyst.api.logic.access import AuthenticationProviderType, AuthenticationTokenType, AuthenticationTokenSecurity
 
 ''' --------------------------------------------------------------------------------------------------------------------
