@@ -7,9 +7,9 @@ from random import random, choice, seed
 import copy
 from cyst.api.configuration import *
 import numpy as np
-import scenario_configuration
-import smaller_scenario_configuration
-import tiny_scenario_configuration
+import scenarios.scenario_configuration
+import scenarios.smaller_scenario_configuration
+import scenarios.tiny_scenario_configuration
 
 seed(42)
 
@@ -422,7 +422,7 @@ if __name__ == "__main__":
     env = Environment(verbosity=0)
     
     #read network setup from CYST configuration
-    env.process_cyst_config(tiny_scenario_configuration.configuration_objects)
+    env.process_cyst_config(scenarios.tiny_scenario_configuration.configuration_objects)
     #define winning conditions and starting position
     goal = {
         "known_networks":set(),
