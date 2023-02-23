@@ -140,6 +140,7 @@ if __name__ == '__main__':
 
 
     logger.info(f'Setting the network security environment')
+    env = Network_Security_Environment(random_start=args.random_start, verbosity=0)
     if args.scenario == "scenario1":
         env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":
