@@ -126,6 +126,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
+    logging.basicConfig(filename='q_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+    logger = logging.getLogger('Q-agent')
+
     #set random seed
     #random.seed(42)
     #random.seed(1234)
@@ -133,7 +136,7 @@ if __name__ == '__main__':
     random.seed(19)
 
 
-    env = EnvironmentV2(random_start=args.random_start, verbosity=0)
+    logger.info(f'Setting the network security environment')
     if args.scenario == "scenario1":
         env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":
@@ -177,15 +180,21 @@ if __name__ == '__main__':
             "known_data":{}
         }
     
-    #TRAINING
+    # Training
+    logger.info(f'Initializing the environment')
     state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+    logger.info(f'Creating the agent')
     agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
     try:
+        # Load a previous qtable from a pickled file
+        logger.info(f'Loading a previous Qtable')
         agent.load_q_table(args.filename)
     except FileNotFoundError:
+        logger.info(f"No previous qtable file found to load, starting with an emptly zeroed qtable")
     
     # If we are not evaluating the model
     if not args.evaluate:
+        logger.info(f'Starting the training')
             # Reset
             state = env.reset()
             # Play complete round
@@ -203,8 +212,9 @@ if __name__ == '__main__':
                     if detection:
                         detected +=1
                     rewards += [ret]
-                print(f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}")
-    agent.store_q_table(args.filename)
+                text = f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}"
+                print(text)
+                logger.info(text)
 
     # FINAL EVALUATION
     wins = 0
@@ -220,4 +230,6 @@ if __name__ == '__main__':
             detected +=1
         rewards += [ret]
         num_steps += [steps]
-    print(f"Final evaluation ({i+1} episodes): Winrate={(wins/(i+1))*100}%, detection_rate={(detected/(i+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}")
+    text = f"Final evaluation ({i+1} episodes): Winrate={(wins/(i+1))*100}%, detection_rate={(detected/(i+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}"
+    print(text)
+    logger.info(text)
