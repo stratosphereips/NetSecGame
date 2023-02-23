@@ -9,7 +9,10 @@ import pickle
 import sys
 import argparse
 from timeit import default_timer as timer
-from environment_v2 import EnvironmentV2
+from network_security_game import Network_Security_Environment
+import logging
+from torch.utils.tensorboard import SummaryWriter
+import time
 
 class DoubleQAgent:
 
@@ -114,7 +117,7 @@ class DoubleQAgent:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", help="Sets number of training epochs", default=10000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--epsilon", help="Sets epsilon for exploration", default=0.2, type=float)
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
     parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.2, type=float)
@@ -125,17 +128,33 @@ if __name__ == '__main__':
     parser.add_argument("--eval_each", help="Sets periodic evaluation during training", default=500, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=1000, type=int)
     parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action="store_true")
+    parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
     args = parser.parse_args()
     args.filename = "DoubleQAgent_2goal_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in["evaluate", "eval_each"])) + ".pickle"
 
-    
-    env = EnvironmentV2(verbosity=0, random_start=args.random_start)
+    args.filename = "DoubleQAgent_2goal_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in["evaluate", "eval_each", "eval_each"])) + ".pickle"
+
+
+    logging.basicConfig(filename='doubleq_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+    logger = logging.getLogger('DoubleQ-agent')
+
+    # Setup tensorboard
+    run_name = f"netsecgame__doubleqlearning__{args.seed}__{int(time.time())}"
+    writer = SummaryWriter(f"logs/{run_name}")
+    writer.add_text(
+        "hypherparameters", 
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
+    )
+
+    random.seed(args.seed)
+
+    env = Network_Security_Environment(verbosity=0, random_start=args.random_start)
     if args.scenario == "scenario1":
-        env.process_cyst_config(scenario_configuration.configuration_objects)
+        env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":
-        env.process_cyst_config(smaller_scenario_configuration.configuration_objects)
+        env.process_cyst_config(scenarios.smaller_scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_tiny":
-        env.process_cyst_config(tiny_scenario_configuration.configuration_objects)
+        env.process_cyst_config(scenarios.tiny_scenario_configuration.configuration_objects)
     else:
         print("unknown scenario")
         exit(1)
@@ -173,22 +192,27 @@ if __name__ == '__main__':
             "known_data":{}
         }
     
-    #alphas = np.linspace(0.25, 0.1, args.epochs)
-    #TRAINING
+    # Training
+    logger.info(f'Initializing the environment')
     state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+    logger.info(f'Creating the agent')
     agent = DoubleQAgent(env, args.alpha, args.gamma, args.epsilon)
     try:
-        agent.load_q_table('DoubleQAgent_alpha=0.25,defender=True,epochs=10000,epsilon=0.1,gamma=0.9,max_steps=25,scenario=scenario1.pickle')
+        # Load a previous qtable from a pickled file
+        logger.info(f'Loading a previous Qtable')
+        agent.load_q_table(args.filename)
     except FileNotFoundError:
-        print("No file found, starting from zeros")
+        logger.info(f"No previous qtable file found to load, starting with an emptly zeroed qtable")
     if not args.evaluate:
-        for i in range(args.epochs):
+        logger.info(f'Starting the training')
+        for i in range(0, args.episodes + 1):
             state = env.reset()
             ret, win,_,_ = agent.play(state)
             if i % args.eval_each == 0 and i != 0:
                 wins = 0
                 detected = 0
                 rewards = [] 
+                num_steps = [] 
                 for j in range(100):
                     state = env.reset()
                     ret, win, detection, steps = agent.evaluate(state)
@@ -197,11 +221,18 @@ if __name__ == '__main__':
                     if detection:
                         detected +=1
                     rewards += [ret]
-                #agent.alpha = alphas[i]
-                print(f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}")
+                    num_steps += [steps]
+                text = f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}"
+                print(text)
+                logger.info(text)
+                # Store in tensorboard
+                writer.add_scalar("charts/episodic_return", np.mean(rewards), i)
+                writer.add_scalar("charts/episodic_length", np.mean(num_steps), i)
+                writer.add_scalar("charts/episodic_wins", np.mean(num_steps), i)
+        # Store the model on disk
         agent.store_q_table(args.filename)
 
-    #FINAL EVALUATION
+    # Final evaluation
     wins = 0
     detected = 0
     rewards = [] 
@@ -214,4 +245,6 @@ if __name__ == '__main__':
         if detection:
             detected +=1
         rewards += [ret]
-    print(f"Final evaluation ({i+1} episodes): Winrate={(wins/(i+1))*100}%, detection_rate={(detected/(i+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}.")
+    text = f"Final evaluation ({i+1} episodes): Winrate={(wins/(i+1))*100}%, detection_rate={(detected/(i+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}"
+    print(text)
+    logger.info(text)
