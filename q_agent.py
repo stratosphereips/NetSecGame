@@ -198,7 +198,9 @@ if __name__ == '__main__':
     
     # If we are not evaluating the model
     if not args.evaluate:
+        # Run for some episodes 
         logger.info(f'Starting the training')
+        for i in range(1, args.episodes + 1):
             # Reset
             state = env.reset()
             # Play complete round
