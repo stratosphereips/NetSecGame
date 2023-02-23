@@ -112,7 +112,7 @@ class QAgent:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", help="Sets number of training epochs", default=1000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--epsilon", help="Sets epsilon for exploration", default=0.2, type=float)
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
     parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.3, type=float)
