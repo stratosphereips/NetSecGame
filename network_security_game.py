@@ -7,11 +7,12 @@ from random import random, choice, seed
 import copy
 from cyst.api.configuration import *
 import numpy as np
-from scenarios.scenario_configuration import *
-#import scenarios.smaller_scenario_configuration
-#import scenarios.tiny_scenario_configuration
+#from scenarios.scenario_configuration import *
+import scenarios.scenario_configuration
+import scenarios.smaller_scenario_configuration
+import scenarios.tiny_scenario_configuration
 
-class EnvironmentV2(object):
+class Network_Security_Environment(object):
     def __init__(self, random_start=True, verbosity=0) -> None:
         self._nodes = {}
         self._connections = {}
@@ -448,12 +449,13 @@ class EnvironmentV2(object):
 
 if __name__ == "__main__":
     
-    #create environment
-    env = EnvironmentV2(random_start=False, verbosity=0)
+    # Create the network security environment
+    env = Network_Security_Environment(random_start=False, verbosity=0)
     
-    #read network setup from CYST configuration
-    env.process_cyst_config(configuration_objects)
-    #define winning conditions and starting position
+    # Read network setup from predefined CYST configuration
+    env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
+
+    # Define winning conditions and starting position
     goal = {
         "known_networks":set(),
         "known_hosts":{},
@@ -465,19 +467,23 @@ if __name__ == "__main__":
     #goal = {"known_networks":set(), "known_hosts":{}, "controlled_hosts":{"192.168.1.2"}, "known_services":{'192.168.1.2': frozenset({Service(name='lanman server', type='passive', version='10.0.19041')})}, "known_data":{}}
     #goal = {"known_networks":{}, "known_hosts":{"192.168.1.4"}, "controlled_hosts":{}, "known_services":{}, "known_data":{}}
     #attacker_start = {"known_networks":{}, "known_hosts":set(), "controlled_hosts":{"213.47.23.195", "192.168.1.2"}, "known_services":{}, "known_data":{}}
+
+    # Define where the attacker will start
     attacker_start = {
         "known_networks":set(),
         "known_hosts":set(),
-        "controlled_hosts":{"192.168.2.2",'213.47.23.195'},
+        "controlled_hosts":{"192.168.2.2", "213.47.23.195"},
         "known_services":{},
         "known_data":{"213.47.23.195":{("User1", "DataFromServer1"),("User1", "DatabaseData")}}
     }
-    
+
+    # Do we have a defender? 
     defender = False
 
-    #initialize the game
+    # Initialize the game
     state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50)
     print(env.is_goal(state.observation))
+
     #scan netwokr
     # next_state = env.step(Action("ScanNetwork", {"target_network":"192.168.1.0/24"}))
     # print(next_state.observation)
