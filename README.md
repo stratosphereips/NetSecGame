@@ -1,38 +1,67 @@
-# Game States Maker
-A python tool to design, generate, train, compare and plot a network security game in AiDojo project.
+# Network Security Game
 
-The game states maker allows you to:
-- Define how you want your network to look like and which services are running. This is done using Cyst configuration of services.
+As part of the AiDojo project, the Network Security Game is a python tool that builds a simulated local network using the Cyst simulator, and then trains reinforcement learning (RL) algorithms on how to better attack the network.
+
+## How does it work
+1. There is a pre-configured Cyst network environment in the file `scenarios/scenario_configuration.py`
+2. There are some pre-implemented RL models in the files `q_agent.py`, `naive_q_learning.py`, and `double_q_learning.py`.
+3. When you run the network_security_game.py tool, it loads the environment into Cyst and starts the training of the RL algorithms.
+4. It outputs the results in xxx
+5. You can plot the results with the tool `plot_generation.py`.
 
 
-## Dependencies
+## Install and Dependencies
 To run this code you need an environment and access to cyst code. However, the venv needs to be created for your own user
 
 - If you don't have your environment
 
-    python -m venv ai-dojo-venv-<yourusername>
+```bash
+python -m venv ai-dojo-venv-<yourusername>
+```
 
 - The environment can be activated with
 
-    source ai-dojo-venv<yourusername>/bin/activate
+```bash
+source ai-dojo-venv<yourusername>/bin/activate
+```
 
-- Cyst libraries are installed in 
+- Install the requirements with 
 
-    cyst-core
-    cyst-models-aif
+```bash
+python3 -m pip install -r requirements.txt
+```
 
-- Scenarios
-
-## Environment
+## Python Environment
 Be careful of which python environment are you using. If using the venv here you may need to install pagackes as
 
     ai-dojo-venv-sebas/bin/pip install frozendict
 
 ## Run
 
-The game is defined in the topogoly of the network and the rules, services and actions. This can be found in file `sfzlllll`.
+The game is played and started by running the differnt agents.
 
-This is a folder with some scenarios (not sure if we are using or not)
+To run the Q learning agent:
+
+```bash
+python q_agent.py --episodes 100
+```
+
+
+## Game Environment
+The game is defined by the topogoly of the network and the rules, services and actions. This can be found in the files in folder `scenarios`.
+
+
+The file `scenarios/scenario_configuration.py` corresponds to the final and large scenario.
+The file `scenarios/smaller_scenario_configuration.py` corresponds to a small scenario for testing.
+The file `scenarios/tiny_scenario_configuration.py` corresponds to a tiny scenario for testing.
+
+## Agents
+Currently the implemented agents are:
+
+- Q learning agent in `q_agent.py`
+- Double Q learning agent in `double_q_agent.py`
+- Naive Q learning agent in `naive_q_agent.py`
+- Random agent in `random_agent.py`
 
 ## Assumptions:
 * We work with close world assumntion - only entities defined exist in the simulation
@@ -43,7 +72,7 @@ This is a folder with some scenarios (not sure if we are using or not)
 * Attacker has to know about data before exflitration is possible
 * Attacker has to own or at least know about a host to try to Find Data
 
-## ACTIONS
+## Actions for the Attacker
 | Action name          | Description                                                              | Preconditions                         | Effects                                          |
 |----------------------|--------------------------------------------------------------------------|---------------------------------------|--------------------------------------------------|
 | ScanNetwork          | Scans complete range of given network                                    | network + mask                        | extends 'known_hosts'                            |
