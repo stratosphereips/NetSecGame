@@ -130,7 +130,6 @@ if __name__ == '__main__':
     parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action="store_true")
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
     args = parser.parse_args()
-    args.filename = "DoubleQAgent_2goal_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in["evaluate", "eval_each"])) + ".pickle"
 
     args.filename = "DoubleQAgent_2goal_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in["evaluate", "eval_each", "eval_each"])) + ".pickle"
 
@@ -181,7 +180,7 @@ if __name__ == '__main__':
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":{("User1", "DataFromServer1"), ("User1", "DatabaseData")}}
+            "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
         }
 
         attacker_start = {
