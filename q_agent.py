@@ -123,6 +123,7 @@ if __name__ == '__main__':
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=50, type=int)
     parser.add_argument("--eval_for", help="Sets final evaluation length", default=1000, type=int)
     parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
+    parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
     args = parser.parse_args()
     args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
@@ -133,7 +134,9 @@ if __name__ == '__main__':
     #random.seed(42)
     #random.seed(1234)
     #random.seed(10)
-    random.seed(19)
+    #random.seed(19)
+    # Set the random seed 
+    random.seed(args.seed)
 
 
     logger.info(f'Setting the network security environment')
