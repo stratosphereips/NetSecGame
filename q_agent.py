@@ -1,6 +1,6 @@
 # Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 #           Arti       
-from environment_v2 import EnvironmentV2
+from network_security_game import Network_Security_Environment
 from environment import *
 from game_components import *
 import numpy as np
@@ -10,8 +10,14 @@ import pickle
 import sys
 import argparse
 from timeit import default_timer as timer
+import logging
+from torch.utils.tensorboard import SummaryWriter
+import time
 
 class QAgent:
+    """
+    Class implementing the Q-Learning algorithm
+    """
 
     def __init__(self, env, alpha=0.1, gamma=0.6, epsilon=0.1):
         self.env = env
@@ -53,27 +59,47 @@ class QAgent:
         return tmp[max(tmp,key=tmp.get)] #return maximum Q_value for a given state (out of available actions)
     
     def play(self, state, testing=False) -> tuple:
+        """
+        Play a complete episode from beginning to end
+
+        1. Get next action 
+        2. Step and get next state
+        3. Get max action of next state
+        4. Update q table
+        5. Store rewards
+        6. loop
+        """
         rewards = 0
         while not state.done:
             #select action
             action = self.move(state, testing)
             #get next state of the environment
             next_state = self.env.step(action)           
-            #find max Q-Value for next state
+
+            # Find max Q-Value for next state
             if next_state.done:
                 max_q_next = 0
             else:
                 max_q_next = self.max_action_q(next_state)
-            #update q values
-            new_Q = self.q_values[state.observation, action] + self.alpha*(next_state.reward + self.gamma*max_q_next - self.q_values[state.observation, action])
+
+            # Update q values
+            new_Q = self.q_values[state.observation, action] + self.alpha*(next_state.reward + self.gamma * max_q_next - self.q_values[state.observation, action])
             self.q_values[state.observation, action] = new_Q
             
             rewards += next_state.reward
+
             #move to next state
             state = next_state
+
+        # If state is 'done' this should throw an error of missing variables
         return rewards, next_state.reward > 0, self.env.detected, self.env.timestamp
 
     def evaluate(self, state) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
+        """
+        Evaluate the agent so far for one episode
+
+        Do without learning
+        """
         rewards = 0
         while not state.done:
             action = self.move(state, testing=True)
@@ -94,8 +120,8 @@ if __name__ == '__main__':
     parser.add_argument("--defender", help="Is defender present", default=True, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--evaluate", help="Do not train, only run evaluation", default=False, action="store_true")
-    parser.add_argument("--eval_each", help="Sets periodic evaluation during training", default=500, type=int)
-    parser.add_argument("--eval_for", help="Sets evaluation length", default=1000, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=50, type=int)
+    parser.add_argument("--eval_for", help="Sets final evaluation length", default=1000, type=int)
     parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
     args = parser.parse_args()
     args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
@@ -109,14 +135,15 @@ if __name__ == '__main__':
 
     env = EnvironmentV2(random_start=args.random_start, verbosity=0)
     if args.scenario == "scenario1":
-        env.process_cyst_config(scenario_configuration.configuration_objects)
+        env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":
-        env.process_cyst_config(smaller_scenario_configuration.configuration_objects)
+        env.process_cyst_config(scenarios.smaller_scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_tiny":
-        env.process_cyst_config(tiny_scenario_configuration.configuration_objects)
+        env.process_cyst_config(scenarios.tiny_scenario_configuration.configuration_objects)
     else:
         print("unknown scenario")
         exit(1)
+
     # define attacker goal and initial location
     if args.random_start:
         goal = {
@@ -156,11 +183,14 @@ if __name__ == '__main__':
     try:
         agent.load_q_table(args.filename)
     except FileNotFoundError:
-        print("No file found, starting from zeros")
+    
+    # If we are not evaluating the model
     if not args.evaluate:
-        for i in range(args.epochs):
+            # Reset
             state = env.reset()
+            # Play complete round
             ret, win,_,_ = agent.play(state)
+            # Every X episodes, eval
             if i % args.eval_each == 0:
                 wins = 0
                 detected = 0
@@ -176,7 +206,7 @@ if __name__ == '__main__':
                 print(f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}")
     agent.store_q_table(args.filename)
 
-    #FINAL EVALUATION
+    # FINAL EVALUATION
     wins = 0
     detected = 0
     rewards = []
