@@ -130,6 +130,15 @@ if __name__ == '__main__':
     logging.basicConfig(filename='q_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     logger = logging.getLogger('Q-agent')
 
+    # Setup tensorboard
+    run_name = f"netsecgame__qlearning__{args.seed}__{int(time.time())}"
+    writer = SummaryWriter(f"logs/{run_name}")
+    writer.add_text(
+        "hypherparameters", 
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
+    )
+
+
     #set random seed
     #random.seed(42)
     #random.seed(1234)
@@ -209,7 +218,8 @@ if __name__ == '__main__':
             if i % args.eval_each == 0:
                 wins = 0
                 detected = 0
-                rewards = [] 
+                rewards = []
+                num_steps = [] 
                 for j in range(100):
                     state = env.reset()
                     ret, win, detection, steps = agent.evaluate(state)
@@ -218,9 +228,14 @@ if __name__ == '__main__':
                     if detection:
                         detected +=1
                     rewards += [ret]
+                    num_steps += [steps]
                 text = f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}"
                 print(text)
                 logger.info(text)
+                # Store in tensorboard
+                writer.add_scalar("charts/episodic_return", np.mean(rewards), i)
+                writer.add_scalar("charts/episodic_length", np.mean(num_steps), i)
+                writer.add_scalar("charts/episodic_wins", np.mean(num_steps), i)
 
     # FINAL EVALUATION
     wins = 0
