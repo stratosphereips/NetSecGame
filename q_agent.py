@@ -235,7 +235,7 @@ if __name__ == '__main__':
                 # Store in tensorboard
                 writer.add_scalar("charts/episodic_return", np.mean(rewards), i)
                 writer.add_scalar("charts/episodic_length", np.mean(num_steps), i)
-                writer.add_scalar("charts/episodic_wins", np.mean(num_steps), i)
+                writer.add_scalar("charts/episodic_wins", np.mean((wins/(j+1))*100), i)
 
         # Store the q table on disk
         agent.store_q_table(args.filename)
