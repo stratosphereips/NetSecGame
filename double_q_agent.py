@@ -212,22 +212,25 @@ if __name__ == '__main__':
                 detected = 0
                 rewards = [] 
                 num_steps = [] 
+                num_win_steps = [] 
                 for j in range(100):
                     state = env.reset()
                     ret, win, detection, steps = agent.evaluate(state)
                     if win:
                         wins += 1
+                        num_win_steps += [steps]
                     if detection:
                         detected +=1
                     rewards += [ret]
                     num_steps += [steps]
-                text = f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}"
+                text = f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_total_steps={np.mean(num_steps)} +- {np.std(num_steps)}, average_win_steps={np.mean(num_win_steps)} +- {np.std(num_win_steps)}"
                 print(text)
                 logger.info(text)
                 # Store in tensorboard
                 writer.add_scalar("charts/episodic_return", np.mean(rewards), i)
-                writer.add_scalar("charts/episodic_length", np.mean(num_steps), i)
-                writer.add_scalar("charts/episodic_wins", np.mean(num_steps), i)
+                writer.add_scalar("charts/episodic_total_step_length", np.mean(num_steps), i)
+                writer.add_scalar("charts/episodic_win_step_length", np.mean(num_win_steps), i)
+                writer.add_scalar("charts/episodic_wins", np.mean((wins/(j+1))*100), i)
         # Store the model on disk
         agent.store_q_table(args.filename)
 
@@ -236,14 +239,16 @@ if __name__ == '__main__':
     detected = 0
     rewards = [] 
     start_t = timer()
+    num_win_steps = [] 
     for i in range(args.eval_for):
         state = env.reset()
         ret, win, detection, steps = agent.evaluate(state)
         if win:
             wins += 1
+            num_win_steps += [steps]
         if detection:
             detected +=1
         rewards += [ret]
-    text = f"Final evaluation ({i+1} episodes): Winrate={(wins/(i+1))*100}%, detection_rate={(detected/(i+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}"
+    text = f"Final evaluation ({i+1} episodes): Winrate={(wins/(i+1))*100}%, detection_rate={(detected/(i+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}, average_win_steps={np.mean(num_win_steps)} +- {np.std(num_win_steps)}"
     print(text)
     logger.info(text)
