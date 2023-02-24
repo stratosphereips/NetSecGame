@@ -1,6 +1,5 @@
 # Author: Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 from os import stat
-from environment import *
 from game_components import *
 import numpy as np
 from random import choice, random, uniform
