@@ -1,19 +1,19 @@
+# File to train all the agents together 
+
 from q_agent import QAgent
 from naive_q_agent import NaiveQAgent
 from double_q_agent import DoubleQAgent
 import numpy as np
 import matplotlib
-from environment_v2 import EnvironmentV2
+from network_security_game import Network_Security_Environment
 import math
 import pickle
-from environment import *
 from game_components import *
 
-seeds = [31,45,21321312, 675,545]
+seeds = [31, 45, 21321312, 675, 545]
 training_episodes=25001
 eval_each = 500
 eval_for = 500
-
 
 goal = {
     "known_networks":set(),
@@ -32,8 +32,8 @@ attacker_start = {
 }
 
 #prepare the environment
-env = EnvironmentV2(random_start=True)
-env.process_cyst_config(scenario_configuration.configuration_objects)
+env = Network_Security_Environment(random_start=True)
+env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
 state = env.initialize(win_conditons=goal, defender_positions=True, attacker_start_position=attacker_start, max_steps=25)
 
 #prepare agents

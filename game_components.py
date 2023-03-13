@@ -2,10 +2,11 @@
 from collections import namedtuple
 import deepdiff
 from frozendict import frozendict
-#Transition between nodes
+
+# Transition between nodes
 """
 Transition represents generic actions for attacker in the game. Each transition has a default probabilities
-for success and detection (if defensive measures are present). Each transition has default cost and reward(if successful).
+for success and detection (if defensive measures are present). Each transition has default cost and reward (if successful).
 Net reward can be computed as follows net_reward = sucess*default_reward - default_cost
 """
 Transition = namedtuple("Transition", ["type", "default_success_p", "default_detection_p", "default_reward", "default_cost"])
@@ -138,6 +139,8 @@ class GameState(object):
 
 
 if __name__ == '__main__':
+    # Used for tests
+
     a = Action("FindServices", ["192.168.1.0"])
     a2 = Action("FindServices", ["192.168.1.0"])
     print(hash(a), hash(a2))
