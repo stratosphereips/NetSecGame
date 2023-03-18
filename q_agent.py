@@ -151,12 +151,6 @@ if __name__ == '__main__':
     )
 
 
-    #set random seed
-    #random.seed(42)
-    #random.seed(1234)
-    #random.seed(10)
-    #random.seed(19)
-    # Set the random seed 
     random.seed(args.seed)
 
 
@@ -257,7 +251,7 @@ if __name__ == '__main__':
                 eval_average_detected_steps = np.mean(num_detected_steps)
                 eval_std_detected_steps = np.std(num_detected_steps)
 
-                text = f'''Evaluated after {i} episodes, for {args.eval_for} steps. 
+                text = f'''Evaluated after {i} episodes, for {args.eval_for} episodes. 
                     Wins={wins}, 
                     Detections={detected}, 
                     winrate={eval_win_rate:.3f}%, 
@@ -272,8 +266,8 @@ if __name__ == '__main__':
                 # Store in tensorboard
                 writer.add_scalar("charts/eval_avg_win_rate", eval_win_rate, i)
                 writer.add_scalar("charts/eval_avg_detection_rate", eval_detection_rate, i)
-                writer.add_scalar("charts/eval_avg_reward", eval_average_returns , i)
-                writer.add_scalar("charts/eval_std_reward", eval_std_returns , i)
+                writer.add_scalar("charts/eval_avg_returns", eval_average_returns , i)
+                writer.add_scalar("charts/eval_std_returns", eval_std_returns , i)
                 writer.add_scalar("charts/eval_avg_episode_steps", eval_average_episode_steps , i)
                 writer.add_scalar("charts/eval_std_episode_steps", eval_std_episode_steps , i)
                 writer.add_scalar("charts/eval_avg_win_steps", eval_average_win_steps , i)
@@ -334,8 +328,8 @@ if __name__ == '__main__':
         # Store in tensorboard
         writer.add_scalar("charts/test_avg_win_rate", test_win_rate, i)
         writer.add_scalar("charts/test_avg_detection_rate", test_detection_rate, i)
-        writer.add_scalar("charts/test_avg_reward", test_average_returns , i)
-        writer.add_scalar("charts/test_std_reward", test_std_returns , i)
+        writer.add_scalar("charts/test_avg_returns", test_average_returns , i)
+        writer.add_scalar("charts/test_std_returns", test_std_returns , i)
         writer.add_scalar("charts/test_avg_episode_steps", test_average_episode_steps , i)
         writer.add_scalar("charts/test_std_episode_steps", test_std_episode_steps , i)
         writer.add_scalar("charts/test_avg_win_steps", test_average_win_steps , i)
