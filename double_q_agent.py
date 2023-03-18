@@ -12,7 +12,7 @@ from network_security_game import Network_Security_Environment
 import logging
 from torch.utils.tensorboard import SummaryWriter
 import time
-from scenarios import scenario_configuration
+from scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
 
 class DoubleQAgent:
 
@@ -105,14 +105,26 @@ class DoubleQAgent:
         return rewards, next_state.reward > 0, self.env.detected, self.env.timestamp
 
     def evaluate(self, state) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
-        rewards = 0
+        """
+        Evaluate the agent so far for one episode
+
+        Do without learning
+        """
+        return_value = 0
         while not state.done:
             action = self.move(state, testing=True)
             next_state = self.env.step(action)
-            rewards += next_state.reward
+            return_value += next_state.reward
             state = next_state
-        #reached_goal = self.env.is_goal(state.observation)
-        return rewards, next_state.reward > 0, self.env.detected, self.env.timestamp
+         # Has to return
+        # 1. returns
+        # 2. if it is a win
+        # 3. if it is was detected
+        # 4. amount of steps when finished
+        wins = next_state.reward > 0
+        detected = self.env.detected
+        steps = self.env.timestamp
+        return return_value, wins, detected, steps
 
 
 if __name__ == '__main__':
@@ -126,7 +138,9 @@ if __name__ == '__main__':
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--evaluate", help="Do not train, only run evaluation", default=False, action="store_true")
     parser.add_argument("--eval_each", help="Sets periodic evaluation during training", default=50, type=int)
-    parser.add_argument("--eval_for", help="Sets evaluation length", default=1000, type=int)
+    parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
+    parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
+    parser.add_argument("--test_each", help="Sets periodic evaluation during testing", default=100, type=int)
     parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action="store_true")
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
     args = parser.parse_args()
@@ -210,10 +224,10 @@ if __name__ == '__main__':
             if i % args.eval_each == 0 and i != 0:
                 wins = 0
                 detected = 0
-                rewards = [] 
+                returns = [] 
                 num_steps = [] 
                 num_win_steps = [] 
-                for j in range(100):
+                for j in range(args.eval_for):
                     state = env.reset()
                     ret, win, detection, steps = agent.evaluate(state)
                     if win:
@@ -221,26 +235,55 @@ if __name__ == '__main__':
                         num_win_steps += [steps]
                     if detection:
                         detected +=1
-                    rewards += [ret]
+                    returns += [ret]
                     num_steps += [steps]
-                text = f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_total_steps={np.mean(num_steps)} +- {np.std(num_steps)}, average_win_steps={np.mean(num_win_steps)} +- {np.std(num_win_steps)}"
+
+                eval_win_rate = (wins/(args.eval_for+1))*100
+                eval_detection_rate = (detected/(args.eval_for+1))*100
+                eval_average_returns = np.mean(returns)
+                eval_std_returns = np.std(returns)
+                eval_average_episode_steps = np.mean(num_steps)
+                eval_std_episode_steps = np.std(num_steps)
+                eval_average_win_steps = np.mean(num_win_steps)
+                eval_std_win_steps = np.std(num_win_steps)
+                eval_average_detected_steps = np.mean(num_detected_steps)
+                eval_std_detected_steps = np.std(num_detected_steps)
+
+                text = f'''Evaluated after {i} episodes, for {args.eval_for} steps. 
+                    Wins={wins}, 
+                    Detections={detected}, 
+                    winrate={eval_win_rate:.3f}%, 
+                    detection_rate={eval_detection_rate:.3f}%, 
+                    average_returns={eval_average_returns:.3f} +- {eval_std_returns:.3f}, 
+                    average_episode_steps={eval_average_episode_steps:.3f} +- {eval_std_episode_steps:.3f}, 
+                    average_win_steps={eval_average_win_steps:.3f} +- {eval_std_win_steps:.3f},
+                    average_detected_steps={eval_average_detected_steps:.3f} +- {eval_std_detected_steps:.3f}
+                    '''
                 print(text)
                 logger.info(text)
                 # Store in tensorboard
-                writer.add_scalar("charts/episodic_return", np.mean(rewards), i)
-                writer.add_scalar("charts/episodic_total_step_length", np.mean(num_steps), i)
-                writer.add_scalar("charts/episodic_win_step_length", np.mean(num_win_steps), i)
-                writer.add_scalar("charts/episodic_wins", np.mean((wins/(j+1))*100), i)
+                writer.add_scalar("charts/eval_avg_win_rate", eval_win_rate, i)
+                writer.add_scalar("charts/eval_avg_detection_rate", eval_detection_rate, i)
+                writer.add_scalar("charts/eval_avg_returns", eval_average_returns , i)
+                writer.add_scalar("charts/eval_std_returns", eval_std_returns , i)
+                writer.add_scalar("charts/eval_avg_episode_steps", eval_average_episode_steps , i)
+                writer.add_scalar("charts/eval_std_episode_steps", eval_std_episode_steps , i)
+                writer.add_scalar("charts/eval_avg_win_steps", eval_average_win_steps , i)
+                writer.add_scalar("charts/eval_std_win_steps", eval_std_win_steps , i)
+                writer.add_scalar("charts/eval_avg_detected_steps", eval_average_detected_steps , i)
+                writer.add_scalar("charts/eval_std_detected_steps", eval_std_detected_steps , i)
+
         # Store the model on disk
         agent.store_q_table(args.filename)
 
     # Final evaluation
     wins = 0
     detected = 0
-    rewards = [] 
+    returns = [] 
     start_t = timer()
     num_win_steps = [] 
-    for i in range(args.eval_for):
+    num_detected_steps = []
+    for i in range(args.test_for):
         state = env.reset()
         ret, win, detection, steps = agent.evaluate(state)
         if win:
@@ -248,7 +291,57 @@ if __name__ == '__main__':
             num_win_steps += [steps]
         if detection:
             detected +=1
-        rewards += [ret]
-    text = f"Final evaluation ({i+1} episodes): Winrate={(wins/(i+1))*100}%, detection_rate={(detected/(i+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}, average_win_steps={np.mean(num_win_steps)} +- {np.std(num_win_steps)}"
+            num_detected_steps += [steps]
+        returns += [ret]
+        num_steps += [steps]
+
+        test_win_rate = (wins/(args.test_for+1))*100
+        test_detection_rate = (detected/(args.test_for+1))*100
+        test_average_returns = np.mean(returns)
+        test_std_returns = np.std(returns)
+        test_average_episode_steps = np.mean(num_steps)
+        test_std_episode_steps = np.std(num_steps)
+        test_average_win_steps = np.mean(num_win_steps)
+        test_std_win_steps = np.std(num_win_steps)
+        test_average_detected_steps = np.mean(num_detected_steps)
+        test_std_detected_steps = np.std(num_detected_steps)
+
+        # Print and report every 100 test episodes
+        if i % 100 == 0 and i != 0:
+            text = f'''Tested after {i} episodes, for {args.test_for} steps. 
+                Wins={wins}, 
+                Detections={detected}, 
+                winrate={test_win_rate:.3f}%, 
+                detection_rate={test_detection_rate:.3f}%, 
+                average_returns={test_average_returns:.3f} +- {test_std_returns:.3f}, 
+                average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f}, 
+                average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
+                average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
+                '''
+            print(text)
+            logger.info(text)
+            # Store in tensorboard
+            writer.add_scalar("charts/test_avg_win_rate", test_win_rate, i)
+            writer.add_scalar("charts/test_avg_detection_rate", test_detection_rate, i)
+            writer.add_scalar("charts/test_avg_returns", test_average_returns , i)
+            writer.add_scalar("charts/test_std_returns", test_std_returns , i)
+            writer.add_scalar("charts/test_avg_episode_steps", test_average_episode_steps , i)
+            writer.add_scalar("charts/test_std_episode_steps", test_std_episode_steps , i)
+            writer.add_scalar("charts/test_avg_win_steps", test_average_win_steps , i)
+            writer.add_scalar("charts/test_std_win_steps", test_std_win_steps , i)
+            writer.add_scalar("charts/test_avg_detected_steps", test_average_detected_steps , i)
+            writer.add_scalar("charts/test_std_detected_steps", test_std_detected_steps , i)
+
+
+    text = f'''Final test after {i} episodes, for {args.test_for} steps. 
+        Wins={wins}, 
+        Detections={detected}, 
+        winrate={test_win_rate:.3f}%, 
+        detection_rate={test_detection_rate:.3f}%, 
+        average_returns={test_average_returns:.3f} +- {test_std_returns:.3f}, 
+        average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f}, 
+        average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
+        average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
+        '''
     print(text)
     logger.info(text)
