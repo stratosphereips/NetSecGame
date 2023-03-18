@@ -46,7 +46,7 @@ class Network_Security_Environment(object):
             return self._detected
         else: return False
         
-    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10,topology=False)-> Observation:
+    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, topology=False)-> Observation:
         """
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
