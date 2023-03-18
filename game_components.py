@@ -136,14 +136,16 @@ class GameState(object):
     
     def __hash__(self) -> int:
         return hash(self.known_hosts) + hash(self.known_networks) + hash(self.controlled_hosts) + hash(self.known_data) + hash(self.known_services)
-
+    
+    def as_graph(self):
+        return adj_matrix, node_features, edge_features, grpah_features
 
 if __name__ == '__main__':
     # Used for tests
 
     a = Action("FindServices", ["192.168.1.0"])
     a2 = Action("FindServices", ["192.168.1.0"])
-    print(hash(a), hash(a2))
+    #print(hash(a), hash(a2))
     
     
     
