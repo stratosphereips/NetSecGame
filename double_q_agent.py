@@ -227,6 +227,7 @@ if __name__ == '__main__':
                 returns = [] 
                 num_steps = [] 
                 num_win_steps = [] 
+                num_detected_steps = []
                 for j in range(args.eval_for):
                     state = env.reset()
                     ret, win, detection, steps = agent.evaluate(state)
@@ -235,6 +236,7 @@ if __name__ == '__main__':
                         num_win_steps += [steps]
                     if detection:
                         detected +=1
+                        num_detected_steps += [steps]
                     returns += [ret]
                     num_steps += [steps]
 
