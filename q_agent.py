@@ -1,7 +1,7 @@
 # Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 #           Arti       
 from network_security_game import Network_Security_Environment
-from environment import *
+#from environment import *
 from game_components import *
 import numpy as np
 from random import choice, random, seed
@@ -13,6 +13,7 @@ from timeit import default_timer as timer
 import logging
 from torch.utils.tensorboard import SummaryWriter
 import time
+from scenarios import scenario_configuration
 
 class QAgent:
     """
@@ -151,11 +152,11 @@ if __name__ == '__main__':
     logger.info(f'Setting the network security environment')
     env = Network_Security_Environment(random_start=args.random_start, verbosity=0)
     if args.scenario == "scenario1":
-        env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
+        env.process_cyst_config(scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":
-        env.process_cyst_config(scenarios.smaller_scenario_configuration.configuration_objects)
+        env.process_cyst_config(smaller_scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_tiny":
-        env.process_cyst_config(scenarios.tiny_scenario_configuration.configuration_objects)
+        env.process_cyst_config(tiny_scenario_configuration.configuration_objects)
     else:
         print("unknown scenario")
         exit(1)
