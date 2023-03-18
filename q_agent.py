@@ -130,9 +130,12 @@ if __name__ == '__main__':
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--evaluate", help="Do not train, only run evaluation", default=False, action="store_true")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=50, type=int)
-    parser.add_argument("--eval_for", help="Sets final evaluation length", default=1000, type=int)
+    parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
+    parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
     parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
+    parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
+    parser.add_argument("--filename", help="Load previous model file", type=str)
     args = parser.parse_args()
     args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
