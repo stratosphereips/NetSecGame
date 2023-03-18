@@ -13,7 +13,7 @@ from timeit import default_timer as timer
 import logging
 from torch.utils.tensorboard import SummaryWriter
 import time
-from scenarios import scenario_configuration
+from scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
 
 class QAgent:
     """
@@ -101,14 +101,22 @@ class QAgent:
 
         Do without learning
         """
-        rewards = 0
+        return_value = 0
         while not state.done:
             action = self.move(state, testing=True)
             next_state = self.env.step(action)
-            rewards += next_state.reward
+            return_value += next_state.reward
             state = next_state
-        #reached_goal = self.env.is_goal(state.observation)
-        return rewards, next_state.reward > 0, self.env.detected, self.env.timestamp
+
+        # Has to return
+        # 1. returns
+        # 2. if it is a win
+        # 3. if it is was detected
+        # 4. amount of steps when finished
+        wins = next_state.reward > 0
+        detected = self.env.detected
+        steps = self.env.timestamp
+        return return_value, wins, detected, steps
 
 
 if __name__ == '__main__':
@@ -150,7 +158,7 @@ if __name__ == '__main__':
 
 
     logger.info(f'Setting the network security environment')
-    env = Network_Security_Environment(random_start=args.random_start, verbosity=0)
+    env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
     if args.scenario == "scenario1":
         env.process_cyst_config(scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":
