@@ -227,24 +227,56 @@ if __name__ == '__main__':
             if i % args.eval_each == 0:
                 wins = 0
                 detected = 0
-                rewards = []
+                returns = []
                 num_steps = [] 
-                for j in range(100):
+                num_win_steps = []
+                num_detected_steps = []
+                for j in range(args.eval_for):
                     state = env.reset()
                     ret, win, detection, steps = agent.evaluate(state)
                     if win:
                         wins += 1
+                        num_win_steps += [steps]
                     if detection:
-                        detected +=1
-                    rewards += [ret]
+                        detected += 1
+                        num_detected_steps += [steps]
+                    returns += [ret]
                     num_steps += [steps]
-                text = f"Evaluated after {i} episodes: Winrate={(wins/(j+1))*100}%, detection_rate={(detected/(j+1))*100}%, average_return={np.mean(rewards)} +- {np.std(rewards)}, average_steps={np.mean(num_steps)} +- {np.std(num_steps)}"
+
+                eval_win_rate = (wins/(args.eval_for+1))*100
+                eval_detection_rate = (detected/(args.eval_for+1))*100
+                eval_average_returns = np.mean(returns)
+                eval_std_returns = np.std(returns)
+                eval_average_episode_steps = np.mean(num_steps)
+                eval_std_episode_steps = np.std(num_steps)
+                eval_average_win_steps = np.mean(num_win_steps)
+                eval_std_win_steps = np.std(num_win_steps)
+                eval_average_detected_steps = np.mean(num_detected_steps)
+                eval_std_detected_steps = np.std(num_detected_steps)
+
+                text = f'''Evaluated after {i} episodes, for {args.eval_for} steps. 
+                    Wins={wins}, 
+                    Detections={detected}, 
+                    winrate={eval_win_rate:.3f}%, 
+                    detection_rate={eval_detection_rate:.3f}%, 
+                    average_returns={eval_average_returns:.3f} +- {eval_std_returns:.3f}, 
+                    average_episode_steps={eval_average_episode_steps:.3f} +- {eval_std_episode_steps:.3f}, 
+                    average_win_steps={eval_average_win_steps:.3f} +- {eval_std_win_steps:.3f},
+                    average_detected_steps={eval_average_detected_steps:.3f} +- {eval_std_detected_steps:.3f}
+                    '''
                 print(text)
                 logger.info(text)
                 # Store in tensorboard
-                writer.add_scalar("charts/episodic_return", np.mean(rewards), i)
-                writer.add_scalar("charts/episodic_length", np.mean(num_steps), i)
-                writer.add_scalar("charts/episodic_wins", np.mean((wins/(j+1))*100), i)
+                writer.add_scalar("charts/eval_avg_win_rate", eval_win_rate, i)
+                writer.add_scalar("charts/eval_avg_detection_rate", eval_detection_rate, i)
+                writer.add_scalar("charts/eval_avg_reward", eval_average_returns , i)
+                writer.add_scalar("charts/eval_std_reward", eval_std_returns , i)
+                writer.add_scalar("charts/eval_avg_episode_steps", eval_average_episode_steps , i)
+                writer.add_scalar("charts/eval_std_episode_steps", eval_std_episode_steps , i)
+                writer.add_scalar("charts/eval_avg_win_steps", eval_average_win_steps , i)
+                writer.add_scalar("charts/eval_std_win_steps", eval_std_win_steps , i)
+                writer.add_scalar("charts/eval_avg_detected_steps", eval_average_detected_steps , i)
+                writer.add_scalar("charts/eval_std_detected_steps", eval_std_detected_steps , i)
 
         # Store the q table on disk
         agent.store_q_table(args.filename)
