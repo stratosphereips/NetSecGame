@@ -16,17 +16,17 @@ class RandomAgent:
     def __init__(self, env):
         self.env = env
     
-    def move(self, state:GameState, testing=False) -> Action:
+    def move(self, state:GameState) -> Action:
         state = state.observation
         # Randomly choose from the available actions
         actions = self.env.get_valid_actions(state)
         return choice(actions)
     
-    def play(self, state, testing=False) -> tuple:
+    def play(self, state) -> tuple:
         return_value = 0
         while not state.done:
             #select action
-            action = self.move(state, testing)
+            action = self.move(state)
             #get next state of the environment
             next_state = self.env.step(action)
             #collect reward
@@ -38,11 +38,12 @@ class RandomAgent:
     def evaluate(self, state) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
         return_value = 0
         while not state.done:
-            action = self.move(state, testing=True)
+            action = self.move(state)
             next_state = self.env.step(action)
             return_value += next_state.reward
             state = next_state
-        return return_value, self.env.is_goal(state.observation), self.env.detected, self.env.timestamp
+        game_ended_detected = self.env.detected
+        return return_value, self.env.is_goal(state.observation), game_ended_detected, self.env.timestamp
 
 
 if __name__ == '__main__':
@@ -50,7 +51,7 @@ if __name__ == '__main__':
     seed(42)
     parser = argparse.ArgumentParser()
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
+    parser.add_argument("--defender", help="Is defender present", default=True, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_small", type=str)
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     parser.add_argument("--test_each", help="Sets periodic evaluation during testing", default=100, type=int)
     args = parser.parse_args()
 
-    logging.basicConfig(filename='random_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+    logging.basicConfig(filename='random_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.CRITICAL)
     logger = logging.getLogger('Random-agent')
 
     # Setup tensorboard
