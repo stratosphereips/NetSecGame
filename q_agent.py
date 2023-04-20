@@ -128,7 +128,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
     parser.add_argument("--defender", help="Is defender present", default=True, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
-    parser.add_argument("--evaluate", help="Do not train, only run evaluation", default=False, action="store_true")
+    parser.add_argument("--test", help="Do not train, only run test", default=False, action="store_true")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=50, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
@@ -212,7 +212,7 @@ if __name__ == '__main__':
         logger.info(f"No previous qtable file found to load, starting with an emptly zeroed qtable")
     
     # If we are not evaluating the model
-    if not args.evaluate:
+    if not args.test:
         # Run for some episodes 
         logger.info(f'Starting the training')
         for i in range(1, args.episodes + 1):
@@ -278,7 +278,7 @@ if __name__ == '__main__':
         # Store the q table on disk
         agent.store_q_table(args.filename)
 
-    # FINAL EVALUATION
+    # Test
     wins = 0
     detected = 0
     returns = []
