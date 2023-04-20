@@ -1,0 +1,23 @@
+node_sets {
+  key: "nodes"
+  value {
+    features {
+      key: "node_type"
+      value {
+        dtype: DT_INT32
+        shape {
+          dim {
+            size: 6
+          }
+        }
+      }
+    }
+  }
+}
+edge_sets {
+  key: "related_to"
+  value {
+    source: "nodes"
+    target: "nodes"
+  }
+}
