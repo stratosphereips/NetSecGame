@@ -1,8 +1,12 @@
 #Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 # Library of helpful functions and objects to play the net sec game
 from collections import namedtuple
-import deepdiff
-from frozendict import frozendict
+import netaddr
+import json
+from dataclasses import dataclass, field
+
+
+
 
 
 # Transitions are not implemented in the game of 2022
@@ -34,12 +38,12 @@ Actions are composed of the transition type (see Transition) and additional para
  - ScanNetwork {"target_network": "X.X.X.X/mask" (string)}
  - FindServices {"target_host": "X.X.X.X" (string)}
  - FindData {"target_host": "X.X.X.X" (string)}
- - ExecuteCodeInService {"target_host": "X.X.X.X" (string), "target_service":"service_name" (string)}
- - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"path_to_data" (string)}
+ - ExecuteCodeInService {"target_host": "X.X.X.X" (string), "target_service":"service" (Service named tuple)}
+ - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"Data tuple" (tuple)}
 """
 class Action(object):
-    
-    def __init__(self, transition:str, params:list) -> None:
+  
+    def __init__(self, transition:str, params:dict) -> None:
         self._transition_name = transition
         self._parameters = params
     
@@ -71,77 +75,90 @@ Observations are given when making a step in the environment.
 """
 Observation = namedtuple("Observation", ["state", "reward", "done", "info"])
 
-
 # Service - agents representation of a service found with "FindServices" action
-Service = namedtuple("Service", ["name", "type", "version"])
+Service = namedtuple("Service", ["name", "type", "version", "is_local"])
 
 
 """
 Game state represents the states in the game state space.
 """
+@dataclass(frozen=True)
 class GameState(object):
-    def __init__(self, controlled_hosts:set={}, known_hosts:set={}, know_services:dict={}, known_data:dict={}, known_networks:set={}) -> None:
-        # Initialize the game state
-        # It uses frozensets because once created a state should not be changed.
-        # Any change should create a new state
-        self._controlled_hosts = frozenset(controlled_hosts)
-        self._known_networks = frozenset(known_networks)
-        self._known_hosts = frozenset(known_hosts)
-        self._known_services = frozendict(know_services)
-        self._known_data = frozendict({k:frozenset([x for x in v]) for k,v in known_data.items()})
+    controlled_hosts:set=field(default_factory=set, hash=True)
+    known_hosts:set=field(default_factory=set,  hash=True)
+    known_services:dict=field(default_factory=dict, hash=True)
+    known_data:dict=field(default_factory=dict,  hash=True)
+    known_networks:set=field(default_factory=set,  hash=True)
     
     @property
-    def controlled_hosts(self):
-        return self._controlled_hosts
+    def as_graph(self):
+        node_types = {"network":0, "host":1, "service":2, "datapoint":3}
+        graph_nodes = {}
+        node_features = []
+        controlled = []
+        try:
+            edges = []
+            #add known nets
+            for net in self.known_networks:
+                graph_nodes[net] = len(graph_nodes)
+                node_features.append(node_types["network"])
+                controlled.append(0)
+            #add known and controlled hosts
+            for host in self.known_hosts:
+                graph_nodes[host] = len(graph_nodes)
+                node_features.append(node_types["host"])
+                #add to controlled hosts if needed
+                if host in self.controlled_hosts:
+                    controlled.append(1)
+                else:
+                    controlled.append(0)
+                #add to proper network if host is in the network
+                try:
+                    for net in self.known_networks:
+                        if host in netaddr.IPNetwork(net):
+                            edges.append((graph_nodes[net], graph_nodes[host]))
+                            edges.append((graph_nodes[host], graph_nodes[net]))
+                except netaddr.core.AddrFormatError as e:
+                    print(host, self.known_networks, self.known_hosts, net)
+                    print("Error:")
+                    print(e)
+                    exit()
+            #Add known services
+            for host,services in self.known_services.items():
+                for service in services:
+                    graph_nodes[service] = len(graph_nodes)
+                    node_features.append(node_types["service"])
+                    controlled.append(0)
+                    #connect to the proper host
+                    try:
+                        edges.append((graph_nodes[host], graph_nodes[service]))
+                        edges.append((graph_nodes[service], graph_nodes[host]))
+                    except KeyError as e:
+                        print(self.known_hosts)
+                        print(self.known_services)
+                        raise e
+            #Add known data
+            for host,data in self.known_data.items():
+                for datapoint in data:
+                    graph_nodes[datapoint] = len(graph_nodes)
+                    node_features.append(node_types["datapoint"])
+                    controlled.append(0)
+                    #connect to the proper host
+                    edges.append((graph_nodes[host], graph_nodes[datapoint]))
+                    edges.append((graph_nodes[datapoint], graph_nodes[host]))
 
-    @property
-    def known_hosts(self):
-        return self._known_hosts
-    
-    @property
-    def known_services(self):
-        return self._known_services
-    
-    @property
-    def known_networks(self):
-        return self._known_networks
-    
-    @property
-    def known_data(self):
-        return self._known_data
-    
+            #print(f"Total Nodes:{total_nodes}")
+        except KeyError as e:
+            print(f"Error in building graph from {self}: {e}")
+        return node_features, controlled, edges, {v:k for k,v in graph_nodes.items()}
+
     def __str__(self) -> str:
         return f"State<nets:{self.known_networks}; known:{self.known_hosts}; owned:{self.controlled_hosts}; services:{self._known_services}; data:{self._known_data}>"
     
-    def __eq__(self, other: object) -> bool:
-        # Implements the = to know if two game states are the same
-        if isinstance(other, GameState):
-            #known_nets
-            if len(self.known_networks) != len(other.known_networks) or len(self.known_networks.difference(other.known_networks)) != 0:
-                #print("mismatch in known_nets")
-                return False
-            #known_hosts
-            if len(self.known_hosts) != len(other.known_hosts) or len(self.known_hosts.difference(other.known_hosts)) != 0:
-                #print("mismatch in known_hosts")
-                return False
-            #controlled_hosts
-            if len(self.controlled_hosts) != len(other.controlled_hosts) or len(self.controlled_hosts.difference(other.controlled_hosts)) != 0:
-                #print("mismatch in owned_nets")
-                return False
-            #known_services
-            if len(deepdiff.DeepDiff(self.known_services, other.known_services, ignore_order=True)) != 0:
-                #print("mismatch in known_services")
-                return False
-            #data
-            if len(deepdiff.DeepDiff(self.known_data, other.known_data, ignore_order=True)) != 0:
-                #print("mismatch in data")
-                return False
-            return True
-        return False
     
-    def __hash__(self) -> int:
-        return hash(self.known_hosts) + hash(self.known_networks) + hash(self.controlled_hosts) + hash(self.known_data) + hash(self.known_services)
-    
+    def as_json(self):
+        d = {"nets":list(self.known_networks), "known_hosts":list(self.known_hosts), "controlled_hosts":list(self.controlled_hosts), "known_services":list(self.known_services.items()), "known_data":list(self.known_data.items())}
+        return json.dumps(d) 
 
 # Main is only used for testing
 if __name__ == '__main__':
@@ -149,16 +166,13 @@ if __name__ == '__main__':
 
     a = Action("FindServices", ["192.168.1.0"])
     a2 = Action("FindServices", ["192.168.1.0"])
-    s1 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': frozenset([Service(name='bash', type='passive', version='5.0.0'), Service(name='listener', type='passive', version='1.0.0')])},{},{})
+    #print(hash(a), hash(a2))
+    # # print(a1, a2, a1==a2)
+    s1 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='bash', type='passive', version='5.0.0', is_local=True), Service(name='listener', type='passive', version='1.0.0', is_local=False)}},{},{})
     #print(hash(s1))
-    s2 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': frozenset([Service(name='listener', type='passive', version='1.0.0'), Service(name='bash', type='passive', version='5.0.0')])}, {},{})
-    s3 = GameState({"192.168.1.1"}, {}, {}, {},{})
-    #print(s1, s2, s1 == s2)
-    q = {}
-    if (a,s1) not in q.keys():
-        print("missing")
-    q[(a,s1)] = 0
-    q[(a,s2)] = 1
-    print(q)
-    q[(a,s3)] = 2
-    print(q)
+    s2 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='listener', type='passive', version='1.0.0', is_local=False)}},{},{})
+    s3 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='listener', type='passive', version='1.2.0', is_local=False)}},{},{})
+    print(s1==s2, s2==s2, s2 == s3)
+    s1.known_services["213.47.23.195"] = "new_value"
+    print(s1)
+    
