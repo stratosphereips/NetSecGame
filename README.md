@@ -48,7 +48,24 @@ python q_agent.py --episodes 100
 
 
 ## Game Environment
-The game is defined by the topogoly of the network and the rules, services and actions. This can be found in the files in folder `scenarios`.
+The game has several components
+
+File `network_security_game.py`
+
+File `game_components.py`
+
+File `scenarios/scenario_configuration.py`
+Defines the
+- Hosts
+    - Features of the hosts, such as services, operating system, etc.
+    - Features of the services running in the hsots, such as versions, etc.
+    - Users 
+
+hosts and their characteristics, the services they run, the users they have and their security levels, the data they have, and in the router/FW all the rules of which host can access what
+
+
+
+is defined by the topogoly of the network and the rules, services and actions. This can be found in the files in folder `scenarios`.
 
 
 The file `scenarios/scenario_configuration.py` corresponds to the final and large scenario.
