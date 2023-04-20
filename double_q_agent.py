@@ -134,7 +134,7 @@ if __name__ == '__main__':
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
     parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.2, type=float)
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
+    parser.add_argument("--defender", help="Is defender present", default=True, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--evaluate", help="Do not train, only run evaluation", default=False, action="store_true")
     parser.add_argument("--eval_each", help="Sets periodic evaluation during training", default=50, type=int)
