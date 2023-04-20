@@ -11,6 +11,12 @@ import numpy as np
 import scenarios.scenario_configuration
 import scenarios.smaller_scenario_configuration
 import scenarios.tiny_scenario_configuration
+import logging
+
+
+# Set the logging
+logger = logging.getLogger('Net-sec-env')
+    
 
 class Network_Security_Environment(object):
     def __init__(self, random_start=True, verbosity=0) -> None:
@@ -45,7 +51,33 @@ class Network_Security_Environment(object):
         if self.done: #Only tell if detected when the interaction ends
             return self._detected
         else: return False
-        
+    
+    @property
+    def num_actions(self):
+        return len(transitions)
+    
+    def get_all_actions(self):
+        actions = {}
+        for ip, name in self._ips.items():
+            #network scans
+            for net in self._get_networks_from_host(ip):
+                actions[len(actions)] = Action("ScanNetwork",{"target_network":net})
+            #portscans
+            actions[len(actions)] = Action("FindServices", {"target_host":ip})
+
+            #Run Code in service
+            for service in self._get_services_from_host(ip):
+                actions[len(actions)] = Action("ExecuteCodeInService", {"target_host":ip, "target_service":service.name})
+            #find data
+            actions[len(actions)] = Action("FindData", {"target_host":ip})
+
+            #exfiltrate data
+            for data in self._get_data_in_host(ip):
+                for src in self._ips.keys():
+                    for trg in self._ips.keys():
+                        actions[len(actions)] = Action("ExfiltrateData", {"target_host":trg, "data":data, "source_host":src})
+        return actions
+
     def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, topology=False)-> Observation:
         """
         Initializes the environment with start and goal configuraions.
@@ -351,7 +383,7 @@ class Network_Security_Environment(object):
                     target_accessible = [target in netaddr.IPNetwork(n) for n in state.known_networks] #TODO Add check for FW rules
                     return data_accessible and target_accessible  and len(action.parameters["data"]) > 0
                 except KeyError as e:
-                    print(e)
+                    #print(e)
                     return False
             else:
                 return False #for now we don't support this option TODO
@@ -402,53 +434,108 @@ class Network_Security_Environment(object):
     
     def _is_detected(self, state, action:Action)->bool:
         if self._defender_placements:
-            return random() < action.transition.default_detection_p     
+            value = random() < action.transition.default_detection_p     
+            logger.info(f'There is a defender and the detection is {value}')
+            return value
         else: #no defender
+            logger.info(f'There is NO defender')
             return False 
     
     def reset(self)->Observation:
+        logger.info(f'------\nGame resetted')
         self._done = False
         self._step_counter = 0
         self._detected = False  
         self._current_state = self._create_starting_state()
-        return Observation(self.current_state, 0, self.is_goal(self.current_state), self._done, {})
+        #return Observation(self.current_state, 0, self.is_goal(self.current_state), self._done, {})
+        return Observation(self.current_state, 0, self._done, {})
     
     def step(self, action:Action)-> Observation:
+        """
+        Take a step in the environment given an action
+
+        in:
+        - action
+        out:
+        - observation of the state of the env
+        """
         if not self._done:
-            self._step_counter +=1
-            #Roll the dice on success
+            logger.info(f'Step taken')
+            self._step_counter += 1
+
+            reason = {}
+            # 1. Check if the action was successful or not
             if random() <= action.transition.default_success_p:
+                # The action was successful
+                logger.info(f'Action {action} sucessful')
+
+                # Get the next state given the action
                 next_state = self._execute_action(self._current_state, action)
+
+                # Reard for making an action
                 reward = -1     #action.transition.default_reward - action.transition.default_cost
-            else: #unsuccessful - pay the cost but no reward, no change in game state
+            else: 
+                # The action was not successful
+                logger.info(f'Action {action} not sucessful')
+
+                # State does not change
                 next_state = self._current_state
+
+                # Reward for taking an action
                 reward = -1 #action.transition.default_cost
+
                 if self.verbosity >=1:
                     print("Action unsuccessful")
+
+            # 2. Check if the new state is the goal state
             is_goal = self.is_goal(next_state)
             if is_goal:
-                if self.verbosity >=1:
-                    print("Goal Reached")
+                # It is the goal
+                # Give reward
                 reward += 100  
+                logger.info(f'Goal reached')
+                # Game ended
+                self._done = True
+                logger.info(f'Game ended')
+                reason = {'end_reason':'goal_reached'}
+
+            # 3. Check if the action was detected
             detected = self._is_detected(self._current_state, action)
             if detected:
-                #reward -= 50
+                logger.info(f'Action detected')
+                # Reward should be negative
+                reward -= 50
+                # Mark the environment as detected
                 self._detected = True
-                if self.verbosity >=1:
-                    print("Detection")
-            done = self._step_counter >= self._timeout or is_goal or detected
-            self._done = done
-            #move environment to the next stae
+                reason = {'end_reason':'detected'}
+                self._done = True
+                logger.info(f'Game ended')
+
+            # 4. Check if the max number of steps of the game passed already
+            game_timeout = False
+            if self._step_counter >= self._timeout:
+                game_timeout = True
+                logger.info(f'Game timeout')
+                self._done = True
+                logger.info(f'Game ended')
+                reason = {'end_reason':'timeout'}
+
+            # Make the state we just got into, our current state
             self._current_state = next_state
-            return Observation(next_state, reward, is_goal or detected, done, {})
+
+            # Return an observation
+            return Observation(next_state, reward, self._done, reason)
         else:
             raise ValueError("Interaction over! No more steps can be made in the environment")
 
     def set_timeout(self, timeout):
         self._timeout = timeout
 
+    @property
+    def get_current_state(self)->Observation:
+        return Observation(self.current_state, 0, self._done, {})
+
 if __name__ == "__main__":
-    
     # Create the network security environment
     env = Network_Security_Environment(random_start=False, verbosity=0)
     
@@ -464,16 +551,12 @@ if __name__ == "__main__":
         "known_data":{"213.47.23.195":{("User1", "DataFromServer1"),("User1", "DatabaseData")}}
     }
 
-    #goal = {"known_networks":set(), "known_hosts":{}, "controlled_hosts":{"192.168.1.2"}, "known_services":{'192.168.1.2': frozenset({Service(name='lanman server', type='passive', version='10.0.19041')})}, "known_data":{}}
-    #goal = {"known_networks":{}, "known_hosts":{"192.168.1.4"}, "controlled_hosts":{}, "known_services":{}, "known_data":{}}
-    #attacker_start = {"known_networks":{}, "known_hosts":set(), "controlled_hosts":{"213.47.23.195", "192.168.1.2"}, "known_services":{}, "known_data":{}}
-
     # Define where the attacker will start
     attacker_start = {
         "known_networks":set(),
         "known_hosts":set(),
         "controlled_hosts":{"192.168.2.2", "213.47.23.195"},
-        "known_services":{},
+        "known_services":{'213.47.23.195': [Service(name='listener', type='passive', version='1.0.0'), Service(name='bash', type='passive', version='5.0.0')]},
         "known_data":{"213.47.23.195":{("User1", "DataFromServer1"),("User1", "DatabaseData")}}
     }
 
@@ -482,25 +565,4 @@ if __name__ == "__main__":
 
     # Initialize the game
     state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50)
-    print(env.is_goal(state.observation))
-
-    #scan netwokr
-    # next_state = env.step(Action("ScanNetwork", {"target_network":"192.168.1.0/24"}))
-    # print(next_state.observation)
-    # print("---------------")
-    # next_state = env.step(Action("FindServices", {"target_host":"192.168.1.2"}))
-    # print(next_state.observation)
-    # print("---------------")
-    # next_state = env.step(Action("ExecuteCodeInService", {"target_host":"192.168.1.2","target_service":Service(name='lanman server', type='passive', version='10.0.19041')}))
-    # print(next_state.observation)
-    # print("---------------")
-    # next_state = env.step(Action("FindData",{"target_host":"192.168.1.2"}))
-    # print(next_state.observation)
-    # print("---------------")
-    # next_state = env.step(Action("ExfiltrateData", {"target_host": '213.47.23.195', "source_host":"192.168.1.2", "data":("User1", "DataFromServer1")}))
-    # print(next_state.observation, env.is_goal(next_state.observation))
-    # print("---------------")
-    
-    # for _ in range(5):
-    #     print(env.reset().observation)
-
+    env.get_all_actions()
