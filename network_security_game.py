@@ -59,8 +59,12 @@ class Network_Security_Environment(object):
     def get_all_actions(self):
         actions = {}
         for ip, name in self._ips.items():
+            if ip in "0.0.0.0":
+                continue
             #network scans
             for net in self._get_networks_from_host(ip):
+                if str(net) in "0.0.0.0/0":
+                    continue
                 actions[len(actions)] = Action("ScanNetwork",{"target_network":net})
             #portscans
             actions[len(actions)] = Action("FindServices", {"target_host":ip})
@@ -73,9 +77,11 @@ class Network_Security_Environment(object):
 
             #exfiltrate data
             for data in self._get_data_in_host(ip):
-                for src in self._ips.keys():
-                    for trg in self._ips.keys():
-                        actions[len(actions)] = Action("ExfiltrateData", {"target_host":trg, "data":data, "source_host":src})
+                for trg in self._ips.keys():
+                    if trg in "0.0.0.0":
+                        continue
+                    actions[len(actions)] = Action("ExfiltrateData", {"target_host":trg, "data":data, "source_host":ip})
+        print("total actions:", len(actions))
         return actions
 
     def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, topology=False)-> Observation:
@@ -192,12 +198,15 @@ class Network_Security_Environment(object):
         self._src_file = filename
 
     def process_cyst_config(self, configuration_objects:list)->None:
+        
+        
         nodes = []
         node_to_id = {}
         routers = []
         connections = []
         exploits = []
-        
+    
+
         #sort objects into categories
         for o in configuration_objects:
             if isinstance(o, NodeConfig):
@@ -216,6 +225,7 @@ class Network_Security_Environment(object):
     
             for i in n.interfaces:
                 self._ips[str(i.ip)] = n.id
+                print(i)
         #process routers
         for r in routers:
             self._nodes[r.id] = r
@@ -314,51 +324,76 @@ class Network_Security_Environment(object):
         return data
 
     def _execute_action(self, current:GameState, action:Action)-> GameState:
-        if action.transition.type == "ScanNetwork":
-            #does the network exist?
-            new_ips = set()
-            for ip in netaddr.IPNetwork(action.parameters["target_network"]):
-                if str(ip) in self._ips.keys():
-                    new_ips.add(str(ip))
-            extended_hosts = current.known_hosts.union(new_ips)
-            return GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)
-        elif action.transition.type == "FindServices":
-            found_services =  self._get_services_from_host(action.parameters["target_host"])
-            extended_services = {k:v for k,v in current.known_services.items()}
-            if len(found_services) > 0:
-                if action.parameters["target_host"] not in extended_services.keys():
-                    extended_services[action.parameters["target_host"]] = frozenset(found_services)
+        try:
+            if action.transition.type == "ScanNetwork":
+                #does the network exist?
+                new_ips = set()
+                #print("evaluating:", action.parameters["target_network"])
+                for ip in netaddr.IPNetwork(action.parameters["target_network"]):
+                    if str(ip) in self._ips.keys():
+                        new_ips.add(str(ip))
+                extended_hosts = current.known_hosts.union(new_ips)
+                return GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)
+            elif action.transition.type == "FindServices":
+                found_services =  self._get_services_from_host(action.parameters["target_host"])
+                extended_services = {k:v for k,v in current.known_services.items()}
+                if len(found_services) > 0:
+                    if action.parameters["target_host"] not in current.known_hosts:
+                        #print("Adding ",action.parameters["target_host"], " to known_hosts")
+                        extended_hosts = current.known_hosts.union({action.parameters["target_host"]})
+                        extended_networks = {k for k in current.known_networks}
+                        for net in self._get_networks_from_host(action.parameters["target_host"]):
+                            extended_networks.add(str(net))
+                            #print("Adding ",str(net), " to known_nets") 
+                    else:
+                        extended_hosts = current.known_hosts
+                        extended_networks = current.known_networks
+                    if action.parameters["target_host"] not in extended_services.keys():
+                        extended_services[action.parameters["target_host"]] = frozenset(found_services)
+                    else:
+                        extended_services[action.parameters["target_host"]] = frozenset(extended_services[action.parameters["target_host"]]).union(found_services)
                 else:
-                    extended_services[action.parameters["target_host"]] = frozenset(extended_services[action.parameters["target_host"]]).union(found_services)
-            return GameState(current.controlled_hosts, current.known_hosts, extended_services, current.known_data, current.known_networks)
-        elif action.transition.type == "FindData":
-            extended_data = {k:v for k,v in current.known_data.items()}
-            new_data = self._get_data_in_host(action.parameters["target_host"])
-            if len(new_data) > 0:
-                if action.parameters["target_host"] not in extended_data.keys():
-                    extended_data[action.parameters["target_host"]] = new_data
-                else:
-                    extended_data[action.parameters["target_host"]].union(new_data)
-            return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
-        
-        elif action.transition.type == "ExecuteCodeInService":
-            extended_controlled_hosts = set([x for x in current.controlled_hosts])
-            if action.parameters["target_host"] not in current.controlled_hosts:
-                extended_controlled_hosts.add(action.parameters["target_host"])
-            new_networks = self._get_networks_from_host(action.parameters["target_host"])
-            extended_networks = current.known_networks.union(new_networks)
-            return GameState(extended_controlled_hosts, current.known_hosts, current.known_services, current.known_data, extended_networks)
-        
-        elif action.transition.type == "ExfiltrateData":
-            extended_data = {k:v for k,v in current.known_data.items()}
-            if len(action.parameters["data"]) > 0:
-                if action.parameters["target_host"] not in current.known_data.keys():
-                    extended_data[action.parameters["target_host"]] = {action.parameters["data"]}
-                else:
-                    extended_data[action.parameters["target_host"]].union(action.parameters["data"])
-            return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
-        else:
-            raise ValueError(f"Unknown Action type: '{action.transition.type}'")
+                    extended_hosts = current.known_hosts
+                return GameState(current.controlled_hosts, extended_hosts, extended_services, current.known_data, current.known_networks)
+            elif action.transition.type == "FindData":
+                extended_data = {k:v for k,v in current.known_data.items()}
+                new_data = self._get_data_in_host(action.parameters["target_host"])
+                if len(new_data) > 0:
+                    if action.parameters["target_host"] not in extended_data.keys():
+                        extended_data[action.parameters["target_host"]] = new_data
+                    else:
+                        extended_data[action.parameters["target_host"]].union(new_data)
+                return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
+            
+            elif action.transition.type == "ExecuteCodeInService":
+                extended_controlled_hosts = set([x for x in current.controlled_hosts])
+                if action.parameters["target_host"] not in current.controlled_hosts:
+                    extended_controlled_hosts.add(action.parameters["target_host"])
+                new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                
+                if "0.0.0.0/0" in new_networks:
+                    new_networks.remove("0.0.0.0/0")
+
+
+                extended_networks = current.known_networks.union(new_networks)
+                return GameState(extended_controlled_hosts, current.known_hosts, current.known_services, current.known_data, extended_networks)
+            
+            elif action.transition.type == "ExfiltrateData":
+                extended_data = {k:v for k,v in current.known_data.items()}
+                if len(action.parameters["data"]) > 0:
+                    if action.parameters["target_host"] not in current.known_data.keys():
+                        extended_data[action.parameters["target_host"]] = {action.parameters["data"]}
+                    else:
+                        extended_data[action.parameters["target_host"]].union(action.parameters["data"])
+                return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
+            else:
+                raise ValueError(f"Unknown Action type: '{action.transition.type}'")
+        except Exception as e:
+            print("ERROR")
+            print(GameState)
+            print(action)
+            print(e)
+            exit()
     
     def is_valid_action(self, state:GameState, action:Action)-> bool:
         if action.transition.type == "ScanNetwork":
@@ -451,6 +486,7 @@ class Network_Security_Environment(object):
         return Observation(self.current_state, 0, self._done, {})
     
     def step(self, action:Action)-> Observation:
+        
         """
         Take a step in the environment given an action
 
@@ -462,69 +498,83 @@ class Network_Security_Environment(object):
         if not self._done:
             logger.info(f'Step taken')
             self._step_counter += 1
-
             reason = {}
-            # 1. Check if the action was successful or not
-            if random() <= action.transition.default_success_p:
-                # The action was successful
-                logger.info(f'Action {action} sucessful')
+            if self.is_valid_action(self._current_state, action):
+                # 1. Check if the action was successful or not
+                if random() <= action.transition.default_success_p:
+                    # The action was successful
+                    logger.info(f'Action {action} sucessful')
 
-                # Get the next state given the action
-                next_state = self._execute_action(self._current_state, action)
+                    # Get the next state given the action
+                    next_state = self._execute_action(self._current_state, action)
 
-                # Reard for making an action
-                reward = -1     #action.transition.default_reward - action.transition.default_cost
-            else: 
-                # The action was not successful
-                logger.info(f'Action {action} not sucessful')
+                    # Reard for making an action
+                    reward = -1     #action.transition.default_reward - action.transition.default_cost
+                else: 
+                    # The action was not successful
+                    logger.info(f'Action {action} not sucessful')
 
-                # State does not change
-                next_state = self._current_state
+                    # State does not change
+                    next_state = self._current_state
 
-                # Reward for taking an action
-                reward = -1 #action.transition.default_cost
+                    # Reward for taking an action
+                    reward = -1 #action.transition.default_cost
 
-                if self.verbosity >=1:
-                    print("Action unsuccessful")
+                    if self.verbosity >=1:
+                        print("Action unsuccessful")
 
-            # 2. Check if the new state is the goal state
-            is_goal = self.is_goal(next_state)
-            if is_goal:
-                # It is the goal
-                # Give reward
-                reward += 100  
-                logger.info(f'Goal reached')
-                # Game ended
-                self._done = True
-                logger.info(f'Game ended')
-                reason = {'end_reason':'goal_reached'}
+                # 2. Check if the new state is the goal state
+                is_goal = self.is_goal(next_state)
+                if is_goal:
+                    # It is the goal
+                    # Give reward
+                    reward += 100  
+                    logger.info(f'Goal reached')
+                    # Game ended
+                    self._done = True
+                    logger.info(f'Game ended')
+                    reason = {'end_reason':'goal_reached'}
 
-            # 3. Check if the action was detected
-            detected = self._is_detected(self._current_state, action)
-            if detected:
-                logger.info(f'Action detected')
-                # Reward should be negative
-                reward -= 50
-                # Mark the environment as detected
-                self._detected = True
-                reason = {'end_reason':'detected'}
-                self._done = True
-                logger.info(f'Game ended')
+                # 3. Check if the action was detected
+                detected = self._is_detected(self._current_state, action)
+                if detected:
+                    logger.info(f'Action detected')
+                    # Reward should be negative
+                    reward -= 50
+                    # Mark the environment as detected
+                    self._detected = True
+                    reason = {'end_reason':'detected'}
+                    self._done = True
+                    logger.info(f'Game ended')
+
+                # Make the state we just got into, our current state
+                self._current_state = next_state
+            else: #INVALID ACTION:
+                # 3. Check if the action was detected
+                print("Invalid action: ", action)
+                reward = -5
+                logger.info(f'Action {action} is invalid')
+                detected = self._is_detected(self._current_state, action)
+                if detected:
+                    logger.info(f'Action detected')
+                    # Reward should be negative
+                    reward -= 50
+                    # Mark the environment as detected
+                    self._detected = True
+                    reason = {'end_reason':'detected'}
+                    self._done = True
+                    logger.info(f'Game ended')
 
             # 4. Check if the max number of steps of the game passed already
-            game_timeout = False
-            if self._step_counter >= self._timeout:
-                game_timeout = True
-                logger.info(f'Game timeout')
-                self._done = True
-                logger.info(f'Game ended')
-                reason = {'end_reason':'timeout'}
-
-            # Make the state we just got into, our current state
-            self._current_state = next_state
-
+                game_timeout = False
+                if self._step_counter >= self._timeout:
+                    game_timeout = True
+                    logger.info(f'Game timeout')
+                    self._done = True
+                    logger.info(f'Game ended')
+                    reason = {'end_reason':'timeout'}
             # Return an observation
-            return Observation(next_state, reward, self._done, reason)
+            return Observation(self._current_state, reward, self._done, reason)
         else:
             raise ValueError("Interaction over! No more steps can be made in the environment")
 
