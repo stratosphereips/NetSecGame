@@ -74,20 +74,20 @@ Observations are given when making a step in the environment.
 Observation = namedtuple("Observation", ["observation", "reward", "done", "info"])
 
 #Service - agents representation of service found with "FindServices" action
-Service = namedtuple("Service", ["name", "type", "version"])
+Service = namedtuple("Service", ["name", "type", "version","is_local"])
 
 """
 Game state represents the states in the game state space.
 
 """
 class GameState(object):
-    def __init__(self, controlled_hosts:set={}, known_hosts:set={}, know_services:dict={},
+    def __init__(self, controlled_hosts:set={}, known_hosts:set={}, known_services:dict={},
     known_data:dict={}, known_networks:set={}) -> None:
-        self._controlled_hosts = frozenset(controlled_hosts)
-        self._known_networks = frozenset(known_networks)
-        self._known_hosts = frozenset(known_hosts)
-        self._known_services = frozendict(know_services)
-        self._known_data = frozendict({k:frozenset([x for x in v]) for k,v in known_data.items()})
+        self._controlled_hosts = controlled_hosts
+        self._known_networks = known_networks
+        self._known_hosts = known_hosts
+        self._known_services = known_services
+        self._known_data = known_data
     
     @property
     def controlled_hosts(self):
@@ -142,77 +142,68 @@ class GameState(object):
     
     @property
     def as_graph(self):
-        node_types = {"master_node":0, "aggregator":1, "network":2, "host":3, "service":4, "datapoint":5}
-        graph_nodes = {"master_node":0, "nets":1, "known_hosts":2, "controlled_hosts":3, "known_services":4, "known_data": 5}
-        node_features = [0]
+        node_types = {"network":0, "host":1, "service":2, "datapoint":3}
+        graph_nodes = {}
+        node_features = []
+        controlled = []
         #total_nodes = len(graph_nodes) + len(self.known_networks) + len(self.known_hosts) + len(self.controlled_hosts) + sum([len(x) for x in self.known_services.values()]) + sum([len(x) for x in self.known_data.values()])
         
-        edges = []
-        #create adjecency matrix
-        #adj_matrix = np.zeros([total_nodes, total_nodes])
-        #conect all groups to master node
-        for i in range(1, len(graph_nodes)):
-            #adj_matrix[0,i]  = 1
-            edges.append((0,i))
-            node_features.append(node_types["aggregator"])
-        #add known nets
-        for net in self.known_networks:
-            graph_nodes[net] = len(graph_nodes)
-            node_features.append(node_types["network"])
-            #adj_matrix[graph_nodes["nets"],graph_nodes[net]] = 1
-            edges.append((graph_nodes["nets"],graph_nodes[net]))
-        #add known and controlled hosts
-        for host in self.known_hosts:
-            graph_nodes[host] = len(graph_nodes)
-            node_features.append(node_types["host"])
-            #connect to known_hosts
-            #adj_matrix[graph_nodes["known_hosts"], graph_nodes[host]] = 1
-            edges.append((graph_nodes["known_hosts"], graph_nodes[host]))
-            #add to controlled hosts if needed
-            if host in self.controlled_hosts:
-                #adj_matrix[graph_nodes["controlled_hosts"], graph_nodes[host]] = 1
-                edges.append((graph_nodes["controlled_hosts"], graph_nodes[host]))
-            #add to proper network if host is in the network
-            try:
-                for net in self.known_networks:
-                    if host in netaddr.IPNetwork(net):
-                        #adj_matrix[graph_nodes[net], graph_nodes[host]] = 1
-                        edges.append((graph_nodes[net], graph_nodes[host]))
-            except netaddr.core.AddrFormatError as e:
-                print(host, self.known_networks, self.known_hosts, net)
-                print("Error:")
-                print(e)
-                exit()
-        #Add known services
-        for host,services in self.known_services.items():
-            for service in services:
-                graph_nodes[service] = len(graph_nodes)
-                node_features.append(node_types["service"])
-                #add to known_services
-                #adj_matrix[graph_nodes["known_services"], graph_nodes[service]] = 1
-                edges.append((graph_nodes["known_services"], graph_nodes[service]))
-                #connect to the proper host
+        try:
+            edges = []
+            #add known nets
+            for net in self.known_networks:
+                graph_nodes[net] = len(graph_nodes)
+                node_features.append(node_types["network"])
+                controlled.append(0)
+            #add known and controlled hosts
+            for host in self.known_hosts:
+                graph_nodes[host] = len(graph_nodes)
+                node_features.append(node_types["host"])
+                #add to controlled hosts if needed
+                if host in self.controlled_hosts:
+                    controlled.append(1)
+                else:
+                    controlled.append(0)
+                #add to proper network if host is in the network
                 try:
-                    edges.append((graph_nodes[host], graph_nodes[service]))
-                except KeyError as e:
-                    print(self._known_hosts)
-                    print(self._known_services)
-                    raise e
+                    for net in self.known_networks:
+                        if host in netaddr.IPNetwork(net):
+                            edges.append((graph_nodes[net], graph_nodes[host]))
+                            edges.append((graph_nodes[host], graph_nodes[net]))
+                except netaddr.core.AddrFormatError as e:
+                    print(host, self.known_networks, self.known_hosts, net)
+                    print("Error:")
+                    print(e)
+                    exit()
+            #Add known services
+            for host,services in self.known_services.items():
+                for service in services:
+                    graph_nodes[service] = len(graph_nodes)
+                    node_features.append(node_types["service"])
+                    controlled.append(0)
+                    #connect to the proper host
+                    try:
+                        edges.append((graph_nodes[host], graph_nodes[service]))
+                        edges.append((graph_nodes[service], graph_nodes[host]))
+                    except KeyError as e:
+                        print(self._known_hosts)
+                        print(self._known_services)
+                        raise e
 
-        #Add known data
-        for host,data in self.known_data.items():
-            for datapoint in data:
-                graph_nodes[datapoint] = len(graph_nodes)
-                node_features.append(node_types["datapoint"])
-                #add to known_data
-                #adj_matrix[graph_nodes["known_data"], graph_nodes[datapoint]] = 1
-                edges.append((graph_nodes["known_data"], graph_nodes[datapoint]))
-                #connect to the proper host
-                #adj_matrix[graph_nodes[host], graph_nodes[datapoint]] = 1
-                edges.append((graph_nodes[host], graph_nodes[datapoint]))
+            #Add known data
+            for host,data in self.known_data.items():
+                for datapoint in data:
+                    graph_nodes[datapoint] = len(graph_nodes)
+                    node_features.append(node_types["datapoint"])
+                    controlled.append(0)
+                    #connect to the proper host
+                    edges.append((graph_nodes[host], graph_nodes[datapoint]))
+                    edges.append((graph_nodes[datapoint], graph_nodes[host]))
 
-        #print(f"Total Nodes:{total_nodes}")
-        return node_features, [], edges
+            #print(f"Total Nodes:{total_nodes}")
+        except KeyError as e:
+            print(f"Error in building graph from {self}: {e}")
+        return node_features, controlled, edges
 
     @property
     def as_json(self):
