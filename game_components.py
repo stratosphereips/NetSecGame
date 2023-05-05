@@ -114,26 +114,44 @@ class GameState(object):
     
     def __eq__(self, other: object) -> bool:
         if isinstance(other, GameState):
+            
             #known_nets
-            if len(self.known_networks) != len(other.known_networks) or len(self.known_networks.difference(other.known_networks)) != 0:
-                #print("mismatch in known_nets")
+            if self.known_networks != other.known_networks:
                 return False
             #known_hosts
-            if len(self.known_hosts) != len(other.known_hosts) or len(self.known_hosts.difference(other.known_hosts)) != 0:
-                #print("mismatch in known_hosts")
+            if self.known_hosts != other.known_hosts:
                 return False
             #controlled_hosts
-            if len(self.controlled_hosts) != len(other.controlled_hosts) or len(self.controlled_hosts.difference(other.controlled_hosts)) != 0:
-                #print("mismatch in owned_nets")
+            if self.controlled_hosts != other.controlled_hosts:
                 return False
             #known_services
-            if len(deepdiff.DeepDiff(self.known_services, other.known_services, ignore_order=True)) != 0:
-                #print("mismatch in known_services")
+            if self.known_services != other.known_services:
                 return False
             #data
-            if len(deepdiff.DeepDiff(self.known_data, other.known_data, ignore_order=True)) != 0:
-                #print("mismatch in data")
+            if self.known_data != other.known_data:
                 return False
+
+
+            # |#known_nets
+            # if len(self.known_networks) != len(other.known_networks) or len(self.known_networks.difference(other.known_networks)) != 0:
+            #     #print("mismatch in known_nets")
+            #     return False
+            # #known_hosts
+            # if len(self.known_hosts) != len(other.known_hosts) or len(self.known_hosts.difference(other.known_hosts)) != 0:
+            #     #print("mismatch in known_hosts")
+            #     return False
+            # #controlled_hosts
+            # if len(self.controlled_hosts) != len(other.controlled_hosts) or len(self.controlled_hosts.difference(other.controlled_hosts)) != 0:
+            #     #print("mismatch in owned_nets")
+            #     return False
+            # #known_services
+            # if len(deepdiff.DeepDiff(self.known_services, other.known_services, ignore_order=True)) != 0:
+            #     #print("mismatch in known_services")
+            #     return False
+            # #data
+            # if len(deepdiff.DeepDiff(self.known_data, other.known_data, ignore_order=True)) != 0:
+            #     #print("mismatch in data")
+            #     return False
             return True
         return False
     
