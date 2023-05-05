@@ -12,11 +12,9 @@ import scenarios.scenario_configuration
 import scenarios.smaller_scenario_configuration
 import scenarios.tiny_scenario_configuration
 import logging
-import gc 
 
 # Set the logging
 logger = logging.getLogger('Net-sec-env')
-    
 
 class Network_Security_Environment(object):
     def __init__(self, random_start=True, verbosity=0) -> None:
@@ -313,13 +311,14 @@ class Network_Security_Environment(object):
         #exploits
         self._exploits = exploits
 
-        print(self._networks)
-        print("-----------")
-        print(self._ips)
-        print("-----------")
-        print(self._services)
-        print("-----------")
-        print(self._data)
+        
+        # print(self._networks)
+        # print("-----------")
+        # print(self._ips)
+        # print("-----------")
+        # print(self._services)
+        # print("-----------")
+        # print(self._data)
     
     def get_valid_actions(self, state:GameState)->list:
         """
@@ -381,71 +380,60 @@ class Network_Security_Environment(object):
 
     def _execute_action(self, current:GameState, action:Action)-> GameState:
         try:
+            next_known_networks = copy.deepcopy(current.known_networks)
+            next_known_hosts = copy.deepcopy(current.known_hosts)
+            next_controlled_hosts = copy.deepcopy(current.controlled_hosts)
+            next_known_services = copy.deepcopy(current.known_services)
+            next_known_data = copy.deepcopy(current.known_data)
             if action.transition.type == "ScanNetwork":
                 new_ips = set()
                 for ip in self._ips.keys(): #check if 
                     if ip in netaddr.IPNetwork(action.parameters["target_network"]):
                         new_ips.add(ip)
-                extended_hosts = {x for x in current.known_hosts}.union(new_ips)
-                return GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)
-            
+                next_known_hosts.union(new_ips)
             elif action.transition.type == "FindServices":
                 #get services for current states in target_host
                 found_services = self._get_services_from_host(action.parameters["target_host"], current._controlled_hosts)
-
-                #add the services to the known set
-                extended_services = {k:v for k,v in current.known_services.items()}
-                if action.parameters["target_host"] not in extended_services.keys():
-                    extended_services[action.parameters["target_host"]] = frozenset(found_services)
-                else:
-                    extended_services[action.parameters["target_host"]] = frozenset(extended_services[action.parameters["target_host"]]).union(found_services)
-
-                #if host was not known, add it to the known_hosts ONLY if there are some found services
-                extended_hosts = current.known_hosts
-                extended_networks = current.known_networks
                 if len(found_services) > 0:
-                    if action.parameters["target_host"] not in current.known_hosts:
-                        extended_hosts = extended_hosts.union({action.parameters["target_host"]})
-                        extended_networks = extended_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
-                return GameState(current.controlled_hosts, extended_hosts, extended_services, current.known_data, current.known_networks)
-            
+                    if action.parameters["target_host"] not in next_known_services.keys():
+                        next_known_services[action.parameters["target_host"]] = found_services
+                    else:
+                        next_known_services[action.parameters["target_host"]] = next_known_services[action.parameters["target_host"]].union(found_services)
+
+                    #if host was not known, add it to the known_hosts ONLY if there are some found services
+                    if action.parameters["target_host"] not in next_known_hosts:
+                        next_known_hosts.add(action.parameters["target_host"])
+                        next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+
             elif action.transition.type == "FindData":
-                extended_data = {k:v for k,v in current.known_data.items()}
                 new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
                 if len(new_data) > 0:
-                    if action.parameters["target_host"] not in extended_data.keys():
-                        extended_data[action.parameters["target_host"]] = new_data
+                    if action.parameters["target_host"] not in next_known_data.keys():
+                        next_known_data[action.parameters["target_host"]] = new_data
                     else:
-                        extended_data[action.parameters["target_host"]].union(new_data)
-                return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
-            
+                        next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
+                        
             elif action.transition.type == "ExecuteCodeInService":
-                extended_controlled_hosts = set([x for x in current.controlled_hosts])
-                if action.parameters["target_host"] not in current.controlled_hosts:
-                    extended_controlled_hosts.add(action.parameters["target_host"])
+                if action.parameters["target_host"] not in next_controlled_hosts:
+                    next_controlled_hosts.add(action.parameters["target_host"])
+                if action.parameters["target_host"] not in next_known_hosts:
+                    next_known_hosts.add(action.parameters["target_host"])  
                 new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                
-                extended_hosts = {x for x in current.known_hosts}
-                if action.parameters["target_host"] not in extended_hosts:
-                    extended_hosts.add(action.parameters["target_host"])
-                # if "0.0.0.0/0" in new_networks:
-                #     new_networks.remove("0.0.0.0/0")
+                next_known_networks = next_known_networks.union(new_networks)
 
-                extended_networks = current.known_networks.union(new_networks)
-                return GameState(extended_controlled_hosts, extended_hosts, current.known_services, current.known_data, extended_networks)
-            
             elif action.transition.type == "ExfiltrateData":
-                extended_data = {k:v for k,v in current.known_data.items()}
                 if len(action.parameters["data"]) > 0 and action.parameters["target_host"] in current.controlled_hosts and action.parameters["source_host"] in current.controlled_hosts:
-                    if action.parameters["target_host"] not in current.known_data.keys():
-                        extended_data[action.parameters["target_host"]] = {action.parameters["data"]}
+                    if action.parameters["target_host"] not in next_known_data.keys():
+                        next_known_data[action.parameters["target_host"]] = {action.parameters["data"]}
                     else:
-                        extended_data[action.parameters["target_host"]].union(action.parameters["data"])
-                return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
+                        next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(action.parameters["data"])
             else:
                 raise ValueError(f"Unknown Action type: '{action.transition.type}'")
+            return GameState(next_controlled_hosts, next_known_hosts, next_known_services, next_known_data, next_known_networks)
         except Exception as e:
             print(f"Error occured when executing action:{action} in  {current}: {e}")
+            print(found_services)
+            print(next_known_services[action.parameters["target_host"]])
             exit()
     
     def is_valid_action(self, state:GameState, action:Action)-> bool:
@@ -560,7 +548,7 @@ class Network_Security_Environment(object):
                 # Get the next state given the action
                 next_state = self._execute_action(self._current_state, action)
                 # Reard for making an action
-                reward = 0#-1    
+                reward = -1    
             else: 
                 # The action was not successful
                 logger.info(f'Action {action} not sucessful')
@@ -569,7 +557,7 @@ class Network_Security_Environment(object):
                 next_state = self._current_state
 
                 # Reward for taking an action
-                reward = 0#-1 #action.transition.default_cost
+                reward = -1 #action.transition.default_cost
 
                 if self.verbosity >=1:
                     print("Action unsuccessful")
@@ -644,12 +632,35 @@ if __name__ == "__main__":
         "known_networks":set(),
         "known_hosts":set(),
         "controlled_hosts":{"192.168.2.2", "213.47.23.195"},
-        "known_services":{'213.47.23.195': [Service(name='listener', type='passive', version='1.0.0', is_local=False), Service(name='bash', type='passive', version='5.0.0', is_local=True)]},
-        "known_data":{"213.47.23.195":{("User1", "DataFromServer1"),("User1", "DatabaseData")}}
+        "known_services":{'213.47.23.195': {Service(name='listener', type='passive', version='1.0.0', is_local=False), Service(name='bash', type='passive', version='5.0.0', is_local=True)}    },
+        "known_data":{}
     }
 
     # Do we have a defender? 
     defender = False
 
     # Initialize the game
-    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50)
+    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=100000000)
+    actions = env.get_all_actions()
+    current = state
+    a = choice(actions)
+    next_s = env.step(a)
+    states = []
+    for _ in range(10):
+        a = choice(actions)
+        states.append(current.observation)
+        next_s = env.step(a)
+        print(a)
+        current = next_s
+
+
+    print(current.observation)
+    print(a)
+    print(next_s.observation)
+
+    # print("\n")
+    # print( "nets",current.observation._known_networks == next.observation._known_networks, current.observation._known_networks is next.observation._known_networks)
+    # print( "knownH",current.observation._known_hosts == next.observation._known_hosts, current.observation._known_hosts is next.observation._known_hosts)
+    # print( "ownedH",current.observation._controlled_hosts == next.observation._controlled_hosts, current.observation._controlled_hosts is next.observation._controlled_hosts)
+    # print( "services",current.observation._known_services == next.observation._known_services, current.observation._known_services is next.observation._known_services)
+    # print( "data",current.observation._known_data == next.observation._known_data, current.observation._known_data is next.observation._known_data)
