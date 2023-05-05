@@ -7,7 +7,7 @@ node_sets {
         dtype: DT_INT32
         shape {
           dim {
-            size: 6
+            size: 7
           }
         }
       }
