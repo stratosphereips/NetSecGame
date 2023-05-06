@@ -531,9 +531,6 @@ class Network_Security_Environment(object):
     def set_timeout(self, timeout):
         self._timeout = timeout
 
-    @property
-    def get_current_state(self)->Observation:
-        return Observation(self.current_state, 0, self._done, {})
 
 if __name__ == "__main__":
     # Create the network security environment
