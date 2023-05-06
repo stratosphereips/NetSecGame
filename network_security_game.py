@@ -447,7 +447,6 @@ class Network_Security_Environment(object):
         self._step_counter = 0
         self._detected = False  
         self._current_state = self._create_starting_state()
-        #return Observation(self.current_state, 0, self.is_goal(self.current_state), self._done, {})
         return Observation(self.current_state, 0, self._done, {})
     
     def step(self, action:Action)-> Observation:
