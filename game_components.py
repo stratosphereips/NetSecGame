@@ -2,9 +2,7 @@
 from collections import namedtuple
 import deepdiff
 from frozendict import frozendict
-import numpy as np
-import netaddr
-import json
+
 # Transition between nodes
 """
 Transition represents generic actions for attacker in the game. Each transition has a default probabilities
@@ -70,8 +68,7 @@ Observations are given when making a step in the environment.
  - done: boolean, True if no further interaction is possible (either terminal state or because of timeout)
  - info: dict, can contain additional information about the state
 """
-#Observation = namedtuple("Observation", ["observation", "reward", "is_terminal", "done", "info"])
-Observation = namedtuple("Observation", ["observation", "reward", "done", "info"])
+Observation = namedtuple("Observation", ["observation", "reward", "is_terminal", "done", "info"])
 
 #Service - agents representation of service found with "FindServices" action
 Service = namedtuple("Service", ["name", "type", "version"])
@@ -140,66 +137,8 @@ class GameState(object):
     def __hash__(self) -> int:
         return hash(self.known_hosts) + hash(self.known_networks) + hash(self.controlled_hosts) + hash(self.known_data) + hash(self.known_services)
     
-    @property
     def as_graph(self):
-        node_types = {"master_node":0, "aggregator":1, "network":2, "host":3, "service":4, "datapoint":5}
-        graph_nodes = {"master_node":0, "nets":1, "known_hosts":2, "controlled_hosts":3, "known_services":4, "known_data": 5}
-        node_features = [0]
-        total_nodes = len(graph_nodes) + len(self.known_networks) + len(self.known_hosts) + len(self.controlled_hosts) + sum([len(x) for x in self.known_services.values()]) + sum([len(x) for x in self.known_data.values()])
-        #create adjecency matrix
-        adj_matrix = np.zeros([total_nodes, total_nodes])
-        #conect all groups to master node
-        for i in range(1, len(graph_nodes)):
-            adj_matrix[0,i]  = 1
-            node_features.append(node_types["aggregator"])
-        #add known nets
-        for net in self.known_networks:
-            graph_nodes[net] = len(graph_nodes)
-            node_features.append(node_types["network"])
-            adj_matrix[graph_nodes["nets"],graph_nodes[net]] = 1
-        #add known and controlled hosts
-        for host in self.known_hosts:
-            graph_nodes[host] = len(graph_nodes)
-            node_features.append(node_types["host"])
-            #connect to known_hosts
-            adj_matrix[graph_nodes["known_hosts"], graph_nodes[host]] = 1
-            #add to controlled hosts if needed
-            if host in self.controlled_hosts:
-                adj_matrix[graph_nodes["controlled_hosts"], graph_nodes[host]] = 1
-            #add to proper network if host is in the network
-            for net in self.known_networks:
-                if host in netaddr.IPNetwork(net):
-                    adj_matrix[graph_nodes[net], graph_nodes[host]] = 1
-        
-        #Add known services
-        for host,services in self.known_services.items():
-            for service in services:
-                graph_nodes[service] = len(graph_nodes)
-                node_features.append(node_types["service"])
-                #add to known_services
-                adj_matrix[graph_nodes["known_services"], graph_nodes[service]] = 1
-                #connect to the proper host
-                try:
-                    adj_matrix[graph_nodes[host], graph_nodes[service]] = 1
-                except KeyError as e:
-                    print(graph_nodes)
-                    raise(e)
-        #Add known data
-        for host,data in self.known_data.items():
-            for datapoint in data:
-                graph_nodes[datapoint] = len(graph_nodes)
-                node_features.append(node_types["datapoint"])
-                #add to known_data
-                adj_matrix[graph_nodes["known_data"], graph_nodes[datapoint]] = 1
-                #connect to the proper host
-                adj_matrix[graph_nodes[host], graph_nodes[datapoint]] = 1
-        #print(f"Total Nodes:{total_nodes}")
-        return node_features, [], adj_matrix
-
-    @property
-    def as_json(self):
-        d = {"nets":list(self.known_networks), "known_hosts":list(self.known_hosts), "controlled_hosts":list(self.controlled_hosts), "known_services":list(self._known_services.items()), "known_data":list(self._known_data.items())}
-        return json.dumps(d) 
+        return adj_matrix, node_features, edge_features, grpah_features
 
 if __name__ == '__main__':
     # Used for tests
