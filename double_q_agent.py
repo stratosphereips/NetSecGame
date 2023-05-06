@@ -102,7 +102,7 @@ class DoubleQAgent:
             rewards += next_state.reward
             #move to next state
             state = next_state
-        return rewards, next_state.reward > 0, self.env.detected, self.env.timestamp
+        return rewards, self.env.is_goal(state.observation), self.env.detected, self.env.timestamp
 
     def evaluate(self, state) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
         """
