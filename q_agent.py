@@ -49,7 +49,6 @@ class QAgent:
             max_q_key = max(tmp, key=tmp.get)
             if max_q_key not in self.q_values:
                 self.q_values[max_q_key] = 0
-                #self.counts[max_q_key] = 0
             return max_q_key[1]
     
     def max_action_q(self, state:GameState) -> Action:
@@ -92,7 +91,7 @@ class QAgent:
             state = next_state
 
         # If state is 'done' this should throw an error of missing variables
-        return rewards, next_state.reward > 0, self.env.detected, self.env.timestamp
+        return rewards, self.env.is_goal(state.observation), self.env.detected, self.env.timestamp
 
     def evaluate(self, state) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
         """
@@ -131,7 +130,7 @@ if __name__ == '__main__':
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=50, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
-    parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
+    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action="store_true")
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
     parser.add_argument("--filename", help="Load previous model file", type=str)
@@ -149,9 +148,7 @@ if __name__ == '__main__':
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
     )
 
-
     random.seed(args.seed)
-
 
     logger.info(f'Setting the network security environment')
     env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
