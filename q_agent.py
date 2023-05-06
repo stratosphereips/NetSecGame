@@ -1,7 +1,6 @@
 # Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 #           Arti       
-from network_security_game import Network_Security_Environment
-#from environment import *
+from environment_v2 import EnvironmentV2
 from game_components import *
 import numpy as np
 from random import choice, random, seed
