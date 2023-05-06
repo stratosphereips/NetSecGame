@@ -72,6 +72,10 @@ The file `scenarios/scenario_configuration.py` corresponds to the final and larg
 The file `scenarios/smaller_scenario_configuration.py` corresponds to a small scenario for testing.
 The file `scenarios/tiny_scenario_configuration.py` corresponds to a tiny scenario for testing.
 
+### Verification of actions
+The game environment now has a function called ```get_valid_actions(state)```, which returns the valid actions for a given state. This allows the agents to always know the actions that can be played and therefore there should not be any check in the game env about if the action is possible or not.
+
+
 ## Agents
 Currently the implemented agents are:
 
@@ -88,6 +92,7 @@ Currently the implemented agents are:
 * Find Data action finds all available data if successful
 * Attacker has to know about data before exflitration is possible
 * Attacker has to own or at least know about a host to try to Find Data
+* Since the qtable is being constructed in real time when new states are returned (and not hold in memory completely), then the agents must have a way to estimate the value of new yet-unknown states. This is equivalent to have an initialized qtable upon start. Therefore our agents assume a state value of 0 if the state is new.
 
 ## Actions for the Attacker
 | Action name          | Description                                                              | Preconditions                         | Effects                                          |
