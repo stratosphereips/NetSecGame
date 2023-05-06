@@ -125,6 +125,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     args.filename = "NaiveQAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
+
+    logging.basicConfig(filename='q_naive_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     logger = logging.getLogger('Qnaive-agent')
 
     run_name = f"netsecgame__qnaive-learning__{args.seed}__{int(time.time())}"
