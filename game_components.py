@@ -68,7 +68,7 @@ Observations are given when making a step in the environment.
  - done: boolean, True if no further interaction is possible (either terminal state or because of timeout)
  - info: dict, can contain additional information about the state
 """
-Observation = namedtuple("Observation", ["observation", "reward", "is_terminal", "done", "info"])
+Observation = namedtuple("Observation", ["observation", "reward", "done", "info"])
 
 #Service - agents representation of service found with "FindServices" action
 Service = namedtuple("Service", ["name", "type", "version"])
