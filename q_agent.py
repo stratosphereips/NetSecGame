@@ -1,7 +1,6 @@
 # Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 #           Arti       
 from environment_v2 import EnvironmentV2
-from environment import *
 from game_components import *
 import numpy as np
 from random import choice, random, seed
