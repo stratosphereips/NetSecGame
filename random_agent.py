@@ -1,4 +1,5 @@
 #Author: Ondrej Lukas, ondrej.lukas@aic.cvut.cz
+# This agents just randomnly picks actions. No learning
 from game_components import *
 from random import choice, seed
 import random
@@ -50,6 +51,7 @@ if __name__ == '__main__':
     # set seed 
     seed(42)
     parser = argparse.ArgumentParser()
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
     parser.add_argument("--defender", help="Is defender present", default=True, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_small", type=str)
@@ -131,7 +133,8 @@ if __name__ == '__main__':
     num_steps = []
     num_win_steps = [] 
     num_detected_steps = []
-    for i in range(args.test_for):
+    logger.info(f'Starting the training')
+    for i in range(1, args.episodes + 1):
         state = env.reset()
         ret, win, detection, steps = agent.evaluate(state)
         if win:
