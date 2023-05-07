@@ -1,24 +1,18 @@
 #Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
+# Library of helpful functions and objects to play the net sec game
 from collections import namedtuple
 import deepdiff
 from frozendict import frozendict
 
 # Transition between nodes
 """
-Transition represents generic actions for attacker in the game. Each transition has a default probabilities
-for success and detection (if defensive measures are present). Each transition has default cost and reward (if successful).
-Net reward can be computed as follows net_reward = sucess*default_reward - default_cost
+Transition represents generic actions for attacker in the game. Each transition has a default probability
+of success and probability of detection (if the defender is present). Each transition has default cost and reward (if successful).
+Net reward can be computed as follows net_reward = p_sucess * (default_reward - default_cost)
 """
 Transition = namedtuple("Transition", ["type", "default_success_p", "default_detection_p", "default_reward", "default_cost"])
 
 #List of transitions available for attacker with default parameters
-# transitions = {
-#     "ScanNetwork": Transition("ScanNetwork",0.9,0.5,1,0.1), #In the beginning we artificially add 3 more networks in both directions
-#     "FindServices": Transition("FindServices",0.9,0.6,1,0.1),
-#     "FindData": Transition("FindData",0.5,0.9,2,0.1),
-#     "ExecuteCodeInService": Transition("ExecuteCodeInService",0.3,0.3,20,0.3),
-#     "ExfiltrateData": Transition("ExfiltrateData",0.8,0.8,1000,0.1),
-# }
 transitions = {
     "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2, 0,1), 
     "FindServices": Transition("FindServices",0.9, 0.3,0,1),
@@ -142,11 +136,6 @@ if __name__ == '__main__':
 
     a = Action("FindServices", ["192.168.1.0"])
     a2 = Action("FindServices", ["192.168.1.0"])
-    #print(hash(a), hash(a2))
-    
-    
-    
-    # # print(a1, a2, a1==a2)
     s1 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': frozenset([Service(name='bash', type='passive', version='5.0.0'), Service(name='listener', type='passive', version='1.0.0')])},{},{})
     #print(hash(s1))
     s2 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': frozenset([Service(name='listener', type='passive', version='1.0.0'), Service(name='bash', type='passive', version='5.0.0')])}, {},{})
