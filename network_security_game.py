@@ -13,6 +13,8 @@ import scenarios.smaller_scenario_configuration
 import scenarios.tiny_scenario_configuration
 import logging
 
+
+
 # Set the logging
 logger = logging.getLogger('Net-sec-env')
 
@@ -525,6 +527,7 @@ class Network_Security_Environment(object):
         self._current_state = self._create_starting_state()
         return Observation(self.current_state, 0, self._done, {})
     
+    #@profile
     def step(self, action:Action)-> Observation:
         
         """
@@ -587,9 +590,7 @@ class Network_Security_Environment(object):
                 self._done = True
                 logger.info(f'Game ended: Detection')
 
-            # Make sure the old state object is deleted (should prevent OOM errros)
-            del self._current_state
-            gc.collect()    
+            # Make sure the old state object is deleted (should prevent OOM errros) 
             # Make the state we just got into, our current state
             self._current_state = next_state
 
