@@ -16,6 +16,8 @@ from scenarios import scenario_configuration, smaller_scenario_configuration, ti
 import tensorflow_gnn as tfgnn
 import tensorflow as tf
 
+
+from memory_profiler import profile
 tf.get_logger().setLevel('ERROR')
 
 class GNN_REINFORCE_Agent:
@@ -33,13 +35,46 @@ class GNN_REINFORCE_Agent:
 
         #model building blocks
         def set_initial_node_state(node_set, node_set_name):
-            d1 = tf.keras.layers.Dense(24,activation="relu")(node_set['node_type'])
+            d1 = tf.keras.layers.Dense(64,activation="relu")(node_set['node_type'])
             return tf.keras.layers.Dense(32,activation="relu")(d1)
     
 
         def dense_layer(units=64,l2_reg=0.1,dropout=0.25,activation='relu'):
             regularizer = tf.keras.regularizers.l2(l2_reg)
-            return tf.keras.Sequential([tf.keras.layers.Dense(units, kernel_regularizer=regularizer, bias_regularizer=regularizer),  tf.keras.layers.Dropout(dropout)])
+            return tf.keras.Sequential([tf.keras.layers.Dense(units, activation=activation, kernel_regularizer=regularizer, bias_regularizer=regularizer),  tf.keras.layers.Dropout(dropout)])
+        
+        #input
+        input_graph = tf.keras.layers.Input(type_spec=self._example_input_spec, name="input_actor")
+        #process node features with FC layer
+        graph = tfgnn.keras.layers.MapFeatures(node_sets_fn=set_initial_node_state, name="preprocessing_actor")(input_graph)
+
+        #Graph conv
+        graph_updates = 3 # TODO Add to args
+        for i in range(graph_updates):
+            graph = tfgnn.keras.layers.GraphUpdate(
+                node_sets = {
+                    'nodes': tfgnn.keras.layers.NodeSetUpdate({
+                        'related_to': tfgnn.keras.layers.SimpleConv(
+                            message_fn = dense_layer(units=128), #TODO add num_units to args
+                            reduce_type="max",
+                            receiver_tag=tfgnn.TARGET)},
+                        tfgnn.keras.layers.NextStateFromConcat(dense_layer(64)))}, name=f"graph_update_{i}")(graph)  #TODO add num_units to args
+        # Pool to get a single vector representing the graph 
+        pooling = tfgnn.keras.layers.Pool(tfgnn.CONTEXT, "mean",node_set_name="nodes", name="pooling_actor")(graph)
+        # Two hidden layers (Followin the REINFORCE)
+        normed = tf.keras.layers.BatchNormalization()(pooling)
+        hidden1 = tf.keras.layers.Dense(128, activation="relu", name="hidden1_actor")(normed)
+        hidden2 = tf.keras.layers.Dense(64, activation="relu", name="hidden2_actor")(hidden1)
+        
+        # Output layer
+        out  = tf.keras.layers.Dense(len(self._transition_mapping), activation=None, name="output_logits")(hidden2)
+        
+        #Build the model
+        self._model = tf.keras.Model(input_graph, out, name="Actor")
+        self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr, clipvalue=5.0))
+        
+        
+        #baseline
         #input
         input_graph = tf.keras.layers.Input(type_spec=self._example_input_spec)
         #process node features with FC layer
@@ -52,28 +87,28 @@ class GNN_REINFORCE_Agent:
                 node_sets = {
                     'nodes': tfgnn.keras.layers.NodeSetUpdate({
                         'related_to': tfgnn.keras.layers.SimpleConv(
-                            message_fn = dense_layer(units=24), #TODO add num_units to args
-                            reduce_type="mean",
+                            message_fn = dense_layer(units=128), #TODO add num_units to args
+                            reduce_type="max",
                             receiver_tag=tfgnn.TARGET)},
-                        tfgnn.keras.layers.NextStateFromConcat(dense_layer(16)))})(graph)  #TODO add num_units to args
+                        tfgnn.keras.layers.NextStateFromConcat(dense_layer(64)))}, name=f"graph_update_{i}")(graph)  #TODO add num_units to args
         # Pool to get a single vector representing the graph 
         pooling = tfgnn.keras.layers.Pool(tfgnn.CONTEXT, "mean",node_set_name="nodes")(graph)
         # Two hidden layers (Followin the REINFORCE)
-        normed = tf.keras.layers.BatchNormalization()(pooling)
-        hidden1 = tf.keras.layers.Dense(64, activation="relu", name="hidden1")(normed)
-        hidden2 = tf.keras.layers.Dense(16, activation="relu", name="hidden2")(hidden1)
+        hidden2 = tf.keras.layers.Dense(64, activation="relu", name="baseline_hidden")(pooling)
         
-
-        node_states = graph.node_sets["nodes"]
-
         # Output layer
-        out  = tf.keras.layers.Dense(len(self._transition_mapping), activation="softmax", name="softmax_output")(hidden2)
+        out_baseline  = tf.keras.layers.Dense(1, activation=None, name="baseline_value")(hidden2)
         
         #Build the model
-        self._model = tf.keras.Model(input_graph, [out,pooling])
-        self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr, clipvalue=1.0))
-        self._model.summary()
+        self._baseline = tf.keras.Model(input_graph, out_baseline, name="Baseline model")
+        self._baseline.compile(tf.keras.optimizers.Adam(learning_rate=args.lr), loss=tf.losses.MeanSquaredError())
+        
 
+
+
+
+        self._model.summary()
+        self._baseline.summary()
     def _create_graph_tensor(self, node_features, controlled, edges):
         src,trg = [x[0] for x in edges],[x[1] for x in edges]
 
@@ -118,15 +153,24 @@ class GNN_REINFORCE_Agent:
     def predict(self, state_graph, training=False):
         return self._model(state_graph, training=training)
     
-    @tf.function
-    def _make_training_step(self, inputs, labels, weights):
+    #@tf.function
+    def _make_training_step_actor(self, inputs, labels, weights)->None:
         #perform training step
         with tf.GradientTape() as tape:
-            logits, hidden_states = self.predict(inputs, training=True)
-            cce = tf.keras.losses.SparseCategoricalCrossentropy()
+            logits = self.predict(inputs, training=True)
+            cce = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
             loss = cce(labels, logits, sample_weight=weights)
         grads = tape.gradient(loss, self._model.trainable_weights)
-        self._model.optimizer.apply_gradients(zip(grads, self._model.trainable_weights)) 
+        self._model.optimizer.apply_gradients(zip(grads, self._model.trainable_weights))
+        del logits
+    
+    def _make_training_step_baseline(self, inputs, rewards)->None:
+        #perform training step
+        with tf.GradientTape() as tape:
+            values = self._baseline(inputs, training=True)
+            loss = self._baseline.loss(values, rewards)
+        grads = tape.gradient(loss, self._baseline.trainable_weights)
+        self._baseline.optimizer.apply_gradients(zip(grads, self._baseline.trainable_weights))
     
     def _preprocess_inputs(self, replay_buffer):
         raise NotImplementedError
@@ -137,6 +181,7 @@ class GNN_REINFORCE_Agent:
     def load_model(self, filename):
         raise NotImplementedError
     
+    #@profile
     def train(self):
         for episode in range(self.args.episodes):
             #collect data
@@ -150,11 +195,10 @@ class GNN_REINFORCE_Agent:
                     state_node_f,controlled, state_edges = state.as_graph
                     state_g = self._create_graph_tensor(state_node_f, controlled, state_edges)
                     #predict action probabilities
-                    probabilities, hidden_states = self.predict(state_g)
-                    probabilities = tf.squeeze(probabilities)
-                    
-                    weights = probabilities
-                    action = random.choices([x for x in range(len(self._transition_mapping))], weights=weights, k=1)[0]
+                    probabilities = self.predict(state_g)
+                    probabilities = tf.squeeze(tf.nn.softmax(probabilities))
+                
+                    action = random.choices([x for x in range(len(self._transition_mapping))], weights=probabilities, k=1)[0]
                     #select action and perform it
                     next_state = self.env.step(self._transition_mapping[action])
 
@@ -196,10 +240,15 @@ class GNN_REINFORCE_Agent:
             # scalar_graph_tensor = graph_tensor_batch.merge_batch_to_components()
 
 
+            batch_returns = np.array(batch_returns)
+
             scalar_graph_tensor = self._build_batch_graph(batch_states)
             #perform training step
-            self._make_training_step(scalar_graph_tensor, batch_actions, batch_returns)
-
+            baseline = tf.squeeze(self._baseline(scalar_graph_tensor))
+            self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
+            updated_batch_returns = batch_returns-baseline
+            self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns)
+            
 
             
             #evaluate
@@ -208,17 +257,17 @@ class GNN_REINFORCE_Agent:
                 for _ in range(self.args.eval_for):
                     state, done = env.reset().observation, False
                     ret = 0
-                    print("--------------")
+                    #print("--------------")
                     while not done:
                         state_node_f,controlled, state_edges = state.as_graph
                         state_g = self._create_graph_tensor(state_node_f,controlled,state_edges)
                         #predict action probabilities
-                        probabilities, hidden_states = self.predict(state_g)
+                        probabilities = self.predict(state_g)
                         
-                        probabilities = tf.squeeze(probabilities)
+                        probabilities = tf.squeeze(tf.nn.softmax(probabilities))
                         action_idx = np.argmax(probabilities)
                         action = self._transition_mapping[action_idx]
-                        print(action)
+                        #print(action)
                         #select action and perform it
                         next_state = self.env.step(action)
                         ret += next_state.reward
@@ -229,25 +278,26 @@ class GNN_REINFORCE_Agent:
                 print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}") 
             else:
                 pass
-                print(f"Episode {episode} done.")
+                #print(f"Episode {episode} done.")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+
     #env arguments
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=10, type=int)
+    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=7, type=int)
     parser.add_argument("--defender", help="Is defender present", default=True, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=10000, type=int)
-    parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.95, type=float)
-    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=8)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-4)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=2000, type=int)
+    parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.99, type=float)
+    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=32)
+    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
 
     #training arguments
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=100, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=200, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
 
     parser.add_argument("--test", help="Do not train, only run test", default=False, action="store_true")
