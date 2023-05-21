@@ -32,7 +32,6 @@ Actions are composed of the transition type (see Transition) and additional para
  - ExecuteCodeInService {"target_host": "X.X.X.X" (string), "target_service":"service_name" (string)}
  - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"path_to_data" (string)}
 """
-#Action = namedtuple("Action", ["transition", "parameters"])
 class Action(object):
     
     def __init__(self, transition:str, params:list) -> None:
