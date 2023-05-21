@@ -14,10 +14,9 @@ import scenarios.smaller_scenario_configuration
 import scenarios.tiny_scenario_configuration
 import logging
 
-
 # Set the logging
+logging.basicConfig(filename='netsecenv.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
 logger = logging.getLogger('Net-sec-env')
-    
 
 class Network_Security_Environment(object):
     def __init__(self, random_start=True, verbosity=0) -> None:
