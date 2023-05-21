@@ -28,13 +28,13 @@ class NaiveQAgent:
         with open(filename, "rb") as f:
             self.q_values = pickle.load(f)
     
-    def move(self, state:GameState, testing=False) -> Action:
+    def move(self, observation:Observation, testing=False) -> Action:
         """
-        Given a state, select the next action to take
+        Given a observation, select the next action to take
         This follows the target policy, which is e-greedy here
         a mix of random (exploratory) and behavioral (exploiting)
         """
-        state = state.observation
+        state = observation.state
         actions = self.env.get_valid_actions(state)
         if random.uniform(0, 1) <= self.epsilon and not testing: #random play
             action = choice(actions)
@@ -54,13 +54,13 @@ class NaiveQAgent:
                 self.q_values[action_max_value] = 0
             return action_max_value[1]
     
-    def max_action_q(self, state:GameState) -> Action:
+    def max_action_q(self, observation:Observation) -> Action:
         """
         Given a state, select the next action to take
         This finds the action that maximices the state-action value
         This follows the behavioral policy that is being trained
         """
-        state = state.observation
+        state = observation.state
         # Get list of allowed actions
         actions = self.env.get_valid_actions(state)
         # Get q_values for given actions in current state
@@ -69,7 +69,7 @@ class NaiveQAgent:
         action_max_value = tmp[max(tmp,key=tmp.get)] 
         return action_max_value
     
-    def play(self, state, testing=False) -> tuple:
+    def play(self, observation:Observation, testing=False) -> tuple:
         """
         Make a game play moves for a whole episode
         Select an action based on some policy
@@ -77,30 +77,30 @@ class NaiveQAgent:
         """
         # To sum the rewards
         rewards = 0
-        while not state.done:
+        while not observation.done:
             # Select action
-            action = self.move(state, testing)
+            action = self.move(observation, testing)
             # Get next state of the environment
-            next_state = self.env.step(action)
+            next_observation = self.env.step(action)
             # Update q-values
-            if next_state.done:
+            if next_observation.done:
                 max_q_next = 0
             else:
-                max_q_next = self.max_action_q(next_state)
-            self.q_values[state.observation, action] = self.alpha * self.q_values[state.observation, action] + (1-self.alpha) * (next_state.reward + self.gamma * max_q_next)            
-            rewards += next_state.reward
+                max_q_next = self.max_action_q(next_observation)
+            self.q_values[observation.state, action] = self.alpha * self.q_values[observation.state, action] + (1-self.alpha) * (next_observation.reward + self.gamma * max_q_next)            
+            rewards += next_observation.reward
             #move to next state
-            state = next_state
-        return rewards, self.env.is_goal(state.observation), self.env.detected, self.env.timestamp
+            observation = next_observation
+        return rewards, self.env.is_goal(observation.state), self.env.detected, self.env.timestamp
 
-    def evaluate(self, state) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
+    def evaluate(self, observation:Observation) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
         rewards = 0
-        while not state.done:
-            action = self.move(state, testing=True)
-            next_state = self.env.step(action)
-            rewards += next_state.reward
-            state = next_state
-        reached_goal = self.env.is_goal(state.observation)
+        while not observation.done:
+            action = self.move(observation, testing=True)
+            next_observation = self.env.step(action)
+            rewards += next_observation.reward
+            state = next_observation
+        reached_goal = self.env.is_goal(observation.state)
         return rewards, reached_goal, self.env.detected, self.env.timestamp
 
 
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     # Training
     # Set the configuration of the game in the env
     logger.info(f'Initializing the environment')
-    state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+    observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
     # Instantiate the agent
     logger.info(f'Creating the agent')
     agent = NaiveQAgent(env, args.alpha, args.gamma, args.epsilon)
@@ -203,9 +203,9 @@ if __name__ == '__main__':
         logger.info(f'Starting the training')
         for i in range(1, args.episodes + 1): 
             # Reset
-            state = env.reset()
+            observation = env.reset()
             # Play complete round
-            ret, win, _, _ = agent.play(state)
+            ret, win, _, _ = agent.play(observation)
             # Every X episodes, eval
             if i % args.eval_each == 0:
                 wins = 0
@@ -215,8 +215,8 @@ if __name__ == '__main__':
                 num_win_steps = []
                 num_detected_steps = []
                 for j in range(args.eval_for):
-                    state = env.reset()
-                    ret, win, detection, steps = agent.evaluate(state)
+                    observation = env.reset()
+                    ret, win, detection, steps = agent.evaluate(observation)
                     if win:
                         wins += 1
                         num_win_steps += [steps]
@@ -273,8 +273,8 @@ if __name__ == '__main__':
     num_detected_steps = []
     start_t = timer()
     for i in range(args.test_for + 1):
-        state = env.reset()
-        ret, win, detection, steps = agent.evaluate(state)
+        observation = env.reset()
+        ret, win, detection, steps = agent.evaluate(observation)
         if win:
             wins += 1
             num_win_steps += [steps]
