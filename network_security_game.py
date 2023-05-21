@@ -507,9 +507,6 @@ class Network_Security_Environment(object):
         else:
             raise ValueError("Interaction over! No more steps can be made in the environment")
 
-    def set_timeout(self, timeout):
-        self._timeout = timeout
-
 
 if __name__ == "__main__":
     # Create the network security environment
