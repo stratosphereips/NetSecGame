@@ -653,8 +653,7 @@ Internet
 '''
 internet = RouterConfig(
     interfaces=[
-        InterfaceConfig(IPAddress("0.0.0.0"), IPNetwork("0.0.0.0/0"), index=0),
-        InterfaceConfig(IPAddress("213.47.23.193"), IPNetwork("213.47.23.192/26"), index=1)
+        InterfaceConfig(IPAddress("213.47.23.193"), IPNetwork("213.47.23.192/26"), index=0)
     ],
     routing_table=[
         RouteConfig(IPNetwork("192.168.0.0/16"), 0)
