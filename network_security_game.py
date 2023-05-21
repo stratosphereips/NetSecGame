@@ -237,7 +237,6 @@ class Network_Security_Environment(object):
         Returns set of Service tuples from given hostIP
         TODO active services
         """
-        #check if IP is correct
         try:
             # Check if the IP has a correct IP format
             netaddr.IPAddress(host_ip)
@@ -257,6 +256,8 @@ class Network_Security_Environment(object):
                 return services
             # Return empty services
             return {}
+        except (ValueError, netaddr.core.AddrFormatError) as error:
+            logging.error("HostIP is invalid. Due to {error}")
             # Return empty services
             return {}
     
