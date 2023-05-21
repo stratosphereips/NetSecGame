@@ -425,11 +425,12 @@ class Network_Security_Environment(object):
         Function to reset the state of the game 
         and play a new episode
         """
+        logger.info(f'------Game resetted. New startging ------')
         self._done = False
         self._step_counter = 0
-        self._detected = False  
+        self.detected = False  
         self._current_state = self._create_starting_state()
-        return Observation(self.current_state, 0, self._done, {})
+        return Observation(self._current_state, 0, self._done, {})
     
     def step(self, action:Action)-> Observation:
         """
