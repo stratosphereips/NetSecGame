@@ -1,6 +1,5 @@
 #Author: Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import netaddr
-from random import random
 from game_components import *
 import yaml
 from random import choice, seed
@@ -8,7 +7,6 @@ import random
 import copy
 from cyst.api.configuration import *
 import numpy as np
-#from scenarios.scenario_configuration import *
 import scenarios.scenario_configuration
 import scenarios.smaller_scenario_configuration
 import scenarios.tiny_scenario_configuration
