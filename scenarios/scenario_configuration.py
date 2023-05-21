@@ -398,7 +398,8 @@ client_1 = NodeConfig(
     traffic_processors=[],
     interfaces=[InterfaceConfig(IPAddress("192.168.2.2"), IPNetwork("192.168.2.0/24"))],
     shell="powershell",
-    id="client_1"
+    id="client_1",
+    note="can_start_attacker"
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
@@ -448,7 +449,9 @@ client_2 = NodeConfig(
     traffic_processors=[],
     interfaces=[InterfaceConfig(IPAddress("192.168.2.3"), IPNetwork("192.168.2.0/24"))],
     shell="powershell",
-    id="client_2"
+    id="client_2",
+    note="can_start_attacker"
+
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
@@ -496,7 +499,9 @@ client_3 = NodeConfig(
     traffic_processors=[],
     interfaces=[InterfaceConfig(IPAddress("192.168.2.4"), IPNetwork("192.168.2.0/24"))],
     shell="bash",
-    id="client_3"
+    id="client_3",
+    note="can_start_attacker"
+
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
@@ -544,7 +549,9 @@ client_4 = NodeConfig(
     traffic_processors=[],
     interfaces=[InterfaceConfig(IPAddress("192.168.2.5"), IPNetwork("192.168.2.0/24"))],
     shell="bash",
-    id="client_4"
+    id="client_4",
+    note="can_start_attacker"
+
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
@@ -581,7 +588,9 @@ client_5 = NodeConfig(
     traffic_processors=[],
     interfaces=[InterfaceConfig(IPAddress("192.168.2.6"), IPNetwork("192.168.2.0/24"))],
     shell="bash",
-    id="client_5"
+    id="client_5",
+    note="can_start_attacker"
+
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
