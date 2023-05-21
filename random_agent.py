@@ -17,34 +17,34 @@ class RandomAgent:
     def __init__(self, env):
         self.env = env
     
-    def move(self, state:GameState) -> Action:
-        state = state.observation
+    def move(self, observation:Observation) -> Action:
+        state = observation.state
         # Randomly choose from the available actions
         actions = self.env.get_valid_actions(state)
         return choice(actions)
     
-    def play(self, state) -> tuple:
+    def play(self, observation:Observation) -> tuple:
         return_value = 0
-        while not state.done:
-            #select action
-            action = self.move(state)
-            #get next state of the environment
-            next_state = self.env.step(action)
-            #collect reward
-            return_value += next_state.reward
-            #move to next state
-            state = next_state
-        return return_value, self.env.is_goal(state.observation), self.env.detected, self.env.timestamp
+        while not observation.done:
+            # Select action
+            action = self.move(observation)
+            # Get next observation of the environment
+            next_observation = self.env.step(action)
+            # Collect reward
+            return_value += next_observation.reward
+            # Move to next state
+            observation = next_observation
+        return return_value, self.env.is_goal(observation.state), self.env.detected, self.env.timestamp
 
-    def evaluate(self, state) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
+    def evaluate(self, observation:Observation) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
         return_value = 0
-        while not state.done:
-            action = self.move(state)
-            next_state = self.env.step(action)
-            return_value += next_state.reward
-            state = next_state
+        while not observation.done:
+            action = self.move(observation)
+            next_observation = self.env.step(action)
+            return_value += next_observation.reward
+            observation = next_observation
         game_ended_detected = self.env.detected
-        return return_value, self.env.is_goal(state.observation), game_ended_detected, self.env.timestamp
+        return return_value, self.env.is_goal(observation.state), game_ended_detected, self.env.timestamp
 
 
 if __name__ == '__main__':
@@ -122,7 +122,7 @@ if __name__ == '__main__':
 
     # Create agent
     logger.info(f'Initializing the environment')
-    state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+    observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
     logger.info(f'Creating the agent')
     agent = RandomAgent(env)
 
@@ -135,8 +135,8 @@ if __name__ == '__main__':
     num_detected_steps = []
     logger.info(f'Starting the training')
     for i in range(1, args.episodes + 1):
-        state = env.reset()
-        ret, win, detection, steps = agent.evaluate(state)
+        observation = env.reset()
+        ret, win, detection, steps = agent.evaluate(observation)
         if win:
             wins += 1
             num_win_steps += [steps]
