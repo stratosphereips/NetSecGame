@@ -21,44 +21,52 @@ logger = logging.getLogger('Net-sec-env')
 
 class Network_Security_Environment(object):
     def __init__(self, random_start=True, verbosity=0) -> None:
+        """
+        Class to manage the whole network security game
+        It uses some Cyst libraries for the network topology
+        It presents a env environment to play
+        """
+        # Dictionary of all the nodes in environment
+        # Nodes are hosts, attackers, etc (but not router, connections or exploits)
         self._nodes = {}
+        # Connections are how can connect to whom.
         self._connections = {}
+        # A list of all ips in the sytem?
         self._ips = {}
+        # A list of the networks we know
+        self._networks = []
+        # All the exploits in the environment
         self._exploits = {}
-        self._fw_rules = []
+        # If the game starts randomly or not
         self._random_start = random_start
-
+        # Place of the defender
         self._defender_placements = None
+        # Current state of the game
         self._current_state = None
+        # If the game finished
         self._done = False
+        # ?
         self._src_file = None
+        # Verbosity. 
+        # If the episode/action was detected by the defender
+        self.detected = False
+        # TODO change to logging level
         self.verbosity = verbosity
-        self._detected = False
     
-    @property
-    def current_state(self) -> GameState:
-        return self._current_state
-
     @property
     def timestamp(self)->int:
+        """
+        Property used to show an interface to agents about what timestamp it is
+        """
         return self._step_counter
-
-    @property
-    def done(self):
-        return self._done
-    
-    @property
-    def detected(self):
-        if self.done: #Only tell if detected when the interaction ends
-            return self._detected
-        else: return False
-    
-    @property
-    def num_actions(self):
-        return len(transitions)
     
     def get_all_actions(self):
+        """
+        Return all the possible actions in the game
+        """
+        logger.info(f'All actions requested')
         actions = {}
+        # For each...?
         for ip, name in self._ips.items():
             #network scans
             for net in self._get_networks_from_host(ip):
@@ -83,13 +91,49 @@ class Network_Security_Environment(object):
         """
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
-        TODO Firewall rules processing
+        It ALSO resets the environment, so it returns a full state. This is different from other gym envs.
         """
+        # Process parameters
+        self._attacker_start_position = attacker_start_position
+        self.max_steps = max_steps
+        if not defender_positions:
+            self._defender_placements = False
+        else:
+            self._place_defences(defender_positions)
+        self._win_conditions = win_conditons
+
         # Set the seed if passed by the agent
         if agent_seed:
             np.random.seed(agent_seed)
             random.seed(agent_seed)
             logger.info(f'Agent passed a seed, setting to {agent_seed}')
+        
+        # Check if position of data is randomized 
+        logger.info(f"Checking if we need to set the data to win in a random location.")
+        # For each known data point in the conditions to win
+        for k, v in win_conditons["known_data"].items():
+            # Was the position defined as random?
+            if isinstance(v, str) and v.lower() == "random":
+                logger.info(f"\tYes we do.")
+                # Load all the available data from all hosts
+                available_data = []
+                for node in self._nodes.values():
+                    # For each node, independent of what type of node they are...
+                    try:                   
+                        # Search for passive services, since this is where the 'DataConfig' is
+                        for service in node.passive_services:
+                            # Search for private data
+                            for dataconfig in service.private_data:
+                                # Store all places where we can put the data
+                                available_data.append((dataconfig.owner, dataconfig.description))
+                    except AttributeError:
+                        pass
+                # From all available data, randomly pick the one that is going to be used to win the game
+                self._win_conditions["known_data"][k] = {choice(available_data)}
+                logger.info(f"\tWinning condition of `known_data` randomly set to {self._win_conditions['known_data']}")
+            else:
+                logger.info(f"\tNo we don't.")
+        return self.reset()
     
     def _create_starting_state(self) -> GameState:
         """
