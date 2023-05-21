@@ -627,7 +627,6 @@ Routers
 '''
 router1 = RouterConfig(
     interfaces=[
-        InterfaceConfig(IPAddress("192.168.0.1"), IPNetwork("192.168.0.0/16"), index=1),
         InterfaceConfig(IPAddress("192.168.1.1"), IPNetwork("192.168.1.0/24"), index=2),
         InterfaceConfig(IPAddress("192.168.2.1"), IPNetwork("192.168.2.0/24"), index=3),
     ],
