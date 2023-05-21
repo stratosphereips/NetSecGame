@@ -149,6 +149,7 @@ if __name__ == '__main__':
     )
 
     random.seed(args.seed)
+    np.random.seed(args.seed)
 
     logger.info(f'Setting the network security environment')
     env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
@@ -197,7 +198,7 @@ if __name__ == '__main__':
     
     # Training
     logger.info(f'Initializing the environment')
-    state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+    state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, agent_seed=args.seed)
     logger.info(f'Creating the agent')
     agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
     try:
