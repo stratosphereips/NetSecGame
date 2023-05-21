@@ -487,15 +487,13 @@ class Network_Security_Environment(object):
                 # Reward should be negative
                 reward -= 50
                 # Mark the environment as detected
-                self._detected = True
+                self.detected = True
                 reason = {'end_reason':'detected'}
                 self._done = True
                 logger.info(f'Game ended')
 
             # 4. Check if the max number of steps of the game passed already
-            game_timeout = False
-            if self._step_counter >= self._timeout:
-                game_timeout = True
+            if self._step_counter >= self.max_steps:
                 logger.info(f'Game timeout')
                 self._done = True
                 logger.info(f'Game ended')
