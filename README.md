@@ -85,6 +85,9 @@ The network topology and rules are defined using a Cyst simulator configuration.
     - Which host can connect
 
 
+Very important is that we made an addition to the NodeConfig objects in our Cyst configuration to include the property 'note' with the text 'can_start_attacker'. Meaning that the game env will take these host as candidates for the random start position.
+
+
 ## Agents Implemented
 Currently the implemented agents are:
 
@@ -127,10 +130,12 @@ The state of the game is an object with the following parts:
 * `known_services` (dict of host:service pairs. A service is a port)
 * `known_data` (dict of host:path pairs. path is where data was found)
 
+An observation is the object received by an agent that has its view of the state, the reward, if the game ended and information about the observation.
+
 ## Defining starting position of the attacker
 The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts` so there is no need to include these in both lists. `known_networks` is also extended with a list of **all** networks accessible from the `controlled_hosts`.
 
-## Defining Defender position
+## Defining defender position
 The defender can be present in the network or not. In case you defined in the configuration of the game that the defender is present (see below), then the detection probabilities of each actions are taken into account. If the defender is not present, then there is no detection and the game can only end in two ways: timeout or the goal of the attacker was acchieved.
 
 ## Initializing the Environment
