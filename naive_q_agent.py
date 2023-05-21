@@ -99,7 +99,7 @@ class NaiveQAgent:
             action = self.move(observation, testing=True)
             next_observation = self.env.step(action)
             rewards += next_observation.reward
-            state = next_observation
+            observation = next_observation
         reached_goal = self.env.is_goal(observation.state)
         return rewards, reached_goal, self.env.detected, self.env.timestamp
 
