@@ -515,12 +515,29 @@ class Network_Security_Environment(object):
 
 if __name__ == "__main__":
     # Create the network security environment
-    env = Network_Security_Environment(random_start=False, verbosity=0)
+    env = Network_Security_Environment(random_start=True, verbosity=0)
     
     # Read network setup from predefined CYST configuration
     env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
 
-    # Define winning conditions and starting position
+    # Test random data and start position
+    goal = {
+        "known_networks":set(),
+        "known_hosts":set(),
+        "controlled_hosts":set(),
+        "known_services":{},
+        "known_data":{"213.47.23.195":"random"}
+    }
+    attacker_start = {
+        "known_networks":set(),
+        "known_hosts":set(),
+        "controlled_hosts":{"213.47.23.195","192.168.2.0/24"},
+        "known_services":{},
+        "known_data":{}
+    }
+
+    # Test normal winning conditions and starting position
+    """
     goal = {
         "known_networks":set(),
         "known_hosts":{},
@@ -537,10 +554,13 @@ if __name__ == "__main__":
         "known_services":{'213.47.23.195': [Service(name='listener', type='passive', version='1.0.0'), Service(name='bash', type='passive', version='5.0.0')]},
         "known_data":{"213.47.23.195":{("User1", "DataFromServer1"),("User1", "DatabaseData")}}
     }
+    """
 
     # Do we have a defender? 
-    defender = False
+    defender = True
 
     # Initialize the game
-    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50)
+    state_1 = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50, agent_seed=42)
+    print(state_1)
     env.get_all_actions()
+    print(state_1.controlled_hosts)
