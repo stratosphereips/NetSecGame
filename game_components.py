@@ -4,6 +4,8 @@ from collections import namedtuple
 import deepdiff
 from frozendict import frozendict
 
+
+# Transitions are not implemented in the game of 2022
 # Transition between nodes
 """
 Transition represents generic actions for attacker in the game. Each transition has a default probability
@@ -12,7 +14,7 @@ Net reward can be computed as follows net_reward = p_sucess * (default_reward - 
 """
 Transition = namedtuple("Transition", ["type", "default_success_p", "default_detection_p", "default_reward", "default_cost"])
 
-#List of transitions available for attacker with default parameters
+# List of transitions available for attacker with default parameters
 transitions = {
     "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2, 0,1), 
     "FindServices": Transition("FindServices",0.9, 0.3,0,1),
@@ -53,27 +55,31 @@ class Action(object):
     def __hash__(self) -> int:
         return hash(self.transition) + hash("".join(self.parameters))
 
-#Observation - given to agent after taking an action
+
+# Observation - given to agent after taking an action
 """
 Observations are given when making a step in the environment.
  - observation: current state of the environment
- - reward: float  value with immediate reward
- - is_terminal: boolean, True if the game ends the current state
- - done: boolean, True if no further interaction is possible (either terminal state or because of timeout)
- - info: dict, can contain additional information about the state
+ - reward: float  value with immediate reward for last step
+ - done: boolean, True if the game ended. 
+    No further interaction is possible (either terminal state or because of timeout)
+ - info: dict, can contain additional information about the reason for ending
 """
 Observation = namedtuple("Observation", ["observation", "reward", "done", "info"])
 
-#Service - agents representation of service found with "FindServices" action
+
+# Service - agents representation of a service found with "FindServices" action
 Service = namedtuple("Service", ["name", "type", "version"])
+
 
 """
 Game state represents the states in the game state space.
-
 """
 class GameState(object):
-    def __init__(self, controlled_hosts:set={}, known_hosts:set={}, know_services:dict={},
-    known_data:dict={}, known_networks:set={}) -> None:
+    def __init__(self, controlled_hosts:set={}, known_hosts:set={}, know_services:dict={}, known_data:dict={}, known_networks:set={}) -> None:
+        # Initialize the game state
+        # It uses frozensets because once created a state should not be changed.
+        # Any change should create a new state
         self._controlled_hosts = frozenset(controlled_hosts)
         self._known_networks = frozenset(known_networks)
         self._known_hosts = frozenset(known_hosts)
@@ -104,6 +110,7 @@ class GameState(object):
         return f"State<nets:{self.known_networks}; known:{self.known_hosts}; owned:{self.controlled_hosts}; services:{self._known_services}; data:{self._known_data}>"
     
     def __eq__(self, other: object) -> bool:
+        # Implements the = to know if two game states are the same
         if isinstance(other, GameState):
             #known_nets
             if len(self.known_networks) != len(other.known_networks) or len(self.known_networks.difference(other.known_networks)) != 0:
@@ -131,6 +138,8 @@ class GameState(object):
     def __hash__(self) -> int:
         return hash(self.known_hosts) + hash(self.known_networks) + hash(self.controlled_hosts) + hash(self.known_data) + hash(self.known_services)
     
+
+# Main is only used for testing
 if __name__ == '__main__':
     # Used for tests
 
