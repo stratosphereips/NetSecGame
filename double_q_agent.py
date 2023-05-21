@@ -45,8 +45,11 @@ class DoubleQAgent:
             self.q_values1[state, action] = 0
         return self.q_values2[state, action]
 
-    def move(self, state:GameState, testing=False) -> Action:
-        state = state.observation
+    def move(self, obs:Observation, testing=False) -> Action:
+        """
+        Make a move
+        """
+        state = obs.state
         actions = self.env.get_valid_actions(state)
         if random.uniform(0, 1) <= self.epsilon and not testing:
             a = choice(actions)
@@ -71,51 +74,51 @@ class DoubleQAgent:
         tmp = dict(((state,a), q_values.get((state,a), 0)) for a in actions)
         return max(tmp,key=tmp.get)[1] #return maximum Q_value for a given state (out of available actions)
     
-    def play(self, state, testing=False) -> tuple:
+    def play(self, observation, testing=False) -> tuple:
         rewards = 0
-        while not state.done:
-            #select action
-            action = self.move(state, testing)
-            #get next state of the environment
-            next_state = self.env.step(action)
+        while not observation.done:
+            # Select action
+            action = self.move(observation, testing)
+            # Get next state of the environment
+            next_obs = self.env.step(action)
             
             if random.uniform(0, 1) <= 0.5:
                 #find max Q-Value for next state
-                if next_state.done:
+                if next_obs.done:
                     max_q_next = 0
                 else:
-                    max_a_next = self.max_action(next_state.observation, self.q_values1)
-                    max_q_next = self.get_q_value2(next_state.observation, max_a_next)
-                new_Q = self.q_values1[state.observation, action] + self.alpha*(next_state.reward + self.gamma*max_q_next - self.q_values1[state.observation, action])
-                self.q_values1[state.observation, action] = new_Q
+                    max_a_next = self.max_action(next_obs.state, self.q_values1)
+                    max_q_next = self.get_q_value2(next_obs.state, max_a_next)
+                new_Q = self.q_values1[observation.state, action] + self.alpha * (next_obs.reward + self.gamma*max_q_next - self.q_values1[observation.state, action])
+                self.q_values1[observation.state, action] = new_Q
             else:
                 #find max Q-Value for next state
-                if next_state.done:
+                if next_obs.done:
                     max_q_next = 0
                 else:
-                    max_a_next = self.max_action(next_state.observation, self.q_values2)
-                    max_q_next = self.get_q_value1(next_state.observation, max_a_next)
+                    max_a_next = self.max_action(next_obs.state, self.q_values2)
+                    max_q_next = self.get_q_value1(next_obs.state, max_a_next)
                 #update q values
-                new_Q = self.q_values2[state.observation, action] + self.alpha*(next_state.reward + self.gamma*max_q_next - self.q_values2[state.observation, action])
-                self.q_values2[state.observation, action] = new_Q
+                new_Q = self.q_values2[observation.state, action] + self.alpha*(next_obs.reward + self.gamma*max_q_next - self.q_values2[observation.state, action])
+                self.q_values2[observation.state, action] = new_Q
             
-            rewards += next_state.reward
+            rewards += next_obs.reward
             #move to next state
-            state = next_state
-        return rewards, self.env.is_goal(state.observation), self.env.detected, self.env.timestamp
+            state = next_obs
+        return rewards, self.env.is_goal(observation.state), self.env.detected, self.env.timestamp
 
-    def evaluate(self, state) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
+    def evaluate(self, observation) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
         """
         Evaluate the agent so far for one episode
 
         Do without learning
         """
         return_value = 0
-        while not state.done:
-            action = self.move(state, testing=True)
+        while not observation.done:
+            action = self.move(observation, testing=True)
             next_state = self.env.step(action)
             return_value += next_state.reward
-            state = next_state
+            observation = next_state
          # Has to return
         # 1. returns
         # 2. if it is a win
@@ -207,7 +210,7 @@ if __name__ == '__main__':
     
     # Training
     logger.info(f'Initializing the environment')
-    state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+    obs = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
     logger.info(f'Creating the agent')
     agent = DoubleQAgent(env, args.alpha, args.gamma, args.epsilon)
     try:
@@ -219,8 +222,8 @@ if __name__ == '__main__':
     if not args.evaluate:
         logger.info(f'Starting the training')
         for i in range(0, args.episodes + 1):
-            state = env.reset()
-            ret, win,_,_ = agent.play(state)
+            obs = env.reset()
+            ret, win,_,_ = agent.play(obs)
             if i % args.eval_each == 0 and i != 0:
                 wins = 0
                 detected = 0
@@ -229,8 +232,8 @@ if __name__ == '__main__':
                 num_win_steps = [] 
                 num_detected_steps = []
                 for j in range(args.eval_for):
-                    state = env.reset()
-                    ret, win, detection, steps = agent.evaluate(state)
+                    obs = env.reset()
+                    ret, win, detection, steps = agent.evaluate(obs)
                     if win:
                         wins += 1
                         num_win_steps += [steps]
@@ -286,8 +289,8 @@ if __name__ == '__main__':
     num_win_steps = [] 
     num_detected_steps = []
     for i in range(args.test_for):
-        state = env.reset()
-        ret, win, detection, steps = agent.evaluate(state)
+        obs = env.reset()
+        ret, win, detection, steps = agent.evaluate(obs)
         if win:
             wins += 1
             num_win_steps += [steps]
