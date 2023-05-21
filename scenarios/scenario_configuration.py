@@ -585,24 +585,16 @@ client_5 = NodeConfig(
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
-Router
+Routers
 
 - Has a defender
 - SSH (Nope, the routers do not work as normal PCs. But the defender will be ready and will be possible to control it)
 '''
 router1 = RouterConfig(
     interfaces=[
-        InterfaceConfig(IPAddress("192.168.1.1"), IPNetwork("192.168.1.1/24"), index=0),
-        InterfaceConfig(IPAddress("192.168.1.1"), IPNetwork("192.168.1.1/24"), index=1),
-        InterfaceConfig(IPAddress("192.168.1.1"), IPNetwork("192.168.1.1/24"), index=2),
-        InterfaceConfig(IPAddress("192.168.1.1"), IPNetwork("192.168.1.1/24"), index=3),
-        InterfaceConfig(IPAddress("192.168.1.1"), IPNetwork("192.168.1.1/24"), index=4),
-        InterfaceConfig(IPAddress("192.168.2.1"), IPNetwork("192.168.2.1/24"), index=5),
-        InterfaceConfig(IPAddress("192.168.2.1"), IPNetwork("192.168.2.1/24"), index=6),
-        InterfaceConfig(IPAddress("192.168.2.1"), IPNetwork("192.168.2.1/24"), index=7),
-        InterfaceConfig(IPAddress("192.168.2.1"), IPNetwork("192.168.2.1/24"), index=8),
-        InterfaceConfig(IPAddress("192.168.2.1"), IPNetwork("192.168.2.1/24"), index=9),
-        InterfaceConfig(IPAddress("192.168.0.1"), IPNetwork("192.168.0.0/16"), index=10)
+        InterfaceConfig(IPAddress("192.168.0.1"), IPNetwork("192.168.0.0/16"), index=1),
+        InterfaceConfig(IPAddress("192.168.1.1"), IPNetwork("192.168.1.0/24"), index=2),
+        InterfaceConfig(IPAddress("192.168.2.1"), IPNetwork("192.168.2.0/24"), index=3),
     ],
     routing_table=[
         # Push everything not-infrastructure to the internet
