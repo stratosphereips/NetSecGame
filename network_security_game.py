@@ -130,7 +130,9 @@ class Network_Security_Environment(object):
                 logger.info(f"\tWinning condition of `known_data` randomly set to {self._win_conditions['known_data']}")
             else:
                 logger.info(f"\tNo we don't.")
-        return self.reset()
+        # Return an observation after reset
+        obs = self.reset()
+        return obs
     
     def _create_starting_state(self) -> GameState:
         """
@@ -151,6 +153,7 @@ class Network_Security_Environment(object):
                     controlled_hosts.add(controlled_host)
                 """
         else:
+            # Not random start
             logging.info('Start position of agent is fixed in a host')
             controlled_hosts = self._attacker_start_position["controlled_hosts"]
 
@@ -170,9 +173,12 @@ class Network_Security_Environment(object):
                     #return value back to the original
                     net.value += 256
 
+        # Add the controlled hosts to the list of known hosts
         known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
 
-        return GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"],self._attacker_start_position["known_data"], known_networks)
+        game_state = GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
+        logging.info(game_state.controlled_hosts)
+        return game_state
     
     def _place_defences(self, placements:dict)->None:
         # TODO
@@ -203,9 +209,11 @@ class Network_Security_Environment(object):
                 # Ignore the router called 'internet' because it is not a router
                 # in our network
                 return False
+
+            # Add the router as node in our net
             self._nodes[router.id] = router
 
-            # Get all the IPs of this node and store them in our list of known IPs
+            # Get all the IPs and nets of this router and store them in our dicts
             for interface in router.interfaces:
                 self._ips[str(interface.ip)] = router.id
                 # Get the networks where this router is connected and add them as known networks
@@ -460,7 +468,7 @@ class Network_Security_Environment(object):
         Function to reset the state of the game 
         and play a new episode
         """
-        logger.info(f'------Game resetted. New startging ------')
+        logger.info(f'------Game resetted. New starting ------')
         self._done = False
         self._step_counter = 0
         self.detected = False  
@@ -546,27 +554,6 @@ class Network_Security_Environment(object):
 
 if __name__ == "__main__":
     # Create the network security environment
-    env = Network_Security_Environment(random_start=True, verbosity=0)
-    
-    # Read network setup from predefined CYST configuration
-    env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
-
-    # Test random data and start position
-    goal = {
-        "known_networks":set(),
-        "known_hosts":set(),
-        "controlled_hosts":set(),
-        "known_services":{},
-        "known_data":{"213.47.23.195":"random"}
-    }
-    attacker_start = {
-        "known_networks":set(),
-        "known_hosts":set(),
-        "controlled_hosts":{"213.47.23.195","192.168.2.0/24"},
-        "known_services":{},
-        "known_data":{}
-    }
-
     # Test normal winning conditions and starting position
     """
     goal = {
@@ -587,11 +574,33 @@ if __name__ == "__main__":
     }
     """
 
+    # Test random data and start position
+    goal = {
+        "known_networks":set(),
+        "known_hosts":set(),
+        "controlled_hosts":set(),
+        "known_services":{},
+        "known_data":{"213.47.23.195":"random"}
+    }
+    attacker_start = {
+        "known_networks":set(),
+        "known_hosts":set(),
+        "controlled_hosts":{"213.47.23.195"},
+        "known_services":{},
+        "known_data":{}
+    }
+    random_start = False
+    env = Network_Security_Environment(random_start=random_start, verbosity=0)
+    
+    # Read network setup from predefined CYST configuration
+    env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
+
     # Do we have a defender? 
     defender = True
 
     # Initialize the game
-    state_1 = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50, agent_seed=42)
-    print(state_1)
+    obs = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50, agent_seed=42)
+    print(f'The complete observation is: {obs}')
+    print(f'The state is: {obs.state}')
+    print(f'The controlled hosts are: {obs.state.controlled_hosts}')
     env.get_all_actions()
-    print(state_1.controlled_hosts)
