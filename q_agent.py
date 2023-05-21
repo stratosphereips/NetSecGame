@@ -25,7 +25,6 @@ class QAgent:
         self.gamma = gamma 
         self.epsilon = epsilon
         self.q_values = {}
-        #self.counts = {}
 
     def store_q_table(self,filename):
         with open(filename, "wb") as f:
@@ -35,8 +34,8 @@ class QAgent:
         with open(filename, "rb") as f:
             self.q_values = pickle.load(f)
     
-    def move(self, state:GameState, testing=False) -> Action:
-        state = state.observation
+    def move(self, observation:Observation, testing=False) -> Action:
+        state = observation.state
         actions = self.env.get_valid_actions(state)
         if random.uniform(0, 1) <= self.epsilon and not testing:
             a = choice(actions)
@@ -51,13 +50,13 @@ class QAgent:
                 self.q_values[max_q_key] = 0
             return max_q_key[1]
     
-    def max_action_q(self, state:GameState) -> Action:
-        state = state.observation
+    def max_action_q(self, observation:Observation) -> Action:
+        state = observation.state
         actions = self.env.get_valid_actions(state)
         tmp = dict(((state,a), self.q_values.get((state,a), 0)) for a in actions)
         return tmp[max(tmp,key=tmp.get)] #return maximum Q_value for a given state (out of available actions)
     
-    def play(self, state, testing=False) -> tuple:
+    def play(self, observation:Observation, testing=False) -> tuple:
         """
         Play a complete episode from beginning to end
 
@@ -69,49 +68,49 @@ class QAgent:
         6. loop
         """
         rewards = 0
-        while not state.done:
-            #select action
-            action = self.move(state, testing)
-            #get next state of the environment
-            next_state = self.env.step(action)           
+        while not observation.done:
+            # Select action
+            action = self.move(observation, testing)
+            # Get next state of the environment
+            next_observation = self.env.step(action)           
 
             # Find max Q-Value for next state
-            if next_state.done:
+            if next_observation.done:
                 max_q_next = 0
             else:
-                max_q_next = self.max_action_q(next_state)
+                max_q_next = self.max_action_q(next_observation)
 
             # Update q values
-            new_Q = self.q_values[state.observation, action] + self.alpha*(next_state.reward + self.gamma * max_q_next - self.q_values[state.observation, action])
-            self.q_values[state.observation, action] = new_Q
+            new_Q = self.q_values[observation.state, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[observation.state, action])
+            self.q_values[observation.state, action] = new_Q
             
-            rewards += next_state.reward
+            rewards += next_observation.reward
 
-            #move to next state
-            state = next_state
+            # Move to next observation
+            observation = next_observation
 
         # If state is 'done' this should throw an error of missing variables
-        return rewards, self.env.is_goal(state.observation), self.env.detected, self.env.timestamp
+        return rewards, self.env.is_goal(observation.state), self.env.detected, self.env.timestamp
 
-    def evaluate(self, state) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
+    def evaluate(self, observation:Observation) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
         """
         Evaluate the agent so far for one episode
 
         Do without learning
         """
         return_value = 0
-        while not state.done:
-            action = self.move(state, testing=True)
-            next_state = self.env.step(action)
-            return_value += next_state.reward
-            state = next_state
+        while not observation.done:
+            action = self.move(observation, testing=True)
+            next_observation = self.env.step(action)
+            return_value += next_observation.reward
+            observation = next_observation
 
         # Has to return
         # 1. returns
         # 2. if it is a win
         # 3. if it is was detected
         # 4. amount of steps when finished
-        wins = next_state.reward > 0
+        wins = next_observation.reward > 0
         detected = self.env.detected
         steps = self.env.timestamp
         return return_value, wins, detected, steps
@@ -198,7 +197,7 @@ if __name__ == '__main__':
     
     # Training
     logger.info(f'Initializing the environment')
-    state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, agent_seed=args.seed)
+    observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, agent_seed=args.seed)
     logger.info(f'Creating the agent')
     agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
     try:
@@ -214,9 +213,9 @@ if __name__ == '__main__':
         logger.info(f'Starting the training')
         for i in range(1, args.episodes + 1):
             # Reset
-            state = env.reset()
+            observation = env.reset()
             # Play complete round
-            ret, win,_,_ = agent.play(state)
+            ret, win,_,_ = agent.play(observation)
             # Every X episodes, eval
             if i % args.eval_each == 0:
                 wins = 0
@@ -226,8 +225,8 @@ if __name__ == '__main__':
                 num_win_steps = []
                 num_detected_steps = []
                 for j in range(args.eval_for):
-                    state = env.reset()
-                    ret, win, detection, steps = agent.evaluate(state)
+                    observation = env.reset()
+                    ret, win, detection, steps = agent.evaluate(observation)
                     if win:
                         wins += 1
                         num_win_steps += [steps]
@@ -283,8 +282,8 @@ if __name__ == '__main__':
     num_win_steps = []  
     num_detected_steps = []
     for i in range(args.test_for + 1):
-        state = env.reset()
-        ret, win, detection, steps = agent.evaluate(state)
+        observation = env.reset()
+        ret, win, detection, steps = agent.evaluate(observation)
         if win:
             wins += 1
             num_win_steps += [steps]
