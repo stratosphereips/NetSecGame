@@ -80,31 +80,31 @@ class DoubleQAgent:
             # Select action
             action = self.move(observation, testing)
             # Get next state of the environment
-            next_obs = self.env.step(action)
+            next_observation = self.env.step(action)
             
             if random.uniform(0, 1) <= 0.5:
                 #find max Q-Value for next state
-                if next_obs.done:
+                if next_observation.done:
                     max_q_next = 0
                 else:
-                    max_a_next = self.max_action(next_obs.state, self.q_values1)
-                    max_q_next = self.get_q_value2(next_obs.state, max_a_next)
-                new_Q = self.q_values1[observation.state, action] + self.alpha * (next_obs.reward + self.gamma*max_q_next - self.q_values1[observation.state, action])
+                    max_a_next = self.max_action(next_observation.state, self.q_values1)
+                    max_q_next = self.get_q_value2(next_observation.state, max_a_next)
+                new_Q = self.q_values1[observation.state, action] + self.alpha * (next_observation.reward + self.gamma*max_q_next - self.q_values1[observation.state, action])
                 self.q_values1[observation.state, action] = new_Q
             else:
                 #find max Q-Value for next state
-                if next_obs.done:
+                if next_observation.done:
                     max_q_next = 0
                 else:
-                    max_a_next = self.max_action(next_obs.state, self.q_values2)
-                    max_q_next = self.get_q_value1(next_obs.state, max_a_next)
+                    max_a_next = self.max_action(next_observation.state, self.q_values2)
+                    max_q_next = self.get_q_value1(next_observation.state, max_a_next)
                 #update q values
-                new_Q = self.q_values2[observation.state, action] + self.alpha*(next_obs.reward + self.gamma*max_q_next - self.q_values2[observation.state, action])
+                new_Q = self.q_values2[observation.state, action] + self.alpha*(next_observation.reward + self.gamma*max_q_next - self.q_values2[observation.state, action])
                 self.q_values2[observation.state, action] = new_Q
             
-            rewards += next_obs.reward
+            rewards += next_observation.reward
             #move to next state
-            state = next_obs
+            observation = next_observation
         return rewards, self.env.is_goal(observation.state), self.env.detected, self.env.timestamp
 
     def evaluate(self, observation) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
