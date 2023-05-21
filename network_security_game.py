@@ -95,20 +95,24 @@ class Network_Security_Environment(object):
         """
         Builds the starting GameState. Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
         """
+        logging.info('Creating the starting state')
         if self._random_start:
+            logging.info('Start position of agent is random')
             controlled_hosts = set()
-            for h in self._attacker_start_position["controlled_hosts"]:
-                if "/" in h: #possible network
-                    hosts = [str(ip) for ip in netaddr.IPNetwork(h) if (str(ip) in self._ips.keys() and isinstance(self._nodes[self._ips[str(ip)]], NodeConfig))]
+                    # Random choose a host from all the possible in the network
                     controlled_hosts.add(choice(hosts))
+                    logging.info(f'\t\tMaking agent start in {controlled_host}')
                 else:
                     controlled_hosts.add(h)
         else:
+            logging.info('Start position of agent is fixed in a host')
             controlled_hosts = self._attacker_start_position["controlled_hosts"]
+
         known_networks = set()
-        #Exted the networks with the neighbouring networks
-        for h in controlled_hosts:
-            for net in self._get_networks_from_host(h): #TODO
+        # Extend the known networks with the neighbouring networks
+        # TODO remove this!
+        for controlled_host in controlled_hosts:
+            for net in self._get_networks_from_host(controlled_host): #TODO
                 known_networks.add(str(net))
                 if net.is_private(): #TODO
                     net.value += 256
