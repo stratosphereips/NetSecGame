@@ -102,8 +102,13 @@ class Network_Security_Environment(object):
                     # Random choose a host from all the possible in the network
                     controlled_hosts.add(choice(hosts))
                     logging.info(f'\t\tMaking agent start in {controlled_host}')
+                """
+                # Im deleting the option to be 'random' but also specify a certain host to start. 
+                # If the agent has random start, it must specify a network to start
                 else:
-                    controlled_hosts.add(h)
+                    logging.info('\t\t{controlled_host} is a host, so start here.')
+                    controlled_hosts.add(controlled_host)
+                """
         else:
             logging.info('Start position of agent is fixed in a host')
             controlled_hosts = self._attacker_start_position["controlled_hosts"]
