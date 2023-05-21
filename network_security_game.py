@@ -24,15 +24,17 @@ class Network_Security_Environment(object):
         It presents a env environment to play
         """
         # Dictionary of all the nodes in environment
-        # Nodes are hosts, attackers, etc (but not router, connections or exploits)
+        # All the nodes in the game. Node are hosts, attackers, etc (but not router, connections or exploits)
         self._nodes = {}
         # Connections are how can connect to whom.
         self._connections = {}
-        # A dict of all ips in the sytem?
+        # A dict of all ips in the sytem?????
         self._ips = {}
-        # A dict of the networks we know
+        # A dict of the networks present in the game
         self._networks = {}
-        # All the exploits in the environment
+        # A list of all the hosts where the attacker can start in a random start
+        self.hosts_to_start = []
+        # All the exploits in the game
         self._exploits = {}
         # If the game starts randomly or not
         self._random_start = random_start
@@ -138,26 +140,22 @@ class Network_Security_Environment(object):
         """
         Builds the starting GameState. Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
         """
+        known_networks = set()
+        controlled_hosts = set()
+
         logging.info('Creating the starting state')
+
         if self._random_start:
+            # Random start
             logging.info('Start position of agent is random')
-            controlled_hosts = set()
-                    # Random choose a host from all the possible in the network
-                    controlled_hosts.add(choice(hosts))
-                    logging.info(f'\t\tMaking agent start in {controlled_host}')
-                """
-                # Im deleting the option to be 'random' but also specify a certain host to start. 
-                # If the agent has random start, it must specify a network to start
-                else:
-                    logging.info('\t\t{controlled_host} is a host, so start here.')
-                    controlled_hosts.add(controlled_host)
-                """
+            logging.info(f'Choosing from {self.hosts_to_start}')
+            controlled_hosts.add(str(choice(self.hosts_to_start)))
+            logging.info(f'\t\tMaking agent start in {controlled_hosts}')
         else:
             # Not random start
             logging.info('Start position of agent is fixed in a host')
             controlled_hosts = self._attacker_start_position["controlled_hosts"]
 
-        known_networks = set()
         # Extend the known networks with the neighbouring networks
         # TODO remove this!
         for controlled_host in controlled_hosts:
@@ -177,7 +175,6 @@ class Network_Security_Environment(object):
         known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
 
         game_state = GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
-        logging.info(game_state.controlled_hosts)
         return game_state
     
     def _place_defences(self, placements:dict)->None:
@@ -199,8 +196,15 @@ class Network_Security_Environment(object):
             self._nodes[node.id] = node
             # Get all the IPs of this node and store them in our list of known IPs
             for interface in node.interfaces:
-                # _ips is candidate for deletion
+                # Store in _ips . This is candidate for deletion
                 self._ips[str(interface.ip)] = node.id
+
+                # Check if it is a candidate for random start
+                # Becareful, it will add all the IPs for this node
+                for service in node.passive_services:
+                    if service.type == "can_attack_start_here":
+                        self.hosts_to_start.append(str(interface.ip))
+
                 # If the network does not exist it will be created in our dict
                 try:
                     _ = self._networks[str(interface.net)]
@@ -487,7 +491,10 @@ class Network_Security_Environment(object):
         self._step_counter = 0
         self.detected = False  
         self._current_state = self._create_starting_state()
-        return Observation(self._current_state, 0, self._done, {})
+        initial_reward = 0
+        info = {}
+        # An observation has inside ["state", "reward", "done", "info"]
+        return Observation(self._current_state, initial_reward, self._done, info)
     
     def step(self, action:Action)-> Observation:
         """
@@ -603,7 +610,7 @@ if __name__ == "__main__":
         "known_services":{},
         "known_data":{}
     }
-    random_start = False
+    random_start = True
     env = Network_Security_Environment(random_start=random_start, verbosity=0)
     
     # Read network setup from predefined CYST configuration
