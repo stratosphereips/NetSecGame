@@ -28,10 +28,10 @@ class Network_Security_Environment(object):
         self._nodes = {}
         # Connections are how can connect to whom.
         self._connections = {}
-        # A list of all ips in the sytem?
+        # A dict of all ips in the sytem?
         self._ips = {}
-        # A list of the networks we know
-        self._networks = []
+        # A dict of the networks we know
+        self._networks = {}
         # All the exploits in the environment
         self._exploits = {}
         # If the game starts randomly or not
@@ -199,7 +199,15 @@ class Network_Security_Environment(object):
             self._nodes[node.id] = node
             # Get all the IPs of this node and store them in our list of known IPs
             for interface in node.interfaces:
+                # _ips is candidate for deletion
                 self._ips[str(interface.ip)] = node.id
+                # If the network does not exist it will be created in our dict
+                try:
+                    _ = self._networks[str(interface.net)]
+                except KeyError:
+                    # First time
+                    self._networks[str(interface.net)] = []
+                self._networks[str(interface.net)].append(node.id)
 
         def process_router_config(router):
             # Process a router
@@ -216,8 +224,14 @@ class Network_Security_Environment(object):
             # Get all the IPs and nets of this router and store them in our dicts
             for interface in router.interfaces:
                 self._ips[str(interface.ip)] = router.id
-                # Get the networks where this router is connected and add them as known networks
-                self._networks.append(str(interface.net))
+                # Get the networks where this router is connected and add them as networks in the game
+                try:
+                    _ = self._networks[str(interface.net)]
+                except KeyError:
+                    # First time
+                    self._networks[str(interface.net)] = []
+                self._networks[str(interface.net)].append(router.id)
+
                 logging.info(f'Added {str(interface.net)} to the list of available networks in the game.')
 
         def process_exploit_config(exploit):
