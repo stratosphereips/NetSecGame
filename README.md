@@ -39,7 +39,7 @@ Be careful of which python environment are you using. If using the venv here you
 
     ai-dojo-venv-sebas/bin/pip install frozendict
 
-## Run
+## Run the agents
 
 The game is played and started by running the differnt agents.
 
