@@ -133,76 +133,60 @@ class Network_Security_Environment(object):
         # assert self._defender_placements ==  None
         # self._defender_placements = placements
     
-    def read_topology(self, filename) -> None:
-        """
-        Method to process YAML file with congifuration from CYST and build a state space of the environment with possible transitions.
-        """
-        with open(filename, "r") as stream:
-            try:
-                data = yaml.safe_load(stream)
-                for k,v in data.items():
-                    if v['cls_type'] in ["NodeConfig", "RouterConfig"]: #new node or router in the network
-                        self._nodes[v['id']] = v
-                        self._connections[v['id']] = []
-                        #add network information
-                        for item in v["interfaces"]:
-                            if item["cls_type"] == "InterfaceConfig":
-                                # if item["net"]["cls_type"] == "IPNetwork":
-                                #     if item["net"]["value"] not in self._networks.keys():
-                                #         self._networks[item["net"]["value"]] = []
-                                # self._networks[item["net"]["value"]].append((item["ip"]["value"], v['id']))
-                                # #add IP-> host name mapping
-                                self._ips[item["ip"]["value"]] = v['id']  
-                    elif v['cls_type'] in "ConnectionConfig": # TODO
-                        self._connections[v["src_id"]].append(v["dst_id"])
-                        self._connections[v["dst_id"]].append(v["src_id"])
-            except yaml.YAMLError as e:
-                print(e)
-        self._src_file = filename
-
     def process_cyst_config(self, configuration_objects:list)->None:
-        nodes = []
-        node_to_id = {}
-        routers = []
-        connections = []
-        exploits = []
-        
-        #sort objects into categories
-        for o in configuration_objects:
-            if isinstance(o, NodeConfig):
-                nodes.append(o)
-            elif isinstance(o, RouterConfig):
-                routers.append(o)    
-            elif isinstance(o, ConnectionConfig):
-                connections.append(o)
-            elif isinstance(o, ExploitConfig):
-                exploits.append(o)
-        #process Nodes
-        for n in nodes:
-            #print(n)
-            self._nodes[n.id] = n
-            node_to_id[n.id] = len(node_to_id)
-    
-            for i in n.interfaces:
-                self._ips[str(i.ip)] = n.id
-        #process routers
-        for r in routers:
-            self._nodes[r.id] = r
-            node_to_id[r.id] = len(node_to_id)
-            for i in r.interfaces:
-                self._ips[str(i.ip)] = r.id
-            #add Firewall rules
-            for tp in r.traffic_processors:
-                for chain in tp.chains:
-                    for rule in chain.rules:
-                        if rule.policy == FirewallPolicy.ALLOW:
-                            self._fw_rules.append(rule)
-        #connections
-        self._connections = np.zeros([len(node_to_id),len(node_to_id)])
-        for c in connections:
-            self._connections[node_to_id[c.src_id],node_to_id[c.dst_id]] = 1
-        #exploits
-        self._exploits = exploits   
+        """
+        Process the cyst configuration file
+        """
+        # Define inner functions
+        def process_node_config(node):
+            # Process a node
+            self._nodes[node.id] = node
+            # Get all the IPs of this node and store them in our list of known IPs
+            for interface in node.interfaces:
+                self._ips[str(interface.ip)] = node.id
+
+        def process_router_config(router):
+            # Process a router
+            # Add the router to the list of nodes. This goes
+            # against CYST definition. Check if we can modify it in CYST
+            if router.id.lower() == 'internet':
+                # Ignore the router called 'internet' because it is not a router
+                # in our network
+                return False
+            self._nodes[router.id] = router
+
+            # Get all the IPs of this node and store them in our list of known IPs
+            for interface in router.interfaces:
+                self._ips[str(interface.ip)] = router.id
+                # Get the networks where this router is connected and add them as known networks
+                self._networks.append(str(interface.net))
+                logging.info(f'Added {str(interface.net)} to the list of available networks in the game.')
+
+        def process_exploit_config(exploit):
+            # Process an exploit
+            self._exploits = exploit
+
+        def process_connection_config(connection):
+            # Process the connections
+            # self._connections = np.zeros([len(node_to_id),len(node_to_id)])
+            #for connection in connections:
+            #    self._connections[node_to_id[connection.src_id],node_to_id[connection.dst_id]] = 1
+            pass
+
+        # Store all objects into local categories.
+        # Objects are all the nodes, routers, connections and exploits
+        # In Cyst a node can be many things, from a device, to an attacker. :-(
+        # But for some reason is not a router, a connection or an exploit
+        for object in configuration_objects:
+            if isinstance(object, NodeConfig):
+                process_node_config(object)
+            elif isinstance(object, RouterConfig):
+                process_router_config(object)
+            elif isinstance(object, ConnectionConfig):
+                process_connection_config(object)
+            elif isinstance(object, ExploitConfig):
+                process_exploit_config(object)
+
     
     def get_valid_actions(self, state:GameState)->list:
         """
