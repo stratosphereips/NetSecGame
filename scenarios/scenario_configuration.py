@@ -393,13 +393,19 @@ client_1 = NodeConfig(
             version="10.0.19041",
             local=True,
             access_level=AccessLevel.LIMITED
+        ),
+        PassiveServiceConfig(
+            type="can_attack_start_here",
+            owner="Local system",
+            version="1",
+            local=True,
+            access_level=AccessLevel.LIMITED
         )
     ],
     traffic_processors=[],
     interfaces=[InterfaceConfig(IPAddress("192.168.2.2"), IPNetwork("192.168.2.0/24"))],
     shell="powershell",
-    id="client_1",
-    note="can_start_attacker"
+    id="client_1"
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
@@ -444,14 +450,19 @@ client_2 = NodeConfig(
             version="10.0.19041",
             local=True,
             access_level=AccessLevel.LIMITED
+        ),
+        PassiveServiceConfig(
+            type="can_attack_start_here",
+            owner="Local system",
+            version="1",
+            local=True,
+            access_level=AccessLevel.LIMITED
         )
     ],
     traffic_processors=[],
     interfaces=[InterfaceConfig(IPAddress("192.168.2.3"), IPNetwork("192.168.2.0/24"))],
     shell="powershell",
-    id="client_2",
-    note="can_start_attacker"
-
+    id="client_2"
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
@@ -494,14 +505,19 @@ client_3 = NodeConfig(
             version="5.0.0",
             local=True,
             access_level=AccessLevel.LIMITED
+        ),
+        PassiveServiceConfig(
+            type="can_attack_start_here",
+            owner="Local system",
+            version="1",
+            local=True,
+            access_level=AccessLevel.LIMITED
         )
     ],
     traffic_processors=[],
     interfaces=[InterfaceConfig(IPAddress("192.168.2.4"), IPNetwork("192.168.2.0/24"))],
     shell="bash",
-    id="client_3",
-    note="can_start_attacker"
-
+    id="client_3"
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
@@ -544,14 +560,19 @@ client_4 = NodeConfig(
             version="5.0.0",
             local=True,
             access_level=AccessLevel.LIMITED
+        ),
+        PassiveServiceConfig(
+            type="can_attack_start_here",
+            owner="Local system",
+            version="1",
+            local=True,
+            access_level=AccessLevel.LIMITED
         )
     ],
     traffic_processors=[],
     interfaces=[InterfaceConfig(IPAddress("192.168.2.5"), IPNetwork("192.168.2.0/24"))],
     shell="bash",
-    id="client_4",
-    note="can_start_attacker"
-
+    id="client_4"
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
@@ -583,14 +604,19 @@ client_5 = NodeConfig(
                     ]
                 )
             )]
+        ),
+        PassiveServiceConfig(
+            type="can_attack_start_here",
+            owner="Local system",
+            version="1",
+            local=True,
+            access_level=AccessLevel.LIMITED
         )
     ],
     traffic_processors=[],
     interfaces=[InterfaceConfig(IPAddress("192.168.2.6"), IPNetwork("192.168.2.0/24"))],
     shell="bash",
-    id="client_5",
-    note="can_start_attacker"
-
+    id="client_5"
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
