@@ -3,7 +3,8 @@ import netaddr
 from random import random
 from game_components import *
 import yaml
-from random import random, choice, seed
+from random import choice, seed
+import random
 import copy
 from cyst.api.configuration import *
 import numpy as np
@@ -78,51 +79,17 @@ class Network_Security_Environment(object):
                         actions[len(actions)] = Action("ExfiltrateData", {"target_host":trg, "data":data, "source_host":src})
         return actions
 
-    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, topology=False)-> Observation:
+    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, agent_seed=False)-> Observation:
         """
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
         TODO Firewall rules processing
         """
-        if topology:
-            if self._src_file:
-                self._win_conditions = win_conditons
-                self._attacker_start = self._create_starting_state(attacker_start_position)
-                self._timeout = max_steps
-                
-                #position defensive measure
-                self._place_defences(defender_positions)
-                return self.reset()
-            else:
-                print("Please load a topology file before initializing the environment!")
-                return None
-        else:
-            #check if win condition
-            self._attacker_start_position = attacker_start_position
-            self._timeout = max_steps
-            if not defender_positions:
-                self._defender_placements = False
-            else:
-                self._place_defences(defender_positions)
-
-            self._win_conditions = win_conditons
-            
-            #check if position of data is randomized #TODO TEMPORAL - FIX ASAP
-            for k,v in win_conditons["known_data"].items():
-                if isinstance(v, str) and v.lower() == "random":
-                    #pick the goal data randomly 
-                    available_data = []
-                    for n in self._nodes.values():
-                        try:                   
-                            for service in n.passive_services:
-                                for d in service.private_data:
-                                    available_data.append((d.owner, d.description))
-                        except AttributeError:
-                            pass
-                    self._win_conditions["known_data"][k] = {choice(available_data)}
-                    if self.verbosity > 0:
-                        print(f"Winning condition of `known_data` randomly set to {self._win_conditions['known_data']}")
-            return self.reset()
+        # Set the seed if passed by the agent
+        if agent_seed:
+            np.random.seed(agent_seed)
+            random.seed(agent_seed)
+            logger.info(f'Agent passed a seed, setting to {agent_seed}')
     
     def _create_starting_state(self) -> GameState:
         """
@@ -152,7 +119,9 @@ class Network_Security_Environment(object):
                         known_networks.add(str(net))
                     #return value back to the original
                     net.value += 256
+
         known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
+
         return GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"],self._attacker_start_position["known_data"], known_networks)
     
     def _place_defences(self, placements:dict)->None:
@@ -270,21 +239,25 @@ class Network_Security_Environment(object):
         """
         #check if IP is correct
         try:
+            # Check if the IP has a correct IP format
             netaddr.IPAddress(host_ip)
+            # Do we have this IP in our list of ips?
             if host_ip in self._ips:
+                # Get the information we have about this ip
                 host = self._nodes[self._ips[host_ip]]
                 services = set()
+                # Is the host of type NodeConfig?
                 if isinstance(host, NodeConfig):
                     for service in host.passive_services:
                         if service.local:
-                            if host_ip in self.current_state.controlled_hosts:
+                            if host_ip in self._current_state.controlled_hosts:
                                 services.add(Service(service.type, "passive", service.version))
                         else:
                             services.add(Service(service.type, "passive", service.version))
                 return services
+            # Return empty services
             return {}
-        except ValueError:
-            print("HostIP is invalid")
+            # Return empty services
             return {}
     
     def _get_networks_from_host(self, host_ip)->set:
@@ -314,14 +287,20 @@ class Network_Security_Environment(object):
         return data
 
     def _execute_action(self, current:GameState, action:Action)-> GameState:
+
         if action.transition.type == "ScanNetwork":
             #does the network exist?
             new_ips = set()
+            # Read all the theoretically possible IPs in a network
             for ip in netaddr.IPNetwork(action.parameters["target_network"]):
+                # If any of those IPs is in our list of known IPs, return it
                 if str(ip) in self._ips.keys():
                     new_ips.add(str(ip))
+
+            # Add the IPs in the network to the list of known hosts
             extended_hosts = current.known_hosts.union(new_ips)
             return GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)
+
         elif action.transition.type == "FindServices":
             found_services =  self._get_services_from_host(action.parameters["target_host"])
             extended_services = {k:v for k,v in current.known_services.items()}
@@ -434,7 +413,7 @@ class Network_Security_Environment(object):
     
     def _is_detected(self, state, action:Action)->bool:
         if self._defender_placements:
-            value = random() < action.transition.default_detection_p     
+            value = random.random() < action.transition.default_detection_p     
             logger.info(f'There is a defender and the detection is {value}')
             return value
         else: #no defender
@@ -442,7 +421,10 @@ class Network_Security_Environment(object):
             return False 
     
     def reset(self)->Observation:
-        logger.info(f'------\nGame resetted')
+        """
+        Function to reset the state of the game 
+        and play a new episode
+        """
         self._done = False
         self._step_counter = 0
         self._detected = False  
@@ -464,7 +446,7 @@ class Network_Security_Environment(object):
 
             reason = {}
             # 1. Check if the action was successful or not
-            if random() <= action.transition.default_success_p:
+            if random.random() <= action.transition.default_success_p:
                 # The action was successful
                 logger.info(f'Action {action} sucessful')
 
