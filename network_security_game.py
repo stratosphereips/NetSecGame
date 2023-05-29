@@ -620,8 +620,26 @@ if __name__ == "__main__":
     defender = True
 
     # Initialize the game
-    obs = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50, agent_seed=42)
-    print(f'The complete observation is: {obs}')
-    print(f'The state is: {obs.state}')
-    print(f'The controlled hosts are: {obs.state.controlled_hosts}')
-    env.get_all_actions()
+    observation = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50, agent_seed=42)
+    print(f'The complete observation is: {observation}')
+    print(f'The state is: {observation.state}')
+    print(f'Networks in the env: {env._networks}')
+    print(f'\tContr hosts: {observation.state._controlled_hosts}')
+    print(f'\tKnown nets: {observation.state._known_networks}')
+    print(f'\tKnown host: {observation.state._known_hosts}')
+    print(f'\tKnown serv: {observation.state._known_services}')
+    print(f'\tKnown data: {observation.state._known_data}')
+
+    print()
+    print('Start testing rounds of all actions')
+
+    for i in range(2):
+        actions = env.get_valid_actions(observation.state)
+        for action in actions:
+            print(f'\t- Taking Valid action from this state: {action}')
+            observation = env.step(action)
+            print(f'\t\tContr hosts: {observation.state._controlled_hosts}')
+            print(f'\t\tKnown nets: {observation.state._known_networks}')
+            print(f'\t\tKnown host: {observation.state._known_hosts}')
+            print(f'\t\tKnown serv: {observation.state._known_services}')
+            print(f'\t\tKnown data: {observation.state._known_data}')
