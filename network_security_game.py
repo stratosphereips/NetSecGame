@@ -59,33 +59,6 @@ class Network_Security_Environment(object):
         Property used to show an interface to agents about what timestamp it is
         """
         return self._step_counter
-    
-    def get_all_actions(self):
-        """
-        Return all the possible actions in the game
-        """
-        logger.info(f'All actions requested')
-        actions = {}
-        # For each...?
-        for ip, name in self._ips.items():
-            #network scans
-            for net in self._get_networks_from_host(ip):
-                actions[len(actions)] = Action("ScanNetwork",{"target_network":net})
-            #portscans
-            actions[len(actions)] = Action("FindServices", {"target_host":ip})
-
-            #Run Code in service
-            for service in self._get_services_from_host(ip):
-                actions[len(actions)] = Action("ExecuteCodeInService", {"target_host":ip, "target_service":service.name})
-            #find data
-            actions[len(actions)] = Action("FindData", {"target_host":ip})
-
-            #exfiltrate data
-            for data in self._get_data_in_host(ip):
-                for src in self._ips.keys():
-                    for trg in self._ips.keys():
-                        actions[len(actions)] = Action("ExfiltrateData", {"target_host":trg, "data":data, "source_host":src})
-        return actions
 
     def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, agent_seed=False)-> Observation:
         """
