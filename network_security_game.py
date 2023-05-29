@@ -270,12 +270,15 @@ class Network_Security_Environment(object):
 
         # ExecuteCodeInService
         for host, services in state.known_services.items():
+            for service in services:
+                actions.append(Action("ExecuteCodeInService", {"target_host":host, "target_service":service.name}))
+
         # ExfiltrateData
         for source, data in state.known_data.items():
             for target in state.controlled_hosts:
                 if source != target and len(data) > 0:
-                    for d in data:
-                        actions.append(Action("ExfiltrateData", {"target_host":target, "data":d, "source_host":source}))
+                    for datum in data:
+                        actions.append(Action("ExfiltrateData", {"target_host":target, "data":datum, "source_host":source}))
         return actions
 
     def _get_services_from_host(self, host_ip)-> set:
