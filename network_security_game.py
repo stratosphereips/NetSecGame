@@ -28,9 +28,10 @@ class Network_Security_Environment(object):
         self._nodes = {}
         # Connections are how can connect to whom.
         self._connections = {}
-        # A dict of all ips in the sytem?????
+        # A dict of all ips in the env, ordered by IP as str() and the object is the id in the _nodes dictionary
         self._ips = {}
-        # A dict of the networks present in the game
+        # A dict of the networks present in the game. These are NOT the known networks by the agents
+        # self._networks has as key the str of the network and as values a list of the object ids contained in this network.
         self._networks = {}
         # A list of all the hosts where the attacker can start in a random start
         self.hosts_to_start = []
@@ -178,7 +179,10 @@ class Network_Security_Environment(object):
         return game_state
     
     def _place_defences(self, placements:dict)->None:
-        # TODO
+        """
+        Place the defender
+        For now only if it is present
+        """
         if placements:
             self._defender_placements = True
         else:
@@ -194,10 +198,12 @@ class Network_Security_Environment(object):
         def process_node_config(node):
             # Process a node
             self._nodes[node.id] = node
+            logging.info(f'\tAdded {str(node.id)} to the list of available nodes.')
             # Get all the IPs of this node and store them in our list of known IPs
             for interface in node.interfaces:
                 # Store in _ips . This is candidate for deletion
                 self._ips[str(interface.ip)] = node.id
+                logging.info(f'\tAdded IP {str(interface.ip)} to the list of available ips.')
 
                 # Check if it is a candidate for random start
                 # Becareful, it will add all the IPs for this node
@@ -205,6 +211,7 @@ class Network_Security_Environment(object):
                     if service.type == "can_attack_start_here":
                         self.hosts_to_start.append(str(interface.ip))
 
+                # Store the networks where this node is connected in the list of networks of the env
                 # If the network does not exist it will be created in our dict
                 try:
                     _ = self._networks[str(interface.net)]
@@ -212,6 +219,7 @@ class Network_Security_Environment(object):
                     # First time
                     self._networks[str(interface.net)] = []
                 self._networks[str(interface.net)].append(node.id)
+                logging.info(f'\tAdded network {str(interface.net)} to the list of available nets, with node {node.id}.')
 
         def process_router_config(router):
             # Process a router
@@ -228,18 +236,18 @@ class Network_Security_Environment(object):
             # Get all the IPs and nets of this router and store them in our dicts
             for interface in router.interfaces:
                 self._ips[str(interface.ip)] = router.id
-                # Get the networks where this router is connected and add them as networks in the game
+                # Get the networks where this router is connected and add them as networks in the env
                 try:
                     _ = self._networks[str(interface.net)]
                 except KeyError:
                     # First time
                     self._networks[str(interface.net)] = []
                 self._networks[str(interface.net)].append(router.id)
-
-                logging.info(f'Added {str(interface.net)} to the list of available networks in the game.')
+                logging.info(f'\tAdded {str(interface.net)} to the list of available networks in the game.')
 
         def process_exploit_config(exploit):
             # Process an exploit
+            logging.info(f'\t\tAdding exploit {exploit.id}')
             self._exploits = exploit
 
         def process_connection_config(connection):
@@ -253,7 +261,9 @@ class Network_Security_Environment(object):
         # Objects are all the nodes, routers, connections and exploits
         # In Cyst a node can be many things, from a device, to an attacker. :-(
         # But for some reason is not a router, a connection or an exploit
+        logging.info(f'Reading CYST conf')
         for object in configuration_objects:
+            logging.info(f'\tProcesssing obj {object.id}')
             if isinstance(object, NodeConfig):
                 process_node_config(object)
             elif isinstance(object, RouterConfig):
@@ -267,24 +277,24 @@ class Network_Security_Environment(object):
     def get_valid_actions(self, state:GameState)->list:
         """
         Returns list of valid actions in a given state.
+        
+        # For each action, return all the objects that are known to the agent as parameter for that action
         """
         actions = []
         #Scan network
         for net in state.known_networks:
             actions.append(Action("ScanNetwork",{"target_network":net}))
-        #Find services
+        # FindServices
         for host in state.known_hosts:
             actions.append(Action("FindServices", {"target_host":host}))
         #Find Data
-        for host in state.known_hosts.union(state.controlled_hosts):
+        # Find Data
             a = Action("FindData", {"target_host":host})
             if a not in actions:
                 actions.append(a)
-        #ExecuteCodeInService
+        # ExecuteCodeInService
         for host, services in state.known_services.items():
-            for s in services:
-                actions.append(Action("ExecuteCodeInService", {"target_host":host, "target_service":s.name}))
-        #ExfiltrateData
+        # ExfiltrateData
         for source, data in state.known_data.items():
             for target in state.controlled_hosts:
                 if source != target and len(data) > 0:
@@ -294,8 +304,9 @@ class Network_Security_Environment(object):
 
     def _get_services_from_host(self, host_ip)-> set:
         """
-        Returns set of Service tuples from given hostIP
-        TODO active services
+        Returns set of Service tuples from given IP
+        This is an access to the data for that IP, without regard of
+        any checking of IP in the env or state
         """
         try:
             # Check if the IP has a correct IP format
@@ -322,18 +333,22 @@ class Network_Security_Environment(object):
             return {}
     
     def _get_networks_from_host(self, host_ip)->set:
+        """
+        Get all the networks that this IP is connected to
+        """
         try:
             host = self._ips[host_ip]
         except KeyError:
-            print(f"Given host IP '{host_ip}' is unknown!")
-        networks = set()
-        for interface in self._nodes[host].interfaces:
+        # Get all the interfaces of this node
             if isinstance(interface, InterfaceConfig):
                 networks.add(interface.net)
         #print(host_ip, networks, self._nodes[host].interfaces)
         return networks
     
     def _get_data_in_host(self, host_ip)->list:
+        """
+        Get all the data in this IP
+        """
         data = set()
         if host_ip in self._ips:
             host = self._nodes[self._ips[host_ip]]
@@ -348,7 +363,13 @@ class Network_Security_Environment(object):
         return data
 
     def _execute_action(self, current:GameState, action:Action)-> GameState:
+        """
+        Execute the action and update the values in the state
+        Before this function it was checked if the action was successful
+        So in here all actions were already successful.
+        """
 
+        # ScanNetwork
         if action.transition.type == "ScanNetwork":
             #does the network exist?
             new_ips = set()
@@ -363,14 +384,21 @@ class Network_Security_Environment(object):
             return GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)
 
         elif action.transition.type == "FindServices":
+            # Action FindServices
+            # Get all the available services in the host that was attacked
             found_services =  self._get_services_from_host(action.parameters["target_host"])
+            logging.info(f'Done action FoundServices. Services found: {found_services}')
+
+            # Copy the known services in the current state. The current one is frozen
             extended_services = {k:v for k,v in current.known_services.items()}
             if len(found_services) > 0:
                 if action.parameters["target_host"] not in extended_services.keys():
                     extended_services[action.parameters["target_host"]] = frozenset(found_services)
                 else:
+                    # The host is already there, extend its services in case new were added
                     extended_services[action.parameters["target_host"]] = frozenset(extended_services[action.parameters["target_host"]]).union(found_services)
             return GameState(current.controlled_hosts, current.known_hosts, extended_services, current.known_data, current.known_networks)
+
         elif action.transition.type == "FindData":
             extended_data = {k:v for k,v in current.known_data.items()}
             new_data = self._get_data_in_host(action.parameters["target_host"])
@@ -473,11 +501,17 @@ class Network_Security_Environment(object):
         return networks and known_hosts and controlled_hosts and services and data
     
     def _is_detected(self, state, action:Action)->bool:
+        """
+        Check if this action was detected by the global defender
+        based on the probabilitiy distribution in the action configuration
+        """
         if self._defender_placements:
+            # There is a defender
             value = random.random() < action.transition.default_detection_p     
             logger.info(f'There is a defender and the detection is {value}')
             return value
-        else: #no defender
+        else: 
+            # There is no defender
             logger.info(f'There is NO defender')
             return False 
     
@@ -513,22 +547,22 @@ class Network_Security_Environment(object):
             # 1. Check if the action was successful or not
             if random.random() <= action.transition.default_success_p:
                 # The action was successful
-                logger.info(f'Action {action} sucessful')
+                logger.info(f'{action} sucessful')
 
                 # Get the next state given the action
                 next_state = self._execute_action(self._current_state, action)
 
                 # Reard for making an action
-                reward = -1     #action.transition.default_reward - action.transition.default_cost
+                reward = -1     
             else: 
                 # The action was not successful
-                logger.info(f'Action {action} not sucessful')
+                logger.info(f'{action} not sucessful')
 
                 # State does not change
                 next_state = self._current_state
 
                 # Reward for taking an action
-                reward = -1 #action.transition.default_cost
+                reward = -1 
 
                 if self.verbosity >=1:
                     print("Action unsuccessful")
@@ -595,7 +629,7 @@ if __name__ == "__main__":
     }
     """
 
-    # Test random data and start position
+    # Test random data and start positio
     goal = {
         "known_networks":set(),
         "known_hosts":set(),
