@@ -287,30 +287,23 @@ class Network_Security_Environment(object):
         This is an access to the data for that IP, without regard of
         any checking of IP in the env or state
         """
+        services = set()
+
+        # Do we have this ip in our env?
         try:
-            # Check if the IP has a correct IP format
-            netaddr.IPAddress(host_ip)
-            # Do we have this IP in our list of ips?
-            if host_ip in self._ips:
-                # Get the information we have about this ip
-                host = self._nodes[self._ips[host_ip]]
-                services = set()
-                # Is the host of type NodeConfig?
-                if isinstance(host, NodeConfig):
-                    for service in host.passive_services:
-                        if service.local:
-                            if host_ip in self._current_state.controlled_hosts:
-                                services.add(Service(service.type, "passive", service.version))
-                        else:
-                            services.add(Service(service.type, "passive", service.version))
-                return services
-            # Return empty services
-            return {}
-        except (ValueError, netaddr.core.AddrFormatError) as error:
-            logging.error("HostIP is invalid. Due to {error}")
-            # Return empty services
-            return {}
-    
+            node_id = self._ips[host_ip]
+        except KeyError:
+            return services
+
+        # Get the information we have about this ip
+        node = self._nodes[node_id]
+        # Is the host of type NodeConfig? We could have given an NodeExploit
+        if isinstance(node, NodeConfig):
+            for service in node.passive_services:
+                #services.add(service)
+                services.add(Service(service.type, "passive", service.version))
+        return services
+
     def _get_networks_from_host(self, host_ip)->set:
         """
         Get all the networks that this IP is connected to
