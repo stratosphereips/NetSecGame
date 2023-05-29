@@ -445,71 +445,58 @@ class Network_Security_Environment(object):
         else:
             raise ValueError(f"Unknown Action type: '{action.transition.type}'")
     
-    def is_valid_action(self, state:GameState, action:Action)-> bool:
-        if action.transition.type == "ScanNetwork":
-            try:
-                net = netaddr.IPNetwork(action.parameters["target_network"])
-                return True
-            except netaddr.core.AddrFormatError:
-                return False
-        elif action.transition.type == "FindServices":
-            target = action.parameters["target_host"]
-            accessible = [target in netaddr.IPNetwork(n) for n in state.known_networks] #TODO Add check for FW rules
-            return action.parameters["target_host"] in self._ips and any(accessible)
-        elif action.transition.type == "FindData":
-            return action.parameters["target_host"] in state.controlled_hosts or action.parameters["target_host"] in state.known_hosts
-        elif action.transition.type == "ExecuteCodeInService":
-            return action.parameters["target_host"] in state.known_services and action.parameters["target_service"] in [x.name for x in state.known_services[action.parameters["target_host"]]]
-        elif action.transition.type == "ExfiltrateData":
-            if action.parameters["source_host"] in state.controlled_hosts or action.parameters["source_host"] in state.known_hosts:
-                try:
-                    data_accessible = action.parameters["data"] in state.known_data[action.parameters["source_host"]]
-                    target = action.parameters["target_host"]
-                    target_accessible = [target in netaddr.IPNetwork(n) for n in state.known_networks] #TODO Add check for FW rules
-                    return data_accessible and target_accessible  and len(action.parameters["data"]) > 0
-                except KeyError as e:
-                    #print(e)
-                    return False
-            else:
-                return False #for now we don't support this option TODO
-        else:
-            print(f"Unknown transition type '{action.transition.type}'")
-            return False
-    
     def is_goal(self, state:GameState)->bool:
-        #check if all netoworks are known
-        networks = set(self._win_conditions["known_networks"]) <= set(state.known_networks) 
-        known_hosts = set(self._win_conditions["known_hosts"]) <= set(state.known_hosts)
-        controlled_hosts = set(self._win_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
-        try:
-            services = True
-            keys_services = [k for k in self._win_conditions["known_services"].keys() if k not in state.known_services]
-            if len(keys_services) == 0:
-                for k in self._win_conditions["known_services"].keys():
-                    for s in self._win_conditions["known_services"][k]:
-                        if s not in state.known_services[k]:
-                            services = False
-                            break
+        """
+        Check if the goal was reached for the game
+        """
+        # For each part of the state of the game, check if the conditions are met
 
-            else:
-                services = False
-        except KeyError:
-            services = False
+        # Networks
+        if set(self._win_conditions["known_networks"]) <= set(state.known_networks):
+            networks_goal = True
+
+        # Known hosts
+        if set(self._win_conditions["known_hosts"]) <= set(state.known_hosts):
+            known_hosts_goal = True
         
-        try:
-            data = True
-            keys_data = [k for k in self._win_conditions["known_data"].keys() if k not in state.known_data]
-            if len(keys_data) == 0:
-                for k in self._win_conditions["known_data"].keys():
-                    if not set(self._win_conditions["known_data"][k]) <= set(state.known_data[k]):
-                        data = False
+        # Controlled hosts
+        if set(self._win_conditions["controlled_hosts"]) <= set(state.controlled_hosts):
+            controlled_hosts_goal = True
+
+        # Known services
+        # Be careful. Any bug in the following lines may make the goal true
+        known_services_goal = True
+        # Do we have any service to know in goal?
+        if self._win_conditions["known_services"]:
+            # For each host with a service agent should get
+            for ip_service in self._win_conditions["known_services"].keys():
+                # For each service in this host agent should get
+                for service in self._win_conditions["known_services"][ip_service]:
+                    # Does the agent know this service?
+                    if service not in state.known_services[ip_service]:
+                        known_services_goal = False
                         break
 
-            else:
-                data = False
-        except KeyError:
-            data = False
-        return networks and known_hosts and controlled_hosts and services and data
+        # Known data
+        # Be careful. Any bug in the following lines may make the goal true
+        known_data_goal = True
+        # Do we have any data to know in goal?
+        if self._win_conditions["known_data"]:
+            # For each host with data the agent should get
+            for ip_data in self._win_conditions["known_data"].keys():
+                # For each data in this host the agent should get
+                try:
+                    if set(self._win_conditions["known_data"][ip_data]) > set(state.known_data[ip_data]):
+                        known_data_goal = False
+                        break
+                except KeyError:
+                    # The ip is not known yet to the defender. So no.
+                    known_data_goal = False
+                    break
+
+
+
+        return networks_goal and known_hosts_goal and controlled_hosts_goal and known_services_goal and known_data_goal
     
     def _is_detected(self, state, action:Action)->bool:
         """
