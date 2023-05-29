@@ -617,7 +617,7 @@ if __name__ == "__main__":
     env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
 
     # Do we have a defender? 
-    defender = True
+    defender = False
 
     # Initialize the game
     observation = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=50, agent_seed=42)
