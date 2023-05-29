@@ -256,13 +256,14 @@ class Network_Security_Environment(object):
         # For each action, return all the objects that are known to the agent as parameter for that action
         """
         actions = []
-        #Scan network
+        # ScanNetwork
         for net in state.known_networks:
             actions.append(Action("ScanNetwork",{"target_network":net}))
+
         # FindServices
         for host in state.known_hosts:
             actions.append(Action("FindServices", {"target_host":host}))
-        #Find Data
+
         # Find Data
             a = Action("FindData", {"target_host":host})
             if a not in actions:
