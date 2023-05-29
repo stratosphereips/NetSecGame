@@ -484,12 +484,6 @@ class Network_Security_Environment(object):
                 data = False
         except KeyError:
             data = False
-        if self.verbosity > 1:
-            print("networks", networks)
-            print("known", known_hosts)
-            print("controlled", controlled_hosts)
-            print("services", services)
-            print("data", data)
         return networks and known_hosts and controlled_hosts and services and data
     
     def _is_detected(self, state, action:Action)->bool:
