@@ -164,8 +164,6 @@ class Network_Security_Environment(object):
             self._defender_placements = True
         else:
             self._defender_placements = False
-        # assert self._defender_placements ==  None
-        # self._defender_placements = placements
     
     def process_cyst_config(self, configuration_objects:list)->None:
         """
