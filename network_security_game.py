@@ -308,13 +308,17 @@ class Network_Security_Environment(object):
         """
         Get all the networks that this IP is connected to
         """
+        networks = set()
         try:
-            host = self._ips[host_ip]
+            node_id = self._ips[host_ip]
         except KeyError:
+            print(f"Tried to get networks from an unknown IP '{host_ip}'!")
+            return networks
+
         # Get all the interfaces of this node
+        for interface in self._nodes[node_id].interfaces:
             if isinstance(interface, InterfaceConfig):
                 networks.add(interface.net)
-        #print(host_ip, networks, self._nodes[host].interfaces)
         return networks
     
     def _get_data_in_host(self, host_ip)->list:
