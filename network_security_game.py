@@ -139,9 +139,13 @@ class Network_Security_Environment(object):
                     net.value += 256
                     if net.is_private():
                         known_networks.add(str(net))
+                        if str(net) not in self._networks:
+                            self._networks[str(net)] = []
                     net.value -= 2*256
                     if net.is_private():
                         known_networks.add(str(net))
+                        if str(net) not in self._networks:
+                            self._networks[str(net)] = []
                     #return value back to the original
                     net.value += 256
 
