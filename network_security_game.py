@@ -388,40 +388,60 @@ class Network_Security_Environment(object):
             # Copy the known services in the current state to the future services to return. 
             # The current one is frozen and can not be extended
             extended_services = {k:v for k,v in current.known_services.items()}
-            if len(found_services) > 0:
-                if action.parameters["target_host"] not in extended_services.keys():
-                    extended_services[action.parameters["target_host"]] = frozenset(found_services)
-                else:
-                    # The host is already there, extend its services in case new were added
-                    extended_services[action.parameters["target_host"]] = frozenset(extended_services[action.parameters["target_host"]]).union(found_services)
+            if action.parameters["target_host"] not in extended_services.keys():
+                # The host is not in our list of services. Add it and add the service
+                extended_services[action.parameters["target_host"]] = frozenset(found_services)
+            else:
+                # The host is already there, extend its services in case new were added
+                extended_services[action.parameters["target_host"]] = frozenset(extended_services[action.parameters["target_host"]]).union(found_services)
             return GameState(current.controlled_hosts, current.known_hosts, extended_services, current.known_data, current.known_networks)
 
         elif action.transition.type == "FindData":
+            # Find data in a host
+            # Copy the current data in the variable to return. 
+            # Original can not be extended
             extended_data = {k:v for k,v in current.known_data.items()}
+            # Get data in the host
             new_data = self._get_data_in_host(action.parameters["target_host"])
-            if len(new_data) > 0:
-                if action.parameters["target_host"] not in extended_data.keys():
-                    extended_data[action.parameters["target_host"]] = new_data
-                else:
-                    extended_data[action.parameters["target_host"]].union(new_data)
+            if action.parameters["target_host"] not in extended_data.keys():
+                # The host was not in our current list. Add it and the datas
+                extended_data[action.parameters["target_host"]] = new_data
+            else:
+                # Host was known to have some data, add the found data in case it is new
+                extended_data[action.parameters["target_host"]].union(new_data)
             return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
         
         elif action.transition.type == "ExecuteCodeInService":
+            # Execute code and get control of new hosts
+            # Copy the current data in a new var to return
+            # Original is frozen and can not be extended
+
+            # Probably this line can be extended_controlled_hosts = current.controlled_hosts
+            # Not sure why the fanciness copy
             extended_controlled_hosts = set([x for x in current.controlled_hosts])
+            extended_networks = current.known_networks
             if action.parameters["target_host"] not in current.controlled_hosts:
+                # This host is not already controlled, add it
                 extended_controlled_hosts.add(action.parameters["target_host"])
-            new_networks = self._get_networks_from_host(action.parameters["target_host"])
-            extended_networks = current.known_networks.union(new_networks)
+                # Get the networks that this host belongs to and make them known too
+                new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                extended_networks = current.known_networks.union(new_networks)
             return GameState(extended_controlled_hosts, current.known_hosts, current.known_services, current.known_data, extended_networks)
         
         elif action.transition.type == "ExfiltrateData":
+            # Exfiltrate data TO a target host. So copy the data there
+            # After this, the data will be also INSIDE the target
+            # Make a copy in the new var to return. 
+            # Original is frozen
             extended_data = {k:v for k,v in current.known_data.items()}
-            if len(action.parameters["data"]) > 0:
-                if action.parameters["target_host"] not in current.known_data.keys():
-                    extended_data[action.parameters["target_host"]] = {action.parameters["data"]}
-                else:
-                    extended_data[action.parameters["target_host"]].union(action.parameters["data"])
+            if action.parameters["target_host"] not in current.known_data.keys():
+                # We didnt exfiltrate to this host, add it and the data
+                extended_data[action.parameters["target_host"]] = {action.parameters["data"]}
+            else:
+                # We already exfiltrated to this host, copy the new data.
+                extended_data[action.parameters["target_host"]].union(action.parameters["data"])
             return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
+
         else:
             raise ValueError(f"Unknown Action type: '{action.transition.type}'")
     
