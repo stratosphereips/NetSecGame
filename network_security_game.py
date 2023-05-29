@@ -117,19 +117,18 @@ class Network_Security_Environment(object):
         known_networks = set()
         controlled_hosts = set()
 
-        logging.info('Creating the starting state')
+        logger.info('Creating the starting state')
 
         if self._random_start:
             # Random start
-            logging.info('Start position of agent is random')
-            logging.info(f'Choosing from {self.hosts_to_start}')
+            logger.info('Start position of agent is random')
+            logger.info(f'Choosing from {self.hosts_to_start}')
             controlled_hosts.add(str(choice(self.hosts_to_start)))
-            logging.info(f'\t\tMaking agent start in {controlled_hosts}')
+            logger.info(f'\t\tMaking agent start in {controlled_hosts}')
         else:
             # Not random start
-            logging.info('Start position of agent is fixed in a host')
-            controlled_hosts = self._attacker_start_position["controlled_hosts"]
-
+            logger.info('Start position of agent is fixed in a host')
+        
         # Extend the known networks with the neighbouring networks
         # TODO remove this!
         for controlled_host in controlled_hosts:
@@ -173,12 +172,12 @@ class Network_Security_Environment(object):
         def process_node_config(node):
             # Process a node
             self._nodes[node.id] = node
-            logging.info(f'\tAdded {str(node.id)} to the list of available nodes.')
+            logger.info(f'\tAdded {str(node.id)} to the list of available nodes.')
             # Get all the IPs of this node and store them in our list of known IPs
             for interface in node.interfaces:
                 # Store in _ips . This is candidate for deletion
                 self._ips[str(interface.ip)] = node.id
-                logging.info(f'\tAdded IP {str(interface.ip)} to the list of available ips.')
+                logger.info(f'\tAdded IP {str(interface.ip)} to the list of available ips.')
 
                 # Check if it is a candidate for random start
                 # Becareful, it will add all the IPs for this node
@@ -194,7 +193,7 @@ class Network_Security_Environment(object):
                     # First time
                     self._networks[str(interface.net)] = []
                 self._networks[str(interface.net)].append(node.id)
-                logging.info(f'\tAdded network {str(interface.net)} to the list of available nets, with node {node.id}.')
+                logger.info(f'\tAdded network {str(interface.net)} to the list of available nets, with node {node.id}.')
 
         def process_router_config(router):
             # Process a router
@@ -218,11 +217,11 @@ class Network_Security_Environment(object):
                     # First time
                     self._networks[str(interface.net)] = []
                 self._networks[str(interface.net)].append(router.id)
-                logging.info(f'\tAdded {str(interface.net)} to the list of available networks in the game.')
+                logger.info(f'\tAdded {str(interface.net)} to the list of available networks in the game.')
 
         def process_exploit_config(exploit):
             # Process an exploit
-            logging.info(f'\t\tAdding exploit {exploit.id}')
+            logger.info(f'\t\tAdding exploit {exploit.id}')
             self._exploits = exploit
 
         def process_connection_config(connection):
@@ -236,7 +235,7 @@ class Network_Security_Environment(object):
         # Objects are all the nodes, routers, connections and exploits
         # In Cyst a node can be many things, from a device, to an attacker. :-(
         # But for some reason is not a router, a connection or an exploit
-        logging.info(f'Reading CYST conf')
+        logger.info(f'Reading CYST conf')
         for object in configuration_objects:
             logging.info(f'\tProcesssing obj {object.id}')
             if isinstance(object, NodeConfig):
@@ -300,7 +299,6 @@ class Network_Security_Environment(object):
         # Is the host of type NodeConfig? We could have given an NodeExploit
         if isinstance(node, NodeConfig):
             for service in node.passive_services:
-                #services.add(service)
                 services.add(Service(service.type, "passive", service.version))
         return services
 
@@ -352,23 +350,25 @@ class Network_Security_Environment(object):
 
         # ScanNetwork
         if action.transition.type == "ScanNetwork":
-            logging.info(f'Executing action {action}')
+            logger.info(f'Executing action {action}')
             # Is the network in the list of networks of the env. Give back the ips there
             new_ips = set()
             try:
-                logging.info(f'All nets: {self._networks}')
+                logger.info(f'All nets: {self._networks}')
                 # For each node in our network
                 for node_id in self._networks[action.parameters["target_network"]]:
-                    logging.info(f'\tChecking node {node_id}')
+                    logger.info(f'\tChecking node {node_id}')
                     # For each interface
                     for interface in self._nodes[node_id].interfaces:
-                        logging.info(f'\t\tChecking interface {interface}')
+                        logger.info(f'\t\tChecking interface {interface}')
                         # Get the ip
-                        # Be sure the ip is still in our network, since routers have many ips
+                        # Be sure the ip is still in our network, since routers have many ips!
                         if interface.ip in IPNetwork(action.parameters["target_network"]):
-                            logging.info(f'\t\t\tThe IP {interface.ip} is in the scanned network {action.parameters["target_network"]}')
+                            logger.info(f'\t\t\tThe IP {interface.ip} is in the scanned network {action.parameters["target_network"]}. Adding it.')
                             new_ips.add(str(interface.ip))
             except KeyError:
+                # We dont have this network or
+                # it is an invalid network (that we dont have)
                 pass
 
             # Add the IPs in the network to the list of known hosts
@@ -379,9 +379,10 @@ class Network_Security_Environment(object):
             # Action FindServices
             # Get all the available services in the host that was attacked
             found_services =  self._get_services_from_host(action.parameters["target_host"])
-            logging.info(f'Done action FoundServices. Services found: {found_services}')
+            logger.info(f'Done action FoundServices. Services found: {found_services}')
 
-            # Copy the known services in the current state. The current one is frozen
+            # Copy the known services in the current state to the future services to return. 
+            # The current one is frozen and can not be extended
             extended_services = {k:v for k,v in current.known_services.items()}
             if len(found_services) > 0:
                 if action.parameters["target_host"] not in extended_services.keys():
@@ -506,7 +507,7 @@ class Network_Security_Environment(object):
         Function to reset the state of the game 
         and play a new episode
         """
-        logger.info(f'------Game resetted. New starting ------')
+        logger.info(f'------ Game resetted. New starting ------')
         self._done = False
         self._step_counter = 0
         self.detected = False  
@@ -526,7 +527,7 @@ class Network_Security_Environment(object):
         - observation of the state of the env
         """
         if not self._done:
-            logger.info(f'Step taken')
+            logger.info(f'Step taken: {self._step_counter}')
             self._step_counter += 1
 
             reason = {}
@@ -566,6 +567,10 @@ class Network_Security_Environment(object):
                 reason = {'end_reason':'goal_reached'}
 
             # 3. Check if the action was detected
+            # Be sure that if the action was detected the game ends with the
+            # correct penalty, even if the action was successfully executed.
+            # This means defender wins if both defender and attacker are successful
+            # simuntaneously in the same step
             detected = self._is_detected(self._current_state, action)
             if detected:
                 logger.info(f'Action detected')
@@ -574,6 +579,7 @@ class Network_Security_Environment(object):
                 # Mark the environment as detected
                 self.detected = True
                 reason = {'end_reason':'detected'}
+                # End the game
                 self._done = True
                 logger.info(f'Game ended')
 
