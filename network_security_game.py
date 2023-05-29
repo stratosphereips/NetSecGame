@@ -352,13 +352,24 @@ class Network_Security_Environment(object):
 
         # ScanNetwork
         if action.transition.type == "ScanNetwork":
-            #does the network exist?
+            logging.info(f'Executing action {action}')
+            # Is the network in the list of networks of the env. Give back the ips there
             new_ips = set()
-            # Read all the theoretically possible IPs in a network
-            for ip in netaddr.IPNetwork(action.parameters["target_network"]):
-                # If any of those IPs is in our list of known IPs, return it
-                if str(ip) in self._ips.keys():
-                    new_ips.add(str(ip))
+            try:
+                logging.info(f'All nets: {self._networks}')
+                # For each node in our network
+                for node_id in self._networks[action.parameters["target_network"]]:
+                    logging.info(f'\tChecking node {node_id}')
+                    # For each interface
+                    for interface in self._nodes[node_id].interfaces:
+                        logging.info(f'\t\tChecking interface {interface}')
+                        # Get the ip
+                        # Be sure the ip is still in our network, since routers have many ips
+                        if interface.ip in IPNetwork(action.parameters["target_network"]):
+                            logging.info(f'\t\t\tThe IP {interface.ip} is in the scanned network {action.parameters["target_network"]}')
+                            new_ips.add(str(interface.ip))
+            except KeyError:
+                pass
 
             # Add the IPs in the network to the list of known hosts
             extended_hosts = current.known_hosts.union(new_ips)
