@@ -265,9 +265,9 @@ class Network_Security_Environment(object):
             actions.append(Action("FindServices", {"target_host":host}))
 
         # Find Data
-            a = Action("FindData", {"target_host":host})
-            if a not in actions:
-                actions.append(a)
+        for host in state.known_hosts:
+            actions.append(Action("FindData", {"target_host":host}))
+
         # ExecuteCodeInService
         for host, services in state.known_services.items():
         # ExfiltrateData
