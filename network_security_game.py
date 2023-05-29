@@ -242,7 +242,6 @@ class Network_Security_Environment(object):
         # But for some reason is not a router, a connection or an exploit
         logger.info(f'Reading CYST conf')
         for object in configuration_objects:
-            logging.info(f'\tProcesssing obj {object.id}')
             if isinstance(object, NodeConfig):
                 process_node_config(object)
             elif isinstance(object, RouterConfig):
