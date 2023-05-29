@@ -326,16 +326,21 @@ class Network_Security_Environment(object):
         Get all the data in this IP
         """
         data = set()
-        if host_ip in self._ips:
-            host = self._nodes[self._ips[host_ip]]
-            if isinstance(host, NodeConfig):
-                for service in host.passive_services:
-                    try:
-                        for d in service.private_data:
-                            data.add((d.owner, d.description))
-                    except AttributeError:
-                        pass
-                        #service does not contain any data
+        try:
+            node_id = self._ips[host_ip]
+        except KeyError:
+            print(f"Tried to get data from an unknown IP '{host_ip}'!")
+            return data
+
+        node = self._nodes[node_id]
+        if isinstance(node, NodeConfig):
+            for service in node.passive_services:
+                try:
+                    for datum in service.private_data:
+                        data.add((datum.owner, datum.description))
+                except AttributeError:
+                    pass
+                    #service does not contain any data
         return data
 
     def _execute_action(self, current:GameState, action:Action)-> GameState:
