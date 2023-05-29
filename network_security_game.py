@@ -148,6 +148,11 @@ class Network_Security_Environment(object):
                     #return value back to the original
                     net.value += 256
 
+        # Be careful. This line must go alone. Because it should be possible
+        # to have a random start position, but also to 'force' a controlled host
+        # for the case of controlling a command and controll server to exfiltrate.
+        controlled_hosts = self._attacker_start_position["controlled_hosts"]
+
         # Add the controlled hosts to the list of known hosts
         known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
 
