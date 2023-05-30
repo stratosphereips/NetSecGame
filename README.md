@@ -35,9 +35,21 @@ python3 -m pip install -r requirements.txt
 ```
 
 ## Python Environment
-Be careful of which python environment are you using. If using the venv here you may need to install pagackes as
+Be careful of which python environment are you using. If using the venv here you may need to install pagackes as, for example:
 
     ai-dojo-venv-sebas/bin/pip install frozendict
+
+## Test the environment
+
+It is advised that you test if the env is running correctly by doing
+
+```bash
+python network_security_game.py
+```
+
+This will create a small test environment and configuration, and run through some dozen of actions from a fake agent.
+It is going to create the log file netsecenv.log
+
 
 ## Run the agents
 
@@ -100,6 +112,8 @@ Currently the implemented agents are:
 1. We work with the closed-world assumption. Only the defined entities exist in the simulation.
 2. No actions have a "delete" effect (the attacker does not give up ownership of nodes, does not forget nodes or services, and when data is transfered we assume its copied and therefore present in both nodes).
 4. The `Find Data` action finds all the available data in the host if successful.
+5. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty and the game ends.
+6. If you want to exfiltrate data to an external IP, that IP must be in the 'controlled_hosts' part of the configuration. Or the agent will not controll that IP.
 
 ## Actions for the Attacker
 | Action name          | Description                                                              | Preconditions                         | Effects                                          |
@@ -169,7 +183,7 @@ attacker_start = {
     "known_data":{}
 }
 ```
-Empty set() mean no values, and the set of controlled hosts must be filled. The IP where exfiltration must happen must be controlled by the attacker or otherwise it will not succeed. To force the starting position of the attacker to be random in the network, the controlled hosts must be a network such as `"192.168.2.0/24"`. When the game starts, the known networks and known hosts of the attacker are updated to include the controlled hosts and the network where the controlled hosts is.
+An empty set() means no values. The set of `controlled_hosts` must be filled with 1. the external command and control host for exfiltration and 2. if the agent starts from a deterministic host, then add it here. The IP where exfiltration must happen must be controlled by the attacker or otherwise it will not succeed. To force the starting position of the attacker to be random in the network, just put random_start=True in the environment initialization. When the game starts, the known networks and known hosts of the attacker are updated to include the controlled hosts and the network where the controlled hosts is.
 
 The `defender_position` parameter in the initialization of the env can only be for now `True` or `False`.
 
@@ -178,5 +192,5 @@ Each agent can interact with the environment using the `env.step(action:Action)`
 
 ## Restarting the environment
 `env.reset()` can be used for reseting the environment to the original state. That is to the state after `env.initialize()` was called. In other words, `env.current_state` is replaced with `attacker_start_position` and `step_counter` is set to zero.
-
+The environment is also resetted after initialization.
 
