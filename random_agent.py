@@ -98,7 +98,7 @@ if __name__ == '__main__':
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195","192.168.2.0/24"},
+            "controlled_hosts":{"213.47.23.195"},
             "known_services":{},
             "known_data":{}
         }
