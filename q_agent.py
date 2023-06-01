@@ -36,7 +36,10 @@ class QAgent:
     
     def move(self, observation:Observation, testing=False) -> Action:
         state = observation.state
+        print(state)
         actions = self.env.get_valid_actions(state)
+        for action in actions:
+            print(f'\t- Getting action: {action}')
         if random.uniform(0, 1) <= self.epsilon and not testing:
             a = choice(actions)
             if (state, a) not in self.q_values:
@@ -123,7 +126,7 @@ if __name__ == '__main__':
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
     parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.3, type=float)
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=True, action="store_true")
+    parser.add_argument("--defender", help="Is defender present", default=True, type=bool)
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--test", help="Do not train, only run test", default=False, action="store_true")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=50, type=int)
@@ -174,7 +177,7 @@ if __name__ == '__main__':
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195","192.168.2.0/24"},
+            "controlled_hosts":{"213.47.23.195"},
             "known_services":{},
             "known_data":{}
         }
