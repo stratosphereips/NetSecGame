@@ -185,6 +185,7 @@ class Network_Security_Environment(object):
                         self._connections[v["dst_id"]].append(v["src_id"])
             except yaml.YAMLError as e:
                 print(e)
+                logger.error(f"Error while reading CYST topology from '{filename}!")
         self._src_file = filename
 
     def process_cyst_config(self, configuration_objects:list)->None:
@@ -406,6 +407,7 @@ class Network_Security_Environment(object):
             return GameState(next_controlled_hosts, next_known_hosts, next_known_services, next_known_data, next_known_networks)
         except Exception as e:
             print(f"Error occured when executing action:{action} in  {current}: {e}")
+            logger.error(f"Error occured when executing action:{action} in  {current}: {e}")
             exit()
     
     def is_valid_action(self, state:GameState, action:Action)-> bool:
@@ -621,15 +623,3 @@ if __name__ == "__main__":
         next_s = env.step(a)
         print(a)
         current = next_s
-
-
-    # print(current.observation)
-    # print(a)
-    # print(next_s.observation)
-
-    # print("\n")
-    # print( "nets",current.observation._known_networks == next.observation._known_networks, current.observation._known_networks is next.observation._known_networks)
-    # print( "knownH",current.observation._known_hosts == next.observation._known_hosts, current.observation._known_hosts is next.observation._known_hosts)
-    # print( "ownedH",current.observation._controlled_hosts == next.observation._controlled_hosts, current.observation._controlled_hosts is next.observation._controlled_hosts)
-    # print( "services",current.observation._known_services == next.observation._known_services, current.observation._known_services is next.observation._known_services)
-    # print( "data",current.observation._known_data == next.observation._known_data, current.observation._known_data is next.observation._known_data)
