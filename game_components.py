@@ -164,8 +164,6 @@ class GameState(object):
         graph_nodes = {}
         node_features = []
         controlled = []
-        #total_nodes = len(graph_nodes) + len(self.known_networks) + len(self.known_hosts) + len(self.controlled_hosts) + sum([len(x) for x in self.known_services.values()]) + sum([len(x) for x in self.known_data.values()])
-        
         try:
             edges = []
             #add known nets
@@ -221,7 +219,7 @@ class GameState(object):
             #print(f"Total Nodes:{total_nodes}")
         except KeyError as e:
             print(f"Error in building graph from {self}: {e}")
-        return node_features, controlled, edges
+        return node_features, controlled, edges, {v:k for k,v in graph_nodes.items()}
 
     @property
     def as_json(self):
