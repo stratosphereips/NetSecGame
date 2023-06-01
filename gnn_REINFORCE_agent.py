@@ -17,7 +17,6 @@ import tensorflow_gnn as tfgnn
 import tensorflow as tf
 
 
-from memory_profiler import profile
 tf.get_logger().setLevel('ERROR')
 
 class GNN_REINFORCE_Agent:
@@ -35,8 +34,8 @@ class GNN_REINFORCE_Agent:
 
         #model building blocks
         def set_initial_node_state(node_set, node_set_name):
-            d1 = tf.keras.layers.Dense(64,activation="relu")(node_set['node_type'])
-            return tf.keras.layers.Dense(32,activation="relu")(d1)
+            d1 = tf.keras.layers.Dense(128,activation="relu")(node_set['node_type'])
+            return tf.keras.layers.Dense(64,activation="relu")(d1)
     
 
         def dense_layer(units=64,l2_reg=0.1,dropout=0.25,activation='relu'):
@@ -47,23 +46,22 @@ class GNN_REINFORCE_Agent:
         input_graph = tf.keras.layers.Input(type_spec=self._example_input_spec, name="input_actor")
         #process node features with FC layer
         graph = tfgnn.keras.layers.MapFeatures(node_sets_fn=set_initial_node_state, name="preprocessing_actor")(input_graph)
-
+        tmp = graph
         #Graph conv
-        graph_updates = 3 # TODO Add to args
+        graph_updates = 4 # TODO Add to args
         for i in range(graph_updates):
             graph = tfgnn.keras.layers.GraphUpdate(
                 node_sets = {
                     'nodes': tfgnn.keras.layers.NodeSetUpdate({
                         'related_to': tfgnn.keras.layers.SimpleConv(
-                            message_fn = dense_layer(units=128), #TODO add num_units to args
-                            reduce_type="max",
+                            message_fn = dense_layer(units=256), #TODO add num_units to args
+                            reduce_type="sum",
                             receiver_tag=tfgnn.TARGET)},
                         tfgnn.keras.layers.NextStateFromConcat(dense_layer(64)))}, name=f"graph_update_{i}")(graph)  #TODO add num_units to args
         # Pool to get a single vector representing the graph 
-        pooling = tfgnn.keras.layers.Pool(tfgnn.CONTEXT, "mean",node_set_name="nodes", name="pooling_actor")(graph)
+        pooling = tfgnn.keras.layers.Pool(tfgnn.CONTEXT, "max",node_set_name="nodes", name="pooling_actor")(graph)
         # Two hidden layers (Followin the REINFORCE)
-        normed = tf.keras.layers.BatchNormalization()(pooling)
-        hidden1 = tf.keras.layers.Dense(128, activation="relu", name="hidden1_actor")(normed)
+        hidden1 = tf.keras.layers.Dense(128, activation="relu", name="hidden1_actor")(pooling)
         hidden2 = tf.keras.layers.Dense(64, activation="relu", name="hidden2_actor")(hidden1)
         
         # Output layer
@@ -71,7 +69,7 @@ class GNN_REINFORCE_Agent:
         
         #Build the model
         self._model = tf.keras.Model(input_graph, out, name="Actor")
-        self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr, clipvalue=5.0))
+        self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr))
         
         
         #baseline
@@ -88,11 +86,11 @@ class GNN_REINFORCE_Agent:
                     'nodes': tfgnn.keras.layers.NodeSetUpdate({
                         'related_to': tfgnn.keras.layers.SimpleConv(
                             message_fn = dense_layer(units=128), #TODO add num_units to args
-                            reduce_type="max",
+                            reduce_type="sum",
                             receiver_tag=tfgnn.TARGET)},
                         tfgnn.keras.layers.NextStateFromConcat(dense_layer(64)))}, name=f"graph_update_{i}")(graph)  #TODO add num_units to args
         # Pool to get a single vector representing the graph 
-        pooling = tfgnn.keras.layers.Pool(tfgnn.CONTEXT, "mean",node_set_name="nodes")(graph)
+        pooling = tfgnn.keras.layers.Pool(tfgnn.CONTEXT, "sum",node_set_name="nodes")(graph)
         # Two hidden layers (Followin the REINFORCE)
         hidden2 = tf.keras.layers.Dense(64, activation="relu", name="baseline_hidden")(pooling)
         
@@ -103,9 +101,6 @@ class GNN_REINFORCE_Agent:
         self._baseline = tf.keras.Model(input_graph, out_baseline, name="Baseline model")
         self._baseline.compile(tf.keras.optimizers.Adam(learning_rate=args.lr), loss=tf.losses.MeanSquaredError())
         
-
-
-
 
         self._model.summary()
         self._baseline.summary()
@@ -150,19 +145,21 @@ class GNN_REINFORCE_Agent:
         return returns.tolist()
     
     @tf.function
-    def predict(self, state_graph, training=False):
+    def predict(self, state_graph, training=True):
         return self._model(state_graph, training=training)
     
     #@tf.function
     def _make_training_step_actor(self, inputs, labels, weights)->None:
+        #print("Updating actor model")
         #perform training step
         with tf.GradientTape() as tape:
             logits = self.predict(inputs, training=True)
             cce = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
             loss = cce(labels, logits, sample_weight=weights)
         grads = tape.gradient(loss, self._model.trainable_weights)
+        
+        #grads, _ = tf.clip_by_global_norm(grads, 5.0)
         self._model.optimizer.apply_gradients(zip(grads, self._model.trainable_weights))
-        del logits
     
     def _make_training_step_baseline(self, inputs, rewards)->None:
         #perform training step
@@ -170,6 +167,8 @@ class GNN_REINFORCE_Agent:
             values = self._baseline(inputs, training=True)
             loss = self._baseline.loss(values, rewards)
         grads = tape.gradient(loss, self._baseline.trainable_weights)
+        #print(grads)
+        #grads, _ = tf.clip_by_global_norm(grads, 5.0)
         self._baseline.optimizer.apply_gradients(zip(grads, self._baseline.trainable_weights))
     
     def _preprocess_inputs(self, replay_buffer):
@@ -196,6 +195,8 @@ class GNN_REINFORCE_Agent:
                     state_g = self._create_graph_tensor(state_node_f, controlled, state_edges)
                     #predict action probabilities
                     probabilities = self.predict(state_g)
+                    #print(probabilities)
+                    assert not np.isnan(np.sum(probabilities))
                     probabilities = tf.squeeze(tf.nn.softmax(probabilities))
                 
                     action = random.choices([x for x in range(len(self._transition_mapping))], weights=probabilities, k=1)[0]
@@ -245,6 +246,8 @@ class GNN_REINFORCE_Agent:
             scalar_graph_tensor = self._build_batch_graph(batch_states)
             #perform training step
             baseline = tf.squeeze(self._baseline(scalar_graph_tensor))
+            assert not np.isnan(np.sum(baseline))
+            print(baseline)
             self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
             updated_batch_returns = batch_returns-baseline
             self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns)
@@ -263,7 +266,6 @@ class GNN_REINFORCE_Agent:
                         state_g = self._create_graph_tensor(state_node_f,controlled,state_edges)
                         #predict action probabilities
                         probabilities = self.predict(state_g)
-                        
                         probabilities = tf.squeeze(tf.nn.softmax(probabilities))
                         action_idx = np.argmax(probabilities)
                         action = self._transition_mapping[action_idx]
@@ -284,8 +286,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     #env arguments
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=7, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=True, action="store_true")
+    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=10, type=int)
+    parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
@@ -293,7 +295,7 @@ if __name__ == '__main__':
     #model arguments
     parser.add_argument("--episodes", help="Sets number of training episodes", default=2000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.99, type=float)
-    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=32)
+    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=4)
     parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
 
     #training arguments
@@ -355,10 +357,10 @@ if __name__ == '__main__':
     else:
         goal = {
             "known_networks":set(),
-            "known_hosts":{},
+            "known_hosts":{"192.168.1.2"},
             "controlled_hosts":{"192.168.1.2"},
             "known_services":{},
-            "known_data":{}     #"213.47.23.195":{("User1", "DataFromServer1")}
+            "known_data":{"192.168.1.2":{("User1", "DataFromServer1")}}
         }
 
         attacker_start = {
@@ -376,3 +378,12 @@ if __name__ == '__main__':
     # #initialize agent
     agent = GNN_REINFORCE_Agent(env, args)
     agent.train()
+
+    # state, done = env.reset().observation, False
+    # state_node_f,controlled, state_edges = state.as_graph
+    # state_g = agent._create_graph_tensor(state_node_f, controlled, state_edges)
+    # print(state_node_f, controlled,state_edges)
+    # print(state_g.node_sets["nodes"].features)
+
+    # output = agent.predict(state_g)
+    # print(output[1].node_sets["nodes"].features,output[2])
