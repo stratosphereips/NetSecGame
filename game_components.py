@@ -1,8 +1,5 @@
 #Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 from collections import namedtuple
-import deepdiff
-from frozendict import frozendict
-import numpy as np
 import netaddr
 import json
 # Transition between nodes
@@ -130,28 +127,6 @@ class GameState(object):
             #data
             if self.known_data != other.known_data:
                 return False
-
-
-            # |#known_nets
-            # if len(self.known_networks) != len(other.known_networks) or len(self.known_networks.difference(other.known_networks)) != 0:
-            #     #print("mismatch in known_nets")
-            #     return False
-            # #known_hosts
-            # if len(self.known_hosts) != len(other.known_hosts) or len(self.known_hosts.difference(other.known_hosts)) != 0:
-            #     #print("mismatch in known_hosts")
-            #     return False
-            # #controlled_hosts
-            # if len(self.controlled_hosts) != len(other.controlled_hosts) or len(self.controlled_hosts.difference(other.controlled_hosts)) != 0:
-            #     #print("mismatch in owned_nets")
-            #     return False
-            # #known_services
-            # if len(deepdiff.DeepDiff(self.known_services, other.known_services, ignore_order=True)) != 0:
-            #     #print("mismatch in known_services")
-            #     return False
-            # #data
-            # if len(deepdiff.DeepDiff(self.known_data, other.known_data, ignore_order=True)) != 0:
-            #     #print("mismatch in data")
-            #     return False
             return True
         return False
     
@@ -236,16 +211,9 @@ if __name__ == '__main__':
     
     
     # # print(a1, a2, a1==a2)
-    s1 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': frozenset([Service(name='bash', type='passive', version='5.0.0'), Service(name='listener', type='passive', version='1.0.0')])},{},{})
+    s1 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='bash', type='passive', version='5.0.0', is_local=True), Service(name='listener', type='passive', version='1.0.0', is_local=False)}},{},{})
     #print(hash(s1))
-    s2 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': frozenset([Service(name='listener', type='passive', version='1.0.0'), Service(name='bash', type='passive', version='5.0.0')])}, {},{})
-    s3 = GameState({"192.168.1.1"}, {}, {}, {},{})
-    #print(s1, s2, s1 == s2)
-    q = {}
-    if (a,s1) not in q.keys():
-        print("missing")
-    q[(a,s1)] = 0
-    q[(a,s2)] = 1
-    print(q)
-    q[(a,s3)] = 2
-    print(q)
+    s2 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='listener', type='passive', version='1.0.0', is_local=False)}},{},{})
+    s3 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='listener', type='passive', version='1.2.0', is_local=False)}},{},{})
+    print(s1==s2, s2==s2, s2 == s3)
+    
