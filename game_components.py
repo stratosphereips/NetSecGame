@@ -2,6 +2,11 @@
 from collections import namedtuple
 import netaddr
 import json
+from dataclasses import dataclass, field
+
+
+
+
 # Transition between nodes
 """
 Transition represents generic actions for attacker in the game. Each transition has a default probabilities
@@ -10,14 +15,6 @@ Net reward can be computed as follows net_reward = sucess*default_reward - defau
 """
 Transition = namedtuple("Transition", ["type", "default_success_p", "default_detection_p", "default_reward", "default_cost"])
 
-#List of transitions available for attacker with default parameters
-# transitions = {
-#     "ScanNetwork": Transition("ScanNetwork",0.9,0.5,1,0.1), #In the beginning we artificially add 3 more networks in both directions
-#     "FindServices": Transition("FindServices",0.9,0.6,1,0.1),
-#     "FindData": Transition("FindData",0.5,0.9,2,0.1),
-#     "ExecuteCodeInService": Transition("ExecuteCodeInService",0.3,0.3,20,0.3),
-#     "ExfiltrateData": Transition("ExfiltrateData",0.8,0.8,1000,0.1),
-# }
 transitions = {
     "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2, 0,1), 
     "FindServices": Transition("FindServices",0.9, 0.3,0,1),
@@ -35,9 +32,9 @@ Actions are composed of the transition type (see Transition) and additional para
  - ExecuteCodeInService {"target_host": "X.X.X.X" (string), "target_service":"service_name" (string)}
  - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"path_to_data" (string)}
 """
-#Action = namedtuple("Action", ["transition", "parameters"])
+
 class Action(object):
-    
+  
     def __init__(self, transition:str, params:list) -> None:
         self._transition_name = transition
         self._parameters = params
@@ -77,61 +74,60 @@ Service = namedtuple("Service", ["name", "type", "version","is_local"])
 Game state represents the states in the game state space.
 
 """
+@dataclass(frozen=True)
 class GameState(object):
-    def __init__(self, controlled_hosts:set={}, known_hosts:set={}, known_services:dict={},
-    known_data:dict={}, known_networks:set={}) -> None:
-        self._controlled_hosts = controlled_hosts
-        self._known_networks = known_networks
-        self._known_hosts = known_hosts
-        self._known_services = known_services
-        self._known_data = known_data
-    
-    @property
-    def controlled_hosts(self):
-        return self._controlled_hosts
+    controlled_hosts:set=field(default_factory=set)
+    known_hosts:set=field(default_factory=set)
+    known_services:dict=field(default_factory=set)
+    known_data:dict=field(default_factory=set)
+    known_networks:set=field(default_factory=set)
+   
+    # @property
+    # def controlled_hosts(self):
+    #     return self._controlled_hosts
 
-    @property
-    def known_hosts(self):
-        return self._known_hosts
+    # @property
+    # def known_hosts(self):
+    #     return self._known_hosts
     
-    @property
-    def known_services(self):
-        return self._known_services
+    # @property
+    # def known_services(self):
+    #     return self._known_services
     
-    @property
-    def known_networks(self):
-        return self._known_networks
+    # @property
+    # def known_networks(self):
+    #     return self._known_networks
     
-    @property
-    def known_data(self):
-        return self._known_data
+    # @property
+    # def known_data(self):
+    #     return self._known_data
     
-    def __str__(self) -> str:
-        return f"State<nets:{self.known_networks}; known:{self.known_hosts}; owned:{self.controlled_hosts}; services:{self._known_services}; data:{self._known_data}>"
+    # def __str__(self) -> str:
+    #     return f"State<nets:{self.known_networks}; known:{self.known_hosts}; owned:{self.controlled_hosts}; services:{self._known_services}; data:{self._known_data}>"
     
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, GameState):
+    # def __eq__(self, other: object) -> bool:
+    #     if isinstance(other, GameState):
             
-            #known_nets
-            if self.known_networks != other.known_networks:
-                return False
-            #known_hosts
-            if self.known_hosts != other.known_hosts:
-                return False
-            #controlled_hosts
-            if self.controlled_hosts != other.controlled_hosts:
-                return False
-            #known_services
-            if self.known_services != other.known_services:
-                return False
-            #data
-            if self.known_data != other.known_data:
-                return False
-            return True
-        return False
+    #         #known_nets
+    #         if self.known_networks != other.known_networks:
+    #             return False
+    #         #known_hosts
+    #         if self.known_hosts != other.known_hosts:
+    #             return False
+    #         #controlled_hosts
+    #         if self.controlled_hosts != other.controlled_hosts:
+    #             return False
+    #         #known_services
+    #         if self.known_services != other.known_services:
+    #             return False
+    #         #data
+    #         if self.known_data != other.known_data:
+    #             return False
+    #         return True
+    #     return False
     
-    def __hash__(self) -> int:
-        return hash(self.known_hosts) + hash(self.known_networks) + hash(self.controlled_hosts) + hash(self.known_data) + hash(self.known_services)
+    # def __hash__(self) -> int:
+    #     return hash(self.known_hosts) + hash(self.known_networks) + hash(self.controlled_hosts) + hash(self.known_data) + hash(self.known_services)
     
     @property
     def as_graph(self):
@@ -177,8 +173,8 @@ class GameState(object):
                         edges.append((graph_nodes[host], graph_nodes[service]))
                         edges.append((graph_nodes[service], graph_nodes[host]))
                     except KeyError as e:
-                        print(self._known_hosts)
-                        print(self._known_services)
+                        print(self.known_hosts)
+                        print(self.known_services)
                         raise e
 
             #Add known data
@@ -198,7 +194,7 @@ class GameState(object):
 
     @property
     def as_json(self):
-        d = {"nets":list(self.known_networks), "known_hosts":list(self.known_hosts), "controlled_hosts":list(self.controlled_hosts), "known_services":list(self._known_services.items()), "known_data":list(self._known_data.items())}
+        d = {"nets":list(self.known_networks), "known_hosts":list(self.known_hosts), "controlled_hosts":list(self.controlled_hosts), "known_services":list(self.known_services.items()), "known_data":list(self.known_data.items())}
         return json.dumps(d) 
 
 if __name__ == '__main__':
@@ -216,4 +212,5 @@ if __name__ == '__main__':
     s2 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='listener', type='passive', version='1.0.0', is_local=False)}},{},{})
     s3 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='listener', type='passive', version='1.2.0', is_local=False)}},{},{})
     print(s1==s2, s2==s2, s2 == s3)
-    
+    print(s1)
+    print(s1.as_graph)
