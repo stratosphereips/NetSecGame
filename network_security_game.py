@@ -19,7 +19,7 @@ import logging
 logger = logging.getLogger('Net-sec-env')
 
 class Network_Security_Environment(object):
-    def __init__(self, random_start=True, verbosity=0) -> None:
+    def __init__(self, random_start=True, verbosity=0, seed=42) -> None:
         self._nodes = {}
         self._connections = {}
         self._ips = {}
@@ -51,7 +51,7 @@ class Network_Security_Environment(object):
     def detected(self):
         if self.done: #Only tell if detected when the interaction ends
             return self._detected
-        else: return False
+        else: return None
     
     @property
     def num_actions(self):
@@ -212,11 +212,6 @@ class Network_Security_Environment(object):
                         #add network information
                         for item in v["interfaces"]:
                             if item["cls_type"] == "InterfaceConfig":
-                                # if item["net"]["cls_type"] == "IPNetwork":
-                                #     if item["net"]["value"] not in self._networks.keys():
-                                #         self._networks[item["net"]["value"]] = []
-                                # self._networks[item["net"]["value"]].append((item["ip"]["value"], v['id']))
-                                # #add IP-> host name mapping
                                 self._ips[item["ip"]["value"]] = v['id']  
                     elif v['cls_type'] in "ConnectionConfig": # TODO
                         self._connections[v["src_id"]].append(v["dst_id"])
@@ -387,6 +382,7 @@ class Network_Security_Environment(object):
             next_controlled_hosts = copy.deepcopy(current.controlled_hosts)
             next_known_services = copy.deepcopy(current.known_services)
             next_known_data = copy.deepcopy(current.known_data)
+            
             if action.transition.type == "ScanNetwork":
                 new_ips = set()
                 for ip in self._ips.keys(): #check if 
@@ -478,12 +474,11 @@ class Network_Security_Environment(object):
             services = True
             keys_services = [k for k in self._win_conditions["known_services"].keys() if k not in state.known_services]
             if len(keys_services) == 0:
-                for k in self._win_conditions["known_services"].keys():
-                    for s in self._win_conditions["known_services"][k]:
-                        if s not in state.known_services[k]:
+                for ip in self._win_conditions["known_services"].keys():
+                    for service in self._win_conditions["known_services"][ip]:
+                        if service not in state.known_services[ip]:
                             services = False
                             break
-
             else:
                 services = False
         except KeyError:
