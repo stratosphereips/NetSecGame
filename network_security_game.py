@@ -149,12 +149,14 @@ class Network_Security_Environment(object):
                     net.value += 256
 
         # Be careful. This line must go alone. Because it should be possible
-        # to have a random start position, but also to 'force' a controlled host
+        # to have a random start position, but simultaneously to 'force' a controlled host
         # for the case of controlling a command and controll server to exfiltrate.
-        controlled_hosts = self._attacker_start_position["controlled_hosts"]
-
-        # Add the controlled hosts to the list of known hosts
-        known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
+        for controlled_host in self._attacker_start_position["controlled_hosts"]:
+            if controlled_host.find('/') < 0:
+                # This is not a network, so add as controlling host
+                controlled_hosts.add(controlled_host)
+                # Add the controlled hosts to the list of known hosts
+                known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
 
         game_state = GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
@@ -632,22 +634,40 @@ if __name__ == "__main__":
     }
     """
 
-    # Test random data and start positio
-    goal = {
-        "known_networks":set(),
-        "known_hosts":set(),
-        "controlled_hosts":set(),
-        "known_services":{},
-        "known_data":{"213.47.23.195":"random"}
-    }
-    attacker_start = {
-        "known_networks":set(),
-        "known_hosts":set(),
-        "controlled_hosts":{"213.47.23.195"},
-        "known_services":{},
-        "known_data":{}
-    }
-    random_start = True
+    # Test random data and start position
+    random_start = False
+
+    if random_start:
+        goal = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":set(),
+            "known_services":{},
+            "known_data":{"213.47.23.195":"random"}
+        }
+        attacker_start = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":{"213.47.23.195", "192.168.1.9"},
+            "known_services":{},
+            "known_data":{}
+        }
+    else:
+        goal = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":set(),
+            "known_services":{},
+            "known_data":{"213.47.23.195":"random"}
+        }
+        attacker_start = {
+            "known_networks":set(),
+            "known_hosts":set(),
+            "controlled_hosts":{"213.47.23.195", "192.168.1.8/24"},
+            "known_services":{},
+            "known_data":{}
+        }
+
     env = Network_Security_Environment(random_start=random_start, verbosity=0)
     
     # Read network setup from predefined CYST configuration
