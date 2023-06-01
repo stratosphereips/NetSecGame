@@ -69,10 +69,12 @@ class Network_Security_Environment(object):
         # Process parameters
         self._attacker_start_position = attacker_start_position
         self.max_steps = max_steps
+
         if not defender_positions:
             self._defender_placements = False
         else:
             self._place_defences(defender_positions)
+
         self._win_conditions = win_conditons
 
         # Set the seed if passed by the agent
@@ -82,6 +84,7 @@ class Network_Security_Environment(object):
             logger.info(f'Agent passed a seed, setting to {agent_seed}')
         
         # Check if position of data is randomized 
+        # This code should be moved into create_starting_state()
         logger.info(f"Checking if we need to set the data to win in a random location.")
         # For each known data point in the conditions to win
         for k, v in win_conditons["known_data"].items():
@@ -103,9 +106,9 @@ class Network_Security_Environment(object):
                         pass
                 # From all available data, randomly pick the one that is going to be used to win the game
                 self._win_conditions["known_data"][k] = {choice(available_data)}
-                logger.info(f"\tWinning condition of `known_data` randomly set to {self._win_conditions['known_data']}")
             else:
                 logger.info(f"\tNo we don't.")
+        logger.info(f"\tWinning condition of `known_data` set to {self._win_conditions['known_data']}")
         # Return an observation after reset
         obs = self.reset()
         return obs
@@ -128,27 +131,8 @@ class Network_Security_Environment(object):
         else:
             # Not random start
             logger.info('Start position of agent is fixed in a host')
-        
-        # Extend the known networks with the neighbouring networks
-        # TODO remove this!
-        for controlled_host in controlled_hosts:
-            for net in self._get_networks_from_host(controlled_host): #TODO
-                known_networks.add(str(net))
-                if net.is_private(): #TODO
-                    net.value += 256
-                    if net.is_private():
-                        known_networks.add(str(net))
-                        if str(net) not in self._networks:
-                            self._networks[str(net)] = []
-                    net.value -= 2*256
-                    if net.is_private():
-                        known_networks.add(str(net))
-                        if str(net) not in self._networks:
-                            self._networks[str(net)] = []
-                    #return value back to the original
-                    net.value += 256
 
-        # Be careful. This line must go alone. Because it should be possible
+        # Be careful. These lines must go outside the 'not random' part of the loop. Because it should be possible
         # to have a random start position, but simultaneously to 'force' a controlled host
         # for the case of controlling a command and controll server to exfiltrate.
         for controlled_host in self._attacker_start_position["controlled_hosts"]:
@@ -157,6 +141,41 @@ class Network_Security_Environment(object):
                 controlled_hosts.add(controlled_host)
                 # Add the controlled hosts to the list of known hosts
                 known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
+        
+        # Extend the known networks with the neighbouring networks
+        # This is to solve in the env (and not in the agent) the problem
+        # of not knowing other networks appart from the one the agent is in
+        # This is wrong and should be done by the agent, not here
+        # TODO remove this!
+        for controlled_host in controlled_hosts:
+            for net in self._get_networks_from_host(controlled_host): #TODO
+                known_networks.add(str(net))
+                if net.is_private(): #TODO
+                    net.value += 256
+                    if net.is_private():
+                        # Check that the extended network is in our list of networks in the game
+                        logger.info(f'net1 keys: {self._networks} . net {net}')
+                        if str(net) in self._networks.keys():
+                            logger.info(f'Adding {net} to agent')
+                            known_networks.add(str(net))
+                            # If we add it to the agent, also add it in the official list of nets in the env
+                            if str(net) not in self._networks:
+                                logger.info(f'Adding {net} to known nets')
+                                self._networks[str(net)] = []
+                    net.value -= 2*256
+                    if net.is_private():
+                        # Check that the extended network is in our list of networks in the game
+                        logger.info(f'net2 keys: {self._networks} . net {net}')
+                        if str(net) in self._networks.keys():
+                            logger.info(f'Adding {net} to agent')
+                            known_networks.add(str(net))
+                            # If we add it to the agent, also add it in the official list of nets in the env
+                            if str(net) not in self._networks:
+                                logger.info(f'Adding {net} to known nets')
+                                self._networks[str(net)] = []
+                    #return value back to the original
+                    net.value += 256
+
 
         game_state = GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
@@ -484,14 +503,21 @@ class Network_Security_Environment(object):
         known_data_goal = True
         # Do we have any data to know in goal?
         if self._win_conditions["known_data"]:
+            logger.info(f'Checking the goal of data')
+            logger.info(f'\tData needed to win {self._win_conditions["known_data"]}')
             # For each host with data the agent should get
             for ip_data in self._win_conditions["known_data"].keys():
+                logger.info(f'\t\tChecking data in ip {ip_data}')
                 # For each data in this host the agent should get
                 try:
+                    logger.info(f'\t\tData in state: {state.known_data[ip_data]}')
+                    # If the things to know to win is larger than the things known
                     if set(self._win_conditions["known_data"][ip_data]) > set(state.known_data[ip_data]):
+                        logger.info(f'\t\tThere is less data in state: {state.known_data[ip_data]}. So not winning')
                         known_data_goal = False
                         break
                 except KeyError:
+                    logger.info(f'\t\tThis ip {ip_data} does not have the data')
                     # The ip is not known yet to the defender. So no.
                     known_data_goal = False
                     break
@@ -525,6 +551,7 @@ class Network_Security_Environment(object):
         self._step_counter = 0
         self.detected = False  
         self._current_state = self._create_starting_state()
+        logger.info(f'Current state: {self._current_state} ')
         initial_reward = 0
         info = {}
         # An observation has inside ["state", "reward", "done", "info"]
