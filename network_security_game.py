@@ -363,7 +363,7 @@ class Network_Security_Environment(object):
             
             elif action.transition.type == "FindServices":
                 #get services for current states in target_host
-                found_services = self._get_services_from_host(action.parameters["target_host"], current._controlled_hosts)
+                found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
                 if len(found_services) > 0:
                     if action.parameters["target_host"] not in next_known_services.keys():
                         next_known_services[action.parameters["target_host"]] = found_services
