@@ -78,8 +78,8 @@ Game state represents the states in the game state space.
 class GameState(object):
     controlled_hosts:set=field(default_factory=set)
     known_hosts:set=field(default_factory=set)
-    known_services:dict=field(default_factory=set)
-    known_data:dict=field(default_factory=set)
+    known_services:dict=field(default_factory=dict)
+    known_data:dict=field(default_factory=dict)
     known_networks:set=field(default_factory=set)
    
     # @property
@@ -176,7 +176,6 @@ class GameState(object):
                         print(self.known_hosts)
                         print(self.known_services)
                         raise e
-
             #Add known data
             for host,data in self.known_data.items():
                 for datapoint in data:
@@ -213,4 +212,3 @@ if __name__ == '__main__':
     s3 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='listener', type='passive', version='1.2.0', is_local=False)}},{},{})
     print(s1==s2, s2==s2, s2 == s3)
     print(s1)
-    print(s1.as_graph)
