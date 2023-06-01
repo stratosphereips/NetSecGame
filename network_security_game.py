@@ -7,6 +7,7 @@ from random import random, choice, seed
 import copy
 from cyst.api.configuration import *
 import numpy as np
+
 #from scenarios.scenario_configuration import *
 import scenarios.scenario_configuration
 import scenarios.smaller_scenario_configuration
@@ -20,13 +21,7 @@ logger = logging.getLogger('Net-sec-env')
 
 class Network_Security_Environment(object):
     def __init__(self, random_start=True, verbosity=0, seed=42) -> None:
-        self._nodes = {}
-        self._connections = {}
-        self._ips = {}
-        self._exploits = {}
-        self._fw_rules = []
         self._random_start = random_start
-
         self._defender_placements = None
         self._current_state = None
         self._done = False
@@ -58,9 +53,7 @@ class Network_Security_Environment(object):
         return len(transitions)
     
     def get_all_actions(self):
-
         actions = {}
-
         for net,ips in self._networks.items():
             #network scans
             actions[len(actions)] = Action("ScanNetwork",{"target_network":net})
@@ -83,32 +76,6 @@ class Network_Security_Environment(object):
                 for ip, host in self._ips.items():
                     if host_id == host:
                         actions[len(actions)] = Action("ExecuteCodeInService", {"target_host":ip, "target_service":service.name})
-        
-        # for ip, name in self._ips.items():
-        #     if ip in "0.0.0.0":
-        #         continue
-        #     #network scans
-        #     for net in self._get_networks_from_host(ip):
-        #         if str(net) in "0.0.0.0/0":
-        #             continue
-        #         actions[len(actions)] = Action("ScanNetwork",{"target_network":net})
-        #     #portscans
-        #     actions[len(actions)] = Action("FindServices", {"target_host":ip})
-
-        #     #Run Code in service
-        #     for service in self._get_services_from_host(ip):
-        #         actions[len(actions)] = Action("ExecuteCodeInService", {"target_host":ip, "target_service":service.name})
-        #     #find data
-        #     actions[len(actions)] = Action("FindData", {"target_host":ip})
-
-        #     #exfiltrate data
-        #     for data in self._get_data_in_host(ip):
-        #         for trg in self._ips.keys():
-        #             if trg in "0.0.0.0":
-        #                 continue
-                    
-        #             actions[len(actions)] = Action("ExfiltrateData", {"target_host":trg, "data":data, "source_host":ip})
-        print("total actions:", len(actions))
         return actions
 
     def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, topology=False)-> Observation:
@@ -222,7 +189,6 @@ class Network_Security_Environment(object):
 
     def process_cyst_config(self, configuration_objects:list)->None:
         
-        
         nodes = []
         node_to_id = {}
         routers = []
@@ -234,6 +200,12 @@ class Network_Security_Environment(object):
         self._hosts = {}
         self._services = {}
         self._data = {}
+
+        self._nodes = {}
+        self._connections = {}
+        self._ips = {}
+        self._exploits = {}
+        self._fw_rules = []
 
         #sort objects into categories
         for o in configuration_objects:
@@ -307,15 +279,6 @@ class Network_Security_Environment(object):
             self._connections[node_to_id[c.src_id],node_to_id[c.dst_id]] = 1
         #exploits
         self._exploits = exploits
-
-        
-        # print(self._networks)
-        # print("-----------")
-        # print(self._ips)
-        # print("-----------")
-        # print(self._services)
-        # print("-----------")
-        # print(self._data)
     
     def get_valid_actions(self, state:GameState)->list:
         """
@@ -349,32 +312,39 @@ class Network_Security_Environment(object):
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
         """
         Returns set of Service tuples from given hostIP
-        TODO active services
+
+        TODO Differentiate between active and passive services
         """
         found_services = {}
         if host_ip in self._ips: #is it existing IP?
             if self._ips[host_ip] in self._services: #does it have any services?
-                if host_ip in controlled_hosts: #include local services
+                if host_ip in controlled_hosts: # Shoul  local services be included ?
                     found_services = {s for s in self._services[self._ips[host_ip]]}
                 else:
                     found_services = {s for s in self._services[self._ips[host_ip]] if not s.is_local}
         return found_services
     
     def _get_networks_from_host(self, host_ip)->set:
+        """
+        Returns set of IPs the host has access to
+        """
         networks = set()
-        for net,values in self._networks.items():
+        for net, values in self._networks.items():
             if host_ip in values:
                 networks.add(net)
         return networks
     
-    def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->list:
+    def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
+        """
+        Returns set of Data tuples from given host IP
+        """
         data = set()
         if host_ip in controlled_hosts:
             if host_ip in self._ips:
                 if self._ips[host_ip] in self._data:
                     data = set(self._data[self._ips[host_ip]])
         return data
-
+  
     def _execute_action(self, current:GameState, action:Action)-> GameState:
         try:
             next_known_networks = copy.deepcopy(current.known_networks)
@@ -385,10 +355,11 @@ class Network_Security_Environment(object):
             
             if action.transition.type == "ScanNetwork":
                 new_ips = set()
-                for ip in self._ips.keys(): #check if 
+                for ip in self._ips.keys(): #check if IP exists
                     if ip in netaddr.IPNetwork(action.parameters["target_network"]):
                         new_ips.add(ip)
                 next_known_hosts.union(new_ips)
+            
             elif action.transition.type == "FindServices":
                 #get services for current states in target_host
                 found_services = self._get_services_from_host(action.parameters["target_host"], current._controlled_hosts)
@@ -412,12 +383,15 @@ class Network_Security_Environment(object):
                         next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
                         
             elif action.transition.type == "ExecuteCodeInService":
-                if action.parameters["target_host"] not in next_controlled_hosts:
-                    next_controlled_hosts.add(action.parameters["target_host"])
-                if action.parameters["target_host"] not in next_known_hosts:
-                    next_known_hosts.add(action.parameters["target_host"])  
-                new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                next_known_networks = next_known_networks.union(new_networks)
+                if action.parameters["target_host"] in self._ips: #is it existing IP?
+                    if self._ips[action.parameters["target_host"]] in self._services: #does it have any services?
+                        if action.parameters["target_service"] in self._services[self._ips[action.parameters["target_host"]]]: #does it have the service in question?
+                            if action.parameters["target_host"] not in next_controlled_hosts:
+                                next_controlled_hosts.add(action.parameters["target_host"])
+                            if action.parameters["target_host"] not in next_known_hosts:
+                                next_known_hosts.add(action.parameters["target_host"])  
+                            new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                            next_known_networks = next_known_networks.union(new_networks)
 
             elif action.transition.type == "ExfiltrateData":
                 if len(action.parameters["data"]) > 0 and action.parameters["target_host"] in current.controlled_hosts and action.parameters["source_host"] in current.controlled_hosts:
@@ -425,16 +399,17 @@ class Network_Security_Environment(object):
                         next_known_data[action.parameters["target_host"]] = {action.parameters["data"]}
                     else:
                         next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(action.parameters["data"])
+            
             else:
                 raise ValueError(f"Unknown Action type: '{action.transition.type}'")
+            
             return GameState(next_controlled_hosts, next_known_hosts, next_known_services, next_known_data, next_known_networks)
         except Exception as e:
             print(f"Error occured when executing action:{action} in  {current}: {e}")
-            print(found_services)
-            print(next_known_services[action.parameters["target_host"]])
             exit()
     
     def is_valid_action(self, state:GameState, action:Action)-> bool:
+        raise DeprecationWarning
         if action.transition.type == "ScanNetwork":
             try:
                 net = netaddr.IPNetwork(action.parameters["target_network"])
@@ -472,8 +447,8 @@ class Network_Security_Environment(object):
         controlled_hosts = set(self._win_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
         try:
             services = True
-            keys_services = [k for k in self._win_conditions["known_services"].keys() if k not in state.known_services]
-            if len(keys_services) == 0:
+            missing_keys_services = [k for k in self._win_conditions["known_services"].keys() if k not in state.known_services]
+            if len(missing_keys_services) == 0:
                 for ip in self._win_conditions["known_services"].keys():
                     for service in self._win_conditions["known_services"][ip]:
                         if service not in state.known_services[ip]:
@@ -486,13 +461,12 @@ class Network_Security_Environment(object):
         
         try:
             data = True
-            keys_data = [k for k in self._win_conditions["known_data"].keys() if k not in state.known_data]
-            if len(keys_data) == 0:
+            missing_keys_data = [k for k in self._win_conditions["known_data"].keys() if k not in state.known_data]
+            if len(missing_keys_data) == 0:
                 for k in self._win_conditions["known_data"].keys():
                     if not set(self._win_conditions["known_data"][k]) <= set(state.known_data[k]):
                         data = False
                         break
-
             else:
                 data = False
         except KeyError:
@@ -522,7 +496,6 @@ class Network_Security_Environment(object):
         self._current_state = self._create_starting_state()
         return Observation(self.current_state, 0, self._done, {})
     
-    #@profile
     def step(self, action:Action)-> Observation:
         
         """
@@ -650,9 +623,9 @@ if __name__ == "__main__":
         current = next_s
 
 
-    print(current.observation)
-    print(a)
-    print(next_s.observation)
+    # print(current.observation)
+    # print(a)
+    # print(next_s.observation)
 
     # print("\n")
     # print( "nets",current.observation._known_networks == next.observation._known_networks, current.observation._known_networks is next.observation._known_networks)
