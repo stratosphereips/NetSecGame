@@ -502,28 +502,38 @@ class Network_Security_Environment(object):
                         break
 
         # Known data
-        # Be careful. Any bug in the following lines may make the goal true
         known_data_goal = True
+
         # Do we have any data to know in goal?
+        logger.info(f'Checking the goal of data')
         if self._win_conditions["known_data"]:
-            logger.info(f'Checking the goal of data')
             logger.info(f'\tData needed to win {self._win_conditions["known_data"]}')
+
             # For each host with data the agent should get
-            for ip_data in self._win_conditions["known_data"].keys():
-                logger.info(f'\t\tChecking data in ip {ip_data}')
-                # For each data in this host the agent should get
+            for ip_win, data_win in self._win_conditions["known_data"].items():
+                logger.info(f'\t\tChecking data in ip {ip_win}')
+
                 try:
-                    logger.info(f'\t\tData in state: {state.known_data[ip_data]}')
+                    logger.info(f'\t\t\tData in state: {state.known_data[ip_win]}')
                     # If the things to know to win is larger than the things known
-                    if set(self._win_conditions["known_data"][ip_data]) > set(state.known_data[ip_data]):
-                        logger.info(f'\t\tThere is less data in state: {state.known_data[ip_data]}. So not winning')
+                    if state.known_data[ip_win] == frozenset():
+                        known_data_goal = False
+                        break
+                    elif set(self._win_conditions["known_data"][ip_win]) < set(state.known_data[ip_win]):
+                        logger.info(f'\t\t\tThere is less data in state: {state.known_data[ip_win]}. So not winning')
                         known_data_goal = False
                         break
                 except KeyError:
-                    logger.info(f'\t\tThis ip {ip_data} does not have the data')
+                    logger.info(f'\t\tThis ip {ip_win} does not have the data')
                     # The ip is not known yet to the defender. So no.
                     known_data_goal = False
                     break
+        else:
+            # There is no data configured to win, so the agent can never win
+            known_data_goal = False
+
+        if known_data_goal:
+            logger.info(f'\tWinning condigion: towin: {self._win_conditions["known_data"][ip_win]}. instate: {state.known_data[ip_win]}.')
 
 
 
