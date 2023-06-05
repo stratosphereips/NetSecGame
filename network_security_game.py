@@ -381,7 +381,6 @@ class Network_Security_Environment(object):
 
         # ScanNetwork
         if action.transition.type == "ScanNetwork":
-            logger.info(f'Executing {action}')
             # Is the network in the list of networks of the env. Give back the ips there
             new_ips = set()
             try:
@@ -404,7 +403,9 @@ class Network_Security_Environment(object):
 
             # Add the IPs in the network to the list of known hosts
             extended_hosts = current.known_hosts.union(new_ips)
-            return GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)
+            new_state = GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)
+            logger.info(f'New state: {new_state}')
+            return new_state
 
         elif action.transition.type == "FindServices":
             # Action FindServices
@@ -421,7 +422,9 @@ class Network_Security_Environment(object):
             else:
                 # The host is already there, extend its services in case new were added
                 extended_services[action.parameters["target_host"]] = frozenset(extended_services[action.parameters["target_host"]]).union(found_services)
-            return GameState(current.controlled_hosts, current.known_hosts, extended_services, current.known_data, current.known_networks)
+            new_state = GameState(current.controlled_hosts, current.known_hosts, extended_services, current.known_data, current.known_networks)
+            logger.info(f'New state: {new_state}')
+            return new_state
 
         elif action.transition.type == "FindData":
             # Find data in a host
@@ -436,7 +439,9 @@ class Network_Security_Environment(object):
             else:
                 # Host was known to have some data, add the found data in case it is new
                 extended_data[action.parameters["target_host"]].union(new_data)
-            return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
+            new_state = GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
+            logger.info(f'New state: {new_state}')
+            return new_state
         
         elif action.transition.type == "ExecuteCodeInService":
             # Execute code and get control of new hosts
@@ -453,7 +458,9 @@ class Network_Security_Environment(object):
                 # Get the networks that this host belongs to and make them known too
                 new_networks = self._get_networks_from_host(action.parameters["target_host"])
                 extended_networks = current.known_networks.union(new_networks)
-            return GameState(extended_controlled_hosts, current.known_hosts, current.known_services, current.known_data, extended_networks)
+            new_state = GameState(extended_controlled_hosts, current.known_hosts, current.known_services, current.known_data, extended_networks)
+            logger.info(f'New state: {new_state}')
+            return new_state
         
         elif action.transition.type == "ExfiltrateData":
             # Exfiltrate data TO a target host. So copy the data there
@@ -466,10 +473,12 @@ class Network_Security_Environment(object):
                 # We didnt exfiltrate to this host, add it and the data
                 extended_data[action.parameters["target_host"]] = {action.parameters["data"]}
             else:
-                logger.info(f'\tIP {action.parameters["target_host"]} was already there, extending data {action.parameters["data"]}')
                 # We already exfiltrated to this host, copy the new data.
                 extended_data[action.parameters["target_host"]].union(action.parameters["data"])
-            return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
+                logger.info(f'\tIP {action.parameters["target_host"]} was already there, extending data in this IP with {action.parameters["data"]}. Final data: {extended_data}')
+            new_state = GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
+            logger.info(f'New state: {new_state}')
+            return new_state
 
         else:
             raise ValueError(f"Unknown Action type: '{action.transition.type}'")
