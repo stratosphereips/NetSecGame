@@ -459,9 +459,11 @@ class Network_Security_Environment(object):
             # Original is frozen
             extended_data = {k:v for k,v in current.known_data.items()}
             if action.parameters["target_host"] not in current.known_data.keys():
+                logger.info(f'\tIP {action.parameters["target_host"]} was not there, adding data {action.parameters["data"]}')
                 # We didnt exfiltrate to this host, add it and the data
                 extended_data[action.parameters["target_host"]] = {action.parameters["data"]}
             else:
+                logger.info(f'\tIP {action.parameters["target_host"]} was already there, extending data {action.parameters["data"]}')
                 # We already exfiltrated to this host, copy the new data.
                 extended_data[action.parameters["target_host"]].union(action.parameters["data"])
             return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
@@ -547,11 +549,11 @@ class Network_Security_Environment(object):
         if self._defender_placements:
             # There is a defender
             value = random.random() < action.transition.default_detection_p     
-            logger.info(f'There is a defender and the detection is {value}')
+            logger.info(f'Check detection: There is a defender and the detection is {value}')
             return value
         else: 
             # There is no defender
-            logger.info(f'There is NO defender')
+            logger.info(f'Check detection: There is NO defender.')
             return False 
     
     def reset(self)->Observation:
@@ -613,11 +615,10 @@ class Network_Security_Environment(object):
                 # It is the goal
                 # Give reward
                 reward += 100  
-                logger.info(f'Goal reached')
                 # Game ended
                 self._done = True
-                logger.info(f'Game ended')
                 reason = {'end_reason':'goal_reached'}
+                logger.info(f'Game ended. Reason: {reason}')
 
             # 3. Check if the action was detected
             # Be sure that if the action was detected the game ends with the
@@ -631,17 +632,15 @@ class Network_Security_Environment(object):
                 reward -= 50
                 # Mark the environment as detected
                 self.detected = True
-                reason = {'end_reason':'detected'}
-                # End the game
                 self._done = True
-                logger.info(f'Game ended')
+                reason = {'end_reason':'detected'}
+                logger.info(f'Game ended. Reason: {reason}')
 
             # 4. Check if the max number of steps of the game passed already
             if self._step_counter >= self.max_steps:
-                logger.info(f'Game timeout')
                 self._done = True
-                logger.info(f'Game ended')
                 reason = {'end_reason':'timeout'}
+                logger.info(f'Game ended. Reason: {reason}')
 
             # Make the state we just got into, our current state
             self._current_state = next_state
@@ -699,7 +698,7 @@ if __name__ == "__main__":
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":"random"}
+            "known_data":{"213.47.23.195":{("User2", "Data2FromServer1")}}
         }
         attacker_start = {
             "known_networks":set(),
