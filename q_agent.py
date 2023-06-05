@@ -123,13 +123,13 @@ if __name__ == '__main__':
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
     parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.3, type=float)
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=True, type=bool)
+    parser.add_argument("--defender", help="Is defender present", default=True, action=argparse.BooleanOptionalAction)
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--test", help="Do not train, only run test", default=False, action="store_true")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=50, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
-    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action="store_true")
+    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=True, action=argparse.BooleanOptionalAction)
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
     parser.add_argument("--filename", help="Load previous model file", type=str, default=False)
@@ -220,6 +220,7 @@ if __name__ == '__main__':
             observation = env.reset()
             # Play complete round
             ret, win,_,_ = agent.play(observation)
+            logger.info(f'Reward: {ret}, Win:{win}')
             # Every X episodes, eval
             if i % args.eval_each == 0:
                 wins = 0
@@ -311,7 +312,7 @@ if __name__ == '__main__':
 
         # Print and report every 100 test episodes
         if i % 100 == 0 and i != 0:
-            text = f'''Test {i} episodes. 
+            text = f'''Test results after {i} episodes. 
                 Wins={wins}, 
                 Detections={detected}, 
                 winrate={test_win_rate:.3f}%, 
