@@ -29,7 +29,7 @@ class GNN_REINFORCE_Agent:
 
         self.env = env
         self.args = args
-        self._transition_mapping = env.get_all_actions()
+        self._transition_mapping = [k for k in transitions.keys()]
         graph_schema = tfgnn.read_schema("schema.pbtxt")
         self._example_input_spec = tfgnn.create_graph_spec_from_schema_pb(graph_schema)
 
@@ -207,6 +207,37 @@ class GNN_REINFORCE_Agent:
     
     def load_model(self, filename):
         raise NotImplementedError
+    
+    def _contruct_action_from_logits(self, logits_a, logits_p1, logits_p2, logits_p3, node_mapping, sample=True)-> Action:
+        if sample:
+            print(len(self._transition_mapping), logits_a.shape)
+            transition_type = self._transition_mapping[random.choices([x for x in range(len(self._transition_mapping))], weights=tf.squeeze(tf.nn.softmax(logits_a)), k=1)[0]]
+            p1 = node_mapping[random.choices([x for x in range(len(node_mapping))], weights=tf.squeeze(tf.nn.softmax(logits_p1)), k=1)[0]]
+            p2 = node_mapping[random.choices([x for x in range(len(node_mapping))], weights=tf.squeeze(tf.nn.softmax(logits_p2)), k=1)[0]]
+            p3 = node_mapping[random.choices([x for x in range(len(node_mapping))], weights=tf.squeeze(tf.nn.softmax(logits_p3)), k=1)[0]]
+        else:
+            transition_type = self._transition_mapping[np.argmax(tf.squeeze(tf.nn.softmax(logits_a)))]
+            p1 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(logits_p1)))]
+            p2 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(logits_p2)))]
+            p3 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(logits_p3)))]
+        return self._build_action(transition_type, p1, p2,p3)
+
+
+    def _build_action(self, transition, p1, p2,p3)->Action:
+        if transition == "ScanNetwork":
+            return Action(transition, {"target_network": p1})
+        elif transition == "FindServices":
+            return Action(transition, {"target_host": p1})
+        elif transition == "FindData":
+            return Action(transition, {"target_host": p1})
+        elif transition == "ExecuteCodeInService":
+            return Action(transition, {"target_host": p1, "target_service":p2})
+        elif transition == "ExfiltrateData":
+            return Action(transition, {"target_host": p1, "source_host":p2, "data": p3})
+        else:
+            return None
+    
+    
     
     #@profile
     def train(self):
@@ -410,11 +441,10 @@ if __name__ == '__main__':
     state_g = agent._create_graph_tensor(state_node_f, controlled, state_edges)
 
     a_logits, p1_logits, p2_logits, p3_logits = agent.predict(state_g)
-    
 
-    action = list(transitions.keys())[np.argmax(tf.squeeze(tf.nn.softmax(a_logits)))]
-    p1 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(p1_logits)))]
-    p2 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(p2_logits)))]
-    p3 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(p3_logits)))]
-
-    print(action, p1, p2, p3)
+    print(state)
+    a = agent._contruct_action_from_logits(a_logits, p1_logits, p2_logits, p3_logits,node_mapping,sample=False)
+    a_s = agent._contruct_action_from_logits(a_logits, p1_logits, p2_logits, p3_logits,node_mapping,sample=True)
+    print(f"Playing {a}, sampled{a_s}")
+    next_state = env.step(a)
+    print(next_state.observation, next_state.reward )
