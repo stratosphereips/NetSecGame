@@ -87,9 +87,9 @@ class Network_Security_Environment(object):
         # This code should be moved into create_starting_state()
         logger.info(f"Checking if we need to set the data to win in a random location.")
         # For each known data point in the conditions to win
-        for k, v in win_conditons["known_data"].items():
+        for key, value in win_conditons["known_data"].items():
             # Was the position defined as random?
-            if isinstance(v, str) and v.lower() == "random":
+            if isinstance(value, str) and value.lower() == "random":
                 logger.info(f"\tYes we do.")
                 # Load all the available data from all hosts
                 available_data = []
@@ -105,7 +105,8 @@ class Network_Security_Environment(object):
                     except AttributeError:
                         pass
                 # From all available data, randomly pick the one that is going to be used to win the game
-                self._win_conditions["known_data"][k] = {choice(available_data)}
+                # It seems there can be only one data to win for now
+                self._win_conditions["known_data"][key] = {choice(available_data)}
             else:
                 logger.info(f"\tNo we don't.")
         logger.info(f"\tWinning condition of `known_data` set to {self._win_conditions['known_data']}")
@@ -300,6 +301,8 @@ class Network_Security_Environment(object):
         # ExfiltrateData
         for source, data in state.known_data.items():
             for target in state.controlled_hosts:
+                # Do not exfiltrate to the same host or empty data
+                # Apart from that exfiltrate to all other controlled hosts
                 if source != target and len(data) > 0:
                     for datum in data:
                         actions.append(Action("ExfiltrateData", {"target_host":target, "data":datum, "source_host":source}))
@@ -375,7 +378,7 @@ class Network_Security_Environment(object):
 
         # ScanNetwork
         if action.transition.type == "ScanNetwork":
-            logger.info(f'Executing action {action}')
+            logger.info(f'Executing {action}')
             # Is the network in the list of networks of the env. Give back the ips there
             new_ips = set()
             try:
@@ -633,6 +636,7 @@ class Network_Security_Environment(object):
             # Make the state we just got into, our current state
             self._current_state = next_state
 
+            logger.info(f'Current state: {self._current_state} ')
             # Return an observation
             return Observation(next_state, reward, self._done, reason)
         else:
@@ -690,7 +694,7 @@ if __name__ == "__main__":
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195", "192.168.1.8/24"},
+            "controlled_hosts":{"213.47.23.195", "192.168.2.4"},
             "known_services":{},
             "known_data":{}
         }
@@ -719,15 +723,20 @@ if __name__ == "__main__":
     print()
     print('Start testing rounds of all actions')
 
-    num_iterations = 10
-    for i in range(num_iterations):
+    num_iterations = 200
+    break_loop = False
+    for i in range(num_iterations + 1):
+        if break_loop:
+            break
         actions = env.get_valid_actions(observation.state)
+        print(f'\t- Iteration: {i}')
         for action in actions:
             print(f'\t- Taking Valid action from this state: {action}')
             try:
                 observation = env.step(action)
             except ValueError as e:
                 print(f'Game ended. {e}')
+                break_loop = True
                 break
             print(f'\t\tContr hosts: {observation.state._controlled_hosts}')
             print(f'\t\tKnown nets: {observation.state._known_networks}')
