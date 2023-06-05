@@ -36,10 +36,7 @@ class QAgent:
     
     def move(self, observation:Observation, testing=False) -> Action:
         state = observation.state
-        print(state)
         actions = self.env.get_valid_actions(state)
-        for action in actions:
-            print(f'\t- Getting action: {action}')
         if random.uniform(0, 1) <= self.epsilon and not testing:
             a = choice(actions)
             if (state, a) not in self.q_values:
@@ -135,9 +132,13 @@ if __name__ == '__main__':
     parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action="store_true")
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
-    parser.add_argument("--filename", help="Load previous model file", type=str)
+    parser.add_argument("--filename", help="Load previous model file", type=str, default=False)
     args = parser.parse_args()
     args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
+
+    # Remove all handlers associated with the root logger object.
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
 
     logging.basicConfig(filename='q_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     logger = logging.getLogger('Q-agent')
