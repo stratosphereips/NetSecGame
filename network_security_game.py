@@ -340,7 +340,7 @@ class Network_Security_Environment(object):
         Returns set of Data tuples from given host IP
         """
         data = set()
-        if host_ip in controlled_hosts:
+        if host_ip in controlled_hosts: #only return data if the agent controls the host
             if host_ip in self._ips:
                 if self._ips[host_ip] in self._data:
                     data = set(self._data[self._ips[host_ip]])
