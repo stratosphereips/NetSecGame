@@ -347,10 +347,12 @@ class Network_Security_Environment(object):
                 networks.add(interface.net)
         return networks
     
-    def _get_data_in_host(self, host_ip)->list:
+    def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
         """
-        Get all the data in this IP
+        Returns set of Data tuples from given host IP
+        Check if the host is in the list of controlled hosts
         """
+
         data = set()
         try:
             node_id = self._ips[host_ip]
@@ -358,15 +360,16 @@ class Network_Security_Environment(object):
             print(f"Tried to get data from an unknown IP '{host_ip}'!")
             return data
 
-        node = self._nodes[node_id]
-        if isinstance(node, NodeConfig):
-            for service in node.passive_services:
-                try:
-                    for datum in service.private_data:
-                        data.add((datum.owner, datum.description))
-                except AttributeError:
-                    pass
-                    #service does not contain any data
+        if host_ip in controlled_hosts: 
+            node = self._nodes[node_id]
+            if isinstance(node, NodeConfig):
+                for service in node.passive_services:
+                    try:
+                        for datum in service.private_data:
+                            data.add((datum.owner, datum.description))
+                    except AttributeError:
+                        pass
+                        #service does not contain any data
         return data
 
     def _execute_action(self, current:GameState, action:Action)-> GameState:
@@ -426,7 +429,7 @@ class Network_Security_Environment(object):
             # Original can not be extended
             extended_data = {k:v for k,v in current.known_data.items()}
             # Get data in the host
-            new_data = self._get_data_in_host(action.parameters["target_host"])
+            new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
             if action.parameters["target_host"] not in extended_data.keys():
                 # The host was not in our current list. Add it and the datas
                 extended_data[action.parameters["target_host"]] = new_data
