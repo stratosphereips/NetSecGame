@@ -527,7 +527,6 @@ class Network_Security_Environment(object):
         return goal_reached
 
 
-        return networks_goal and known_hosts_goal and controlled_hosts_goal and known_services_goal and known_data_goal
     
     def _is_detected(self, state, action:Action)->bool:
         """
