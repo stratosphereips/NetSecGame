@@ -10,6 +10,11 @@ import numpy as np
 import scenario_configuration
 import smaller_scenario_configuration
 import tiny_scenario_configuration
+import logging
+
+# Set the logging
+logging.basicConfig(filename='netsecenv2022.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+logger = logging.getLogger('Net-sec-env')
 
 class EnvironmentV2(object):
     def __init__(self, random_start=True, verbosity=0) -> None:
@@ -281,6 +286,7 @@ class EnvironmentV2(object):
         return data
 
     def _execute_action(self, current:GameState, action:Action)-> GameState:
+        logger.info(f'Action: {action}. Current State: {current}')
         if action.transition.type == "ScanNetwork":
             #does the network exist?
             new_ips = set()
@@ -288,6 +294,7 @@ class EnvironmentV2(object):
                 if str(ip) in self._ips.keys():
                     new_ips.add(str(ip))
             extended_hosts = current.known_hosts.union(new_ips)
+            logger.info(f'After state: {GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)}')
             return GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)
         elif action.transition.type == "FindServices":
             found_services =  self._get_services_from_host(action.parameters["target_host"])
@@ -297,6 +304,7 @@ class EnvironmentV2(object):
                     extended_services[action.parameters["target_host"]] = frozenset(found_services)
                 else:
                     extended_services[action.parameters["target_host"]] = frozenset(extended_services[action.parameters["target_host"]]).union(found_services)
+            logger.info(f'After state: {GameState(current.controlled_hosts, current.known_hosts, extended_services, current.known_data, current.known_networks)}')
             return GameState(current.controlled_hosts, current.known_hosts, extended_services, current.known_data, current.known_networks)
         elif action.transition.type == "FindData":
             extended_data = {k:v for k,v in current.known_data.items()}
@@ -306,6 +314,7 @@ class EnvironmentV2(object):
                     extended_data[action.parameters["target_host"]] = new_data
                 else:
                     extended_data[action.parameters["target_host"]].union(new_data)
+            logger.info(f'After state: {GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)}')
             return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
         
         elif action.transition.type == "ExecuteCodeInService":
@@ -314,6 +323,7 @@ class EnvironmentV2(object):
                 extended_controlled_hosts.add(action.parameters["target_host"])
             new_networks = self._get_networks_from_host(action.parameters["target_host"])
             extended_networks = current.known_networks.union(new_networks)
+            logger.info(f'After state: {GameState(extended_controlled_hosts, current.known_hosts, current.known_services, current.known_data, extended_networks)}')
             return GameState(extended_controlled_hosts, current.known_hosts, current.known_services, current.known_data, extended_networks)
         
         elif action.transition.type == "ExfiltrateData":
@@ -323,6 +333,7 @@ class EnvironmentV2(object):
                     extended_data[action.parameters["target_host"]] = {action.parameters["data"]}
                 else:
                     extended_data[action.parameters["target_host"]].union(action.parameters["data"])
+            logger.info(f'After state: {GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)}')
             return GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
         else:
             raise ValueError(f"Unknown Action type: '{action.transition.type}'")
@@ -397,6 +408,8 @@ class EnvironmentV2(object):
             print("controlled", controlled_hosts)
             print("services", services)
             print("data", data)
+        logger.info(f'Is goal?: {networks and known_hosts and controlled_hosts and services and data}')
+        logger.info(f'State: {state}')
         return networks and known_hosts and controlled_hosts and services and data
     
     def _is_detected(self, state, action:Action)->bool:
