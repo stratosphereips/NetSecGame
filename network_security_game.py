@@ -125,8 +125,7 @@ class Network_Security_Environment(object):
             logger.info(f"\tSetting win conditions{win_conditons}")
             return self.reset()
         else:
-            print("CYST confiuration or serialized topology file has to be provided for envrionment initialization!")
-            logger.error(f"CYST confiuration or serialized topology file has to be provided for envrionment initialization!")
+            logger.error(f"CYST configuration or serialized topology file has to be provided for envrionment initialization!")
             raise ValueError("Expected either CYST config object list or topology file for environment initialization!")
     def _create_starting_state(self) -> GameState:
         """
@@ -414,7 +413,7 @@ class Network_Security_Environment(object):
                         next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
                         
             elif action.transition.type == "ExecuteCodeInService":
-                logger.info(f"\t\tAttempting to Execute {action.parameters['target_service']} in {action.parameters['target_host']}")
+                logger.info(f"\t\tAttempting to ExecuteCode in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
                 if action.parameters["target_host"] in self._ips: #is it existing IP?
                     logger.info(f"\t\t\tValid host")
                     if self._ips[action.parameters["target_host"]] in self._services: #does it have any services?
@@ -577,8 +576,7 @@ class Network_Security_Environment(object):
             is_goal = self.is_goal(next_state)
             logger.info(f"\tGoal reached?: {is_goal}")
             if is_goal:
-                # It is the goal
-                # Give reward
+                # Give reward if goal is reached
                 reward += 100
                 # Game ended
                 self._done = True
@@ -596,7 +594,7 @@ class Network_Security_Environment(object):
                 self._done = True
                 logger.info(f'Game ended: Detection')
 
-            # Make the state we just got into, our current state
+            # Transiton to the next_state
             self._current_state = next_state
 
             # 4. Check if the max number of steps of the game passed already
@@ -605,9 +603,11 @@ class Network_Security_Environment(object):
                 self._done = True
                 logger.info(f'Game ended')
                 reason = {'end_reason':'timeout'}
+            
             # Return an observation
             return Observation(self._current_state, reward, self._done, reason)
         else:
+            logger.warning(f"Interaction over! No more steps can be made in the environment")
             raise ValueError("Interaction over! No more steps can be made in the environment")
 
     def set_timeout(self, timeout):
@@ -622,9 +622,6 @@ if __name__ == "__main__":
     logging.basicConfig(filename='NetSecGameEvn.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     # Create the network security environment
     env = Network_Security_Environment(random_start=False, verbosity=0)
-    
-    # Read network setup from predefined CYST configuration
-    #env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
 
     # Define winning conditions and starting position
     goal = {
