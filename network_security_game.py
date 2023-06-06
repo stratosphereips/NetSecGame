@@ -370,7 +370,6 @@ class Network_Security_Environment(object):
                     except AttributeError:
                         # Service does not contain any data
                         pass
-                        #service does not contain any data
         return data
 
     def _execute_action(self, current:GameState, action:Action)-> GameState:
