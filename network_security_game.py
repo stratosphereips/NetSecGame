@@ -383,6 +383,7 @@ class Network_Security_Environment(object):
         if action.transition.type == "ScanNetwork":
             # Is the network in the list of networks of the env. Give back the ips there
             new_ips = set()
+            extended_hosts = current.known_hosts
             try:
                 logger.info(f'All nets: {self._networks}')
                 # For each node in our network
@@ -396,13 +397,13 @@ class Network_Security_Environment(object):
                         if interface.ip in IPNetwork(action.parameters["target_network"]):
                             logger.info(f'\t\t\tThe IP {interface.ip} is in the scanned network {action.parameters["target_network"]}. Adding it.')
                             new_ips.add(str(interface.ip))
+
+                            # Add the IPs in the network to the list of known hosts
+                            extended_hosts = current.known_hosts.union(new_ips)
             except KeyError:
                 # We dont have this network or
                 # it is an invalid network (that we dont have)
                 pass
-
-            # Add the IPs in the network to the list of known hosts
-            extended_hosts = current.known_hosts.union(new_ips)
             new_state = GameState(current.controlled_hosts, extended_hosts, current.known_services, current.known_data, current.known_networks)
             logger.info(f'New state: {new_state}')
             return new_state
@@ -416,12 +417,13 @@ class Network_Security_Environment(object):
             # Copy the known services in the current state to the future services to return. 
             # The current one is frozen and can not be extended
             extended_services = {k:v for k,v in current.known_services.items()}
-            if action.parameters["target_host"] not in extended_services.keys():
-                # The host is not in our list of services. Add it and add the service
-                extended_services[action.parameters["target_host"]] = frozenset(found_services)
-            else:
-                # The host is already there, extend its services in case new were added
-                extended_services[action.parameters["target_host"]] = frozenset(extended_services[action.parameters["target_host"]]).union(found_services)
+            if found_services != frozenset():
+                if action.parameters["target_host"] not in extended_services.keys():
+                    # The host is not in our list of services. Add it and add the service
+                    extended_services[action.parameters["target_host"]] = frozenset(found_services)
+                else:
+                    # The host is already there, extend its services in case new were added
+                    extended_services[action.parameters["target_host"]] = frozenset(extended_services[action.parameters["target_host"]]).union(found_services)
             new_state = GameState(current.controlled_hosts, current.known_hosts, extended_services, current.known_data, current.known_networks)
             logger.info(f'New state: {new_state}')
             return new_state
