@@ -150,8 +150,8 @@ class Network_Security_Environment(object):
         # TODO remove this!
         for controlled_host in controlled_hosts:
             for net in self._get_networks_from_host(controlled_host): #TODO
-                known_networks.add(str(net))
                 if net.is_private(): #TODO
+                    known_networks.add(str(net))
                     net.value += 256
                     if net.is_private():
                         # Check that the extended network is in our list of networks in the game
@@ -368,6 +368,7 @@ class Network_Security_Environment(object):
                         for datum in service.private_data:
                             data.add((datum.owner, datum.description))
                     except AttributeError:
+                        # Service does not contain any data
                         pass
                         #service does not contain any data
         return data
