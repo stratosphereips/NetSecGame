@@ -53,30 +53,40 @@ class Network_Security_Environment(object):
         return len(transitions)
     
     def get_all_actions(self):
-        actions = {}
+        actions = set()
         for net,ips in self._networks.items():
             #network scans
-            actions[len(actions)] = Action("ScanNetwork",{"target_network":net})
+            actions.add(Action("ScanNetwork",{"target_network":net}))
             for ip in ips:
                 if ip in "0.0.0.0":
                     continue
                 #service scans
-                actions[len(actions)] = Action("FindServices", {"target_host":ip})
+                actions.add(Action("FindServices", {"target_host":ip}))
                 #data scans
-                actions[len(actions)] = Action("FindData", {"target_host":ip})
-                #data exfiltration
-                for trg_ip in ips:
-                    if ip == trg_ip:
-                        continue
+                actions.add(Action("FindData", {"target_host":ip}))
+        # #data exfiltration
+                # for data_list in self._data.values():
+                #     print("Data list:", data_list)
+                #     for data in data_list:
+                #         print(data)                
+                #         for trg_ip in ips:
+                #             print(trg_ip, ip)
+                #             if ip not in trg_ip:
+                #                 print("Addin data:", data)
+                #                 actions[len(actions)] = Action("ExfiltrateData", {"target_host":trg_ip, "data":data, "source_host":ip})
+        
+        for src_ip in self._ips:
+            for trg_ip in self._ips:
+                if src_ip != trg_ip and src_ip not in "0.0.0.0" and trg_ip not in "0.0.0.0":
                     for data_list in self._data.values():
                         for data in data_list:
-                            actions[len(actions)] = Action("ExfiltrateData", {"target_host":trg_ip, "data":data, "source_host":ip})
+                            actions.add(Action("ExfiltrateData", {"target_host":trg_ip, "data":data, "source_host":src_ip}))
         for host_id, services in self._services.items():
              for service in services:
                 for ip, host in self._ips.items():
                     if host_id == host:
-                        actions[len(actions)] = Action("ExecuteCodeInService", {"target_host":ip, "target_service":service.name})
-        return actions
+                        actions.add(Action("ExecuteCodeInService", {"target_host":ip, "target_service":service.name}))
+        return {k:v for k,v in enumerate(actions)}
 
     def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, topology=False, cyst_config=None)-> Observation:
         """
@@ -642,15 +652,20 @@ if __name__ == "__main__":
     defender = None
 
     # Initialize the game
-    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=10, cyst_config=scenarios.scenario_configuration.configuration_objects)
+    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=10, cyst_config=scenarios.tiny_scenario_configuration.configuration_objects)
     
     #play
+    for l in env._data.values():
+        print(l)
     actions = env.get_all_actions()
-    current = state
-    states = []
-    for _ in range(50):
-        a = choice(actions)
-        states.append(current.observation)
-        next_s = env.step(a)
+    print(len(actions))
+    for a in actions.values():
         print(a)
-        current = next_s
+    # current = state
+    # states = []
+    # for _ in range(50):
+    #     a = choice(actions)
+    #     states.append(current.observation)
+    #     next_s = env.step(a)
+    #     print(a)
+    #     current = next_s
