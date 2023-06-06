@@ -85,9 +85,10 @@ class Network_Security_Environment(object):
         TODO Firewall rules processing
         """
         if topology:
+            logger.info(f"Initializing the NetSecGame environment from topology {self._src_file}.")
             if self._src_file:
                 self._win_conditions = win_conditons
-                self._attacker_start = self._create_starting_state(attacker_start_position)
+                self._attacker_start = attacker_start_position
                 self._timeout = max_steps
                 
                 #position defensive measure
@@ -97,14 +98,12 @@ class Network_Security_Environment(object):
                 print("Please load a topology file before initializing the environment!")
                 return None
         else:
+            logger.info(f"Initializing the NetSecGame environment from CYST configuration.")
             #check if win condition
             self._attacker_start_position = attacker_start_position
+            logger.info(f"\tSetting timeout (max steps) to {max_steps}")
             self._timeout = max_steps
-            if not defender_positions:
-                self._defender_placements = False
-            else:
-                self._place_defences(defender_positions)
-
+            self._place_defences(defender_positions)
             self._win_conditions = win_conditons
             
             #check if position of data is randomized #TODO TEMPORAL - FIX ASAP
@@ -122,13 +121,16 @@ class Network_Security_Environment(object):
                     self._win_conditions["known_data"][k] = {choice(available_data)}
                     if self.verbosity > 0:
                         print(f"Winning condition of `known_data` randomly set to {self._win_conditions['known_data']}")
+            logger.info(f"\tSetting win conditions{win_conditons}")
             return self.reset()
     
     def _create_starting_state(self) -> GameState:
         """
         Builds the starting GameState. Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
         """
+        logger.info("Creating the starting state")
         if self._random_start:
+            logger.info("\tChoosing random start of the attacker")
             controlled_hosts = set()
             for h in self._attacker_start_position["controlled_hosts"]:
                 if "/" in h: #possible network
@@ -137,6 +139,7 @@ class Network_Security_Environment(object):
                 else:
                     controlled_hosts.add(h)
         else:
+            logger.info("\tUsing pre-defined attacker starting position")
             controlled_hosts = self._attacker_start_position["controlled_hosts"]
         known_networks = set()
         #Exted the networks with the neighbouring networks
@@ -154,16 +157,18 @@ class Network_Security_Environment(object):
                     #return value back to the original
                     net_obj.value += 256
         known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
+        logger.info("Initial gamestate created.")
         return GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"],self._attacker_start_position["known_data"], known_networks)
     
     def _place_defences(self, placements:dict)->None:
         # TODO
+        logger.info("\tStoring defender placement")
         if placements:
+            logger.info(f"\t\tDefender placed in {self._defender_placements}")
             self._defender_placements = True
         else:
+            logger.info(f"\t\tNo defender present in the environment")
             self._defender_placements = False
-        # assert self._defender_placements ==  None
-        # self._defender_placements = placements
     
     def read_topology(self, filename) -> None:
         """
@@ -355,15 +360,20 @@ class Network_Security_Environment(object):
             next_known_data = copy.deepcopy(current.known_data)
             
             if action.transition.type == "ScanNetwork":
+                logger.info(f"\t\tScanning {action.parameters['target_network']}")
                 new_ips = set()
                 for ip in self._ips.keys(): #check if IP exists
+                    logger.info(f"\t\tChecking if {ip} in {action.parameters['target_network']}")
                     if ip in netaddr.IPNetwork(action.parameters["target_network"]):
+                        logger.info(f"\t\t\tAdding {ip} to new_ips")
                         new_ips.add(ip)
                 next_known_hosts.union(new_ips)
             
             elif action.transition.type == "FindServices":
                 #get services for current states in target_host
+                logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
                 found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
+                logger.info(f"\t\t\t Found {len(found_services)}: {found_services}")
                 if len(found_services) > 0:
                     if action.parameters["target_host"] not in next_known_services.keys():
                         next_known_services[action.parameters["target_host"]] = found_services
@@ -372,11 +382,14 @@ class Network_Security_Environment(object):
 
                     #if host was not known, add it to the known_hosts ONLY if there are some found services
                     if action.parameters["target_host"] not in next_known_hosts:
+                        logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
                         next_known_hosts.add(action.parameters["target_host"])
                         next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
 
             elif action.transition.type == "FindData":
+                logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
                 new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
+                logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
                 if len(new_data) > 0:
                     if action.parameters["target_host"] not in next_known_data.keys():
                         next_known_data[action.parameters["target_host"]] = new_data
@@ -384,17 +397,24 @@ class Network_Security_Environment(object):
                         next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
                         
             elif action.transition.type == "ExecuteCodeInService":
+                logger.info(f"\t\tAttempting to Execute {action.parameters['target_service']} in {action.parameters['target_host']}")
                 if action.parameters["target_host"] in self._ips: #is it existing IP?
+                    logger.info(f"\t\t\tValid host")
                     if self._ips[action.parameters["target_host"]] in self._services: #does it have any services?
                         if action.parameters["target_service"] in self._services[self._ips[action.parameters["target_host"]]]: #does it have the service in question?
+                            logger.info(f"\t\t\tValid service")
+                            logger.info(f"\t\tAttempt sucessuful")
                             if action.parameters["target_host"] not in next_controlled_hosts:
                                 next_controlled_hosts.add(action.parameters["target_host"])
                             if action.parameters["target_host"] not in next_known_hosts:
-                                next_known_hosts.add(action.parameters["target_host"])  
+                                next_known_hosts.add(action.parameters["target_host"])
+                            logger.info(f"\t\tSearching for new networks in host {action.parameters['target_host']}")      
                             new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                            logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}") 
                             next_known_networks = next_known_networks.union(new_networks)
 
             elif action.transition.type == "ExfiltrateData":
+                logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
                 if len(action.parameters["data"]) > 0 and action.parameters["target_host"] in current.controlled_hosts and action.parameters["source_host"] in current.controlled_hosts:
                     if action.parameters["target_host"] not in next_known_data.keys():
                         next_known_data[action.parameters["target_host"]] = {action.parameters["data"]}
@@ -484,14 +504,14 @@ class Network_Security_Environment(object):
     def _is_detected(self, state, action:Action)->bool:
         if self._defender_placements:
             value = random() < action.transition.default_detection_p     
-            logger.info(f'There is a defender and the detection is {value}')
+            logger.info(f"\tAction detected ({value})")
             return value
         else: #no defender
-            logger.info(f'There is NO defender')
+            logger.info(f"\tNo defender present")
             return False 
     
     def reset(self)->Observation:
-        logger.info(f'------\nGame resetted')
+        logger.info(f'--- Resseting env to its initial state ---')
         self._done = False
         self._step_counter = 0
         self._detected = False  
@@ -509,14 +529,14 @@ class Network_Security_Environment(object):
         - observation of the state of the env
         """
         if not self._done:
-            logger.info(f'Step taken')
+            logger.info(f"Agent's action: {action}")
             self._step_counter += 1
             reason = {}
 
             # 1. Check if the action was successful or not
             if random() <= action.transition.default_success_p:
                 # The action was successful
-                logger.info(f'Action {action} sucessful')
+                logger.info(f"\tAction sucessful")
 
                 # Get the next state given the action
                 next_state = self._execute_action(self._current_state, action)
@@ -524,7 +544,7 @@ class Network_Security_Environment(object):
                 reward = -1    
             else: 
                 # The action was not successful
-                logger.info(f'Action {action} not sucessful')
+                logger.info(f"\tAction NOT sucessful")
 
                 # State does not change
                 next_state = self._current_state
@@ -537,12 +557,11 @@ class Network_Security_Environment(object):
 
             # 2. Check if the new state is the goal state
             is_goal = self.is_goal(next_state)
+            logger.info(f"\tGoal reached?: {is_goal}")
             if is_goal:
                 # It is the goal
                 # Give reward
-                reward += 100  
-                logger.info(f'Goal reached')
-                print("GOAL REACHED")
+                reward += 100
                 # Game ended
                 self._done = True
                 logger.info(f'Game ended: Goal')
@@ -551,7 +570,7 @@ class Network_Security_Environment(object):
             # 3. Check if the action was detected
             detected = self._is_detected(self._current_state, action)
             if detected:
-                logger.info(f'Action detected')
+                logger.info(f'\tAction detected')
                 # Reward should be negative
                 reward -= 50
                 # Mark the environment as detected
@@ -583,6 +602,8 @@ class Network_Security_Environment(object):
         return Observation(self.current_state, 0, self._done, {})
 
 if __name__ == "__main__":
+
+    logging.basicConfig(filename='NetSecGameEvn.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     # Create the network security environment
     env = Network_Security_Environment(random_start=False, verbosity=0)
     
@@ -611,13 +632,15 @@ if __name__ == "__main__":
     defender = False
 
     # Initialize the game
-    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=100000000)
+    
+    
+    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=10)
     actions = env.get_all_actions()
     current = state
     a = choice(actions)
     next_s = env.step(a)
     states = []
-    for _ in range(10):
+    for _ in range(50):
         a = choice(actions)
         states.append(current.observation)
         next_s = env.step(a)
