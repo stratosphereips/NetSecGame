@@ -37,6 +37,7 @@ class QAgent:
     def move(self, observation:Observation, testing=False) -> Action:
         state = observation.state
         actions = self.env.get_valid_actions(state)
+        logger.info(f'The valid actions in this state are: {[str(action) for action in actions]}')
         if random.uniform(0, 1) <= self.epsilon and not testing:
             a = choice(actions)
             if (state, a) not in self.q_values:
