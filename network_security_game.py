@@ -434,12 +434,13 @@ class Network_Security_Environment(object):
             extended_data = {k:v for k,v in current.known_data.items()}
             # Get data in the host
             new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
-            if action.parameters["target_host"] not in extended_data.keys():
-                # The host was not in our current list. Add it and the datas
-                extended_data[action.parameters["target_host"]] = new_data
-            else:
-                # Host was known to have some data, add the found data in case it is new
-                extended_data[action.parameters["target_host"]].union(new_data)
+            if new_data != frozenset():
+                if action.parameters["target_host"] not in extended_data.keys():
+                    # The host was not in our current list. Add it and the datas
+                    extended_data[action.parameters["target_host"]] = new_data
+                else:
+                    # Host was known to have some data, add the found data in case it is new
+                    extended_data[action.parameters["target_host"]].union(new_data)
             new_state = GameState(current.controlled_hosts, current.known_hosts, current.known_services, extended_data, current.known_networks)
             logger.info(f'New state: {new_state}')
             return new_state
