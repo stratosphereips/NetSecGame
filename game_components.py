@@ -16,6 +16,11 @@ Transition = namedtuple("Transition", ["type", "default_success_p", "default_det
 
 # List of transitions available for attacker with default parameters
 transitions = {
+    #"ScanNetwork": Transition("ScanNetwork", 0.9, 0.025, 0,1), 
+    #"FindServices": Transition("FindServices",0.9, 0.035,0,1),
+    #"FindData": Transition("FindData",0.8, 0.012, 0, 1),
+    #"ExecuteCodeInService": Transition("ExecuteCodeInService", 0.7, 0.05, 0, 1),
+    #"ExfiltrateData": Transition("ExfiltrateData",0.8, 0.012, 0, 1),
     "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2, 0,1), 
     "FindServices": Transition("FindServices",0.9, 0.3,0,1),
     "FindData": Transition("FindData",0.8, 0.1, 0, 1),
