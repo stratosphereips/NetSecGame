@@ -65,16 +65,6 @@ class Network_Security_Environment(object):
                 #data scans
                 actions.add(Action("FindData", {"target_host":ip}))
         # #data exfiltration
-                # for data_list in self._data.values():
-                #     print("Data list:", data_list)
-                #     for data in data_list:
-                #         print(data)                
-                #         for trg_ip in ips:
-                #             print(trg_ip, ip)
-                #             if ip not in trg_ip:
-                #                 print("Addin data:", data)
-                #                 actions[len(actions)] = Action("ExfiltrateData", {"target_host":trg_ip, "data":data, "source_host":ip})
-        
         for src_ip in self._ips:
             for trg_ip in self._ips:
                 if src_ip != trg_ip and src_ip not in "0.0.0.0" and trg_ip not in "0.0.0.0":
