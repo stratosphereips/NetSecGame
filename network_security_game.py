@@ -403,11 +403,12 @@ class Network_Security_Environment(object):
                     if self._ips[action.parameters["target_host"]] in self._services: #does it have any services?
                         if action.parameters["target_service"] in self._services[self._ips[action.parameters["target_host"]]]: #does it have the service in question?
                             logger.info(f"\t\t\tValid service")
-                            logger.info(f"\t\tAttempt sucessuful")
                             if action.parameters["target_host"] not in next_controlled_hosts:
                                 next_controlled_hosts.add(action.parameters["target_host"])
+                                logger.info(f"\t\tAdding to controlled_hosts")
                             if action.parameters["target_host"] not in next_known_hosts:
                                 next_known_hosts.add(action.parameters["target_host"])
+                                logger.info(f"\t\tAdding to known_hosts")
                             logger.info(f"\t\tSearching for new networks in host {action.parameters['target_host']}")      
                             new_networks = self._get_networks_from_host(action.parameters["target_host"])
                             logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}") 
@@ -504,14 +505,14 @@ class Network_Security_Environment(object):
     def _is_detected(self, state, action:Action)->bool:
         if self._defender_placements:
             value = random() < action.transition.default_detection_p     
-            logger.info(f"\tAction detected ({value})")
+            logger.info(f"\tAction detected?: {value}")
             return value
         else: #no defender
             logger.info(f"\tNo defender present")
             return False 
     
     def reset(self)->Observation:
-        logger.info(f'--- Resseting env to its initial state ---')
+        logger.info(f'--- Reseting env to its initial state ---')
         self._done = False
         self._step_counter = 0
         self._detected = False  
@@ -550,7 +551,7 @@ class Network_Security_Environment(object):
                 next_state = self._current_state
 
                 # Reward for taking an action
-                reward = -1 #action.transition.default_cost
+                reward = -1
 
                 if self.verbosity >=1:
                     print("Action unsuccessful")
@@ -570,7 +571,6 @@ class Network_Security_Environment(object):
             # 3. Check if the action was detected
             detected = self._is_detected(self._current_state, action)
             if detected:
-                logger.info(f'\tAction detected')
                 # Reward should be negative
                 reward -= 50
                 # Mark the environment as detected
@@ -579,13 +579,12 @@ class Network_Security_Environment(object):
                 self._done = True
                 logger.info(f'Game ended: Detection')
 
-            # Make sure the old state object is deleted (should prevent OOM errros) 
             # Make the state we just got into, our current state
             self._current_state = next_state
 
             # 4. Check if the max number of steps of the game passed already
             if self._step_counter >= self._timeout:
-                logger.info(f'Game timeout')
+                logger.info(f'Game timeout - exceeded max number of steps ({self._timeout})!')
                 self._done = True
                 logger.info(f'Game ended')
                 reason = {'end_reason':'timeout'}
@@ -629,7 +628,7 @@ if __name__ == "__main__":
     }
 
     # Do we have a defender? 
-    defender = False
+    defender = {"defender": True}
 
     # Initialize the game
     
