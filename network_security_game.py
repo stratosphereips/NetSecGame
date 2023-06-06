@@ -123,10 +123,13 @@ class Network_Security_Environment(object):
                     if self.verbosity > 0:
                         print(f"Winning condition of `known_data` randomly set to {self._win_conditions['known_data']}")
             logger.info(f"\tSetting win conditions{win_conditons}")
+            logger.info(f"CYST configuration processed successfully")
             return self.reset()
         else:
             logger.error(f"CYST configuration or serialized topology file has to be provided for envrionment initialization!")
             raise ValueError("Expected either CYST config object list or topology file for environment initialization!")
+    
+    
     def _create_starting_state(self) -> GameState:
         """
         Builds the starting GameState. Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
@@ -580,7 +583,7 @@ class Network_Security_Environment(object):
                 reward += 100
                 # Game ended
                 self._done = True
-                logger.info(f'Game ended: Goal')
+                logger.info(f'Episode ended: Goal reached')
                 reason = {'end_reason':'goal_reached'}
 
             # 3. Check if the action was detected
@@ -592,16 +595,15 @@ class Network_Security_Environment(object):
                 self._detected = True
                 reason = {'end_reason':'detected'}
                 self._done = True
-                logger.info(f'Game ended: Detection')
+                logger.info(f'Episode ended: Detection')
 
             # Transiton to the next_state
             self._current_state = next_state
 
             # 4. Check if the max number of steps of the game passed already
             if self._step_counter >= self._timeout:
-                logger.info(f'Game timeout - exceeded max number of steps ({self._timeout})!')
                 self._done = True
-                logger.info(f'Game ended')
+                logger.info(f'Episode ended: Timeout - exceeded max number of steps ({self._timeout})')
                 reason = {'end_reason':'timeout'}
             
             # Return an observation
@@ -619,7 +621,7 @@ class Network_Security_Environment(object):
 
 if __name__ == "__main__":
 
-    logging.basicConfig(filename='NetSecGameEvn.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+    logging.basicConfig(filename='NetSecGameEnv.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     # Create the network security environment
     env = Network_Security_Environment(random_start=False, verbosity=0)
 
@@ -642,16 +644,14 @@ if __name__ == "__main__":
     }
 
     # Do we have a defender? 
-    defender = {"defender": True}
+    defender = None
 
     # Initialize the game
+    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=10, cyst_config=scenarios.scenario_configuration.configuration_objects)
     
-    
-    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=100, cyst_config=scenarios.scenario_configuration.configuration_objects)
+    #play
     actions = env.get_all_actions()
     current = state
-    a = choice(actions)
-    next_s = env.step(a)
     states = []
     for _ in range(50):
         a = choice(actions)
