@@ -84,6 +84,16 @@ class Network_Security_Environment(object):
         Entities in the environment are either read from CYST objects directly or from the serialization file.
         TODO Firewall rules processing
         """
+        self._networks = {}
+        self._hosts = {}
+        self._services = {}
+        self._data = {}
+
+        self._nodes = {}
+        self._connections = {}
+        self._ips = {}
+        self._exploits = {}
+        self._fw_rules = []
         if topology:
             logger.info(f"Initializing the NetSecGame environment from topology {self._src_file}.")
             if self._src_file:
@@ -206,20 +216,7 @@ class Network_Security_Environment(object):
         routers = []
         connections = []
         exploits = []
-        
-
-        self._networks = {}
-        self._hosts = {}
-        self._services = {}
-        self._data = {}
-
-        self._nodes = {}
-        self._connections = {}
-        self._ips = {}
-        self._exploits = {}
-        self._fw_rules = []
-
-        #sort objects into categories
+        #sort objects into categories (nodes and routers MUST be processed before connections!)
         for o in configuration_objects:
             if isinstance(o, NodeConfig):
                 nodes.append(o)
@@ -230,8 +227,6 @@ class Network_Security_Environment(object):
             elif isinstance(o, ExploitConfig):
                 exploits.append(o)
         
-
-
         def process_node_config(node_obj:NodeConfig) -> None:
             logger.info(f"\tProcessing config of node '{node_obj.id}'")
             #save the complete object
