@@ -78,7 +78,7 @@ class Network_Security_Environment(object):
                         actions[len(actions)] = Action("ExecuteCodeInService", {"target_host":ip, "target_service":service.name})
         return actions
 
-    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, topology=False)-> Observation:
+    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, topology=False, cyst_config=None)-> Observation:
         """
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
@@ -97,8 +97,9 @@ class Network_Security_Environment(object):
             else:
                 print("Please load a topology file before initializing the environment!")
                 return None
-        else:
-            logger.info(f"Initializing the NetSecGame environment from CYST configuration.")
+        elif cyst_config:
+            logger.info(f"Initializing the NetSecGame environment from CYST configuration:")
+            self.process_cyst_config(cyst_config)
             #check if win condition
             self._attacker_start_position = attacker_start_position
             logger.info(f"\tSetting timeout (max steps) to {max_steps}")
@@ -123,7 +124,10 @@ class Network_Security_Environment(object):
                         print(f"Winning condition of `known_data` randomly set to {self._win_conditions['known_data']}")
             logger.info(f"\tSetting win conditions{win_conditons}")
             return self.reset()
-    
+        else:
+            print("CYST confiuration or serialized topology file has to be provided for envrionment initialization!")
+            logger.error(f"CYST confiuration or serialized topology file has to be provided for envrionment initialization!")
+            raise ValueError("Expected either CYST config object list or topology file for environment initialization!")
     def _create_starting_state(self) -> GameState:
         """
         Builds the starting GameState. Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
@@ -224,65 +228,78 @@ class Network_Security_Environment(object):
             elif isinstance(o, ExploitConfig):
                 exploits.append(o)
         
-        #process Nodes
-        for n in nodes:
-            #print(n)
-            self._nodes[n.id] = n
-            node_to_id[n.id] = len(node_to_id)
-    
+
+
+        def process_node_config(node_obj:NodeConfig) -> None:
+            logger.info(f"\tProcessing config of node '{node_obj.id}'")
+            #save the complete object
+            self._nodes[node_obj.id] = node_obj
+            node_to_id[node_obj.id] = len(node_to_id)
+            
             #examine interfaces
-            for i in n.interfaces:
-                net = str(i.net)
-                ip = str(i.ip)
-                self._ips[ip] = n.id            
-                self._hosts[ip] = n
+            logger.info(f"\t\tProcessing interfaces in node '{node_obj.id}'")
+            for interface in node_obj.interfaces:
+                net = str(interface.net)
+                ip = str(interface.ip)
+                self._ips[ip] = node_obj.id            
+                self._hosts[ip] = node_obj
                 if net not in self._networks:
                     self._networks[net] = []
                 self._networks[net].append(ip)
-            
-            #services
-            for service in n.passive_services:
-                if n.id not in self._services:
-                    self._services[n.id] = []
-                self._services[n.id].append(Service(service.type, "passive", service.version, service.local))
 
+            #services
+            logger.info(f"\t\tProcessing services & data in node '{node_obj.id}'")
+            for service in node_obj.passive_services:
+                if node_obj.id not in self._services:
+                    self._services[node_obj.id] = []
+                self._services[node_obj.id].append(Service(service.type, "passive", service.version, service.local))
                 #data
+                logger.info(f"\t\t\tProcessing data in node '{node_obj.id}':'{service.type}' service")
                 try:
-                    for d in service.private_data:
-                        if n.id not in self._data:
-                            self._data[n.id] = []
-                        self._data[n.id].append((d.owner, d.description))
+                    for data in service.private_data:
+                        if node_obj.id not in self._data:
+                            self._data[node_obj.id] = []
+                        self._data[node_obj.id].append((data.owner, data.description))
+                    
                 except AttributeError:
                     pass
                     #service does not contain any data
 
-            
-        
-        #process routers
-        for r in routers:
-            self._nodes[r.id] = r
-            node_to_id[r.id] = len(node_to_id)
-            for i in r.interfaces:
-                net = str(i.net)
-                ip = str(i.ip)
-                self._ips[ip] = r.id
-                self._hosts[ip] = r
+        def process_router_config(router_obj:RouterConfig)->None:
+            logger.info(f"\tProcessing config of router '{router_obj.id}'")
+            self._nodes[router_obj.id] = router_obj
+            node_to_id[router_obj.id] = len(node_to_id)
+            logger.info(f"\t\tProcessing interfaces in router '{router_obj.id}'")
+            for interface in r.interfaces:
+                net = str(interface.net)
+                ip = str(interface.ip)
+                self._ips[ip] = router_obj.id
+                self._hosts[ip] = router_obj
                 if net not in self._networks:
                     self._networks[net] = []
                 self._networks[net].append(ip)
-
-            
-            
+        
             #add Firewall rules
-            for tp in r.traffic_processors:
+            logger.info(f"\t\tProcessing FW rules in router '{router_obj.id}'")
+            for tp in router_obj.traffic_processors:
                 for chain in tp.chains:
                     for rule in chain.rules:
                         if rule.policy == FirewallPolicy.ALLOW:
                             self._fw_rules.append(rule)
+        #process Nodes
+        for n in nodes:
+            process_node_config(n)
+        #process routers
+        for r in routers:
+            process_router_config(r)
+        
         #connections
+        logger.info(f"\tProcessing connections in the network")
         self._connections = np.zeros([len(node_to_id),len(node_to_id)])
         for c in connections:
             self._connections[node_to_id[c.src_id],node_to_id[c.dst_id]] = 1
+        
+        logger.info(f"\tProcessing available exploits")
         #exploits
         self._exploits = exploits
     
@@ -607,7 +624,7 @@ if __name__ == "__main__":
     env = Network_Security_Environment(random_start=False, verbosity=0)
     
     # Read network setup from predefined CYST configuration
-    env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
+    #env.process_cyst_config(scenarios.scenario_configuration.configuration_objects)
 
     # Define winning conditions and starting position
     goal = {
@@ -633,7 +650,7 @@ if __name__ == "__main__":
     # Initialize the game
     
     
-    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=10)
+    state = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=100, cyst_config=scenarios.scenario_configuration.configuration_objects)
     actions = env.get_all_actions()
     current = state
     a = choice(actions)
