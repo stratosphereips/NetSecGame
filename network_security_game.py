@@ -75,7 +75,7 @@ class Network_Security_Environment(object):
              for service in services:
                 for ip, host in self._ips.items():
                     if host_id == host:
-                        actions.add(Action("ExecuteCodeInService", {"target_host":ip, "target_service":service.name}))
+                        actions.add(Action("ExecuteCodeInService", {"target_host":ip, "target_service":service}))
         return {k:v for k,v in enumerate(actions)}
 
     def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, topology=False, cyst_config=None)-> Observation:
