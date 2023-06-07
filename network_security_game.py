@@ -408,7 +408,7 @@ class Network_Security_Environment(object):
         if host_ip in controlled_hosts: #only return data if the agent controls the host
             if host_ip in self._ips:
                 if self._ips[host_ip] in self._data:
-                    data = self._data[self._ips[host_ip]])
+                    data = self._data[self._ips[host_ip]]
         return data
   
     def _execute_action(self, current:GameState, action:Action)-> GameState:
