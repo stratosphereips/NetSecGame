@@ -50,7 +50,7 @@ class Network_Security_Environment(object):
         self._src_file = None
         # Verbosity. 
         # If the episode/action was detected by the defender
-        self.detected = False
+        self._detected = False
         self.verbosity = verbosity
     
     @property
