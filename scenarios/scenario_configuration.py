@@ -202,10 +202,6 @@ web_server = NodeConfig(
                     owner="User2",
                     description="WebServerData"
             ),
-            DataConfig(
-                    owner="User1",
-                    description="DataFromServer1"
-                )
             ],
             access_level=AccessLevel.LIMITED,
             authentication_providers=[],
