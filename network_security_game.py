@@ -165,6 +165,10 @@ class Network_Security_Environment(object):
             
             logger.info(f"\tWinning condition of `known_data` set to {self._win_conditions['known_data']}")
             logger.info(f"CYST configuration processed successfully")
+            
+            #save self_data original state so we can go back to it in reset
+            self._data_original = copy.deepcopy(self._data)
+            
             # Return an observation
             return self.reset()
         else:
@@ -592,11 +596,12 @@ class Network_Security_Environment(object):
         Function to reset the state of the game 
         and play a new episode
         """
-        # Remember to reset back self._data!!!!!
         logger.info(f'--- Reseting env to its initial state ---')
         self._done = False
         self._step_counter = 0
         self.detected = False  
+        #reset self._data to orignal state
+        self._data = copy.deepcopy(self._data_original)
         self._current_state = self._create_starting_state()
 
         logger.info(f'Current state: {self._current_state} ')
