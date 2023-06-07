@@ -317,8 +317,8 @@ class Network_Security_Environment(object):
                 try:
                     for data in service.private_data:
                         if node_obj.id not in self._data:
-                            self._data[node_obj.id] = []
-                        self._data[node_obj.id].append((data.owner, data.description))
+                            self._data[node_obj.id] = set()
+                        self._data[node_obj.id].add((data.owner, data.description))
                     
                 except AttributeError:
                     pass
@@ -408,7 +408,7 @@ class Network_Security_Environment(object):
         if host_ip in controlled_hosts: #only return data if the agent controls the host
             if host_ip in self._ips:
                 if self._ips[host_ip] in self._data:
-                    data = set(self._data[self._ips[host_ip]])
+                    data = self._data[self._ips[host_ip]])
         return data
   
     def _execute_action(self, current:GameState, action:Action)-> GameState:
