@@ -600,7 +600,7 @@ class Network_Security_Environment(object):
         logger.info(f'--- Reseting env to its initial state ---')
         self._done = False
         self._step_counter = 0
-        self.detected = False  
+        self._detected = False  
         #reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         self._current_state = self._create_starting_state()
@@ -670,7 +670,7 @@ class Network_Security_Environment(object):
                 # Reward should be negative
                 reward -= 50
                 # Mark the environment as detected
-                self.detected = True
+                self._detected = True
                 self._done = True
                 reason = {'end_reason':'detected'}
                 logger.info(f'Episode ended. Reason: {reason}')
