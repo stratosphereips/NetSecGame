@@ -117,6 +117,7 @@ class Network_Security_Environment(object):
         self._ips = {}
         self._exploits = {}
         self._fw_rules = []
+        logger.info(f"Initializing NetSetGame environment")
 
         # Process parameters
         self._attacker_start_position = attacker_start_position
@@ -135,7 +136,7 @@ class Network_Security_Environment(object):
             logger.info(f'Agent passed a seed, setting to {agent_seed}')
         
         if cyst_config:
-            logger.info(f"Initializing the NetSecGame environment from CYST configuration:")
+            logger.info(f"Reading from CYST configuration:")
             self.process_cyst_config(cyst_config)
 
             # Check if position of data is randomized 
@@ -172,8 +173,8 @@ class Network_Security_Environment(object):
             # Return an observation
             return self.reset()
         else:
-            logger.error(f"CYST configuration or serialized topology file has to be provided for envrionment initialization!")
-            raise ValueError("Expected either CYST config object list or topology file for environment initialization!")
+            logger.error(f"CYST configuration has to be provided for envrionment initialization!")
+            raise ValueError("CYST configuration has to be provided for envrionment initialization!")
     
     def _create_starting_state(self) -> GameState:
         """
@@ -722,49 +723,50 @@ if __name__ == "__main__":
 
     # Initialize the game
     observation = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=500, agent_seed=42, cyst_config=scenarios.tiny_scenario_configuration.configuration_objects)
-    print(f'The complete observation is: {observation}')
-    print(f'The state is: {observation.state}')
-    print(f'Networks in the env: {env._networks}')
-    print(f'\tContr hosts: {observation.state._controlled_hosts}')
-    print(f'\tKnown nets: {observation.state._known_networks}')
-    print(f'\tKnown host: {observation.state._known_hosts}')
-    print(f'\tKnown serv:')
-    for ip_service in observation.state._known_services:
-        print(f'\t\t{observation.state._known_services[ip_service]}:{ip_service}')
-    print(f'\tKnown data: {observation.state._known_data}')
+    print(observation)
+    # print(f'The complete observation is: {observation}')
+    # print(f'The state is: {observation.state}')
+    # print(f'Networks in the env: {env._networks}')
+    # print(f'\tContr hosts: {observation.state.controlled_hosts}')
+    # print(f'\tKnown nets: {observation.state.known_networks}')
+    # print(f'\tKnown host: {observation.state.known_hosts}')
+    # print(f'\tKnown serv:')
+    # for ip_service in observation.state.known_services:
+    #     print(f'\t\t{observation.state.known_services[ip_service]}:{ip_service}')
+    # print(f'\tKnown data: {observation.state.known_data}')
 
-    print()
-    print('Start testing rounds of all actions')
+    # print()
+    # print('Start testing rounds of all actions')
 
-    num_iterations = 200
-    break_loop = False
-    for i in range(num_iterations + 1):
-        if break_loop:
-            break
-        actions = env.get_valid_actions(observation.state)
-        print(f'\t- Iteration: {i}')
-        for action in actions:
-            print(f'\t- Taking Valid action from this state: {action}')
-            try:
-                observation = env.step(action)
-            except ValueError as e:
-                print(f'Game ended. {e}')
-                break_loop = True
-                break
-            print(f'\t\tContr hosts: {observation.state._controlled_hosts}')
-            print(f'\t\tKnown nets: {observation.state._known_networks}')
-            print(f'\t\tKnown host: {observation.state._known_hosts}')
-            print(f'\t\tKnown serv:')
-            for ip_service in observation.state._known_services:
-                print(f'\t\t\t{ip_service}')
-                for serv in observation.state._known_services[ip_service]:
-                    print(f'\t\t\t\t{serv.name}')
-            print(f'\t\tKnown data: {observation.state._known_data}')
-            for ip_data in observation.state._known_data:
-                if observation.state._known_data[ip_data]:
-                    print(f'\t\t\t{ip_data}')
-                    for data in observation.state._known_data[ip_data]:
-                        print(f'\t\t\t\t{data}')
-    print(f'The {num_iterations} iterations of test actions ended.')
+    # num_iterations = 200
+    # break_loop = False
+    # for i in range(num_iterations + 1):
+    #     if break_loop:
+    #         break
+    #     actions = env.get_valid_actions(observation.state)
+    #     print(f'\t- Iteration: {i}')
+    #     for action in actions:
+    #         print(f'\t- Taking Valid action from this state: {action}')
+    #         try:
+    #             observation = env.step(action)
+    #         except ValueError as e:
+    #             print(f'Game ended. {e}')
+    #             break_loop = True
+    #             break
+    #         print(f'\t\tContr hosts: {observation.state.controlled_hosts}')
+    #         print(f'\t\tKnown nets: {observation.state.known_networks}')
+    #         print(f'\t\tKnown host: {observation.state.known_hosts}')
+    #         print(f'\t\tKnown serv:')
+    #         for ip_service in observation.state.known_services:
+    #             print(f'\t\t\t{ip_service}')
+    #             for serv in observation.state.known_services[ip_service]:
+    #                 print(f'\t\t\t\t{serv.name}')
+    #         print(f'\t\tKnown data: {observation.state._known_data}')
+    #         for ip_data in observation.state._known_data:
+    #             if observation.state._known_data[ip_data]:
+    #                 print(f'\t\t\t{ip_data}')
+    #                 for data in observation.state._known_data[ip_data]:
+    #                     print(f'\t\t\t\t{data}')
+    # print(f'The {num_iterations} iterations of test actions ended.')
 
 
