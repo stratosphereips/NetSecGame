@@ -153,7 +153,7 @@ class GameState(object):
         return node_features, controlled, edges, {v:k for k,v in graph_nodes.items()}
 
     def __str__(self) -> str:
-        return f"State<nets:{self.known_networks}; known:{self.known_hosts}; owned:{self.controlled_hosts}; services:{self._known_services}; data:{self._known_data}>"
+        return f"State<nets:{self.known_networks}; known:{self.known_hosts}; owned:{self.controlled_hosts}; services:{self.known_services}; data:{self.known_data}>"
     
     
     def as_json(self):
