@@ -483,24 +483,26 @@ class Network_Security_Environment(object):
                             new_networks = self._get_networks_from_host(action.parameters["target_host"])
                             logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}") 
                             next_known_networks = next_known_networks.union(new_networks)
-            elif action.transition.type == "ExecuteCodeInService":
-                # Beer bet. No bugs in this code. Pinky-swear
-                logger.info(f"\t\tAttempting to ExecuteCode in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
-                if action.parameters["target_host"] in self._ips: #is it existing IP?
-                    logger.info(f"\t\t\tValid host")
-                    if self._ips[action.parameters["target_host"]] in self._services: #does it have any services?
-                        if action.parameters["target_service"] in self._services[self._ips[action.parameters["target_host"]]]: #does it have the service in question?
-                            logger.info(f"\t\t\tValid service")
-                            if action.parameters["target_host"] not in next_controlled_hosts:
-                                next_controlled_hosts.add(action.parameters["target_host"])
-                                logger.info(f"\t\tAdding to controlled_hosts")
-                            if action.parameters["target_host"] not in next_known_hosts:
-                                next_known_hosts.add(action.parameters["target_host"])
-                                logger.info(f"\t\tAdding to known_hosts")
-                            logger.info(f"\t\tSearching for new networks in host {action.parameters['target_host']}")      
-                            new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                            logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}") 
-                            next_known_networks = next_known_networks.union(new_networks)
+            elif action.transition.type == "ExfiltrateData":
+                logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
+                if action.parameters["target_host"] in current.controlled_hosts:
+                    logger.info(f"\t\t\t {action.parameters['target_host']} is under-control: {current.controlled_hosts}")
+                    if action.parameters["source_host"] in current.controlled_hosts:
+                        logger.info(f"\t\t\t {action.parameters['source_host']} is under-control: {current.controlled_hosts}")
+                        if self._ips[action.parameters["source_host"]] in self._data.keys():
+                            if action.parameters["data"] in self._data[self._ips[action.parameters["source_host"]]]:
+                                logger.info(f"\t\t\t Data present in the source_host")
+                                if action.parameters["target_host"] not in next_known_data.keys():
+                                    next_known_data[action.parameters["target_host"]] = {action.parameters["data"]}
+                                else:
+                                    next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(action.parameters["data"])
+
+                                # If the data was exfiltrated to a new host, remember the data in the new nost in the env
+                                if self._ips[action.parameters["target_host"]] not in self._data.keys():
+
+                                    self._data[ self._ips[action.parameters["target_host"]] ] = {action.parameters["data"]}
+                                else:
+                                    self._data[ self._ips[action.parameters["target_host"]] ] = self._data[ self._ips[action.parameters["target_host"]] ].union(action.parameters["data"])
             else:
                 raise ValueError(f"Unknown Action type: '{action.transition.type}'")
             
@@ -723,7 +725,11 @@ if __name__ == "__main__":
 
     # Initialize the game
     observation = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=500, agent_seed=42, cyst_config=scenarios.tiny_scenario_configuration.configuration_objects)
-    print(observation)
+    actions = env.get_all_actions()
+    print(f"Actions space size:{len(actions)}")
+    for _ in range(50):
+        observation = env.step(random.choice(actions))
+    
     # print(f'The complete observation is: {observation}')
     # print(f'The state is: {observation.state}')
     # print(f'Networks in the env: {env._networks}')
