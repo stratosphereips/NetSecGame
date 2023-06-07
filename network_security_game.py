@@ -521,15 +521,18 @@ class Network_Security_Environment(object):
         # Networks
         if set(self._win_conditions["known_networks"]) <= set(state.known_networks):
             networks_goal = True
-        
+        else:
+            networks_goal = False
         # Known hosts
         if set(self._win_conditions["known_hosts"]) <= set(state.known_hosts):
             known_hosts_goal = True
-
+        else:
+            known_hosts_goal = False
         # Controlled hosts
         if set(self._win_conditions["controlled_hosts"]) <= set(state.controlled_hosts):
             controlled_hosts_goal = True
-
+        else:
+            controlled_hosts_goal = False
         # Services
         try:
             services_goal = True
