@@ -29,13 +29,13 @@ Actions are composed of the transition type (see Transition) and additional para
  - ScanNetwork {"target_network": "X.X.X.X/mask" (string)}
  - FindServices {"target_host": "X.X.X.X" (string)}
  - FindData {"target_host": "X.X.X.X" (string)}
- - ExecuteCodeInService {"target_host": "X.X.X.X" (string), "target_service":"service_name" (string)}
- - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"path_to_data" (string)}
+ - ExecuteCodeInService {"target_host": "X.X.X.X" (string), "target_service":"service" (Service named tuple)}
+ - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"Data tuple" (tuple)}
 """
 
 class Action(object):
   
-    def __init__(self, transition:str, params:list) -> None:
+    def __init__(self, transition:str, params:dict) -> None:
         self._transition_name = transition
         self._parameters = params
     
