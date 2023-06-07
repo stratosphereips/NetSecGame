@@ -122,7 +122,7 @@ class Network_Security_Environment(object):
         # Process parameters
         self._attacker_start_position = attacker_start_position
         logger.info(f"\tSetting max steps to {max_steps}")
-        self.max_steps = max_steps
+        self._max_steps = max_steps
 
         self._place_defences(defender_positions)
 
@@ -564,7 +564,7 @@ class Network_Security_Environment(object):
         except KeyError:
             known_data_goal = False
 
-        goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and known_services_goal and known_data_goal
+        goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
 
         return goal_reached
 
