@@ -558,8 +558,8 @@ class Network_Security_Environment(object):
                 for ip_win in self._win_conditions["known_data"].keys():
                     logger.info(f'\t\tChecking data in ip {ip_win}')
                     logger.info(f'\t\t\tData in state: {state.known_data[ip_win]}')
-                    logger.info(f'\t\t\tnot set(self._win_conditions["known_data"][ip_win]) <= set(state.known_data[ip_win]): {not set(self._win_conditions["known_data"][ip_win]) <= set(state.known_data[ip_win])}')
-                    if not set(self._win_conditions["known_data"][ip_win]) <= set(state.known_data[ip_win]):
+                    if set(self._win_conditions["known_data"][ip_win]) > set(state.known_data[ip_win]):
+                        logger.info(f'\t\t\tnot set(self._win_conditions["known_data"][ip_win]) <= set(state.known_data[ip_win]): {set(self._win_conditions["known_data"][ip_win]) > set(state.known_data[ip_win])}')
                         known_data_goal = False
                         break
             else:
@@ -711,7 +711,7 @@ if __name__ == "__main__":
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":{("User2", "Data2FromServer1")}}
+            "known_data":{"213.47.23.195":{("User1", "Data1FromServer1")}}
         }
         attacker_start = {
             "known_networks":set(),
@@ -730,9 +730,14 @@ if __name__ == "__main__":
     observation = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=500, agent_seed=42, cyst_config=scenarios.tiny_scenario_configuration.configuration_objects)
     actions = env.get_all_actions()
     print(f"Actions space size:{len(actions)}")
-    for _ in range(50):
-        observation = env.step(random.choice(actions))
     
+
+    #execute code in service to get control
+    obs = env.step(Action(transition="ExecuteCodeInService", params={'target_host': '192.168.1.2', 'target_service': Service(name='remote desktop service', type='passive', version='10.0.19041', is_local=False)}))
+    print(obs.state)
+    #exflitrate
+    obs = env.step(Action(transition="ExfiltrateData", params={'target_host': '213.47.23.195', 'data': ('User1', 'DataFromServer1'), 'source_host': '192.168.1.2'}))
+    print(obs.state)
     # print(f'The complete observation is: {observation}')
     # print(f'The state is: {observation.state}')
     # print(f'Networks in the env: {env._networks}')
