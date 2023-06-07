@@ -175,7 +175,6 @@ class Network_Security_Environment(object):
         """
         Builds the starting GameState. Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
         """
-<<<<<<< HEAD
         known_networks = set()
         controlled_hosts = set()
 
