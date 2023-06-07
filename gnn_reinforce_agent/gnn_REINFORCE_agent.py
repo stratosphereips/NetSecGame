@@ -202,7 +202,7 @@ class GNN_REINFORCE_Agent:
             while len(batch_states) < args.batch_size:
                 #perform episode
                 states, actions, rewards = [], [], []
-                state, done = env.reset().observation, False
+                state, done = env.reset().state, False
 
                 while not done:
                     state_node_f,controlled, state_edges,_ = state.as_graph
@@ -229,7 +229,7 @@ class GNN_REINFORCE_Agent:
                     rewards.append(next_state.reward)
 
                     #move to the next state
-                    state = next_state.observation
+                    state = next_state.state
                     done = next_state.done
 
                 discounted_returns = self._get_discounted_rewards(rewards)
@@ -276,7 +276,7 @@ class GNN_REINFORCE_Agent:
             if episode > 0 and episode % args.eval_each == 0:
                 returns = []
                 for _ in range(self.args.eval_for):
-                    state, done = env.reset().observation, False
+                    state, done = env.reset().state, False
                     ret = 0
                     #print("--------------")
                     while not done:
@@ -291,7 +291,7 @@ class GNN_REINFORCE_Agent:
                         #select action and perform it
                         next_state = self.env.step(action)
                         ret += next_state.reward
-                        state = next_state.observation
+                        state = next_state.state
                         done = next_state.done
     
                     returns.append(ret)
