@@ -227,34 +227,20 @@ class Network_Security_Environment(object):
         # TODO remove this!
         for controlled_host in controlled_hosts:
             for net in self._get_networks_from_host(controlled_host): #TODO
-                if net.is_private(): #TODO
-                    known_networks.add(str(net))
-                    net.value += 256
-                    if net.is_private():
-                        # Check that the extended network is in our list of networks in the game
-                        logger.info(f'net1 keys: {self._networks} . net {net}')
-                        if str(net) in self._networks.keys():
-                            logger.info(f'Adding {net} to agent')
-                            known_networks.add(str(net))
-                            # If we add it to the agent, also add it in the official list of nets in the env
-                            if str(net) not in self._networks:
-                                logger.info(f'Adding {net} to known nets')
-                                self._networks[str(net)] = []
-                    net.value -= 2*256
-                    if net.is_private():
-                        # Check that the extended network is in our list of networks in the game
-                        logger.info(f'net2 keys: {self._networks} . net {net}')
-                        if str(net) in self._networks.keys():
-                            logger.info(f'Adding {net} to agent')
-                            known_networks.add(str(net))
-                            # If we add it to the agent, also add it in the official list of nets in the env
-                            if str(net) not in self._networks:
-                                logger.info(f'Adding {net} to known nets')
-                                self._networks[str(net)] = []
+                known_networks.add(net)
+                net_obj = netaddr.IPNetwork(net)
+                if net_obj.is_private(): #TODO
+                    net_obj.value += 256
+                    if net_obj.is_private():
+                        logger.info(f'\tAdding {str(net_obj)} to agent')
+                        known_networks.add(str(net_obj))
+                    net_obj.value -= 2*256
+                    if net_obj.is_private():
+                        known_networks.add(str(net_obj))
+                        logger.info(f'\tAdding {str(net_obj)} to agent')
                     #return value back to the original
-                    net.value += 256
-
-
+                    net_obj.value += 256
+        known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
         game_state = GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
     
