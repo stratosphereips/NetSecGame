@@ -100,7 +100,7 @@ class Network_Security_Environment(object):
                         actions.add(Action("ExecuteCodeInService", {"target_host":ip, "target_service":service}))
         return {k:v for k,v in enumerate(actions)}
 
-    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, cyst_config=None)-> Observation:
+    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, agent_seed=42, cyst_config=None)-> Observation:
         """
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
