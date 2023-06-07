@@ -298,7 +298,7 @@ class Network_Security_Environment(object):
             logger.info(f"\tProcessing config of node '{node_obj.id}'")
             #save the complete object
             self._nodes[node_obj.id] = node_obj
-            logger.info(f'\tAdded {str(node.id)} to the list of available nodes.')
+            logger.info(f'\tAdded {node_obj.id} to the list of available nodes.')
             node_to_id[node_obj.id] = len(node_to_id)
             
             #examine interfaces
@@ -311,7 +311,7 @@ class Network_Security_Environment(object):
                 if net not in self._networks:
                     self._networks[net] = []
                 self._networks[net].append(ip)
-                logger.info(f'\tAdded network {str(interface.net)} to the list of available nets, with node {node.id}.')
+                logger.info(f'\tAdded network {str(interface.net)} to the list of available nets, with node {node_obj.id}.')
 
 
             #services
@@ -343,7 +343,7 @@ class Network_Security_Environment(object):
             # Process a router
             # Add the router to the list of nodes. This goes
             # against CYST definition. Check if we can modify it in CYST
-            if router.id.lower() == 'internet':
+            if router_obj.id.lower() == 'internet':
                 # Ignore the router called 'internet' because it is not a router
                 # in our network
                 logger.info(f"\t\tSkipping the internet router'")
@@ -379,8 +379,9 @@ class Network_Security_Environment(object):
         logger.info(f"\tProcessing connections in the network")
         self._connections = np.zeros([len(node_to_id),len(node_to_id)])
         for c in connections:
-            self._connections[node_to_id[c.src_id],node_to_id[c.dst_id]] = 1
-        
+            if c.src_id != "internet" and c.dst_id != "internet":
+                self._connections[node_to_id[c.src_id],node_to_id[c.dst_id]] = 1
+                #TODO FIX THE INTERNET Node issue in connections
         logger.info(f"\tProcessing available exploits")
 
         #exploits
