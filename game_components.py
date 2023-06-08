@@ -6,54 +6,6 @@ import json
 from dataclasses import dataclass, field
 import enum
 
-
-class ActionType(enum.Enum):
-    #override the __new__ method to enable multiple parameters
-    def __new__(cls, *args, **kwds):
-        value = len(cls.__members__) + 1
-        obj = object.__new__(cls)
-        obj._value_ = value  
-        return obj    
-
-    def __init__(self, default_success_p:float, default_detection_p:float):
-        self.default_success_p = default_success_p
-        self.default_detection_p = default_detection_p
-    
-    #ActionTypes
-    ScanNetwork = 0.9, 0.2
-    FindServices = 0.9, 0.3
-    FindData = 0.8, 0.1
-    ExploitService = 0.7, 0.4
-    ExfiltrateData = 0.8, 0.1
-
-
-# # Transition between nodes
-# """
-# Transition represents generic actions for attacker in the game. Each transition has a default probability
-# of success and probability of detection (if the defender is present).
-# Currently 5 transition types are implemented:
-#  - ScanNetwork
-#  - FindServices
-#  - FindData
-#  - ExploitService
-#  - ExfiltrateData
-# """
-
-# @dataclass(frozen=True, eq=True, repr=True)
-# class Transition(object):
-#     type:str
-#     default_success_p:float
-#     default_detection_p:float
-
-# # List of transitions available for attacker with default parameters
-# transitions = {
-#     "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2), 
-#     "FindServices": Transition("FindServices",0.9, 0.3),
-#     "FindData": Transition("FindData",0.8, 0.1,),
-#     "ExploitService": Transition("ExploitService", 0.7, 0.4),
-#     "ExfiltrateData": Transition("ExfiltrateData",0.8, 0.1),
-# }
-
 """
 Service represents the service object in the NetSecGame
 """
@@ -98,6 +50,36 @@ class Data(object):
     id:str
 
 
+# Types of actions
+"""
+ActionType represents generic action for attacker in the game. Each transition has a default probability
+of success and probability of detection (if the defender is present).
+Currently 5 action types are implemented:
+ - ScanNetwork
+ - FindServices
+ - FindData
+ - ExploitService
+ - ExfiltrateData
+"""
+class ActionType(enum.Enum):
+    #override the __new__ method to enable multiple parameters
+    def __new__(cls, *args, **kwds):
+        value = len(cls.__members__) + 1
+        obj = object.__new__(cls)
+        obj._value_ = value  
+        return obj    
+
+    def __init__(self, default_success_p:float, default_detection_p:float):
+        self.default_success_p = default_success_p
+        self.default_detection_p = default_detection_p
+    
+    #ActionTypes
+    ScanNetwork = 0.9, 0.2
+    FindServices = 0.9, 0.3
+    FindData = 0.8, 0.1
+    ExploitService = 0.7, 0.4
+    ExfiltrateData = 0.8, 0.1
+
 #Actions
 """
 Actions are composed of the transition type (see Transition) and additional parameters listed in dictionary
@@ -133,19 +115,6 @@ class Action(object):
     
     def __hash__(self) -> int:
         return hash(self._type) + hash("".join(self._parameters))
-
-
-# Observation - given to agent after taking an action
-"""
-Observations are given when making a step in the environment.
- - observation: current state of the environment
- - reward: float  value with immediate reward for last step
- - done: boolean, True if the game ended. 
-    No further interaction is possible (either terminal state or because of timeout)
- - info: dict, can contain additional information about the reason for ending
-"""
-Observation = namedtuple("Observation", ["state", "reward", "done", "info"])
-
 
 """
 Game state represents the states in the game state space.
@@ -227,6 +196,18 @@ class GameState(object):
     def as_json(self):
         d = {"nets":list(self.known_networks), "known_hosts":list(self.known_hosts), "controlled_hosts":list(self.controlled_hosts), "known_services":list(self.known_services.items()), "known_data":list(self.known_data.items())}
         return json.dumps(d) 
+
+# Observation - given to agent after taking an action
+"""
+Observations are given when making a step in the environment.
+ - observation: current state of the environment
+ - reward: float  value with immediate reward for last step
+ - done: boolean, True if the game ended. 
+    No further interaction is possible (either terminal state or because of timeout)
+ - info: dict, can contain additional information about the reason for ending
+"""
+Observation = namedtuple("Observation", ["state", "reward", "done", "info"])
+
 
 # Main is only used for testing
 if __name__ == '__main__':
