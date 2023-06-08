@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 import enum
 
 
-class ActionType(enum.Enum):
+class Transition(enum.Enum):
     #override the __new__ method to enable multiple parameters
     def __new__(cls, *args, **kwds):
         value = len(cls.__members__) + 1
@@ -27,32 +27,32 @@ class ActionType(enum.Enum):
     ExfiltrateData = 0.8, 0.1
 
 
-# Transition between nodes
-"""
-Transition represents generic actions for attacker in the game. Each transition has a default probability
-of success and probability of detection (if the defender is present).
-Currently 5 transition types are implemented:
- - ScanNetwork
- - FindServices
- - FindData
- - ExploitService
- - ExfiltrateData
-"""
+# # Transition between nodes
+# """
+# Transition represents generic actions for attacker in the game. Each transition has a default probability
+# of success and probability of detection (if the defender is present).
+# Currently 5 transition types are implemented:
+#  - ScanNetwork
+#  - FindServices
+#  - FindData
+#  - ExploitService
+#  - ExfiltrateData
+# """
 
-@dataclass(frozen=True, eq=True, repr=True)
-class Transition(object):
-    type:str
-    default_success_p:float
-    default_detection_p:float
+# @dataclass(frozen=True, eq=True, repr=True)
+# class Transition(object):
+#     type:str
+#     default_success_p:float
+#     default_detection_p:float
 
-# List of transitions available for attacker with default parameters
-transitions = {
-    "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2), 
-    "FindServices": Transition("FindServices",0.9, 0.3),
-    "FindData": Transition("FindData",0.8, 0.1,),
-    "ExploitService": Transition("ExploitService", 0.7, 0.4),
-    "ExfiltrateData": Transition("ExfiltrateData",0.8, 0.1),
-}
+# # List of transitions available for attacker with default parameters
+# transitions = {
+#     "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2), 
+#     "FindServices": Transition("FindServices",0.9, 0.3),
+#     "FindData": Transition("FindData",0.8, 0.1,),
+#     "ExploitService": Transition("ExploitService", 0.7, 0.4),
+#     "ExfiltrateData": Transition("ExfiltrateData",0.8, 0.1),
+# }
 
 """
 Service represents the service object in the NetSecGame
@@ -252,10 +252,8 @@ if __name__ == '__main__':
     net2 = Network("192.168.1.0", 32)
     net3 = Network("192.168.2.0", 32)
    
-    print(transitions["ExploitService"].default_detection_p)
-
+    
     d = {net1:[IP1 ,IP2], net3:[]}
     print(d)
-    for at in ActionType:
+    for at in Transition:
         print(at, at.default_success_p, at.default_detection_p)
-        if at == ActionType.ScanNetwork:
