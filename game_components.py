@@ -6,27 +6,6 @@ import json
 from dataclasses import dataclass, field
 import enum
 
-
-class ActionType(enum.Enum):
-    #override the __new__ method to enable multiple parameters
-    def __new__(cls, *args, **kwds):
-        value = len(cls.__members__) + 1
-        obj = object.__new__(cls)
-        obj._value_ = value  
-        return obj    
-
-    def __init__(self, default_success_p:float, default_detection_p:float):
-        self.default_success_p = default_success_p
-        self.default_detection_p = default_detection_p
-    
-    #ActionTypes
-    ScanNetwork = 0.9, 0.2
-    FindServices = 0.9, 0.3
-    FindData = 0.8, 0.1
-    ExploitService = 0.7, 0.4
-    ExfiltrateData = 0.8, 0.1
-
-
 """
 Service represents the service object in the NetSecGame
 """
@@ -100,50 +79,6 @@ class ActionType(enum.Enum):
     FindData = 0.8, 0.1
     ExploitService = 0.7, 0.4
     ExfiltrateData = 0.8, 0.1
-
-"""
-Service represents the service object in the NetSecGame
-"""
-@dataclass(frozen=True)
-class Service(object):
-    name:str
-    type:str
-    version:str
-    is_local:bool
-
-"""
-IP represents the ip address object in the NetSecGame
-"""
-@dataclass(frozen=True)
-class IP(object):
-    ip:str
-
-    def __repr__(self):
-        return self.ip
-
-"""
-Network represents the network object in the NetSecGame
-"""
-@dataclass(frozen=True)
-class Network(object):
-    ip:str
-    mask:int
-    
-    def __repr__(self):
-         return f"{self.ip}/{self.mask}"
-
-    def __str__(self):
-         return f"{self.ip}/{self.mask}"
-
-
-"""
-Data represents the data object in the NetSecGame
-"""
-@dataclass(frozen=True)
-class Data(object):
-    owner:str
-    id:str
-
 
 #Actions
 """
