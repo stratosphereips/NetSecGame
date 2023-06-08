@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 import enum
 
 
-class Transition(enum.Enum):
+class ActionType(enum.Enum):
     #override the __new__ method to enable multiple parameters
     def __new__(cls, *args, **kwds):
         value = len(cls.__members__) + 1
@@ -108,31 +108,31 @@ Actions are composed of the transition type (see Transition) and additional para
  - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"Data tuple" (tuple)}
 """
 class Action(object):  
-    def __init__(self, transition: Transition, params:dict) -> None:
-        self._transition = transition
+    def __init__(self, type: ActionType, params:dict) -> None:
+        self._type = type
         self._parameters = params
     
     @property
-    def transition(self) -> Transition:
-        return self._transition
+    def type(self) -> ActionType:
+        return self._type
     
     @property
     def parameters(self)->dict:
         return self._parameters
 
     def __repr__(self) -> str:
-        return f"Action <{self._transition}|{self._parameters}>"
+        return f"Action <{self._type}|{self._parameters}>"
     
     def __str__(self) -> str:
-        return f"Action <{self._transition}|{self._parameters}>"
+        return f"Action <{self._type}|{self._parameters}>"
     
     def __eq__(self, __o: object) -> bool:
         if isinstance(__o, Action):
-            return self._transition == __o.transition and self.parameters == __o.parameters
+            return self._type == __o.type and self.parameters == __o.parameters
         return False
     
     def __hash__(self) -> int:
-        return hash(self._transition) + hash("".join(self._parameters))
+        return hash(self._type) + hash("".join(self._parameters))
 
 
 # Observation - given to agent after taking an action
@@ -255,5 +255,6 @@ if __name__ == '__main__':
     
     d = {net1:[IP1 ,IP2], net3:[]}
     print(d)
-    for at in Transition:
+    print(len(ActionType))
+    for at in ActionType:
         print(at, at.default_success_p, at.default_detection_p)
