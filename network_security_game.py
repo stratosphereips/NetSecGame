@@ -574,7 +574,7 @@ class Network_Security_Environment(object):
                 known_data_goal = False
         except KeyError:
             known_data_goal = False
-
+        logger.info(f"\tnets:{networks_goal}, known_hosts:{known_hosts_goal}, controlled_hosts:{controlled_hosts_goal},services:{services_goal}, data:{known_data_goal}")
         goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
 
         return goal_reached
@@ -720,7 +720,7 @@ if __name__ == "__main__":
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":{components.Data("User1", "Data1FromServer1")}}
+            "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "Data1FromServer1")}}
         }
         attacker_start = {
             "known_networks":set(),
@@ -743,21 +743,21 @@ if __name__ == "__main__":
     obs = env.step(components.Action(components.ActionType.ExploitService, params={'target_host': components.IP('192.168.1.2'), 'target_service': components.Service(name='remote desktop service', type='passive', version='10.0.19041', is_local=False)}))
     obs = env.step(components.Action(components.ActionType.ExfiltrateData, params={'target_host': components.IP('213.47.23.195'), 'data': components.Data('User1', 'DataFromServer1'), 'source_host': components.IP('192.168.1.2')}))
 
-    # Test of several 1000's actions
-    obs = env.reset()
-    num_iterations = 20
-    break_loop = False
-    for i in range(num_iterations + 1):
-        logger.info(f"Test Iteration number:{i}")
-        if break_loop:
-            break
-        actions = env.get_all_actions()
-        for action_id in actions:
-            try:
-                print(actions[action_id])
-                observation = env.step(actions[action_id])
-            except ValueError as e:
-                # Reset so the env accepts more actions
-                obs = env.reset()
-                #break_loop = True
-                break
+    # # Test of several 1000's actions
+    # obs = env.reset()
+    # num_iterations = 1
+    # break_loop = False
+    # for i in range(num_iterations + 1):
+    #     logger.info(f"Test Iteration number:{i}")
+    #     if break_loop:
+    #         break
+    #     actions = env.get_all_actions()
+    #     for action_id in actions:
+    #         try:
+    #             print(actions[action_id])
+    #             observation = env.step(actions[action_id])
+    #         except ValueError as e:
+    #             # Reset so the env accepts more actions
+    #             obs = env.reset()
+    #             #break_loop = True
+    #             break
