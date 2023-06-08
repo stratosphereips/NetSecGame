@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 import enum
 
 
-class ActionType(enum.Enum):
+class Transition(enum.Enum):
     #override the __new__ method to enable multiple parameters
     def __new__(cls, *args, **kwds):
         value = len(cls.__members__) + 1
