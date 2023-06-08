@@ -108,8 +108,8 @@ Actions are composed of the transition type (see Transition) and additional para
  - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"Data tuple" (tuple)}
 """
 class Action(object):  
-    def __init__(self, transition_name:str, params:dict) -> None:
-        self._transition = transitions[transition_name]
+    def __init__(self, transition: Transition, params:dict) -> None:
+        self._transition = transition
         self._parameters = params
     
     @property
@@ -121,10 +121,10 @@ class Action(object):
         return self._parameters
 
     def __repr__(self) -> str:
-        return f"Action <{self._transition.type}|{self._parameters}>"
+        return f"Action <{self._transition}|{self._parameters}>"
     
     def __str__(self) -> str:
-        return f"Action <{self._transition.type}|{self._parameters}>"
+        return f"Action <{self._transition}|{self._parameters}>"
     
     def __eq__(self, __o: object) -> bool:
         if isinstance(__o, Action):
@@ -132,7 +132,7 @@ class Action(object):
         return False
     
     def __hash__(self) -> int:
-        return hash(self._transition.type) + hash("".join(self._parameters))
+        return hash(self._transition) + hash("".join(self._parameters))
 
 
 # Observation - given to agent after taking an action
