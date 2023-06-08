@@ -76,23 +76,22 @@ class Network_Security_Environment(object):
     
     def get_all_actions(self):
         actions = set()
+        # Get Network scans, Service Find and Data Find
         for net,ips in self._networks.items():
-            #network scans
             actions.add(Action("ScanNetwork",{"target_network":net}))
             for ip in ips:
-                if ip in "0.0.0.0":
-                    continue
-                #service scans
+                # ServiceFind
                 actions.add(Action("FindServices", {"target_host":ip}))
-                #data scans
+                # DataFind
                 actions.add(Action("FindData", {"target_host":ip}))
-        # #data exfiltration
+        # Get Data exfiltration
         for src_ip in self._ips:
             for trg_ip in self._ips:
                 if src_ip != trg_ip and src_ip not in "0.0.0.0" and trg_ip not in "0.0.0.0":
                     for data_list in self._data.values():
                         for data in data_list:
                             actions.add(Action("ExfiltrateData", {"target_host":trg_ip, "data":data, "source_host":src_ip}))
+        # Get Execute services
         for host_id, services in self._services.items():
              for service in services:
                 for ip, host in self._ips.items():
@@ -146,7 +145,7 @@ class Network_Security_Environment(object):
             for key, value in win_conditons["known_data"].items():
                 # Was the position defined as random?
                 if isinstance(value, str) and value.lower() == "random":
-                    logger.info(f"\tYes we do.")
+                    logger.info(f"\tData was requested to be put in a random location.")
                     # Load all the available data from all hosts
                     available_data = []
                     for node in self._nodes.values():
@@ -163,6 +162,8 @@ class Network_Security_Environment(object):
                     # From all available data, randomly pick the one that is going to be used to win the game
                     # It seems there can be only one data to win for now
                     self._win_conditions["known_data"][key] = {choice(available_data)}
+                else:
+                    logger.info(f"\tData was not requested to be put in a random location.")
             
             logger.info(f"\tWinning condition of `known_data` set to {self._win_conditions['known_data']}")
             logger.info(f"CYST configuration processed successfully")
@@ -187,13 +188,13 @@ class Network_Security_Environment(object):
 
         if self._random_start:
             # Random start
-            logger.info('Start position of agent is random')
-            logger.info(f'Choosing from {self.hosts_to_start}')
+            logger.info('\tStart position of agent is random')
+            logger.info(f'\tChoosing from {self.hosts_to_start}')
             controlled_hosts.add(str(choice(self.hosts_to_start)))
             logger.info(f'\t\tMaking agent start in {controlled_hosts}')
         else:
             # Not random start
-            logger.info('Start position of agent is fixed in a host')
+            logger.info('\tStart position of agent is not random.')
 
         """
         logger.info("Creating the starting state")
@@ -220,6 +221,7 @@ class Network_Security_Environment(object):
                 controlled_hosts.add(controlled_host)
                 # Add the controlled hosts to the list of known hosts
                 known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
+                logger.info(f'\tThe attacker has control of host {controlled_host}.')
         
         # Extend the known networks with the neighbouring networks
         # This is to solve in the env (and not in the agent) the problem
@@ -228,9 +230,9 @@ class Network_Security_Environment(object):
         # TODO remove this!
         for controlled_host in controlled_hosts:
             for net in self._get_networks_from_host(controlled_host): #TODO
-                known_networks.add(net)
                 net_obj = netaddr.IPNetwork(net)
                 if net_obj.is_private(): #TODO
+                    known_networks.add(net)
                     net_obj.value += 256
                     if net_obj.is_private():
                         logger.info(f'\tAdding {str(net_obj)} to agent')
@@ -241,6 +243,7 @@ class Network_Security_Environment(object):
                         logger.info(f'\tAdding {str(net_obj)} to agent')
                     #return value back to the original
                     net_obj.value += 256
+        # Be sure the controlled hosts are also known hosts
         known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
         game_state = GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
@@ -285,7 +288,7 @@ class Network_Security_Environment(object):
             logger.info(f"\tProcessing config of node '{node_obj.id}'")
             #save the complete object
             self._nodes[node_obj.id] = node_obj
-            logger.info(f'\tAdded {node_obj.id} to the list of available nodes.')
+            logger.info(f'\t\tAdded {node_obj.id} to the list of available nodes.')
             node_to_id[node_obj.id] = len(node_to_id)
             
             #examine interfaces
@@ -298,7 +301,7 @@ class Network_Security_Environment(object):
                 if net not in self._networks:
                     self._networks[net] = []
                 self._networks[net].append(ip)
-                logger.info(f'\tAdded network {str(interface.net)} to the list of available nets, with node {node_obj.id}.')
+                logger.info(f'\t\tAdded network {str(interface.net)} to the list of available nets, with node {node_obj.id}.')
 
 
             #services
@@ -333,7 +336,7 @@ class Network_Security_Environment(object):
             if router_obj.id.lower() == 'internet':
                 # Ignore the router called 'internet' because it is not a router
                 # in our network
-                logger.info(f"\t\tSkipping the internet router'")
+                logger.info(f"\t\tSkipping the internet router")
                 return False
 
             self._nodes[router_obj.id] = router_obj
@@ -455,6 +458,8 @@ class Network_Security_Environment(object):
                         logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
                         next_known_hosts.add(action.parameters["target_host"])
                         next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+                else:
+                    logger.info(f"\t\tFindServices is not allowed under the current conditions.")
 
             elif action.transition.type == "FindData":
                 logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
@@ -465,6 +470,8 @@ class Network_Security_Environment(object):
                         next_known_data[action.parameters["target_host"]] = new_data
                     else:
                         next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
+                else:
+                    logger.info(f"\t\tFindData is not allowed under the current conditions.")
 
             elif action.transition.type == "ExecuteCodeInService":
                 logger.info(f"\t\tAttempting to ExecuteCode in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
@@ -483,6 +490,8 @@ class Network_Security_Environment(object):
                             new_networks = self._get_networks_from_host(action.parameters["target_host"])
                             logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}") 
                             next_known_networks = next_known_networks.union(new_networks)
+                else:
+                    logger.info(f"\t\tExecuteCode is not allowed under the current conditions.")
             elif action.transition.type == "ExfiltrateData":
                 logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
                 if action.parameters["target_host"] in current.controlled_hosts:
@@ -503,6 +512,8 @@ class Network_Security_Environment(object):
                                     self._data[ self._ips[action.parameters["target_host"]] ] = {action.parameters["data"]}
                                 else:
                                     self._data[ self._ips[action.parameters["target_host"]] ] = self._data[ self._ips[action.parameters["target_host"]] ].union(action.parameters["data"])
+                else:
+                    logger.info(f"\t\tExfiltrate is not allowed under the current conditions.")
             else:
                 raise ValueError(f"Unknown Action type: '{action.transition.type}'")
             
@@ -519,21 +530,25 @@ class Network_Security_Environment(object):
         # For each part of the state of the game, check if the conditions are met
 
         # Networks
+        # If empty goal, then should be true for this element
         if set(self._win_conditions["known_networks"]) <= set(state.known_networks):
             networks_goal = True
         else:
             networks_goal = False
         # Known hosts
+        # If empty goal, then should be true for this element
         if set(self._win_conditions["known_hosts"]) <= set(state.known_hosts):
             known_hosts_goal = True
         else:
             known_hosts_goal = False
         # Controlled hosts
+        # If empty goal, then should be true for this element
         if set(self._win_conditions["controlled_hosts"]) <= set(state.controlled_hosts):
             controlled_hosts_goal = True
         else:
             controlled_hosts_goal = False
         # Services
+        # If empty goal, then should be true for this element
         try:
             services_goal = True
             missing_keys_services = [k for k in self._win_conditions["known_services"].keys() if k not in state.known_services]
@@ -686,6 +701,7 @@ class Network_Security_Environment(object):
 
 if __name__ == "__main__":
     # Create the network security environment
+    # Run a set of basic tests to be sure the env works
     # Test normal winning conditions and starting position
     # Test random data and start position
     random_start = False
@@ -727,60 +743,28 @@ if __name__ == "__main__":
     defender = None
 
     # Initialize the game
-    observation = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=500, agent_seed=42, cyst_config=scenarios.tiny_scenario_configuration.configuration_objects)
-    actions = env.get_all_actions()
-    print(f"Actions space size:{len(actions)}")
-    
+    observation = env.initialize(win_conditons=goal, defender_positions=defender, attacker_start_position=attacker_start, max_steps=500, agent_seed=42, cyst_config=scenarios.scenario_configuration.configuration_objects)
+    #logger.info(f"Actions space size:{len(actions)}")
 
-    #execute code in service to get control
+    # Test of winning actions only. You need 2
     obs = env.step(Action(transition="ExecuteCodeInService", params={'target_host': '192.168.1.2', 'target_service': Service(name='remote desktop service', type='passive', version='10.0.19041', is_local=False)}))
-    print(obs.state)
-    #exflitrate
     obs = env.step(Action(transition="ExfiltrateData", params={'target_host': '213.47.23.195', 'data': ('User1', 'DataFromServer1'), 'source_host': '192.168.1.2'}))
-    print(obs.state)
-    # print(f'The complete observation is: {observation}')
-    # print(f'The state is: {observation.state}')
-    # print(f'Networks in the env: {env._networks}')
-    # print(f'\tContr hosts: {observation.state.controlled_hosts}')
-    # print(f'\tKnown nets: {observation.state.known_networks}')
-    # print(f'\tKnown host: {observation.state.known_hosts}')
-    # print(f'\tKnown serv:')
-    # for ip_service in observation.state.known_services:
-    #     print(f'\t\t{observation.state.known_services[ip_service]}:{ip_service}')
-    # print(f'\tKnown data: {observation.state.known_data}')
 
-    # print()
-    # print('Start testing rounds of all actions')
-
-    # num_iterations = 200
-    # break_loop = False
-    # for i in range(num_iterations + 1):
-    #     if break_loop:
-    #         break
-    #     actions = env.get_valid_actions(observation.state)
-    #     print(f'\t- Iteration: {i}')
-    #     for action in actions:
-    #         print(f'\t- Taking Valid action from this state: {action}')
-    #         try:
-    #             observation = env.step(action)
-    #         except ValueError as e:
-    #             print(f'Game ended. {e}')
-    #             break_loop = True
-    #             break
-    #         print(f'\t\tContr hosts: {observation.state.controlled_hosts}')
-    #         print(f'\t\tKnown nets: {observation.state.known_networks}')
-    #         print(f'\t\tKnown host: {observation.state.known_hosts}')
-    #         print(f'\t\tKnown serv:')
-    #         for ip_service in observation.state.known_services:
-    #             print(f'\t\t\t{ip_service}')
-    #             for serv in observation.state.known_services[ip_service]:
-    #                 print(f'\t\t\t\t{serv.name}')
-    #         print(f'\t\tKnown data: {observation.state._known_data}')
-    #         for ip_data in observation.state._known_data:
-    #             if observation.state._known_data[ip_data]:
-    #                 print(f'\t\t\t{ip_data}')
-    #                 for data in observation.state._known_data[ip_data]:
-    #                     print(f'\t\t\t\t{data}')
-    # print(f'The {num_iterations} iterations of test actions ended.')
-
-
+    # Test of several 1000's actions
+    obs = env.reset()
+    num_iterations = 2000
+    break_loop = False
+    for i in range(num_iterations + 1):
+        logger.info(f"Test Iteration number:{i}")
+        if break_loop:
+            break
+        actions = env.get_all_actions()
+        for action_id in actions:
+            try:
+                print(f'Action {actions[action_id]}')
+                observation = env.step(actions[action_id])
+            except ValueError as e:
+                # Reset so the env accepts more actions
+                obs = env.reset()
+                #break_loop = True
+                break
