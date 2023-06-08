@@ -80,6 +80,36 @@ class ActionType(enum.Enum):
     ExploitService = 0.7, 0.4
     ExfiltrateData = 0.8, 0.1
 
+"""
+Service represents the service object in CYST
+"""
+@dataclass(frozen=True)
+class Service(object):
+    name:str
+    type:str
+    version:str
+    is_local:bool
+
+@dataclass(frozen=True)
+class Host(object):
+    ip:str
+
+    def __repr__(self):
+        return self.ip
+
+@dataclass(frozen=True)
+class Network(object):
+    ip:str
+    mask:int
+    def __repr__(self):
+        return f"{self.ip}/{self.mask}"
+
+@dataclass(frozen=True)
+class Data(object):
+    owner:str
+    id:str
+
+
 #Actions
 """
 Actions are composed of the action type (see ActionTupe) and additional parameters listed in dictionary
