@@ -198,22 +198,6 @@ class Network_Security_Environment(object):
             # Not random start
             logger.info('\tStart position of agent is not random.')
 
-        """
-        logger.info("Creating the starting state")
-        if self._random_start:
-            logger.info("\tChoosing random start of the attacker")
-            controlled_hosts = set()
-            for h in self._attacker_start_position["controlled_hosts"]:
-                if "/" in h: #possible network
-                    hosts = [str(ip) for ip in netaddr.IPNetwork(h) if (str(ip) in self._ip_to_hostname.keys() and isinstance(self._node_objects[self._ip_to_hostname[str(ip)]], NodeConfig))]
-                    controlled_hosts.add(choice(hosts))
-                else:
-                    controlled_hosts.add(h)
-        else:
-            logger.info("\tUsing pre-defined attacker starting position")
-            controlled_hosts = self._attacker_start_position["controlled_hosts"]
-        """
-
         # Be careful. These lines must go outside the 'not random' part of the loop. Because it should be possible
         # to have a random start position, but simultaneously to 'force' a controlled host
         # for the case of controlling a command and controll server to exfiltrate.
@@ -232,7 +216,6 @@ class Network_Security_Environment(object):
         # TODO remove this!
         for controlled_host in controlled_hosts:
             for net in self._get_networks_from_host(controlled_host): #TODO
-                known_networks.add(net)
                 net_obj = netaddr.IPNetwork(str(net))
                 if net_obj.is_private(): #TODO
                     known_networks.add(net)
@@ -754,7 +737,6 @@ if __name__ == "__main__":
         actions = env.get_all_actions()
         for action_id in actions:
             try:
-                print(f'Action {actions[action_id]}')
                 observation = env.step(actions[action_id])
             except ValueError as e:
                 # Reset so the env accepts more actions
