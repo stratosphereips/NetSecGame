@@ -13,24 +13,53 @@ from dataclasses import dataclass, field
 # Transition between nodes
 """
 Transition represents generic actions for attacker in the game. Each transition has a default probability
-of success and probability of detection (if the defender is present). Each transition has default cost and reward (if successful).
-Net reward can be computed as follows net_reward = p_sucess * (default_reward - default_cost)
+of success and probability of detection (if the defender is present).
 """
-Transition = namedtuple("Transition", ["type", "default_success_p", "default_detection_p", "default_reward", "default_cost"])
+
+@dataclass(frozen=True, eq=True, repr=True)
+class Transition(object):
+    type:str
+    default_success_p:float
+    default_detection_p:float
 
 # List of transitions available for attacker with default parameters
 transitions = {
-    #"ScanNetwork": Transition("ScanNetwork", 0.9, 0.025, 0,1), 
-    #"FindServices": Transition("FindServices",0.9, 0.035,0,1),
-    #"FindData": Transition("FindData",0.8, 0.012, 0, 1),
-    #"ExecuteCodeInService": Transition("ExecuteCodeInService", 0.7, 0.05, 0, 1),
-    #"ExfiltrateData": Transition("ExfiltrateData",0.8, 0.012, 0, 1),
-    "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2, 0,1), 
-    "FindServices": Transition("FindServices",0.9, 0.3,0,1),
-    "FindData": Transition("FindData",0.8, 0.1, 0, 1),
-    "ExecuteCodeInService": Transition("ExecuteCodeInService", 0.7, 0.4, 0, 1),
-    "ExfiltrateData": Transition("ExfiltrateData",0.8, 0.1, 0, 1),
+    "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2), 
+    "FindServices": Transition("FindServices",0.9, 0.3),
+    "FindData": Transition("FindData",0.8, 0.1,),
+    "ExecuteCodeInService": Transition("ExecuteCodeInService", 0.7, 0.4),
+    "ExfiltrateData": Transition("ExfiltrateData",0.8, 0.1),
 }
+
+"""
+Service represents the service object in CYST
+"""
+@dataclass(frozen=True)
+class Service(object):
+    name:str
+    type:str
+    version:str
+    is_local:bool
+
+@dataclass(frozen=True)
+class Host(object):
+    ip:str
+
+    def __repr__(self):
+        return self.ip
+
+@dataclass(frozen=True)
+class Network(object):
+    ip:str
+    mask:int
+    def __repr__(self):
+        return f"{self.ip}/{self.mask}"
+
+@dataclass(frozen=True)
+class Data(object):
+    owner:str
+    id:str
+
 
 #Actions
 """
@@ -41,27 +70,31 @@ Actions are composed of the transition type (see Transition) and additional para
  - ExecuteCodeInService {"target_host": "X.X.X.X" (string), "target_service":"service" (Service named tuple)}
  - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"Data tuple" (tuple)}
 """
-class Action(object):
-  
-    def __init__(self, transition:str, params:dict) -> None:
-        self._transition_name = transition
+class Action(object):  
+    def __init__(self, transition_name:str, params:dict) -> None:
+        self._transition = transitions[transition_name]
         self._parameters = params
     
     @property
     def transition(self) -> Transition:
-        return transitions[self._transition_name]
-    @property
+        return self._transition
+    
     def parameters(self)->dict:
         return self._parameters
+
+    def __repr__(self) -> str:
+        return f"Action <{self._transition.type}|{self._parameters}>"
     def __str__(self) -> str:
-        return f"Action <{self._transition_name}|{self.parameters}>"
+        return f"Action <{self._transition.type}|{self._parameters}>"
     
     def __eq__(self, __o: object) -> bool:
         if isinstance(__o, Action):
-            return self.transition == __o.transition and self.parameters == __o.parameters
+            return self._transition == __o.transition and self.parameters == __o.parameters
         return False
+    
     def __hash__(self) -> int:
-        return hash(self.transition) + hash("".join(self.parameters))
+        print(self.parameters)
+        return hash(self._transition.type) + hash("".join(self._parameters))
 
 
 # Observation - given to agent after taking an action
@@ -74,9 +107,6 @@ Observations are given when making a step in the environment.
  - info: dict, can contain additional information about the reason for ending
 """
 Observation = namedtuple("Observation", ["state", "reward", "done", "info"])
-
-# Service - agents representation of a service found with "FindServices" action
-Service = namedtuple("Service", ["name", "type", "version", "is_local"])
 
 
 """
@@ -163,16 +193,25 @@ class GameState(object):
 # Main is only used for testing
 if __name__ == '__main__':
     # Used for tests
+    service_1 = Service("rdp", "passive", "1.067", True)
+    service_2 = Service("rdp", "passive", "1.067", True)
+    service_3 = Service("sql", "passive", "5.0", True)
+    assert (service_1 == service_1 and service_1 is service_1)
+    assert (service_1 == service_2)
+    assert (service_1 is not service_2)
+    assert(service_1 != service_3)
 
-    a = Action("FindServices", ["192.168.1.0"])
-    a2 = Action("FindServices", ["192.168.1.0"])
-    #print(hash(a), hash(a2))
-    # # print(a1, a2, a1==a2)
-    s1 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='bash', type='passive', version='5.0.0', is_local=True), Service(name='listener', type='passive', version='1.0.0', is_local=False)}},{},{})
-    #print(hash(s1))
-    s2 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='listener', type='passive', version='1.0.0', is_local=False)}},{},{})
-    s3 = GameState({"192.168.1.0"}, {}, {'213.47.23.195': {Service(name='listener', type='passive', version='1.2.0', is_local=False)}},{},{})
-    print(s1==s2, s2==s2, s2 == s3)
-    s1.known_services["213.47.23.195"] = "new_value"
-    print(s1)
+    print(service_1, service_2, service_3)
+    host1 = Host("192.168.1.2")
+    host2 = Host("192.168.1.2")
+    host3 = Host("192.168.0.2")
+    assert(host1 == host1)
+    assert(host1 == host2)
+    assert(host2 is not host1)
+    assert(host1 != host3)
     
+    net1 = Network("192.168.1.0", 32)
+    net2 = Network("192.168.1.0", 32)
+    net3 = Network("192.168.2.0", 32)
+   
+    print(transitions["ExecuteCodeInService"].default_detection_p)
