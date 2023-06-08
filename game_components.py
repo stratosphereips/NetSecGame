@@ -5,15 +5,16 @@ import netaddr
 import json
 from dataclasses import dataclass, field
 
-
-
-
-
-# Transitions are not implemented in the game of 2022
 # Transition between nodes
 """
 Transition represents generic actions for attacker in the game. Each transition has a default probability
 of success and probability of detection (if the defender is present).
+Currently 5 transition types are implemented:
+ - ScanNetwork
+ - FindServices
+ - FindData
+ - ExploitService
+ - ExfiltrateData
 """
 
 @dataclass(frozen=True, eq=True, repr=True)
@@ -27,12 +28,12 @@ transitions = {
     "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2), 
     "FindServices": Transition("FindServices",0.9, 0.3),
     "FindData": Transition("FindData",0.8, 0.1,),
-    "ExecuteCodeInService": Transition("ExecuteCodeInService", 0.7, 0.4),
+    "ExploitService": Transition("ExploitService", 0.7, 0.4),
     "ExfiltrateData": Transition("ExfiltrateData",0.8, 0.1),
 }
 
 """
-Service represents the service object in CYST
+Service represents the service object in the NetSecGame
 """
 @dataclass(frozen=True)
 class Service(object):
@@ -41,20 +42,34 @@ class Service(object):
     version:str
     is_local:bool
 
+"""
+IP represents the ip address object in the NetSecGame
+"""
 @dataclass(frozen=True)
-class Host(object):
+class IP(object):
     ip:str
 
     def __repr__(self):
         return self.ip
 
+"""
+Network represents the network object in the NetSecGame
+"""
 @dataclass(frozen=True)
 class Network(object):
     ip:str
     mask:int
+    
     def __repr__(self):
-        return f"{self.ip}/{self.mask}"
+         return f"{self.ip}/{self.mask}"
 
+    def __str__(self):
+         return f"{self.ip}/{self.mask}"
+
+
+"""
+Data represents the data object in the NetSecGame
+"""
 @dataclass(frozen=True)
 class Data(object):
     owner:str
@@ -67,7 +82,7 @@ Actions are composed of the transition type (see Transition) and additional para
  - ScanNetwork {"target_network": "X.X.X.X/mask" (string)}
  - FindServices {"target_host": "X.X.X.X" (string)}
  - FindData {"target_host": "X.X.X.X" (string)}
- - ExecuteCodeInService {"target_host": "X.X.X.X" (string), "target_service":"service" (Service named tuple)}
+ - ExploitService {"target_host": "X.X.X.X" (string), "target_service":"service" (Service named tuple)}
  - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"Data tuple" (tuple)}
 """
 class Action(object):  
@@ -79,11 +94,13 @@ class Action(object):
     def transition(self) -> Transition:
         return self._transition
     
+    @property
     def parameters(self)->dict:
         return self._parameters
 
     def __repr__(self) -> str:
         return f"Action <{self._transition.type}|{self._parameters}>"
+    
     def __str__(self) -> str:
         return f"Action <{self._transition.type}|{self._parameters}>"
     
@@ -93,7 +110,6 @@ class Action(object):
         return False
     
     def __hash__(self) -> int:
-        print(self.parameters)
         return hash(self._transition.type) + hash("".join(self._parameters))
 
 
@@ -202,16 +218,19 @@ if __name__ == '__main__':
     assert(service_1 != service_3)
 
     print(service_1, service_2, service_3)
-    host1 = Host("192.168.1.2")
-    host2 = Host("192.168.1.2")
-    host3 = Host("192.168.0.2")
-    assert(host1 == host1)
-    assert(host1 == host2)
-    assert(host2 is not host1)
-    assert(host1 != host3)
+    IP1 = IP("192.168.1.2")
+    IP2 = IP("192.168.1.2")
+    IP3 = IP("192.168.0.2")
+    assert(IP1 == IP1)
+    assert(IP1 == IP2)
+    assert(IP2 is not IP1)
+    assert(IP1 != IP3)
     
     net1 = Network("192.168.1.0", 32)
     net2 = Network("192.168.1.0", 32)
     net3 = Network("192.168.2.0", 32)
    
-    print(transitions["ExecuteCodeInService"].default_detection_p)
+    print(transitions["ExploitService"].default_detection_p)
+
+    d = {net1:[IP1 ,IP2], net3:[]}
+    print(d)
