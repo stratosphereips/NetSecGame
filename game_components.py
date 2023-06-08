@@ -82,12 +82,12 @@ class ActionType(enum.Enum):
 
 #Actions
 """
-Actions are composed of the transition type (see Transition) and additional parameters listed in dictionary
- - ScanNetwork {"target_network": "X.X.X.X/mask" (string)}
- - FindServices {"target_host": "X.X.X.X" (string)}
- - FindData {"target_host": "X.X.X.X" (string)}
- - ExploitService {"target_host": "X.X.X.X" (string), "target_service":"service" (Service named tuple)}
- - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"Data tuple" (tuple)}
+Actions are composed of the action type (see ActionTupe) and additional parameters listed in dictionary
+ - ScanNetwork {"target_network": Network object}
+ - FindServices {"target_host": IP object}
+ - FindData {"target_host": IP object}
+ - ExploitService {"target_host": IP object, "target_service": Service object}
+ - ExfiltrateData {"target_host": IP object, "source_host": IP object, "data": Data object}
 """
 class Action(object):  
     def __init__(self, type: ActionType, params:dict) -> None:
