@@ -81,7 +81,7 @@ class ActionType(enum.Enum):
     ExfiltrateData = 0.8, 0.1
 
 """
-Service represents the service object in CYST
+Service represents the service object in the NetSecGame
 """
 @dataclass(frozen=True)
 class Service(object):
@@ -90,20 +90,34 @@ class Service(object):
     version:str
     is_local:bool
 
+"""
+IP represents the ip address object in the NetSecGame
+"""
 @dataclass(frozen=True)
-class Host(object):
+class IP(object):
     ip:str
 
     def __repr__(self):
         return self.ip
 
+"""
+Network represents the network object in the NetSecGame
+"""
 @dataclass(frozen=True)
 class Network(object):
     ip:str
     mask:int
+    
     def __repr__(self):
-        return f"{self.ip}/{self.mask}"
+         return f"{self.ip}/{self.mask}"
 
+    def __str__(self):
+         return f"{self.ip}/{self.mask}"
+
+
+"""
+Data represents the data object in the NetSecGame
+"""
 @dataclass(frozen=True)
 class Data(object):
     owner:str
