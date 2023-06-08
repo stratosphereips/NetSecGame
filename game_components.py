@@ -6,6 +6,27 @@ import json
 from dataclasses import dataclass, field
 import enum
 
+
+class ActionType(enum.Enum):
+    #override the __new__ method to enable multiple parameters
+    def __new__(cls, *args, **kwds):
+        value = len(cls.__members__) + 1
+        obj = object.__new__(cls)
+        obj._value_ = value  
+        return obj    
+
+    def __init__(self, default_success_p:float, default_detection_p:float):
+        self.default_success_p = default_success_p
+        self.default_detection_p = default_detection_p
+    
+    #ActionTypes
+    ScanNetwork = 0.9, 0.2
+    FindServices = 0.9, 0.3
+    FindData = 0.8, 0.1
+    ExploitService = 0.7, 0.4
+    ExfiltrateData = 0.8, 0.1
+
+
 """
 Service represents the service object in the NetSecGame
 """
@@ -280,6 +301,5 @@ if __name__ == '__main__':
     
     d = {net1:[IP1 ,IP2], net3:[]}
     print(d)
-    print(len(ActionType))
     for at in ActionType:
         print(at, at.default_success_p, at.default_detection_p)
