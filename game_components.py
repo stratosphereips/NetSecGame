@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 import enum
 
 
-class Transition(enum.Enum):
+class ActionType(enum.Enum):
     #override the __new__ method to enable multiple parameters
     def __new__(cls, *args, **kwds):
         value = len(cls.__members__) + 1
@@ -301,5 +301,6 @@ if __name__ == '__main__':
     
     d = {net1:[IP1 ,IP2], net3:[]}
     print(d)
+    print(len(ActionType))
     for at in ActionType:
         print(at, at.default_success_p, at.default_detection_p)
