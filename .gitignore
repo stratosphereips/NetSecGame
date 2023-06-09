@@ -135,5 +135,6 @@ dmypy.json
 images
 ai-dojo-venv-sebas/share/doc/networkx-3.0/examples/subclass/README.txt
 ai-dojo-venv-sebas
-logs/*
 nohup.out
+*.pbtxt
+agents/*/logs/
