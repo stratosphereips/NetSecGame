@@ -1,17 +1,20 @@
-# Network Security Game
+# NetSecGame
 
-As part of the AiDojo project, the Network Security Game is a python tool that builds a simulated local network using the Cyst simulator, and then trains reinforcement learning (RL) algorithms on how to better attack the network.
+The NetSecGame (Network Security Game) is a framework of reinceforcement learning environment and agents to train and evalate network security attacks and defenses. It builds a simulated local network using the Cyst network simulator, adds many conditions on the environment and can train reinforcement learning (RL) algorithms on how to better attack and defend the network.
+
 
 ## How does it work
-When you run an agent file:
-- it loads the network configuration from configuration files in `scenarios` folder.
-- it defines the attacker's goal, position of attacker and presence of defender using dictionaries.
-- it initializes the game env 
-- it trains and evaluates every some episodes
-- it tests at the end for some episodes
-- it saves the policy to disk
-- it creates a log file
-- it creates tensorboard files
+You run an agent python file, which:
+- defines the attacker's goal, position of attacker and presence of defender.
+- initializes the game env 
+    - the env loads the network configuration from configuration files.
+- receives an observation and reward from the envirionment
+- decides which action to do based on its logic
+- trains and evaluates every some episodes
+- tests at the end for some episodes
+- saves the policy to disk
+- creates a log file
+- creates tensorboard files
 
 ## Install and Dependencies
 To run this code you need an environment and access to cyst code. However, the venv needs to be created for your own user
@@ -34,23 +37,6 @@ source ai-dojo-venv<yourusername>/bin/activate
 python3 -m pip install -r requirements.txt
 ```
 
-## Python Environment
-Be careful of which python environment are you using. If using the venv here you may need to install pagackes as, for example:
-
-    ai-dojo-venv-sebas/bin/pip install frozendict
-
-## Test the environment
-
-It is advised that you test if the env is running correctly by doing
-
-```bash
-python network_security_game.py
-```
-
-This will create a small test environment and configuration, and run through some dozen of actions from a fake agent.
-It is going to create the log file netsecenv.log
-
-
 ## Run the agents
 
 The game is played and started by running the differnt agents.
@@ -58,44 +44,61 @@ The game is played and started by running the differnt agents.
 To run the Q learning agent with default configuration for 100 episodes:
 
 ```bash
-python q_agent.py --episodes 100
+python agents/q_learning/q_agent.py --episodes 100
 ```
 
-The default conf can be seen in the python code but it is:
-- larger network scenario.
-- Attacker starts in a fixed position.
-- Defender is present.
-- Goal is to exfiltrate data from a server to the Internet.
-
-
 ## Components of the NetSecGame Environment
-The game has several components separated in files
+The NetSecGame environment has several components
 
-- File `network_security_game.py`. Implements the game environment
-- File `game_components.py`. Implements a library with objects and functions that help the game env
-- Files in the `scenarios` folder, such as `scenarios/scenario_configuration.py`. Implements the configuration of hosts, data, services, and connnections in the network game. It is taken from Cyst.
-- Files such as `q_agent.py` implement the RL agents.
+- File `env/network_security_game.py`. Implements the game environment
+- File `env/game_components.py`. Implements a library with objects and functions that help the game env
+- Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the configuration of hosts, data, services, and connnections in the network game. It is taken from Cyst.
+- Files such as `agent/q_learning/q_agent.py` that implement the RL agents.
+
+The default configuration is defined in two places:
+1. The network environment 
+
+    It is defined in the files in the `env/scenarios` folder.
+
+2. The configuration of the run
+
+    This is defined inside each agent by a set of dictionaries that define if the defender is present, if the start position of the agent is random, etc.
+
+
+## Testing the environment
+
+It is advised after every change you test if the env is running correctly by doing
+
+```bash
+tests/run_all_tests.sh
+```
+
+This will load and run the unit tests in the `tests` folder.
+
+
+
 
 ## Definition of the network topology
-The network topology and rules are defined using a Cyst simulator configuration. Cyst defines a complex network configuration, and this game does not use all of them for now. The important ones for us are:
+The network topology and rules are defined using a Cyst simulator configuration. Cyst defines a complex network configuration, and this game does not use all Cyst features for now. The important ones for us are:
 
-- Server hosts
-    - IP
+- Server hosts (are a Node in Cyst)
+    - Interfaces, each with one IP address
     - Users that can login to the host
     - Active and passive services
-    - Data in the host
+    - Data in the server
     - To which network is connected
-- Client host
-    - IP
+- Client host (are a Node in Cyst)
+    - Interfaces, each with one IP address
     - To which network is connected
     - Active and passive services if any
-- Router
+    - Data in the client
+- Router (are a Node in RouterConf)
+    - Interfaces, each with one IP address
     - Networks
     - Allowed connections between hosts
-- Internet host (as external router)
-    - IP
+- Internet host (as external router) (are a Node in RouterConf)
+    - Interfaces, each with one IP address
     - Which host can connect
-
 
 Very important is that we made an addition to the NodeConfig objects in our Cyst configuration to include the property 'note' with the text 'can_start_attacker'. Meaning that the game env will take these host as candidates for the random start position.
 
@@ -103,9 +106,9 @@ Very important is that we made an addition to the NodeConfig objects in our Cyst
 ## Agents Implemented
 Currently the implemented agents are:
 
-- Q learning agent in `q_agent.py`
-- Double Q learning agent in `double_q_agent.py`
-- Naive Q learning agent in `naive_q_agent.py`
+- Q learning agent in `agents/q_learning/q_agent.py`
+- Double Q learning agent in `agents/double_q_learning/double_q_agent.py`
+- Naive Q learning agent in `agents/naive_naive_q_agent.py`
 - Random agent in `random_agent.py`
 
 ## Assumptions of the NetSecGame
