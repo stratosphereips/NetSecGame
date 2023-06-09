@@ -4,33 +4,7 @@ from collections import namedtuple
 import netaddr
 import json
 from dataclasses import dataclass, field
-
-# Transition between nodes
-"""
-Transition represents generic actions for attacker in the game. Each transition has a default probability
-of success and probability of detection (if the defender is present).
-Currently 5 transition types are implemented:
- - ScanNetwork
- - FindServices
- - FindData
- - ExploitService
- - ExfiltrateData
-"""
-
-@dataclass(frozen=True, eq=True, repr=True)
-class Transition(object):
-    type:str
-    default_success_p:float
-    default_detection_p:float
-
-# List of transitions available for attacker with default parameters
-transitions = {
-    "ScanNetwork": Transition("ScanNetwork", 0.9, 0.2), 
-    "FindServices": Transition("FindServices",0.9, 0.3),
-    "FindData": Transition("FindData",0.8, 0.1,),
-    "ExploitService": Transition("ExploitService", 0.7, 0.4),
-    "ExfiltrateData": Transition("ExfiltrateData",0.8, 0.1),
-}
+import enum
 
 """
 Service represents the service object in the NetSecGame
@@ -76,54 +50,71 @@ class Data(object):
     id:str
 
 
+# Types of actions
+"""
+ActionType represents generic action for attacker in the game. Each transition has a default probability
+of success and probability of detection (if the defender is present).
+Currently 5 action types are implemented:
+ - ScanNetwork
+ - FindServices
+ - FindData
+ - ExploitService
+ - ExfiltrateData
+"""
+class ActionType(enum.Enum):
+    #override the __new__ method to enable multiple parameters
+    def __new__(cls, *args, **kwds):
+        value = len(cls.__members__) + 1
+        obj = object.__new__(cls)
+        obj._value_ = value  
+        return obj    
+
+    def __init__(self, default_success_p:float, default_detection_p:float):
+        self.default_success_p = default_success_p
+        self.default_detection_p = default_detection_p
+    
+    #ActionTypes
+    ScanNetwork = 0.9, 0.2
+    FindServices = 0.9, 0.3
+    FindData = 0.8, 0.1
+    ExploitService = 0.7, 0.4
+    ExfiltrateData = 0.8, 0.1
+
 #Actions
 """
-Actions are composed of the transition type (see Transition) and additional parameters listed in dictionary
- - ScanNetwork {"target_network": "X.X.X.X/mask" (string)}
- - FindServices {"target_host": "X.X.X.X" (string)}
- - FindData {"target_host": "X.X.X.X" (string)}
- - ExploitService {"target_host": "X.X.X.X" (string), "target_service":"service" (Service named tuple)}
- - ExfiltrateData {"target_host": "X.X.X.X" (string), "source_host":"X.X.X.X" (string), "data":"Data tuple" (tuple)}
+Actions are composed of the action type (see ActionTupe) and additional parameters listed in dictionary
+ - ScanNetwork {"target_network": Network object}
+ - FindServices {"target_host": IP object}
+ - FindData {"target_host": IP object}
+ - ExploitService {"target_host": IP object, "target_service": Service object}
+ - ExfiltrateData {"target_host": IP object, "source_host": IP object, "data": Data object}
 """
 class Action(object):  
-    def __init__(self, transition_name:str, params:dict) -> None:
-        self._transition = transitions[transition_name]
+    def __init__(self, type: ActionType, params:dict) -> None:
+        self._type = type
         self._parameters = params
     
     @property
-    def transition(self) -> Transition:
-        return self._transition
+    def type(self) -> ActionType:
+        return self._type
     
     @property
     def parameters(self)->dict:
         return self._parameters
 
     def __repr__(self) -> str:
-        return f"Action <{self._transition.type}|{self._parameters}>"
+        return f"Action <{self._type}|{self._parameters}>"
     
     def __str__(self) -> str:
-        return f"Action <{self._transition.type}|{self._parameters}>"
+        return f"Action <{self._type}|{self._parameters}>"
     
     def __eq__(self, __o: object) -> bool:
         if isinstance(__o, Action):
-            return self._transition == __o.transition and self.parameters == __o.parameters
+            return self._type == __o.type and self.parameters == __o.parameters
         return False
     
     def __hash__(self) -> int:
-        return hash(self._transition.type) + hash("".join(self._parameters))
-
-
-# Observation - given to agent after taking an action
-"""
-Observations are given when making a step in the environment.
- - observation: current state of the environment
- - reward: float  value with immediate reward for last step
- - done: boolean, True if the game ended. 
-    No further interaction is possible (either terminal state or because of timeout)
- - info: dict, can contain additional information about the reason for ending
-"""
-Observation = namedtuple("Observation", ["state", "reward", "done", "info"])
-
+        return hash(self._type) + hash("".join(self._parameters))
 
 """
 Game state represents the states in the game state space.
@@ -206,6 +197,18 @@ class GameState(object):
         d = {"nets":list(self.known_networks), "known_hosts":list(self.known_hosts), "controlled_hosts":list(self.controlled_hosts), "known_services":list(self.known_services.items()), "known_data":list(self.known_data.items())}
         return json.dumps(d) 
 
+# Observation - given to agent after taking an action
+"""
+Observations are given when making a step in the environment.
+ - observation: current state of the environment
+ - reward: float  value with immediate reward for last step
+ - done: boolean, True if the game ended. 
+    No further interaction is possible (either terminal state or because of timeout)
+ - info: dict, can contain additional information about the reason for ending
+"""
+Observation = namedtuple("Observation", ["state", "reward", "done", "info"])
+
+
 # Main is only used for testing
 if __name__ == '__main__':
     # Used for tests
@@ -230,7 +233,9 @@ if __name__ == '__main__':
     net2 = Network("192.168.1.0", 32)
     net3 = Network("192.168.2.0", 32)
    
-    print(transitions["ExploitService"].default_detection_p)
-
+    
     d = {net1:[IP1 ,IP2], net3:[]}
     print(d)
+    print(len(ActionType))
+    for at in ActionType:
+        print(at, at.default_success_p, at.default_detection_p)
