@@ -2,8 +2,6 @@
 # This agent allows to manually play the Network Security Game
 import argparse
 import logging
-import time
-import tensorflow as tf
 
 import random
 # This is used so the agent can see the environment and game components
