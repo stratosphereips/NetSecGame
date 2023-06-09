@@ -3,6 +3,7 @@
 import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
+import env.game_components as components
 from random import choice, seed
 import random
 import argparse
@@ -10,7 +11,6 @@ import numpy as np
 import time
 import logging
 from torch.utils.tensorboard import SummaryWriter
-import env.game_components as components
 
 # This is used so the agent can see the environment and game components
 
