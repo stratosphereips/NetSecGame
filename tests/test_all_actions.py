@@ -1,5 +1,8 @@
 # Tests to see if all actions can be run
 # Author sebastian garcia sebastian.garcia@agents.fel.cvut.cz
+import sys
+from os import path
+sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
 from env.network_security_game import Network_Security_Environment
 import env.game_components as components
 import netaddr
@@ -11,18 +14,19 @@ from env.scenarios import tiny_scenario_configuration
 def test_all_actions():
     random_start = False
 
+
     if random_start:
         goal = {
             "known_networks":set(),
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":"random"}
+            "known_data":{components.IP("213.47.23.195"):"random"}
         }
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195", "192.168.1.9"},
+            "controlled_hosts":{components.IP("213.47.23.195"), components.IP("192.168.1.9")},
             "known_services":{},
             "known_data":{}
         }
@@ -37,7 +41,7 @@ def test_all_actions():
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195", "192.168.2.4"},
+            "controlled_hosts":{components.IP("213.47.23.195"), components.IP("192.168.2.4")},
             "known_services":{},
             "known_data":{}
         }
