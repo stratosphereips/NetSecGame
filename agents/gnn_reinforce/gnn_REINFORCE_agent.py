@@ -19,7 +19,8 @@ sys.path.append( path.dirname(path.dirname(path.dirname( path.abspath(__file__) 
 #with the path fixed, we can import now
 from env.network_security_game import Network_Security_Environment
 from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from env.game_components import *
+#from env.game_components import *
+import env.game_components as components
 
 
 tf.get_logger().setLevel('ERROR')
@@ -372,12 +373,11 @@ if __name__ == '__main__':
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":"random"}
-        }
+            "known_data":{components.IP("213.47.23.195"):"random"}        }
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195","192.168.2.0/24"},
+            "controlled_hosts":{components.IP("213.47.23.195")},
             "known_services":{},
             "known_data":{}
         }
@@ -385,15 +385,16 @@ if __name__ == '__main__':
         goal = {
             "known_networks":set(),
             "known_hosts":{"192.168.1.2"},
-            "controlled_hosts":{"192.168.1.2"},
+            "controlled_hosts":{components.IP("192.168.1.2")},
             "known_services":{},
-            "known_data":{"192.168.1.2":{("User1", "DataFromServer1")}}
+            #"known_data":{"192.168.1.2":{("User1", "DataFromServer1")}},
+            "known_data":{components.IP("213.47.23.195"):components.Data("User1", "DataFromServer1")}
         }
 
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195","192.168.2.2"},
+            "controlled_hosts":{components.IP("213.47.23.195"),components.IP("192.168.2.2")},
             "known_services":{},
             "known_data":{}
         }

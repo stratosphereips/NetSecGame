@@ -21,6 +21,9 @@ IP represents the ip address object in the NetSecGame
 """
 @dataclass(frozen=True)
 class IP(object):
+    """
+    Receives one parameter ip that should be a string
+    """
     ip:str
 
     def __repr__(self):
@@ -46,6 +49,11 @@ Data represents the data object in the NetSecGame
 """
 @dataclass(frozen=True)
 class Data(object):
+    """
+    Class to define dta
+    owner is the 'user' owner
+    id is the string of the data
+    """
     owner:str
     id:str
 
