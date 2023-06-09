@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
     # Setup tensorboard
     run_name = f"netsecgame__qlearning__{args.seed}__{int(time.time())}"
-    writer = SummaryWriter(f"logs/{run_name}")
+    writer = SummaryWriter(f"agents/tensorboard-logs/logs/{run_name}")
     writer.add_text(
         "hypherparameters", 
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
