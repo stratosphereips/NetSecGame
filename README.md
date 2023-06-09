@@ -66,6 +66,10 @@ The default configuration is defined in two places:
 
     This is defined inside each agent by a set of dictionaries that define if the defender is present, if the start position of the agent is random, etc.
 
+## Tensorboard logs
+
+The logs for tensorboard are stored for all agents in `agents/tensorboard-logs/`.
+
 
 ## Testing the environment
 

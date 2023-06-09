@@ -6,7 +6,7 @@ import argparse
 import numpy as np
 import time
 import logging
-import tensorflow as tf
+from torch.utils.tensorboard import SummaryWriter
 
 # This is used so the agent can see the environment and game components
 import sys
@@ -51,7 +51,6 @@ class RandomAgent:
     def move(self, observation:Observation) -> Action:
         state = observation.state
         # Randomly choose from the available actions
-        print(state)
         actions = self._generate_valid_actions(state)
         return choice(actions)
     
@@ -94,15 +93,16 @@ if __name__ == '__main__':
     parser.add_argument("--test_each", help="Sets periodic evaluation during testing", default=100, type=int)
     args = parser.parse_args()
 
-    logging.basicConfig(filename='random_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.CRITICAL)
+    logging.basicConfig(filename='agents/random/random_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.CRITICAL)
     logger = logging.getLogger('Random-agent')
 
     # Setup tensorboard
-    run_name = f"netsecgame__randomlearning__{args.seed}__{int(time.time())}"
-    writer = tf.summary.create_file_writer(f"./logs/{run_name}")
-
-    with writer.as_default():
-        tf.summary.text("hyperparameters", "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])), step=0)
+    run_name = f"netsecgame__qlearning__{args.seed}__{int(time.time())}"
+    writer = SummaryWriter(f"agents/tensorboard-logs/{run_name}")
+    writer.add_text(
+        "hypherparameters", 
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
+    )
 
     random.seed(args.seed)
 
@@ -200,20 +200,18 @@ if __name__ == '__main__':
                 average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
                 average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
                 '''
-            print(text)
             logger.info(text)
             # Store in tensorboard
-            with writer.as_default():
-                tf.summary.scalar("charts/test_avg_win_rate", test_win_rate, i)
-                tf.summary.scalar("charts/test_avg_detection_rate", test_detection_rate, i)
-                tf.summary.scalar("charts/test_avg_returns", test_average_returns , i)
-                tf.summary.scalar("charts/test_std_returns", test_std_returns , i)
-                tf.summary.scalar("charts/test_avg_episode_steps", test_average_episode_steps , i)
-                tf.summary.scalar("charts/test_std_episode_steps", test_std_episode_steps , i)
-                tf.summary.scalar("charts/test_avg_win_steps", test_average_win_steps , i)
-                tf.summary.scalar("charts/test_std_win_steps", test_std_win_steps , i)
-                tf.summary.scalar("charts/test_avg_detected_steps", test_average_detected_steps , i)
-                tf.summary.scalar("charts/test_std_detected_steps", test_std_detected_steps , i)
+            writer.add_scalar("charts/test_avg_win_rate", test_win_rate, i)
+            writer.add_scalar("charts/test_avg_detection_rate", test_detection_rate, i)
+            writer.add_scalar("charts/test_avg_returns", test_average_returns , i)
+            writer.add_scalar("charts/test_std_returns", test_std_returns , i)
+            writer.add_scalar("charts/test_avg_episode_steps", test_average_episode_steps , i)
+            writer.add_scalar("charts/test_std_episode_steps", test_std_episode_steps , i)
+            writer.add_scalar("charts/test_avg_win_steps", test_average_win_steps , i)
+            writer.add_scalar("charts/test_std_win_steps", test_std_win_steps , i)
+            writer.add_scalar("charts/test_avg_detected_steps", test_average_detected_steps , i)
+            writer.add_scalar("charts/test_std_detected_steps", test_std_detected_steps , i)
 
 
     text = f'''Final test after {i} episodes, for {args.test_for} steps. 
@@ -226,5 +224,4 @@ if __name__ == '__main__':
         average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
         average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
         '''
-    print(text)
     logger.info(text)
