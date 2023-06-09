@@ -100,7 +100,7 @@ class InteractiveAgent:
 
     def _get_action_type_from_stdin(self)->ActionType:
         print("Available Actions:")
-        return self._get_selection_from_user(ActionType, f"Select an action to play [0-{len(ActionType)}]: ")
+        return self._get_selection_from_user(ActionType, f"Select an action to play [0-{len(ActionType)-1}]: ")
     
     def _get_action_params_from_stdin(self, action_type:ActionType, current:GameState)->dict:
         if action_type == ActionType.ScanNetwork:
@@ -118,14 +118,14 @@ class InteractiveAgent:
             trg_host = IP(user_input_host)
             if trg_host in current.known_services:
                 print(f"Known services in {trg_host}")
-                service = self._get_selection_from_user(current.known_services[trg_host], f"Select service to exploint [0-len({len(current.known_services[trg_host])})]: ")
+                service = self._get_selection_from_user(current.known_services[trg_host], f"Select service to exploint [0-len({len(current.known_services[trg_host])-1})]: ")
                 return {"target_host": trg_host, "target_service":service}
         elif action_type == ActionType.ExfiltrateData:
             user_input_host_src = input(f"Provide SOURCE host for selected action {action_type}: ")
             src_host = IP(user_input_host_src)
             if src_host in current.known_data:
                 print(f"Known data in {src_host}")
-                data = self._get_selection_from_user(current.known_data[src_host], f"Select data to exflitrate [0-{len(current.known_data[src_host])}]: ")
+                data = self._get_selection_from_user(current.known_data[src_host], f"Select data to exflitrate [0-{len(current.known_data[src_host])-1}]: ")
                 if data:
                     user_input_host_trg = input(f"Provide TARGET host for data exfiltration: ")
                     trg_host = IP(user_input_host_trg)
