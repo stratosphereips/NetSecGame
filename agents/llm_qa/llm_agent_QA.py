@@ -81,7 +81,7 @@ def validate_action_in_state(response, state):
     contr_hosts = [str(host) for host in state.controlled_hosts]
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
-    
+
     try:
         if response["action"] == 'ScanNetwork':
             if response["parameters"]["target_network"] in known_nets:
@@ -113,27 +113,32 @@ def validate_action_in_state(response, state):
         return False
 
 def create_status_from_state(state):
-    prompt = "Current status:\n"
-    prompt += f"Controlled hosts are {','.join(list(state._controlled_hosts))}\n"
-    logging.debug(f"Controlled hosts are {','.join(list(state._controlled_hosts))}")
-    known_nets = [net for net in list(state._known_networks) if not isinstance(net, IPNetwork)]
-    prompt += f"Known networks are {','.join(known_nets)}\n"
-    prompt += f"Known hosts are {','.join(list(state._known_hosts))}\n"
+    contr_hosts = [str(host) for host in state.controlled_hosts]
+    known_hosts = [str(host) for host in state.known_hosts]
+    known_nets = [str(net) for net in list(state.known_networks)]
 
-    for ip_service in state._known_services:
+    prompt = "Current status:\n"
+    prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
+    logging.info(f"Controlled hosts are {','.join(contr_hosts)}")
+    prompt += f"Known networks are {' and '.join(known_nets)}\n"
+    logging.info(f"Known networks are {' and '.join(known_nets)}")
+    prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
+    logging.info(f"Known hosts are {' and '.join(contr_hosts)}")
+
+    for ip_service in state.known_services:
         services = []
-        if len(list(state._known_services[ip_service])) > 0:
-            for serv in state._known_services[ip_service]:
+        if len(list(state.known_services[ip_service])) > 0:
+            for serv in state.known_services[ip_service]:
                 if serv.name not in local_services:
                     services.append(serv.name)
             if len(services) > 0:
                 logging.debug(f"Known services {ip_service, services}")
-                prompt += f"Known services for host {ip_service} are {','.join(str(services))}\n"
+                prompt += f"Known services for host {ip_service} are {' and '.join(str(services))}\n"
     
-    for ip_data in state._known_data:
-        if len(state._known_data[ip_data]) > 0:
-            prompt += f"Known data for host {ip_data} are {','.join(list(state._known_data[ip_data]))}\n"
-            logging.info(f"Known data: {ip_data, state._known_data[ip_data]}")
+    for ip_data in state.known_data:
+        if len(state.known_data[ip_data]) > 0:
+            prompt += f"Known data for host {ip_data} are {' and '.join(list(state.known_data[ip_data]))}\n"
+            logging.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
     return prompt
 
@@ -214,18 +219,24 @@ if __name__ == "__main__":
     
     env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
     if args.scenario == "scenario1":
-        env.process_cyst_config(scenario_configuration.configuration_objects)
+        cyst_config = scenario_configuration.configuration_objects
     elif args.scenario == "scenario1_small":
-        env.process_cyst_config(smaller_scenario_configuration.configuration_objects)
+        cyst_config = smaller_scenario_configuration.configuration_objects
     elif args.scenario == "scenario1_tiny":
-        env.process_cyst_config(tiny_scenario_configuration.configuration_objects)
+        cyst_config = tiny_scenario_configuration.configuration_objects
     else:
         print("unknown scenario")
         exit(1)
 
     
     # Initialize the game
-    observation = env.initialize(win_conditons=goal, defender_positions=False, attacker_start_position=attacker_start, max_steps=args.max_steps, agent_seed=args.seed)
+    # Initialize the game
+    observation = env.initialize(win_conditons=goal, 
+                                 defender_positions=False, 
+                                 attacker_start_position=attacker_start, 
+                                 max_steps=args.max_steps, 
+                                 agent_seed=args.seed,
+                                 cyst_config=cyst_config)
     current_state = observation.state
 
     num_iterations = 100
@@ -299,12 +310,10 @@ if __name__ == "__main__":
 
         if is_valid:
             params = response["parameters"]
-            if response["action"] == 'ExploitService':
-                response["action"] = "ExecuteCodeInService"
             # In some actions we need to run another eval to get the dictionary
             if isinstance(params, str):
                 params = eval(params)
-            action = Action(response["action"], params)
+            action = Action(action_mapper[response["action"]], params)
             observation = env.step(action)
             taken_action = action
             total_reward += observation.reward
