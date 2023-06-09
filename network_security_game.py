@@ -402,6 +402,8 @@ class Network_Security_Environment(object):
             if host_ip in self._ip_to_hostname:
                 if self._ip_to_hostname[host_ip] in self._data:
                     data = self._data[self._ip_to_hostname[host_ip]]
+        else:
+            logger.info(f"\t\t\tCan't get data in host. The host is not controlled.")
         return data
   
     def _execute_action(self, current:components.GameState, action:components.Action)-> components.GameState:
@@ -435,7 +437,7 @@ class Network_Security_Environment(object):
             #get services for current states in target_host
             logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
             found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
-            logger.info(f"\t\t\t Found {len(found_services)}: {found_services}")
+            logger.info(f"\t\t\tFound {len(found_services)}: {found_services}")
             if len(found_services) > 0:
                 if action.parameters["target_host"] not in next_known_services.keys():
                     next_known_services[action.parameters["target_host"]] = found_services
@@ -459,6 +461,7 @@ class Network_Security_Environment(object):
                     next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
 
         elif action.type == components.ActionType.ExploitService:
+            # We don't check if the target is a known_host because it can be a blind attempt to attack
             logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
             if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
                 logger.info(f"\t\t\tValid host")
@@ -475,6 +478,12 @@ class Network_Security_Environment(object):
                         new_networks = self._get_networks_from_host(action.parameters["target_host"])
                         logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}") 
                         next_known_networks = next_known_networks.union(new_networks)
+                    else:
+                        logger.info(f"\t\t\tCan not exploit. Target host does not the service that was attempted.")
+                else:
+                    logger.info(f"\t\t\tCan not exploit. Target host does not have any services.")
+            else:
+                logger.info(f"\t\t\tCan not exploit. Target host does not exist.")
         elif action.type == components.ActionType.ExfiltrateData:
             logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
             if action.parameters["target_host"] in current.controlled_hosts:
@@ -493,6 +502,14 @@ class Network_Security_Environment(object):
                                 self._data[self._ip_to_hostname[action.parameters["target_host"]]] = {action.parameters["data"]}
                             else:
                                 self._data[self._ip_to_hostname[action.parameters["target_host"]]].add(action.parameters["data"])
+                        else:
+                            logger.info(f"\t\t\tCan not exfiltrate. Source host does not have this data.")
+                    else:
+                        logger.info(f"\t\t\tCan not exfiltrate. Source host does not have any data.")
+                else:
+                    logger.info(f"\t\t\tCan not exfiltrate. Source host is not controlled.")
+            else:
+                logger.info(f"\t\t\tCan not exfiltrate. Target host is not controlled.")
         else:
             raise ValueError(f"Unknown Action type: '{action.type}'")
         
@@ -723,24 +740,25 @@ if __name__ == "__main__":
     #logger.info(f"Actions space size:{len(actions)}")
 
     # Test of winning actions only. You need 2
+    print(f'Testing the winning action')
     obs = env.step(components.Action(components.ActionType.ExploitService, params={'target_host': components.IP('192.168.1.2'), 'target_service': components.Service(name='remote desktop service', type='passive', version='10.0.19041', is_local=False)}))
     obs = env.step(components.Action(components.ActionType.ExfiltrateData, params={'target_host': components.IP('213.47.23.195'), 'data': components.Data('User1', 'DataFromServer1'), 'source_host': components.IP('192.168.1.2')}))
 
-    # # Test of several 1000's actions
-    # obs = env.reset()
-    # num_iterations = 1
-    # break_loop = False
-    # for i in range(num_iterations + 1):
-    #     logger.info(f"Test Iteration number:{i}")
-    #     if break_loop:
-    #         break
-    #     actions = env.get_all_actions()
-    #     for action_id in actions:
-    #         try:
-    #             print(actions[action_id])
-    #             observation = env.step(actions[action_id])
-    #         except ValueError as e:
-    #             # Reset so the env accepts more actions
-    #             obs = env.reset()
-    #             #break_loop = True
-    #             break
+    # Test of several actions
+    print(f'Testing several more actions')
+    obs = env.reset()
+    num_iterations = 40
+    break_loop = False
+    for i in range(num_iterations + 1):
+        logger.info(f"Test Iteration number:{i}")
+        if break_loop:
+            break
+        actions = env.get_all_actions()
+        for action_id in actions:
+            try:
+                observation = env.step(actions[action_id])
+            except ValueError as e:
+                # Reset so the env accepts more actions
+                obs = env.reset()
+                #break_loop = True
+                break
