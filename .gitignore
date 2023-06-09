@@ -138,3 +138,4 @@ agents/*/logs/
 # ignore venv
 ai-dojo-venv-sebas/
 .DS_Store
+*tensorboard-logs*
