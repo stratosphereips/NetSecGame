@@ -1,6 +1,6 @@
-from network_security_game import Network_Security_Environment
+
 from scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from game_components import *
+
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from random import choice, random
@@ -10,6 +10,16 @@ import argparse
 from timeit import default_timer as timer
 import time
 import logging
+
+# This is used so the agent can see the environment and game components
+import sys
+from os import path
+sys.path.append( path.dirname(path.dirname(path.dirname( path.abspath(__file__) ) ) ))
+
+#with the path fixed, we can import now
+from env.network_security_game import Network_Security_Environment
+from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
+from env.game_components import *
 
 class NaiveQAgent:
 
