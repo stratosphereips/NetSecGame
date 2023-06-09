@@ -300,6 +300,7 @@ class Network_Security_Environment(object):
                 # Becareful, it will add all the IPs for this node
                 if service.type == "can_attack_start_here":
                     self.hosts_to_start.append(components.IP(str(interface.ip)))
+                    continue
 
                 if node_obj.id not in self._services:
                     self._services[node_obj.id] = []
