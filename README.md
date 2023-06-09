@@ -100,16 +100,15 @@ The network topology and rules are defined using a Cyst simulator configuration.
     - Interfaces, each with one IP address
     - Which host can connect
 
-
 Very important is that we made an addition to the NodeConfig objects in our Cyst configuration to include the property 'note' with the text 'can_start_attacker'. Meaning that the game env will take these host as candidates for the random start position.
 
 
 ## Agents Implemented
 Currently the implemented agents are:
 
-- Q learning agent in `q_agent.py`
-- Double Q learning agent in `double_q_agent.py`
-- Naive Q learning agent in `naive_q_agent.py`
+- Q learning agent in `agents/q_learning/q_agent.py`
+- Double Q learning agent in `agents/double_q_learning/double_q_agent.py`
+- Naive Q learning agent in `agents/naive_naive_q_agent.py`
 - Random agent in `random_agent.py`
 
 ## Assumptions of the NetSecGame
