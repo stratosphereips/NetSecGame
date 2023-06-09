@@ -105,7 +105,6 @@ celerybeat.pid
 .env
 .venv
 venv/
-ENV/
 env.bak/
 venv.bak/
 
@@ -132,8 +131,6 @@ dmypy.json
 *.pickle
 
 images
-ai-dojo-venv-sebas/share/doc/networkx-3.0/examples/subclass/README.txt
-ai-dojo-venv-sebas
 nohup.out
 *.pbtxt
 agents/*/logs/
