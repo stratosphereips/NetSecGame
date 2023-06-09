@@ -1,5 +1,8 @@
 #Author: Ondrej Lukas, ondrej.lukas@aic.cvut.cz
 # This agents just randomnly picks actions. No learning
+import sys
+from os import path
+sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
 from random import choice, seed
 import random
 import argparse
@@ -7,11 +10,9 @@ import numpy as np
 import time
 import logging
 from torch.utils.tensorboard import SummaryWriter
+import env.game_components as components
 
 # This is used so the agent can see the environment and game components
-import sys
-from os import path
-sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
 
 #with the path fixed, we can import now
 from env.network_security_game import Network_Security_Environment
@@ -88,7 +89,7 @@ if __name__ == '__main__':
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_tiny", type=str)
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
-    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=True, action=argparse.BooleanOptionalAction)
     parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
     parser.add_argument("--test_each", help="Sets periodic evaluation during testing", default=100, type=int)
     args = parser.parse_args()
@@ -124,12 +125,12 @@ if __name__ == '__main__':
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":"random"}
+            "known_data":{components.IP("213.47.23.195"):"random"}
         }
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195"},
+            "controlled_hosts":{components.IP("213.47.23.195")},
             "known_services":{},
             "known_data":{}
         }
@@ -139,13 +140,13 @@ if __name__ == '__main__':
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
+            "known_data":{components.IP("213.47.23.195"):components.Data("User1", "DataFromServer1")}
         }
 
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195","192.168.2.2"},
+            "controlled_hosts":{components.IP("213.47.23.195"),components.IP("192.168.2.2")},
             "known_services":{},
             "known_data":{}
         }
