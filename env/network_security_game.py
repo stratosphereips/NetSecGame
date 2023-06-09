@@ -14,7 +14,7 @@ import logging
 
 
 # Set the logging
-logging.basicConfig(filename='netsecenv.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+logging.basicConfig(filename='env/logs/netsecenv.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
 logger = logging.getLogger('Netsecenv')
 
 class Network_Security_Environment(object):
