@@ -11,10 +11,15 @@ from tensorflow_gnn.models.gcn import gcn_conv
 from random import choice, random, seed, choices
 from timeit import default_timer as timer
 
-sys.path.append('/opt/aidojo/NetSecEnv/game-environment-v1/game-states-maker')
-from network_security_game import Network_Security_Environment
-from game_components import *
-from scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
+# This is used so the agent can see the environment and game components
+import sys
+from os import path
+sys.path.append( path.dirname(path.dirname(path.dirname( path.abspath(__file__) ) ) ))
+
+#with the path fixed, we can import now
+from env.network_security_game import Network_Security_Environment
+from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
+from env.game_components import *
 
 
 tf.get_logger().setLevel('ERROR')
