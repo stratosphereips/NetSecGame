@@ -185,7 +185,7 @@ class Network_Security_Environment(object):
             # Random start
             logger.info('\tStart position of agent is random')
             logger.info(f'\tChoosing from {self.hosts_to_start}')
-            controlled_hosts.add(str(random.choice(self.hosts_to_start)))
+            controlled_hosts.add(random.choice(self.hosts_to_start))
             logger.info(f'\t\tMaking agent start in {controlled_hosts}')
         else:
             # Not random start
@@ -195,12 +195,12 @@ class Network_Security_Environment(object):
         # to have a random start position, but simultaneously to 'force' a controlled host
         # for the case of controlling a command and controll server to exfiltrate.
         for controlled_host in self._attacker_start_position["controlled_hosts"]:
-            if controlled_host.find('/') < 0:
+            if isinstance(controlled_host, components.IP):
                 # This is not a network, so add as controlling host
-                controlled_hosts.add(components.IP(controlled_host))
+                controlled_hosts.add(controlled_host)
                 # Add the controlled hosts to the list of known hosts
                 known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
-                logger.info(f'\tThe attacker has control of host {controlled_host}.')
+                logger.info(f'\tThe attacker has control of host {str(controlled_host)}.')
         
         # Extend the known networks with the neighbouring networks
         # This is to solve in the env (and not in the agent) the problem
@@ -279,7 +279,6 @@ class Network_Security_Environment(object):
                 net = components.Network(net_ip,int(net_mask))
                 ip = components.IP(str(interface.ip))
                 self._ip_to_hostname[ip] = node_obj.id            
-                #self._hosts[ip] = node_obj
                 if net not in self._networks:
                     self._networks[net] = []
                 self._networks[net].append(ip)
@@ -330,7 +329,6 @@ class Network_Security_Environment(object):
                 net = components.Network(net_ip,int(net_mask))
                 ip = components.IP(str(interface.ip))
                 self._ip_to_hostname[ip] = router_obj.id       
-                #self._hosts[ip] = router_obj
                 if net not in self._networks:
                     self._networks[net] = []
                 self._networks[net].append(ip)
