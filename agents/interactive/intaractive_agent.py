@@ -60,7 +60,7 @@ class InteractiveAgent:
         print("Incorrect input, terminating the game!")
 
     def _print_current_state(self, state:GameState, reward:int=None): 
-        print(f"+========================================== CURRENT STATE (reward={reward}) ===========================================")
+        print(f"\n+========================================== CURRENT STATE (reward={reward}) ===========================================")
         print(f"| NETWORKS: {', '.join([str(n) for n in state.known_networks])}")
         print("+----------------------------------------------------------------------------------------------------------------------")
         print(f"| KNOWN_H: {', '.join([str(h) for h in state.known_hosts])}")
@@ -96,7 +96,7 @@ class InteractiveAgent:
                     print(f"|       {h}:")
                     for s in data:
                         print(f"|\t\t{d}")
-        print("+======================================================================================================================")
+        print("+======================================================================================================================\n")
 
     def _get_action_type_from_stdin(self)->ActionType:
         print("Available Actions:")
