@@ -1,6 +1,11 @@
-from network_security_game import Network_Security_Environment
-from scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from game_components import Action
+import sys
+from os import path
+sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
+
+from env.network_security_game import Network_Security_Environment
+from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
+from env.game_components import *
+
 from cyst.api.configuration import *
 import openai
 from tenacity import retry, stop_after_attempt
@@ -18,6 +23,14 @@ local_services = ['bash', 'powershell', 'remote desktop service', 'windows login
 # Set the logging
 import logging
 logger = logging.getLogger(__name__)
+
+action_mapper = {
+    "ScanNetwork": ActionType.ScanNetwork,
+    "FindServices": ActionType.FindServices,
+    "FindData": ActionType.FindData,
+    "ExfiltrateData": ActionType.ExfiltrateData,
+    "ExploitService": ActionType.ExploitService
+}
 
 cot_prompt = """
 Example status:
@@ -65,30 +78,34 @@ Action:
 """
 
 def validate_action_in_state(response, state):
+    contr_hosts = [str(host) for host in state.controlled_hosts]
+    known_hosts = [str(host) for host in state.known_hosts]
+    known_nets = [str(net) for net in list(state.known_networks)]
+    
     try:
         if response["action"] == 'ScanNetwork':
-            if response["parameters"]["target_network"] in list(state._known_networks):
+            if response["parameters"]["target_network"] in known_nets:
                 return True 
         elif response["action"] == 'FindServices':
-            if response["parameters"]["target_host"] in list(state._known_hosts):
+            if response["parameters"]["target_host"] in known_hosts:
                 return True
-        elif response["action"] == 'ExecuteCodeInService':
+        elif response["action"] == 'ExploitService':
             ip_addr = response["parameters"]["target_host"]
-            if ip_addr in list(state._known_hosts): 
-                for service in list(state._known_services[ip_addr]):
+            if ip_addr in known_hosts: 
+                for service in list(state.known_services[ip_addr]):
                     if service.name == response["parameters"]["target_service"]:
                         return True
         elif response["action"] == 'FindData':
-            if response["parameters"]["target_host"] in list(state._controlled_hosts):
+            if response["parameters"]["target_host"] in contr_hosts:
                 return True
         else:
-            for ip_data in state._known_data:
+            for ip_data in state.known_data:
                 params = response["parameters"]
                 if isinstance(params, str):
                     params = eval(params)
                 ip_addr = params["source_host"]
-                if ip_data == ip_addr and ip_addr in list(state._controlled_hosts):
-                    if params["data"] in list(state._known_data[ip_data]):
+                if ip_data == ip_addr and ip_addr in contr_hosts:
+                    if params["data"] in list(state.known_data[ip_data]):
                         return True
         return False 
     except:
