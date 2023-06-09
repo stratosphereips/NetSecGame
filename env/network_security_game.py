@@ -2,7 +2,7 @@
 import netaddr
 import env.game_components as components
 import yaml
-from random import choice, seed
+#from random import choice, seed
 import random
 import copy
 from cyst.api.configuration import *
@@ -51,7 +51,10 @@ class Network_Security_Environment(object):
         # Verbosity. 
         # If the episode/action was detected by the defender
         self._detected = False
-        self.verbosity = verbosity
+        # To hold all the services we know
+        self._services = {}
+        self._data = {}
+        self._fw_rules = []
     
     @property
     def timestamp(self)->int:
@@ -107,16 +110,6 @@ class Network_Security_Environment(object):
         It ALSO resets the environment, so it returns a full state. This is different from other gym envs.
         
         """
-        self._networks = {}
-        #self._hosts = {}
-        self._services = {}
-        self._data = {}
-
-        self._node_objects = {}
-        self._connections = {}
-        self._ip_to_hostname = {}
-        self._exploits = {}
-        self._fw_rules = []
         logger.info(f"Initializing NetSetGame environment")
 
         # Process parameters
@@ -163,7 +156,7 @@ class Network_Security_Environment(object):
                             pass
                     # From all available data, randomly pick the one that is going to be used to win the game
                     # It seems there can be only one data to win for now
-                    self._win_conditions["known_data"][key] = {choice(available_data)}
+                    self._win_conditions["known_data"][key] = {random.choice(available_data)}
                 else:
                     logger.info(f"\tData was not requested to be put in a random location.")
             
@@ -192,7 +185,7 @@ class Network_Security_Environment(object):
             # Random start
             logger.info('\tStart position of agent is random')
             logger.info(f'\tChoosing from {self.hosts_to_start}')
-            controlled_hosts.add(str(choice(self.hosts_to_start)))
+            controlled_hosts.add(str(random.choice(self.hosts_to_start)))
             logger.info(f'\t\tMaking agent start in {controlled_hosts}')
         else:
             # Not random start
@@ -589,7 +582,7 @@ class Network_Security_Environment(object):
         based on the probabilitiy distribution in the action configuration
         """
         if self._defender_placements:
-            value = random() < action.type.default_detection_p     
+            value = random.random() < action.type.default_detection_p     
             logger.info(f"\tAction detected?: {value}")
             return value
         else: #no defender
@@ -649,9 +642,6 @@ class Network_Security_Environment(object):
 
                 # Reward for taking an action
                 reward = -1
-
-                if self.verbosity >=1:
-                    print("Action unsuccessful")
 
             # 2. Check if the new state is the goal state
             is_goal = self.is_goal(next_state)
