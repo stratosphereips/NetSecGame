@@ -133,4 +133,7 @@ dmypy.json
 images
 nohup.out
 *.pbtxt
+# ignorre agent's logs
 agents/*/logs/
+# ignore venv
+ai-dojo-venv-sebas/
