@@ -129,7 +129,7 @@ Currently the implemented agents are:
 |----------------------|--------------------------------------------------------------------------|---------------------------------------|--------------------------------------------------|
 | ScanNetwork          | Scans the given network for active hosts | network + mask                        | extends 'known_hosts'                            |
 | FindServices         | Scans given host for running services                                    | host IP                               | extends 'known_services' with host:service pairs |
-| ExecuteCodeInService | Runs exploit in service to gain control                                  | host:service pair                     | extends 'controlled_hosts'                       |
+| ExploitService | Runs exploit in service to gain control                                  | host:service pair                     | extends 'controlled_hosts'                       |
 | Find Data            | Runs code to discover data either in given service or in controlled host | host:service pair  OR controlled host | extends 'known_data' with host:data pairs        |
 | Exfiltrate data      | Runds code to move data from host to host                                | host:data pair + known_host (target)  | extends 'known_data with "target:data" pair      |
 
