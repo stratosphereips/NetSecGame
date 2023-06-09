@@ -14,9 +14,9 @@ from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
 
 #with the path fixed, we can import now
-from network_security_game import Network_Security_Environment
-from scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from game_components import *
+from env.network_security_game import Network_Security_Environment
+from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
+from env.game_components import *
 
 
 class RandomAgent:
