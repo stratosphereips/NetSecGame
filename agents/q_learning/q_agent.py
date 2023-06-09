@@ -121,7 +121,9 @@ class QAgent:
 
             # Update q values
             state = observation.state
-            This is broken dont use!
+            
+            raise Exception(" This is broken dont use!")
+            
             state = '1'
             new_Q = self.q_values[state, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[state, action])
             self.q_values[state, action] = new_Q
