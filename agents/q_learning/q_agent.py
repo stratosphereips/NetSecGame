@@ -1,8 +1,8 @@
 # Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 #           Arti       
-
+#           Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
 import numpy as np
-from random import choice, random, seed
+#from random import choice, seed
 import random
 import pickle
 import sys
@@ -42,18 +42,47 @@ class QAgent:
         with open(filename, "rb") as f:
             self.q_values = pickle.load(f)
     
+    def get_valid_actions(self, state) -> list:
+        """
+        Given a state, choose the valid actions
+        """
+        valid_actions = set()
+        #Network Scans
+        for network in state.known_networks:
+            # TODO ADD neighbouring networks
+            valid_actions.add(Action(ActionType.ScanNetwork, params={"target_network": network}))
+        # Service Scans
+        for host in state.known_hosts:
+            valid_actions.add(Action(ActionType.FindServices, params={"target_host": host}))
+        # Service Exploits
+        for host, service_list in state.known_services.items():
+            for service in service_list:
+                valid_actions.add(Action(ActionType.ExploitService, params={"target_host": host , "target_service": service}))
+        # Data Scans
+        for host in state.controlled_hosts:
+            valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
+        
+        # Data Exfiltration
+        for src_host, data_list in state.known_data.items():
+            for data in data_list:
+                for trg_host in state.controlled_hosts:
+                    if trg_host != src_host:
+                        valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
+        return list(valid_actions)
+    
     def move(self, observation:Observation, testing=False) -> Action:
         state = observation.state
-        actions = self.env.get_valid_actions(state)
+        actions = self.get_valid_actions(state)
+        state = '1'
         logger.info(f'The valid actions in this state are: {[str(action) for action in actions]}')
         if random.uniform(0, 1) <= self.epsilon and not testing:
-            a = choice(actions)
-            if (state, a) not in self.q_values:
-                self.q_values[state, a] = 0
-            return a
+            action = random.choice(actions)
+            if (state, action) not in self.q_values:
+                self.q_values[state, action] = 0
+            return action
         else: #greedy play
             #select the acion with highest q_value
-            tmp = dict(((state,a), self.q_values.get((state,a), 0)) for a in actions)
+            tmp = dict(((state,action), self.q_values.get((state,action), 0)) for action in actions)
             max_q_key = max(tmp, key=tmp.get)
             if max_q_key not in self.q_values:
                 self.q_values[max_q_key] = 0
@@ -61,7 +90,8 @@ class QAgent:
     
     def max_action_q(self, observation:Observation) -> Action:
         state = observation.state
-        actions = self.env.get_valid_actions(state)
+        actions = self.get_valid_actions(state)
+        state = '1'
         tmp = dict(((state,a), self.q_values.get((state,a), 0)) for a in actions)
         return tmp[max(tmp,key=tmp.get)] #return maximum Q_value for a given state (out of available actions)
     
@@ -90,8 +120,14 @@ class QAgent:
                 max_q_next = self.max_action_q(next_observation)
 
             # Update q values
-            new_Q = self.q_values[observation.state, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[observation.state, action])
-            self.q_values[observation.state, action] = new_Q
+            state = observation.state
+            This is broken dont use!
+            state = '1'
+            new_Q = self.q_values[state, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[state, action])
+            self.q_values[state, action] = new_Q
+            # This is broken dont use!
+            state = observation.state
+
             
             rewards += next_observation.reward
 
@@ -99,7 +135,7 @@ class QAgent:
             observation = next_observation
 
         # If state is 'done' this should throw an error of missing variables
-        return rewards, self.env.is_goal(observation.state), self.env.detected, self.env.timestamp
+        return rewards, self.env.is_goal(state), self.env.detected, self.env.timestamp
 
     def evaluate(self, observation:Observation) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
         """
@@ -166,11 +202,11 @@ if __name__ == '__main__':
     logger.info(f'Setting the network security environment')
     env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
     if args.scenario == "scenario1":
-        env.process_cyst_config(scenario_configuration.configuration_objects)
+        cyst_config = scenario_configuration.configuration_objects
     elif args.scenario == "scenario1_small":
-        env.process_cyst_config(smaller_scenario_configuration.configuration_objects)
+        cyst_config = smaller_scenario_configuration.configuration_objects
     elif args.scenario == "scenario1_tiny":
-        env.process_cyst_config(tiny_scenario_configuration.configuration_objects)
+        cyst_config = tiny_scenario_configuration.configuration_objects
     else:
         print("unknown scenario")
         exit(1)
@@ -210,7 +246,7 @@ if __name__ == '__main__':
     
     # Training
     logger.info(f'Initializing the environment')
-    observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, agent_seed=args.seed)
+    observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, agent_seed=args.seed, cyst_config=cyst_config)
     logger.info(f'Creating the agent')
     agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
     try:
