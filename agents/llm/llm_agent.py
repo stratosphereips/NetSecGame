@@ -1,10 +1,14 @@
-from network_security_game import Network_Security_Environment
-from scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from game_components import Action
+import sys
+from os import path
+sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
+
+from env.network_security_game import Network_Security_Environment
+from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
+from env.game_components import *
+
 from cyst.api.configuration import *
 import openai
 from tenacity import retry, stop_after_attempt
-import re
 import argparse
 import jinja2
 
@@ -19,18 +23,26 @@ local_services = ['bash', 'powershell', 'remote desktop service', 'windows login
 import logging
 logger = logging.getLogger(__name__)
 
-example_prompt = """
+action_mapper = {
+    "ScanNetwork": ActionType.ScanNetwork,
+    "FindServices": ActionType.FindServices,
+    "FindData": ActionType.FindData,
+    "ExfiltrateData": ActionType.ExfiltrateData,
+    "ExploitService": ActionType.ExploitService
+}
+
+example_prompt = """ 
 Example: 
-Known networks are '1.1.1.0/24'
-Known hosts are '2.2.2.2', '1.1.1.2', '2.2.2.3'
-Controlled hosts are '2.2.2.2', '1.1.1.2'
+Known networks are 1.1.1.0/24
+Known hosts are 2.2.2.2 and 1.1.1.2 and 2.2.2.3
+Controlled hosts are '2.2.2.2' and 1.1.1.2
 Known data for source host 1.1.1.2: are ('User1', 'SomeData')
-Known services for host 1.1.1.1 are "openssh"
+Known services for host 1.1.1.1 are openssh
 
 Here are some examples of actions:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
 Action: {"action":"FindServices", "parameters":{"target_host":"192.168.2.0"}}
-Action: {"action":"ExecuteCodeInService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
+Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
 Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
 Action: {"action":"ExfiltrateData", "parameters":"{'target_host': '2.2.2.2', 'data': ('User1', 'SomeData'), 'source_host': '1.1.1.2'}"}}
 End of example.
@@ -39,15 +51,13 @@ End of example.
 instructions_template = """
 You are a pentester and you want to exfiltrate data.
 Your goal is to exfiltrate data, but first you need to know where they are and access them.
-The valid actions are: FindServices, FindData, ScanNetwork, ExecuteCodeInService, and ExfiltrateData. 
+The valid actions are: FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
 You can only use one of the 5 actions. 
-Action ExecuteCodeInService is used to exploit a remote host. An exploited host is under your control.
-Action ExfiltrateData is used to exfiltrate data from the source host to the target host.
 
 Your plan is to:
 1. Scan all known networks one at a time.
 2. Find services for the list of known hosts one at a time.
-3. Execute code for the list of known services of each host.
+3. Exploit the list of known services of each host.
 4. Find data only in controlled hosts.
 5. If you find '{{data}}' of '{{user}}' exfiltrate to target host {{target_host}}.
 Repeat the steps but only for new hosts, services, and data you discovered.
@@ -58,30 +68,34 @@ Select a valid action with the correct format and parameters.
 """
 
 def validate_action_in_state(response, state):
+    contr_hosts = [str(host) for host in state.controlled_hosts]
+    known_hosts = [str(host) for host in state.known_hosts]
+    known_nets = [str(net) for net in list(state.known_networks)]
+
     try:
         if response["action"] == 'ScanNetwork':
-            if response["parameters"]["target_network"] in list(state._known_networks):
+            if response["parameters"]["target_network"] in known_nets:
                 return True 
         elif response["action"] == 'FindServices':
-            if response["parameters"]["target_host"] in list(state._known_hosts):
+            if response["parameters"]["target_host"] in known_hosts:
                 return True
-        elif response["action"] == 'ExecuteCodeInService':
+        elif response["action"] == 'ExploitService':
             ip_addr = response["parameters"]["target_host"]
-            if ip_addr in list(state._known_hosts): 
-                for service in list(state._known_services[ip_addr]):
+            if ip_addr in known_hosts: 
+                for service in list(state.known_services[ip_addr]):
                     if service.name == response["parameters"]["target_service"]:
                         return True
         elif response["action"] == 'FindData':
-            if response["parameters"]["target_host"] in list(state._controlled_hosts):
+            if response["parameters"]["target_host"] in contr_hosts:
                 return True
         else:
-            for ip_data in state._known_data:
+            for ip_data in state.known_data:
                 params = response["parameters"]
                 if isinstance(params, str):
                     params = eval(params)
                 ip_addr = params["source_host"]
-                if ip_data == ip_addr and ip_addr in list(state._controlled_hosts):
-                    if params["data"] in list(state._known_data[ip_data]):
+                if ip_data == ip_addr and ip_addr in contr_hosts:
+                    if params["data"] in list(state.known_data[ip_data]):
                         return True
         return False 
     except:
@@ -89,32 +103,38 @@ def validate_action_in_state(response, state):
         return False
 
 def create_status_from_state(state, memories):
+    contr_hosts = [str(host) for host in state.controlled_hosts]
+    known_hosts = [str(host) for host in state.known_hosts]
+    known_nets = [str(net) for net in list(state.known_networks)]
+
     prompt = "Current status:\n"
     if len(memories) > 0:
         for memory in memories:
             prompt += f'You have taken action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} in the past. {memory[2]}\n' 
     else:
         prompt += ""
-    prompt += f"Controlled hosts are {''.join(list(state._controlled_hosts))}\n"
-    logging.debug(f"Controlled hosts are {''.join(list(state._controlled_hosts))}")
-    known_nets = [net for net in list(state._known_networks) if not isinstance(net, IPNetwork)]
-    prompt += f"Known networks are {''.join(known_nets)}\n"
-    prompt += f"Known hosts are {''.join(list(state._known_hosts))}\n"
+    prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
+    logging.info(f"Controlled hosts are {' and '.join(contr_hosts)}")
+    
+    prompt += f"Known networks are {' and '.join(known_nets)}\n"
+    logging.info(f"Known networks are {' and '.join(known_nets)}")
+    prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
+    logging.info(f"Known hosts are {' and '.join(contr_hosts)}")
 
-    for ip_service in state._known_services:
+    for ip_service in state.known_services:
         services = []
-        if len(list(state._known_services[ip_service])) > 0:
-            for serv in state._known_services[ip_service]:
+        if len(list(state.known_services[ip_service])) > 0:
+            for serv in state.known_services[ip_service]:
                 if serv.name not in local_services:
                     services.append(serv.name)
             if len(services) > 0:
-                logging.debug(f"Known services {ip_service, services}")
-                prompt += f"Known services for host {ip_service} are {''.join(str(services))}\n"
+                logging.info(f"Known services {ip_service, services}")
+                prompt += f"Known services for host {ip_service} are {' and '.join(str(services))}\n"
     
-    for ip_data in state._known_data:
-        if len(state._known_data[ip_data]) > 0:
-            prompt += f"Known data for host {ip_data} are {''.join(list(state._known_data[ip_data]))}\n"
-            logging.info(f"Known data: {ip_data, state._known_data[ip_data]}")
+    for ip_data in state.known_data:
+        if len(state.known_data[ip_data]) > 0:
+            prompt += f"Known data for host {ip_data} are {' and '.join(list(state.known_data[ip_data]))}\n"
+            logging.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
     return prompt
 
@@ -175,7 +195,7 @@ if __name__ == "__main__":
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":{("User1", "DatabaseData")}}
+            "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
         }
 
         attacker_start = {
@@ -188,18 +208,23 @@ if __name__ == "__main__":
     
     env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
     if args.scenario == "scenario1":
-        env.process_cyst_config(scenario_configuration.configuration_objects)
+        cyst_config = scenario_configuration.configuration_objects
     elif args.scenario == "scenario1_small":
-        env.process_cyst_config(smaller_scenario_configuration.configuration_objects)
+        cyst_config = smaller_scenario_configuration.configuration_objects
     elif args.scenario == "scenario1_tiny":
-        env.process_cyst_config(tiny_scenario_configuration.configuration_objects)
+        cyst_config = tiny_scenario_configuration.configuration_objects
     else:
         print("unknown scenario")
         exit(1)
 
     
     # Initialize the game
-    observation = env.initialize(win_conditons=goal, defender_positions=False, attacker_start_position=attacker_start, max_steps=args.max_steps, agent_seed=args.seed)
+    observation = env.initialize(win_conditons=goal, 
+                                 defender_positions=False, 
+                                 attacker_start_position=attacker_start, 
+                                 max_steps=args.max_steps, 
+                                 agent_seed=args.seed,
+                                 cyst_config=cyst_config)
     current_state = observation.state
 
     num_iterations = 100
@@ -260,7 +285,7 @@ if __name__ == "__main__":
             # In some actions we need to run another eval to get the dictionary
             if isinstance(params, str):
                 params = eval(params)
-            action = Action(response["action"], params)
+            action = Action(action_mapper[response["action"]], params)
             observation = env.step(action)
             taken_action = action
             total_reward += observation.reward
