@@ -1,6 +1,10 @@
 # Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 #           Arti       
 #           Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
+import sys
+from os import path
+sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
+import env.game_components as components
 import numpy as np
 #from random import choice, seed
 import random
@@ -121,7 +125,7 @@ class QAgent:
 
             # Update q values
             state = observation.state
-            This is broken dont use!
+            # This is broken dont use!
             state = '1'
             new_Q = self.q_values[state, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[state, action])
             self.q_values[state, action] = new_Q
@@ -218,12 +222,12 @@ if __name__ == '__main__':
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":"random"}
+            "known_data":{components.IP("213.47.23.195"):"random"}
         }
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195"},
+            "controlled_hosts":{components.IP("213.47.23.195")},
             "known_services":{},
             "known_data":{}
         }
@@ -233,16 +237,17 @@ if __name__ == '__main__':
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
+            "known_data":{components.IP("213.47.23.195"):components.Data("User1", "DataFromServer1")}
         }
 
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195","192.168.2.2"},
+            "controlled_hosts":{components.IP("213.47.23.195"),components.IP("192.168.2.2")},
             "known_services":{},
             "known_data":{}
         }
+    
     
     # Training
     logger.info(f'Initializing the environment')
