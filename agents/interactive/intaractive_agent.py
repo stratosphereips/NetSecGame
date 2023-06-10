@@ -17,7 +17,7 @@ from env.game_components import *
 
 
 class InteractiveAgent:
-    
+
     def __init__(self, env)->None:
         self.env = env
     
@@ -33,7 +33,7 @@ class InteractiveAgent:
         # Service Exploits
         for host, service_list in state.known_services.items():
             for service in service_list:
-                valid_actions.add(Action(ActionType.ExploitService, params={"target_host": host , "target_service": service}))
+                valid_actions.add(Action(ActionType.ExploitService, params={"target_host": host, "target_service": service}))
         # Data Scans
         for host in state.controlled_hosts:
             valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
@@ -67,43 +67,43 @@ class InteractiveAgent:
         # If something failed, avoid doing the move
         return False
 
-    def _print_current_state(self, state:GameState, reward:int=None): 
+    def _print_current_state(self, state:GameState, reward:int=None):
         print(f"\n+========================================== CURRENT STATE (reward={reward}) ===========================================")
-        print(f"| NETWORKS: {', '.join([str(n) for n in state.known_networks])}")
+        print(f"| NETWORKS: {', '.join([str(net) for net in state.known_networks])}")
         print("+----------------------------------------------------------------------------------------------------------------------")
-        print(f"| KNOWN_H: {', '.join([str(h) for h in state.known_hosts])}")
+        print(f"| KNOWN_H: {', '.join([str(host) for host in state.known_hosts])}")
         print("+----------------------------------------------------------------------------------------------------------------------")
-        print(f"| OWNED_H: {', '.join([str(h) for h in state.controlled_hosts])}")
+        print(f"| OWNED_H: {', '.join([str(host) for host in state.controlled_hosts])}")
         print("+----------------------------------------------------------------------------------------------------------------------")
         if len(state.known_services) == 0:
             print("| SERVICES: N/A")
         else:
             first = True
-            for h,services in state.known_services.items():
+            for host,services in state.known_services.items():
                 if first:
-                    print(f"| SERVICES: {h}:")
-                    for s in services:
-                        print(f"|\t\t{s}")
+                    print(f"| SERVICES: {host}:")
+                    for service in services:
+                        print(f"|\t\t{service}")
                     first = False
                 else:
-                    print(f"|           {h}:")
-                    for s in services:
-                        print(f"|\t\t{s}")
+                    print(f"|           {host}:")
+                    for service in services:
+                        print(f"|\t\t{service}")
         print("+----------------------------------------------------------------------------------------------------------------------")
         if len(state.known_data) == 0:
             print("| DATA: N/A")
         else:
             first = True
-            for h, data in state.known_data.items():
+            for host, data_list in state.known_data.items():
                 if first:
-                    print(f"| DATA: {h}:")
-                    for d in data:
-                        print(f"|\t\t{d}")
+                    print(f"| DATA: {host}:")
+                    for data in data_list:
+                        print(f"|\t\t{data}")
                     first = False
                 else:
-                    print(f"|       {h}:")
-                    for s in data:
-                        print(f"|\t\t{d}")
+                    print(f"|       {host}:")
+                    for data in data_list:
+                        print(f"|\t\t{data}")
         print("+======================================================================================================================\n")
 
     def _get_action_type_from_stdin(self)->ActionType:
@@ -112,8 +112,8 @@ class InteractiveAgent:
         Probably not needed separatedly
         """
         print("Available Actions:")
-        actiontype = self._get_selection_from_user(ActionType, f"Select an action to play [0-{len(ActionType)-1}]: ")
-        return actiontype
+        action_type = self._get_selection_from_user(ActionType, f"Select an action to play [0-{len(ActionType)-1}]: ")
+        return action_type
     
     def _get_action_params_from_stdin(self, action_type:ActionType, current:GameState)->dict:
         if action_type == ActionType.ScanNetwork:
@@ -153,7 +153,7 @@ class InteractiveAgent:
         Receive an ActionType object that contains all the options of actions
         Get the selection of action in text from the user in the stdin
         """
-        option_dict = {key:value for key,value in enumerate(actiontypes)}
+        option_dict = dict(enumerate(actiontypes))
         input_alive = True
         selected_option = None
         for index, option in option_dict.items():
