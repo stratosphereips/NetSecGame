@@ -71,7 +71,7 @@ class InteractiveAgent:
         # If something failed, avoid doing the move
         return False
 
-    def _print_current_state(self, state: GameState, reward: int = None):
+    def print_current_state(self, state: GameState, reward: int = None):
         print(f"\n+========================================== CURRENT STATE (reward={reward}) ===========================================")
         print(f"| NETWORKS: {', '.join([str(net) for net in state.known_networks])}")
         print("+----------------------------------------------------------------------------------------------------------------------")
@@ -175,7 +175,9 @@ class InteractiveAgent:
                     print(f"Please insert a number in range {min(option_dict.keys())}-{max(option_dict.keys())}!")
         return selected_option
 
-if __name__ == '__main__':
+
+
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
     parser.add_argument("--defender", help="Is defender present", default=False, action=argparse.BooleanOptionalAction)
@@ -241,8 +243,10 @@ if __name__ == '__main__':
     print("Welcome to the Network Security Game!\n")
     while not observation.done:
         # Be sure the agent can do the move before giving to the env.
-        agent._print_current_state(observation.state, observation.reward)
+        agent.print_current_state(observation.state, observation.reward)
         action = agent.move(observation)
         if action:
             observation = env.step(action)
     print(f"Episode over! Reason {observation.info}")
+if __name__ == '__main__':
+    main()
