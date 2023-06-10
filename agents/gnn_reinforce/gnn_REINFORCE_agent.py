@@ -347,7 +347,7 @@ if __name__ == '__main__':
             "controlled_hosts":{components.IP("192.168.1.2")},
             "known_services":{},
             #"known_data":{"192.168.1.2":{("User1", "DataFromServer1")}},
-            "known_data":{components.IP("213.47.23.195"):components.Data("User1", "DataFromServer1")}
+            "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}}
         }
 
         attacker_start = {
