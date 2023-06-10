@@ -85,13 +85,13 @@ def validate_action_in_state(response, state):
     try:
         if response["action"] == 'ScanNetwork':
             if response["parameters"]["target_network"] in known_nets:
-                return True 
+                return True
         elif response["action"] == 'FindServices':
             if response["parameters"]["target_host"] in known_hosts:
                 return True
         elif response["action"] == 'ExploitService':
             ip_addr = response["parameters"]["target_host"]
-            if ip_addr in known_hosts: 
+            if ip_addr in known_hosts:
                 for service in list(state.known_services[ip_addr]):
                     if service.name == response["parameters"]["target_service"]:
                         return True
@@ -107,7 +107,7 @@ def validate_action_in_state(response, state):
                 if ip_data == ip_addr and ip_addr in contr_hosts:
                     if params["data"] in list(state.known_data[ip_data]):
                         return True
-        return False 
+        return False
     except:
         logging.info(f"Exception during validation of {response}")
         return False
@@ -134,7 +134,7 @@ def create_status_from_state(state):
             if len(services) > 0:
                 logging.debug(f"Known services {ip_service, services}")
                 prompt += f"Known services for host {ip_service} are {' and '.join(str(services))}\n"
-    
+
     for ip_data in state.known_data:
         if len(state.known_data[ip_data]) > 0:
             prompt += f"Known data for host {ip_data} are {' and '.join(list(state.known_data[ip_data]))}\n"
@@ -146,9 +146,9 @@ def create_mem_prompt(memories):
     prompt = ""
     if len(memories) > 0:
         for memory in memories:
-            prompt += f'You have taken action {{"action":"{memory[0]}" with "parameters":"{memory[1]}"}} in the past. {memory[2]}\n' 
+            prompt += f'You have taken action {{"action":"{memory[0]}" with "parameters":"{memory[1]}"}} in the past. {memory[2]}\n'
     return prompt
-        
+
 
 def summary_prompt(memories):
     """
@@ -157,8 +157,8 @@ def summary_prompt(memories):
     prompt = "You are a pentester trying to exfiltrate data.\n"
     # prompt += "You need find the best available action out of the valid options.\n"
     for memory in memories:
-        prompt += f"Action {memory}.\n" 
-    
+        prompt += f"Action {memory}.\n"
+
     prompt += "Summarize your past actions in a few sentences. Be specific."
     return prompt
 
@@ -216,7 +216,7 @@ if __name__ == "__main__":
             "known_services":{},
             "known_data":{}
         }
-    
+
     env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
     if args.scenario == "scenario1":
         cyst_config = scenario_configuration.configuration_objects
@@ -228,13 +228,13 @@ if __name__ == "__main__":
         print("unknown scenario")
         exit(1)
 
-    
+
     # Initialize the game
     # Initialize the game
-    observation = env.initialize(win_conditons=goal, 
-                                 defender_positions=False, 
-                                 attacker_start_position=attacker_start, 
-                                 max_steps=args.max_steps, 
+    observation = env.initialize(win_conditons=goal,
+                                 defender_positions=False,
+                                 attacker_start_position=attacker_start,
+                                 max_steps=args.max_steps,
                                  agent_seed=args.seed,
                                  cyst_config=cyst_config)
     current_state = observation.state
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     memories = []
     total_reward = 0
     num_actions = 0
-    
+
     # Populate the instructions based on the pre-defined goal
     jinja_environment = jinja2.Environment()
     template = jinja_environment.from_string(instructions_template)
@@ -254,7 +254,7 @@ if __name__ == "__main__":
 
     for i in range(num_iterations):
         good_action = False
-        
+
         # Step 1
         status_prompt = create_status_from_state(observation.state)
         messages = [
@@ -277,7 +277,7 @@ if __name__ == "__main__":
 
         response = openai_query(messages, max_tokens=250)
         print(f"LLM (step 2): {response}")
-        
+
         # Step 3
         messages = [
             {"role": "user", "content": instructions},
@@ -288,9 +288,9 @@ if __name__ == "__main__":
         ]
 
         print(messages)
-        
+
         response = openai_query(messages, max_tokens=80)
-        
+
         print(f"LLM (step 3): {response}")
         logging.info(f"LLM (step 3): {response}")
 
@@ -303,7 +303,6 @@ if __name__ == "__main__":
             end = [x.start() for x in re.finditer('}', response)][-1]
             response = eval(response[start:end+1])
             is_valid = validate_action_in_state(response, observation.state)
-            
 
         if is_valid:
             params = response["parameters"]
@@ -318,10 +317,10 @@ if __name__ == "__main__":
             if observation.state != current_state:
                 good_action = True
                 current_state = observation.state
- 
+
         logging.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
         if observation.done:
-            break 
+            break
 
         if not is_valid:
             memories.append((response["action"], response["parameters"], "This action was not valid based on your status."))
@@ -333,7 +332,7 @@ if __name__ == "__main__":
                 memories.append((response["action"], response["parameters"], "This action was helpful."))
             else:
                 memories.append((response["action"], response["parameters"], "This action was not helpful."))
-    
+
 
 logging.info(f"Total reward: {total_reward}")
 print(f"Total reward: {total_reward}")
