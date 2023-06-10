@@ -1,3 +1,7 @@
+"""
+This module implements an agent that is using ChatGPT 3.5 as a planning agent
+Authors:  Maria Rigaki - maria.rigaki@aic.fel.cvut.cz
+"""
 import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
@@ -78,6 +82,7 @@ Action:
 """
 
 def validate_action_in_state(response, state):
+    """Check the LLM response and validate it against the current state."""
     contr_hosts = [str(host) for host in state.controlled_hosts]
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
@@ -113,6 +118,7 @@ def validate_action_in_state(response, state):
         return False
 
 def create_status_from_state(state):
+    """Create a status prompt using the current state and the sae memories."""
     contr_hosts = [str(host) for host in state.controlled_hosts]
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
@@ -143,6 +149,7 @@ def create_status_from_state(state):
     return prompt
 
 def create_mem_prompt(memories):
+    """Summarize a list of memories into a few sentences."""
     prompt = ""
     if len(memories) > 0:
         for memory in memories:
@@ -165,6 +172,7 @@ def summary_prompt(memories):
 
 @retry(stop=stop_after_attempt(3))
 def openai_query(messages, max_tokens=60):
+    """Send messages to OpenAI API and return the response."""
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=messages,
