@@ -39,6 +39,13 @@ source ai-dojo-venv<yourusername>/bin/activate
 python3 -m pip install -r requirements.txt
 ```
 
+- If you use conda use
+```bash
+conda create --name aidojo python==3.10
+conda activate aidojo
+python3 -m pip install -r requirements.txt
+```
+
 ## Run the agents
 
 The game is played and started by running the differnt agents.
