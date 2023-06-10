@@ -196,7 +196,7 @@ if __name__ == "__main__":
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{IP("213.47.23.195"):Data("User1", "DataFromServer1")}
+            "known_data":{IP("213.47.23.195"):{Data("User1", "DataFromServer1")}}
         }
 
         attacker_start = {
@@ -238,15 +238,9 @@ if __name__ == "__main__":
     jinja_environment = jinja2.Environment()
     template = jinja_environment.from_string(instructions_template)
     target_host = list(goal["known_data"].keys())[0]
-    if args.random_start:
-        data = goal["known_data"][target_host].pop()
-        user = data.owner
-        data_id = data.id
-    else:
-        user = goal["known_data"][target_host].owner
-        data_id = goal["known_data"][target_host].id
+    data = goal["known_data"][target_host].pop()
+    instructions = template.render(user=data.owner, data=data.id, target_host=target_host)
 
-    instructions = template.render(user=user, data=data_id, target_host=target_host)
 
     for i in range(num_iterations):
         good_action = False
