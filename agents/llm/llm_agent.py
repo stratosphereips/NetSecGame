@@ -1,10 +1,14 @@
+"""
+Agent that uses ChatGPT 3.5 as an agent for the network security envirnment.
+Author: Maria Rigaki - maria.rigaki@fel.cvut.cz
+"""
 import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
 
 from env.network_security_game import Network_Security_Environment
 from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from env.game_components import ActionType, Action, IP, Data
+from env.game_components import ActionType, Action, IP, Data, Network, Service
 
 
 from cyst.api.configuration import *
@@ -106,8 +110,8 @@ def validate_action_in_state(llm_response, state):
 
 def create_status_from_state(state, memory_list):
     """Create a status prompt using the current state and the sae memories."""
-    contr_hosts = [str(host) for host in state.controlled_hosts]
-    known_hosts = [str(host) for host in state.known_hosts]
+    contr_hosts = [host.ip for host in state.controlled_hosts]
+    known_hosts = [host.ip for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
     prompt = "Current status:\n"
@@ -141,17 +145,40 @@ def create_status_from_state(state, memory_list):
 
     return prompt
 
+def create_action_from_response(llm_response):
+    """Build the action object from the llm response"""
+    try:
+        # Validate action based on current states
+        is_valid = validate_action_in_state(llm_response, observation.state)
+        action = None
+        action_str = llm_response["action"]
+        action_params = llm_response["parameters"]
+        if isinstance(action_params, str):
+            action_params = eval(action_params)
+        if is_valid:
+            match action_str:
+                case 'ScanNetwork':
+                    target_net, mask = action_params["target_network"].split('/')
+                    action  = Action(ActionType.ScanNetwork, {"target_network":Network(target_net, int(mask))})
+                case 'FindServices':
+                    action  = Action(ActionType.FindServices, {"target_host":IP(action_params["target_host"])})
+                case 'ExploitService':
+                    # Not finished yet
+                    parameters = {"target_host":IP(action_params["target_host"]), "target_service":Service('postgresql', 'passive', '14.3.0', False)}
+                    action = Action(ActionType.ExploitService, parameters)
+                case 'FindData':
+                    action = Action(ActionType.FindData, {"target_host":IP(action_params["target_host"])})
+                case 'ExfiltrateData':
+                    data_owner, data_id = action_params["data"]
+                    action = Action(ActionType.ExfiltrateData, {"target_host":IP(action_params["target_host"]), "data":Data(data_owner, data_id), "source_host":IP(action_params["source_host"])})
+                case _:
+                    return False, action
 
-def summary_prompt(memory_list):
-    """Summarize a list of memories into a few sentences."""
-    prompt = "You are a pentester trying to exfiltrate data.\n"
-    # prompt += "You need find the best available action out of the valid options.\n"
-    for memory in memory_list:
-        prompt += f"Action {memory}.\n"
+    except SyntaxError:
+        logging.error(f"Cannol parse the response from the LLM: {response_str}")
+        is_valid = False
 
-    prompt += "Summarize your past actions in a few sentences. Be specific."
-    return prompt
-
+    return is_valid, action
 
 @retry(stop=stop_after_attempt(3))
 def openai_query(msg_list, max_tokens=60):
@@ -271,27 +298,16 @@ if __name__ == "__main__":
 
         response = openai_query(messages)
         logging.info(f"Action from LLM: {response}")
+
         try:
             response = eval(response)
-            # Validate action based on current states
-            is_valid = validate_action_in_state(response, observation.state)
-        except SyntaxError:
-            logging.error(f"Cannol parse the response from the LLM: {response}")
+            is_valid, action = create_action_from_response(response)
+        except:
             is_valid = False
-            # start = response.find('{')
-            # end = [x.start() for x in re.finditer('}', response)][-1]
-            # response = eval(response[start:end+1])
 
         if is_valid:
-            params = response["parameters"]
-            # In some actions we need to run another eval to get the dictionary
-            if isinstance(params, str):
-                params = eval(params)
-            action = Action(action_mapper[response["action"]], params)
             observation = env.step(action)
-            taken_action = action
             total_reward += observation.reward
-
             if observation.state != current_state:
                 good_action = True
                 current_state = observation.state
