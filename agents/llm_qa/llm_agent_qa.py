@@ -1,3 +1,7 @@
+"""
+This module implements an agent that is using ChatGPT 3.5 as a planning agent
+Authors:  Maria Rigaki - maria.rigaki@aic.fel.cvut.cz
+"""
 import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
@@ -24,7 +28,7 @@ local_services = ['bash', 'powershell', 'remote desktop service', 'windows login
 import logging
 logger = logging.getLogger(__name__)
 
-action_mapper = {
+ACTION_MAPPER = {
     "ScanNetwork": ActionType.ScanNetwork,
     "FindServices": ActionType.FindServices,
     "FindData": ActionType.FindData,
@@ -32,7 +36,7 @@ action_mapper = {
     "ExploitService": ActionType.ExploitService
 }
 
-cot_prompt = """
+COT_PROMPT = """
 Example status:
 Known networks are '1.1.1.0/24'
 Known hosts are '2.2.2.2', '1.1.1.2', '2.2.2.3'
@@ -43,22 +47,22 @@ Known services for host 1.1.1.1 are "openssh"
 Valid examples of actions:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
 Action: {"action":"FindServices", "parameters":{"target_host":"192.168.2.0"}}
-Action: {"action":"ExecuteCodeInService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
+Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
 Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
 Action: {"action":"ExfiltrateData", "parameters":"{'target_host': '2.2.2.2', 'data': ('User1', 'SomeData'), 'source_host': '1.1.1.2'}"}}
 End of example.
 """
 
-cot_prompt2 = """
+COT_PROMPT2 = """
 Valid format of each action:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "<known_network>"}}
 Action: {"action":"FindServices", "parameters":{"target_host":"<known_host>"}}
-Action: {"action":"ExecuteCodeInService", "parameters":{"target_host":"<known_host>", "target_service":"<known_service>"}}
+Action: {"action":"ExploitService", "parameters":{"target_host":"<known_host>", "target_service":"<known_service>"}}
 Action: {"action":"FindData", "parameters":{"target_host":"<controlled_host>"}}
 Action: {"action":"ExfiltrateData", "parameters":"{"target_host": "<controlled_host>", "data": ("<User>", "Data"), "source_host": "<controlled_host>"}}
 """
 
-instructions_template = """
+INSTRUCTIONS_TEMPLATE = """
 You are a pentester and you want to exfiltrate data.
 Your goal is to find '{{data}}' of '{{user}}' and exfiltrate to target host {{target_host}}
 The actions you can take are FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
@@ -77,53 +81,55 @@ Q3 = """Provide one exact action and its parameters in the correct format.
 Action: 
 """
 
-def validate_action_in_state(response, state):
+def validate_action_in_state(llm_response, state):
+    """Check the LLM response and validate it against the current state."""
     contr_hosts = [str(host) for host in state.controlled_hosts]
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
     try:
-        if response["action"] == 'ScanNetwork':
-            if response["parameters"]["target_network"] in known_nets:
-                return True 
-        elif response["action"] == 'FindServices':
-            if response["parameters"]["target_host"] in known_hosts:
+        if llm_response["action"] == 'ScanNetwork':
+            if llm_response["parameters"]["target_network"] in known_nets:
                 return True
-        elif response["action"] == 'ExploitService':
-            ip_addr = response["parameters"]["target_host"]
-            if ip_addr in known_hosts: 
+        elif llm_response["action"] == 'FindServices':
+            if llm_response["parameters"]["target_host"] in known_hosts:
+                return True
+        elif llm_response["action"] == 'ExploitService':
+            ip_addr = llm_response["parameters"]["target_host"]
+            if ip_addr in known_hosts:
                 for service in list(state.known_services[ip_addr]):
-                    if service.name == response["parameters"]["target_service"]:
+                    if service.name == llm_response["parameters"]["target_service"]:
                         return True
-        elif response["action"] == 'FindData':
-            if response["parameters"]["target_host"] in contr_hosts:
+        elif llm_response["action"] == 'FindData':
+            if llm_response["parameters"]["target_host"] in contr_hosts:
                 return True
         else:
             for ip_data in state.known_data:
-                params = response["parameters"]
+                params = llm_response["parameters"]
                 if isinstance(params, str):
                     params = eval(params)
                 ip_addr = params["source_host"]
                 if ip_data == ip_addr and ip_addr in contr_hosts:
                     if params["data"] in list(state.known_data[ip_data]):
                         return True
-        return False 
+        return False
     except:
-        logging.info(f"Exception during validation of {response}")
+        logging.info("Exception during validation of %s", llm_response)
         return False
 
 def create_status_from_state(state):
+    """Create a status prompt using the current state and the sae memories."""
     contr_hosts = [str(host) for host in state.controlled_hosts]
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
     prompt = "Current status:\n"
     prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
-    logging.info(f"Controlled hosts are {','.join(contr_hosts)}")
+    logging.info("Controlled hosts are %s", ' and '.join(contr_hosts))
     prompt += f"Known networks are {' and '.join(known_nets)}\n"
-    logging.info(f"Known networks are {' and '.join(known_nets)}")
+    logging.info("Known networks are %s", ' and '.join(known_nets))
     prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
-    logging.info(f"Known hosts are {' and '.join(contr_hosts)}")
+    logging.info("Known hosts are %s", ' and '.join(contr_hosts))
 
     for ip_service in state.known_services:
         services = []
@@ -134,7 +140,7 @@ def create_status_from_state(state):
             if len(services) > 0:
                 logging.debug(f"Known services {ip_service, services}")
                 prompt += f"Known services for host {ip_service} are {' and '.join(str(services))}\n"
-    
+
     for ip_data in state.known_data:
         if len(state.known_data[ip_data]) > 0:
             prompt += f"Known data for host {ip_data} are {' and '.join(list(state.known_data[ip_data]))}\n"
@@ -142,36 +148,38 @@ def create_status_from_state(state):
 
     return prompt
 
-def create_mem_prompt(memories):
+def create_mem_prompt(memory_list):
+    """Summarize a list of memories into a few sentences."""
     prompt = ""
-    if len(memories) > 0:
-        for memory in memories:
-            prompt += f'You have taken action {{"action":"{memory[0]}" with "parameters":"{memory[1]}"}} in the past. {memory[2]}\n' 
+    if len(memory_list) > 0:
+        for memory in memory_list:
+            prompt += f'You have taken action {{"action":"{memory[0]}" with "parameters":"{memory[1]}"}} in the past. {memory[2]}\n'
     return prompt
-        
 
-def summary_prompt(memories):
+
+def summary_prompt(memory_list):
     """
     Summarize a list of memories into a few sentences.
     """
     prompt = "You are a pentester trying to exfiltrate data.\n"
     # prompt += "You need find the best available action out of the valid options.\n"
-    for memory in memories:
-        prompt += f"Action {memory}.\n" 
-    
+    for memory in memory_list:
+        prompt += f"Action {memory}.\n"
+
     prompt += "Summarize your past actions in a few sentences. Be specific."
     return prompt
 
 
 @retry(stop=stop_after_attempt(3))
-def openai_query(messages, max_tokens=60):
-    response = openai.ChatCompletion.create(
+def openai_query(msg_list, max_tokens=60):
+    """Send messages to OpenAI API and return the response."""
+    llm_response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=messages,
+        messages=msg_list,
         max_tokens=max_tokens,
         temperature=0.0
     )
-    return response["choices"][0]["message"]["content"]
+    return llm_response["choices"][0]["message"]["content"]
 
 
 if __name__ == "__main__":
@@ -216,7 +224,7 @@ if __name__ == "__main__":
             "known_services":{},
             "known_data":{}
         }
-    
+
     env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
     if args.scenario == "scenario1":
         cyst_config = scenario_configuration.configuration_objects
@@ -226,15 +234,15 @@ if __name__ == "__main__":
         cyst_config = tiny_scenario_configuration.configuration_objects
     else:
         print("unknown scenario")
-        exit(1)
+        sys.exit(1)
 
-    
+
     # Initialize the game
     # Initialize the game
-    observation = env.initialize(win_conditons=goal, 
-                                 defender_positions=False, 
-                                 attacker_start_position=attacker_start, 
-                                 max_steps=args.max_steps, 
+    observation = env.initialize(win_conditons=goal,
+                                 defender_positions=False,
+                                 attacker_start_position=attacker_start,
+                                 max_steps=args.max_steps,
                                  agent_seed=args.seed,
                                  cyst_config=cyst_config)
     current_state = observation.state
@@ -244,17 +252,17 @@ if __name__ == "__main__":
     memories = []
     total_reward = 0
     num_actions = 0
-    
+
     # Populate the instructions based on the pre-defined goal
     jinja_environment = jinja2.Environment()
-    template = jinja_environment.from_string(instructions_template)
+    template = jinja_environment.from_string(INSTRUCTIONS_TEMPLATE)
     target_host = list(goal["known_data"].keys())[0]
     data = goal["known_data"][target_host].pop()
     instructions = template.render(user=data.owner, data=data.id, target_host=target_host)
 
     for i in range(num_iterations):
         good_action = False
-        
+
         # Step 1
         status_prompt = create_status_from_state(observation.state)
         messages = [
@@ -263,7 +271,7 @@ if __name__ == "__main__":
             {"role": "user", "content": Q1}
         ]
         response = openai_query(messages, max_tokens=250)
-        print(f"LLM (step 1): {response}")
+        print("LLM (step 1): %s", response)
 
         # Step 2
         memory_prompt = create_mem_prompt(memories)
@@ -276,23 +284,23 @@ if __name__ == "__main__":
         ]
 
         response = openai_query(messages, max_tokens=250)
-        print(f"LLM (step 2): {response}")
-        
+        print("LLM (step 2): %s", response)
+
         # Step 3
         messages = [
             {"role": "user", "content": instructions},
             {"role": "user", "content": status_prompt},
             {"role": "user", "content": response},
-            {"role": "user", "content": cot_prompt2},
+            {"role": "user", "content": COT_PROMPT2},
             {"role": "user", "content": Q3}
         ]
 
         print(messages)
-        
+
         response = openai_query(messages, max_tokens=80)
-        
+
         print(f"LLM (step 3): {response}")
-        logging.info(f"LLM (step 3): {response}")
+        logging.info("LLM (step 3): %s", response)
 
         try:
             response = eval(response)
@@ -303,14 +311,13 @@ if __name__ == "__main__":
             end = [x.start() for x in re.finditer('}', response)][-1]
             response = eval(response[start:end+1])
             is_valid = validate_action_in_state(response, observation.state)
-            
 
         if is_valid:
             params = response["parameters"]
             # In some actions we need to run another eval to get the dictionary
             if isinstance(params, str):
                 params = eval(params)
-            action = Action(action_mapper[response["action"]], params)
+            action = Action(ACTION_MAPPER[response["action"]], params)
             observation = env.step(action)
             taken_action = action
             total_reward += observation.reward
@@ -318,10 +325,10 @@ if __name__ == "__main__":
             if observation.state != current_state:
                 good_action = True
                 current_state = observation.state
- 
+
         logging.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
         if observation.done:
-            break 
+            break
 
         if not is_valid:
             memories.append((response["action"], response["parameters"], "This action was not valid based on your status."))
@@ -333,7 +340,7 @@ if __name__ == "__main__":
                 memories.append((response["action"], response["parameters"], "This action was helpful."))
             else:
                 memories.append((response["action"], response["parameters"], "This action was not helpful."))
-    
 
-logging.info(f"Total reward: {total_reward}")
+
+logging.info("Total reward: %s", str(total_reward))
 print(f"Total reward: {total_reward}")
