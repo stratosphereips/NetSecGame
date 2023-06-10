@@ -68,51 +68,51 @@ If an action is not helpful do not try it again.
 Select a valid action with the correct format and parameters.
 """
 
-def validate_action_in_state(response, state):
+def validate_action_in_state(llm_response, state):
     """Check the LLM response and validate it against the current state."""
     contr_hosts = [str(host) for host in state.controlled_hosts]
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
     try:
-        if response["action"] == 'ScanNetwork':
-            if response["parameters"]["target_network"] in known_nets:
+        if llm_response["action"] == 'ScanNetwork':
+            if llm_response["parameters"]["target_network"] in known_nets:
                 return True
-        elif response["action"] == 'FindServices':
-            if response["parameters"]["target_host"] in known_hosts:
+        elif llm_response["action"] == 'FindServices':
+            if llm_response["parameters"]["target_host"] in known_hosts:
                 return True
-        elif response["action"] == 'ExploitService':
-            ip_addr = response["parameters"]["target_host"]
+        elif llm_response["action"] == 'ExploitService':
+            ip_addr = llm_response["parameters"]["target_host"]
             if ip_addr in known_hosts:
                 for service in list(state.known_services[ip_addr]):
-                    if service.name == response["parameters"]["target_service"]:
+                    if service.name == llm_response["parameters"]["target_service"]:
                         return True
-        elif response["action"] == 'FindData':
-            if response["parameters"]["target_host"] in contr_hosts:
+        elif llm_response["action"] == 'FindData':
+            if llm_response["parameters"]["target_host"] in contr_hosts:
                 return True
         else:
             for ip_data in state.known_data:
-                params = response["parameters"]
-                if isinstance(params, str):
-                    params = eval(params)
-                ip_addr = params["source_host"]
+                parameters = llm_response["parameters"]
+                if isinstance(parameters, str):
+                    parameters = eval(parameters)
+                ip_addr = parameters["source_host"]
                 if ip_data == ip_addr and ip_addr in contr_hosts:
-                    if params["data"] in list(state.known_data[ip_data]):
+                    if parameters["data"] in list(state.known_data[ip_data]):
                         return True
         return False
     except:
-        logging.info(f"Exception during validation of {response}")
+        logging.info(f"Exception during validation of {llm_response}")
         return False
 
-def create_status_from_state(state, memories):
+def create_status_from_state(state, memory_list):
     """Create a status prompt using the current state and the sae memories."""
     contr_hosts = [str(host) for host in state.controlled_hosts]
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
     prompt = "Current status:\n"
-    if len(memories) > 0:
-        for memory in memories:
+    if len(memory_list) > 0:
+        for memory in memory_list:
             prompt += f'You have taken action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} in the past. {memory[2]}\n'
     else:
         prompt += ""
@@ -142,11 +142,11 @@ def create_status_from_state(state, memories):
     return prompt
 
 
-def summary_prompt(memories):
+def summary_prompt(memory_list):
     """Summarize a list of memories into a few sentences."""
     prompt = "You are a pentester trying to exfiltrate data.\n"
     # prompt += "You need find the best available action out of the valid options.\n"
-    for memory in memories:
+    for memory in memory_list:
         prompt += f"Action {memory}.\n"
 
     prompt += "Summarize your past actions in a few sentences. Be specific."
@@ -154,17 +154,17 @@ def summary_prompt(memories):
 
 
 @retry(stop=stop_after_attempt(3))
-def openai_query(messages, max_tokens=60):
+def openai_query(msg_list, max_tokens=60):
     """
     Send messages to OpenAI API and return the response.
     """
-    response = openai.ChatCompletion.create(
+    llm_response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=messages,
+        messages=msg_list,
         max_tokens=max_tokens,
         temperature=0.0
     )
-    return response["choices"][0]["message"]["content"]
+    return llm_response["choices"][0]["message"]["content"]
 
 
 if __name__ == "__main__":
