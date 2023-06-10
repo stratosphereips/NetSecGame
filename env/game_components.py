@@ -72,7 +72,7 @@ class ActionType(enum.Enum):
     """
 
     #override the __new__ method to enable multiple parameters
-    def __new__(cls):
+    def __new__(cls, *args, **kwargs):
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
         obj._value_ = value
