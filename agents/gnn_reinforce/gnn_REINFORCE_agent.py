@@ -1,10 +1,8 @@
-# Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
-#           Arti
-
-import sys
+# Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz    
 import numpy as np
 import argparse
 import logging
+import time
 import tensorflow_gnn as tfgnn
 import tensorflow as tf
 from tensorflow_gnn.models.gcn import gcn_conv
@@ -13,12 +11,11 @@ from timeit import default_timer as timer
 
 # This is used so the agent can see the environment and game components
 from os import path
-sys.path.append( path.dirname(path.dirname(path.dirname( path.abspath(__file__) ) ) ))
+sys.path.append( path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
 #with the path fixed, we can import now
 from env.network_security_game import Network_Security_Environment
 from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-#from env.game_components import *
 import env.game_components as components
 
 
@@ -30,20 +27,19 @@ class GNN_REINFORCE_Agent:
     """
 
     def __init__(self, env:Network_Security_Environment, args: argparse.Namespace):
-
         self.env = env
         self.args = args
         self._transition_mapping = env.get_all_actions()
         graph_schema = tfgnn.read_schema("schema.pbtxt")
         self._example_input_spec = tfgnn.create_graph_spec_from_schema_pb(graph_schema)
-        self._tf_writer = tf.summary.create_file_writer(f"./logs/GNN_reinforce_agent_")
+        run_name = f"netsecgame__GNN_Reinforce__{args.seed}__{int(time.time())}"
+        self._tf_writer = tf.summary.create_file_writer("./logs/"+ run_name)
 
         #model building blocks
         def set_initial_node_state(node_set, node_set_name):
             d1 = tf.keras.layers.Dense(128,activation="relu")(node_set['node_type'])
             return tf.keras.layers.Dense(64,activation="relu")(d1)
-
-
+        
         def dense_layer(units=64,l2_reg=0.1,dropout=0.25,activation='relu'):
             regularizer = tf.keras.regularizers.l2(l2_reg)
             return tf.keras.Sequential([tf.keras.layers.Dense(units, activation=activation, kernel_regularizer=regularizer, bias_regularizer=regularizer),  tf.keras.layers.Dropout(dropout)])
@@ -59,15 +55,6 @@ class GNN_REINFORCE_Agent:
         graph_updates = 3 # TODO Add to args
         for i in range(graph_updates):
             graph = gcn_conv.GCNHomGraphUpdate(units=128, add_self_loops=True, name=f"GCN_{i+1}")(graph)
-            # graph = tfgnn.keras.layers.GraphUpdate(
-            #     node_sets = {
-            #         'nodes': tfgnn.keras.layers.NodeSetUpdate({
-            #             # 'related_to': tfgnn.keras.layers.SimpleConv(
-            #             #     message_fn = dense_layer(units=256), #TODO add num_units to args
-            #             #     reduce_type="sum",
-            #             #     receiver_tag=tfgnn.TARGET)},
-            #             tfgnn.keras.layers.NextStateFromConcat(dense_layer(64)))}, name=f"graph_update_{i}")(graph)  #TODO add num_units to args
-
 
         #### ACTOR ######
         # Pool to get a single vector representing the graph
@@ -241,42 +228,19 @@ class GNN_REINFORCE_Agent:
 
                 batch_states += states
                 batch_actions += actions
-                batch_returns += discounted_returns
+                batch_returns += discounted_returns         
 
-
-            #shift batch_returns to non-negative
-            #batch_returns = batch_returns + np.abs(np.min(batch_returns)) + 1e-10
-
-            #OLDER VERSION OF DATASET BUILIDING
-            # with tf.io.TFRecordWriter("tmp_record_file") as writer:
-            #     for graph in batch_states:
-            #         example = tfgnn.write_example(graph)
-            #         writer.write(example.SerializeToString())
-
-            # #Create TF dataset
-            # dataset = tf.data.TFRecordDataset("tmp_record_file")
-            # #de-serialize records
-            # new_dataset = dataset.map(lambda serialized: tfgnn.parse_single_example(serialized=serialized, spec=self._example_input_spec))
-            # # #get batch of proper size
-            # batch_data = new_dataset.batch(len(batch_states))
-            # graph_tensor_batch = next(iter(batch_data))
-
-            # #convert batch into scalar graph with multiple components
-            # scalar_graph_tensor = graph_tensor_batch.merge_batch_to_components()
-
-
+            # prepare batch data
             batch_returns = np.array(batch_returns)
-
             scalar_graph_tensor = self._build_batch_graph(batch_states)
+            
             #perform training step
             baseline = tf.squeeze(self._baseline(scalar_graph_tensor))
             assert not np.isnan(np.sum(baseline))
             self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
             updated_batch_returns = batch_returns-baseline
             self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns)
-
-
-
+        
             #evaluate
             if episode > 0 and episode % args.eval_each == 0:
                 returns = []
@@ -311,26 +275,22 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     #env arguments
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
+    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=10, type=int)
     parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_tiny", type=str)
     parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=20000, type=int)
-    parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.99, type=float)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=2000, type=int)
+    parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=48)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-2)
+    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
 
     #training arguments
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=500, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=200, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
-
-    parser.add_argument("--test", help="Do not train, only run test", default=False, action="store_true")
-    parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
-
-
+    
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
 
     args = parser.parse_args()
