@@ -426,7 +426,7 @@ class Network_Security_Environment(object):
                 if str(ip) in netaddr.IPNetwork(str(action.parameters["target_network"])):
                     logger.info(f"\t\t\tAdding {ip} to new_ips")
                     new_ips.add(ip)
-            next_known_hosts.union(new_ips)
+            next_known_hosts = next_known_hosts.union(new_ips)
 
         elif action.type == components.ActionType.FindServices:
             #get services for current states in target_host
