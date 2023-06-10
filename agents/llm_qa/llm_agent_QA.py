@@ -47,7 +47,7 @@ Known services for host 1.1.1.1 are "openssh"
 Valid examples of actions:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
 Action: {"action":"FindServices", "parameters":{"target_host":"192.168.2.0"}}
-Action: {"action":"ExecuteCodeInService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
+Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
 Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
 Action: {"action":"ExfiltrateData", "parameters":"{'target_host': '2.2.2.2', 'data': ('User1', 'SomeData'), 'source_host': '1.1.1.2'}"}}
 End of example.
@@ -57,7 +57,7 @@ cot_prompt2 = """
 Valid format of each action:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "<known_network>"}}
 Action: {"action":"FindServices", "parameters":{"target_host":"<known_host>"}}
-Action: {"action":"ExecuteCodeInService", "parameters":{"target_host":"<known_host>", "target_service":"<known_service>"}}
+Action: {"action":"ExploitService", "parameters":{"target_host":"<known_host>", "target_service":"<known_service>"}}
 Action: {"action":"FindData", "parameters":{"target_host":"<controlled_host>"}}
 Action: {"action":"ExfiltrateData", "parameters":"{"target_host": "<controlled_host>", "data": ("<User>", "Data"), "source_host": "<controlled_host>"}}
 """
@@ -114,7 +114,7 @@ def validate_action_in_state(response, state):
                         return True
         return False
     except:
-        logging.info(f"Exception during validation of {response}")
+        logging.info("Exception during validation of %s", response)
         return False
 
 def create_status_from_state(state):
@@ -125,11 +125,11 @@ def create_status_from_state(state):
 
     prompt = "Current status:\n"
     prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
-    logging.info(f"Controlled hosts are {','.join(contr_hosts)}")
+    logging.info("Controlled hosts are %s", ' and '.join(contr_hosts))
     prompt += f"Known networks are {' and '.join(known_nets)}\n"
-    logging.info(f"Known networks are {' and '.join(known_nets)}")
+    logging.info("Known networks are %s", ' and '.join(known_nets))
     prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
-    logging.info(f"Known hosts are {' and '.join(contr_hosts)}")
+    logging.info("Known hosts are %s", ' and '.join(contr_hosts))
 
     for ip_service in state.known_services:
         services = []
@@ -234,7 +234,7 @@ if __name__ == "__main__":
         cyst_config = tiny_scenario_configuration.configuration_objects
     else:
         print("unknown scenario")
-        exit(1)
+        sys.exit(1)
 
 
     # Initialize the game
@@ -271,7 +271,7 @@ if __name__ == "__main__":
             {"role": "user", "content": Q1}
         ]
         response = openai_query(messages, max_tokens=250)
-        print(f"LLM (step 1): {response}")
+        print("LLM (step 1): %s", response)
 
         # Step 2
         memory_prompt = create_mem_prompt(memories)
@@ -284,7 +284,7 @@ if __name__ == "__main__":
         ]
 
         response = openai_query(messages, max_tokens=250)
-        print(f"LLM (step 2): {response}")
+        print("LLM (step 2): %s", response)
 
         # Step 3
         messages = [
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         response = openai_query(messages, max_tokens=80)
 
         print(f"LLM (step 3): {response}")
-        logging.info(f"LLM (step 3): {response}")
+        logging.info("LLM (step 3): %s", response)
 
         try:
             response = eval(response)
@@ -342,5 +342,5 @@ if __name__ == "__main__":
                 memories.append((response["action"], response["parameters"], "This action was not helpful."))
 
 
-logging.info(f"Total reward: {total_reward}")
+logging.info("Total reward: %s", str(total_reward))
 print(f"Total reward: {total_reward}")
