@@ -32,8 +32,8 @@ action_mapper = {
     "ExploitService": ActionType.ExploitService
 }
 
-example_prompt = """ 
-Example: 
+example_prompt = """
+Example:
 Known networks are 1.1.1.0/24
 Known hosts are 2.2.2.2 and 1.1.1.2 and 2.2.2.3
 Controlled hosts are '2.2.2.2' and 1.1.1.2
@@ -52,8 +52,8 @@ End of example.
 instructions_template = """
 You are a pentester and you want to exfiltrate data.
 Your goal is to exfiltrate data, but first you need to know where they are and access them.
-The valid actions are: FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
-You can only use one of the 5 actions. 
+The valid actions are: FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData.
+You can only use one of the 5 actions.
 
 Your plan is to:
 1. Scan all known networks one at a time.
@@ -76,13 +76,13 @@ def validate_action_in_state(response, state):
     try:
         if response["action"] == 'ScanNetwork':
             if response["parameters"]["target_network"] in known_nets:
-                return True 
+                return True
         elif response["action"] == 'FindServices':
             if response["parameters"]["target_host"] in known_hosts:
                 return True
         elif response["action"] == 'ExploitService':
             ip_addr = response["parameters"]["target_host"]
-            if ip_addr in known_hosts: 
+            if ip_addr in known_hosts:
                 for service in list(state.known_services[ip_addr]):
                     if service.name == response["parameters"]["target_service"]:
                         return True
@@ -98,7 +98,7 @@ def validate_action_in_state(response, state):
                 if ip_data == ip_addr and ip_addr in contr_hosts:
                     if params["data"] in list(state.known_data[ip_data]):
                         return True
-        return False 
+        return False
     except:
         logging.info(f"Exception during validation of {response}")
         return False
@@ -111,12 +111,12 @@ def create_status_from_state(state, memories):
     prompt = "Current status:\n"
     if len(memories) > 0:
         for memory in memories:
-            prompt += f'You have taken action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} in the past. {memory[2]}\n' 
+            prompt += f'You have taken action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} in the past. {memory[2]}\n'
     else:
         prompt += ""
     prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
     logging.info(f"Controlled hosts are {' and '.join(contr_hosts)}")
-    
+
     prompt += f"Known networks are {' and '.join(known_nets)}\n"
     logging.info(f"Known networks are {' and '.join(known_nets)}")
     prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
@@ -131,7 +131,7 @@ def create_status_from_state(state, memories):
             if len(services) > 0:
                 logging.info(f"Known services {ip_service, services}")
                 prompt += f"Known services for host {ip_service} are {' and '.join(str(services))}\n"
-    
+
     for ip_data in state.known_data:
         if len(state.known_data[ip_data]) > 0:
             prompt += f"Known data for host {ip_data} are {' and '.join(list(state.known_data[ip_data]))}\n"
@@ -147,8 +147,8 @@ def summary_prompt(memories):
     prompt = "You are a pentester trying to exfiltrate data.\n"
     # prompt += "You need find the best available action out of the valid options.\n"
     for memory in memories:
-        prompt += f"Action {memory}.\n" 
-    
+        prompt += f"Action {memory}.\n"
+
     prompt += "Summarize your past actions in a few sentences. Be specific."
     return prompt
 
@@ -206,7 +206,7 @@ if __name__ == "__main__":
             "known_services":{},
             "known_data":{}
         }
-    
+
     env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
     if args.scenario == "scenario1":
         cyst_config = scenario_configuration.configuration_objects
@@ -218,12 +218,12 @@ if __name__ == "__main__":
         print("unknown scenario")
         exit(1)
 
-    
+
     # Initialize the game
-    observation = env.initialize(win_conditons=goal, 
-                                 defender_positions=False, 
-                                 attacker_start_position=attacker_start, 
-                                 max_steps=args.max_steps, 
+    observation = env.initialize(win_conditons=goal,
+                                 defender_positions=False,
+                                 attacker_start_position=attacker_start,
+                                 max_steps=args.max_steps,
                                  agent_seed=args.seed,
                                  cyst_config=cyst_config)
     current_state = observation.state
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     memories = []
     total_reward = 0
     num_actions = 0
-    
+
     # Populate the instructions based on the pre-defined goal
     jinja_environment = jinja2.Environment()
     template = jinja_environment.from_string(instructions_template)
@@ -244,7 +244,7 @@ if __name__ == "__main__":
 
     for i in range(num_iterations):
         good_action = False
-        
+
         # maybe add an argument for the memory part
         # if (i+1) % 10 == 0:
         #     # logging.debug("Memories:", memories)
@@ -292,10 +292,10 @@ if __name__ == "__main__":
             if observation.state != current_state:
                 good_action = True
                 current_state = observation.state
- 
+
         logging.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
         if observation.done:
-            break 
+            break
 
         if not is_valid:
             memories.append((response["action"], response["parameters"], "This action was not valid based on your status."))
@@ -307,7 +307,7 @@ if __name__ == "__main__":
                 memories.append((response["action"], response["parameters"], "This action was helpful."))
             else:
                 memories.append((response["action"], response["parameters"], "This action was not helpful."))
-    
+
 
 logging.info(f"Total reward: {total_reward}")
 print(f"Total reward: {total_reward}")
