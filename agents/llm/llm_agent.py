@@ -219,7 +219,7 @@ if __name__ == "__main__":
         cyst_config = tiny_scenario_configuration.configuration_objects
     else:
         print("unknown scenario")
-        exit(1)
+        sys.exit(1)
 
 
     # Initialize the game
