@@ -101,7 +101,7 @@ def validate_action_in_state(llm_response, state):
                         return True
         return False
     except:
-        logging.info(f"Exception during validation of {llm_response}")
+        logging.info("Exception during validation of %s", llm_response)
         return False
 
 def create_status_from_state(state, memory_list):
@@ -117,12 +117,12 @@ def create_status_from_state(state, memory_list):
     else:
         prompt += ""
     prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
-    logging.info(f"Controlled hosts are {' and '.join(contr_hosts)}")
+    logging.info("Controlled hosts are %s", ' and '.join(contr_hosts))
 
     prompt += f"Known networks are {' and '.join(known_nets)}\n"
-    logging.info(f"Known networks are {' and '.join(known_nets)}")
+    logging.info("Known networks are %s", ' and '.join(known_nets))
     prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
-    logging.info(f"Known hosts are {' and '.join(contr_hosts)}")
+    logging.info("Known hosts are %s", ' and '.join(contr_hosts))
 
     for ip_service in state.known_services:
         services = []
@@ -312,5 +312,5 @@ if __name__ == "__main__":
                 memories.append((response["action"], response["parameters"], "This action was not helpful."))
 
 
-logging.info(f"Total reward: {total_reward}")
+logging.info("Total reward: %s", str(total_reward))
 print(f"Total reward: {total_reward}")
