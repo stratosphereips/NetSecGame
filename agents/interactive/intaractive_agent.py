@@ -47,7 +47,13 @@ class InteractiveAgent:
         return list(valid_actions)
 
     def move(self, observation:Observation)->Action:
-        self._print_current_state(observation.state, observation.reward)
+        """
+        Perform a move of the agent by
+        - Selecting the action
+        - Selecting the parameters
+        - Returning the actions with parameters
+        - Returns False if no action could be selected
+        """
         # Get Action type to play
         action_type = self._get_action_type_from_stdin()
         if action_type:
@@ -58,6 +64,8 @@ class InteractiveAgent:
                 print(f"Playing {action}")
                 return action
         print("Incorrect input, terminating the game!")
+        # If something failed, avoid doing the move
+        return False
 
     def _print_current_state(self, state:GameState, reward:int=None): 
         print(f"\n+========================================== CURRENT STATE (reward={reward}) ===========================================")
@@ -99,8 +107,13 @@ class InteractiveAgent:
         print("+======================================================================================================================\n")
 
     def _get_action_type_from_stdin(self)->ActionType:
+        """
+        Small function to call the function that does the selection of actions
+        Probably not needed separatedly
+        """
         print("Available Actions:")
-        return self._get_selection_from_user(ActionType, f"Select an action to play [0-{len(ActionType)-1}]: ")
+        actiontype = self._get_selection_from_user(ActionType, f"Select an action to play [0-{len(ActionType)-1}]: ")
+        return actiontype
     
     def _get_action_params_from_stdin(self, action_type:ActionType, current:GameState)->dict:
         if action_type == ActionType.ScanNetwork:
@@ -130,15 +143,21 @@ class InteractiveAgent:
                     user_input_host_trg = input(f"Provide TARGET host for data exfiltration: ")
                     trg_host = IP(user_input_host_trg)
                     return {"target_host": trg_host, "data":data, "source_host":src_host}
+            else:
+                print(f"Host {src_host} does not have any data yet.")
         else:
             return None
 
-    def _get_selection_from_user(self, options, prompt):
-        option_dict = {k:v for k,v in enumerate(options)}
+    def _get_selection_from_user(self, actiontypes: ActionType, prompt) -> ActionType:
+        """
+        Receive an ActionType object that contains all the options of actions
+        Get the selection of action in text from the user in the stdin
+        """
+        option_dict = {key:value for key,value in enumerate(actiontypes)}
         input_alive = True
         selected_option = None
-        for i,at in option_dict.items():
-            print(f"\t{i} - {at}")
+        for index, option in option_dict.items():
+            print(f"\t{index} - {option}")
         while input_alive:
             user_input = input(prompt)
             if user_input.lower() == "exit":
@@ -218,5 +237,9 @@ if __name__ == '__main__':
 
     print("Welcome to the Network Security Game!\n")
     while not observation.done:
-        observation = env.step(agent.move(observation))
+        # Be sure the agent can do the move before giving to the env.
+        agent._print_current_state(observation.state, observation.reward)
+        action = agent.move(observation)
+        if action:
+            observation = env.step(action)
     print(f"Episode over! Reason {observation.info}")
