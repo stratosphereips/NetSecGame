@@ -28,7 +28,7 @@ local_services = ['bash', 'powershell', 'remote desktop service', 'windows login
 import logging
 logger = logging.getLogger(__name__)
 
-action_mapper = {
+ACTION_MAPPER = {
     "ScanNetwork": ActionType.ScanNetwork,
     "FindServices": ActionType.FindServices,
     "FindData": ActionType.FindData,
@@ -36,7 +36,7 @@ action_mapper = {
     "ExploitService": ActionType.ExploitService
 }
 
-cot_prompt = """
+COT_PROMPT = """
 Example status:
 Known networks are '1.1.1.0/24'
 Known hosts are '2.2.2.2', '1.1.1.2', '2.2.2.3'
@@ -53,7 +53,7 @@ Action: {"action":"ExfiltrateData", "parameters":"{'target_host': '2.2.2.2', 'da
 End of example.
 """
 
-cot_prompt2 = """
+COT_PROMPT2 = """
 Valid format of each action:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "<known_network>"}}
 Action: {"action":"FindServices", "parameters":{"target_host":"<known_host>"}}
@@ -62,7 +62,7 @@ Action: {"action":"FindData", "parameters":{"target_host":"<controlled_host>"}}
 Action: {"action":"ExfiltrateData", "parameters":"{"target_host": "<controlled_host>", "data": ("<User>", "Data"), "source_host": "<controlled_host>"}}
 """
 
-instructions_template = """
+INSTRUCTIONS_TEMPLATE = """
 You are a pentester and you want to exfiltrate data.
 Your goal is to find '{{data}}' of '{{user}}' and exfiltrate to target host {{target_host}}
 The actions you can take are FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
@@ -255,7 +255,7 @@ if __name__ == "__main__":
 
     # Populate the instructions based on the pre-defined goal
     jinja_environment = jinja2.Environment()
-    template = jinja_environment.from_string(instructions_template)
+    template = jinja_environment.from_string(INSTRUCTIONS_TEMPLATE)
     target_host = list(goal["known_data"].keys())[0]
     data = goal["known_data"][target_host].pop()
     instructions = template.render(user=data.owner, data=data.id, target_host=target_host)
@@ -291,7 +291,7 @@ if __name__ == "__main__":
             {"role": "user", "content": instructions},
             {"role": "user", "content": status_prompt},
             {"role": "user", "content": response},
-            {"role": "user", "content": cot_prompt2},
+            {"role": "user", "content": COT_PROMPT2},
             {"role": "user", "content": Q3}
         ]
 
@@ -317,7 +317,7 @@ if __name__ == "__main__":
             # In some actions we need to run another eval to get the dictionary
             if isinstance(params, str):
                 params = eval(params)
-            action = Action(action_mapper[response["action"]], params)
+            action = Action(ACTION_MAPPER[response["action"]], params)
             observation = env.step(action)
             taken_action = action
             total_reward += observation.reward
