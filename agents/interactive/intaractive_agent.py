@@ -184,12 +184,12 @@ if __name__ == '__main__':
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":"random"}
+            "known_data":{IP("213.47.23.195"):"random"}
         }
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195"},
+            "controlled_hosts":{IP("213.47.23.195")},
             "known_services":{},
             "known_data":{}
         }
@@ -199,13 +199,13 @@ if __name__ == '__main__':
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{IP("213.47.23.195"):{("User1", "DataFromServer1")}}
+            "known_data":{IP("213.47.23.195"):{Data("User1", "DataFromServer1")}}
         }
 
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195","192.168.2.2"},
+            "controlled_hosts":{IP("213.47.23.195"),IP("192.168.2.2")},
             "known_services":{},
             "known_data":{}
         }
