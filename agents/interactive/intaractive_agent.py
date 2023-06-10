@@ -10,9 +10,11 @@ sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 
 #with the path fixed, we can import now
 from env.network_security_game import Network_Security_Environment
-from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from env.game_components import *
-
+from env.scenarios import scenario_configuration
+from env.scenarios import smaller_scenario_configuration
+from env.scenarios import tiny_scenario_configuration
+from env.game_components import Network, IP, Service, Data
+from env.game_components import ActionType, Action, GameState, Observation
 class InteractiveAgent:
     """
     Author: Ondrej Lukas, ondrej.lukas@aic.cvut.cz
@@ -118,23 +120,24 @@ class InteractiveAgent:
         return action_type
 
     def _get_action_params_from_stdin(self, action_type: ActionType, current: GameState)->dict:
+        params = {}
         if action_type == ActionType.ScanNetwork:
             user_input = input(f"Provide network for selected action {action_type}: ")
             net_ip, net_mask = user_input.split("/")
-            return {"target_network": Network(net_ip, net_mask)}
+            params = {"target_network": Network(net_ip, net_mask)}
         elif action_type == ActionType.FindData:
             user_input = input(f"Provide target host for selected action {action_type}: ")
-            return {"target_host": IP(user_input)}
+            params = {"target_host": IP(user_input)}
         elif action_type == ActionType.FindServices:
             user_input = input(f"Provide target host for selected action {action_type}: ")
-            return {"target_host": IP(user_input)}
+            params = {"target_host": IP(user_input)}
         elif action_type == ActionType.ExploitService:
             user_input_host = input(f"Provide target host for selected action {action_type}: ")
             trg_host = IP(user_input_host)
             if trg_host in current.known_services:
                 print(f"Known services in {trg_host}")
                 service = self._get_selection_from_user(current.known_services[trg_host], f"Select service to exploint [0-len({len(current.known_services[trg_host])-1})]: ")
-                return {"target_host": trg_host, "target_service":service}
+                params = {"target_host": trg_host, "target_service":service}
         elif action_type == ActionType.ExfiltrateData:
             user_input_host_src = input(f"Provide SOURCE host for selected action {action_type}: ")
             src_host = IP(user_input_host_src)
@@ -144,11 +147,10 @@ class InteractiveAgent:
                 if data:
                     user_input_host_trg = input(f"Provide TARGET host for data exfiltration: ")
                     trg_host = IP(user_input_host_trg)
-                    return {"target_host": trg_host, "data":data, "source_host":src_host}
+                    params = {"target_host": trg_host, "data":data, "source_host":src_host}
             else:
                 print(f"Host {src_host} does not have any data yet.")
-        else:
-            return None
+        return params
 
     def _get_selection_from_user(self, actiontypes: ActionType, prompt) -> ActionType:
         """
@@ -196,7 +198,7 @@ if __name__ == '__main__':
         cyst_config = tiny_scenario_configuration.configuration_objects
     else:
         print("unknown scenario")
-        exit(1)
+        sys.exit(1)
 
     # define attacker goal and initial location
     if args.random_start:
@@ -233,7 +235,7 @@ if __name__ == '__main__':
 
     # Create agent
     observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
-    logger.info(f'Creating the agent')
+    logger.info('Creating the agent')
     agent = InteractiveAgent(env)
 
     print("Welcome to the Network Security Game!\n")
