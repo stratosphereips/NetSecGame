@@ -32,7 +32,7 @@ action_mapper = {
     "ExploitService": ActionType.ExploitService
 }
 
-example_prompt = """
+EXAMPLE_PROMPT = """
 Example:
 Known networks are 1.1.1.0/24
 Known hosts are 2.2.2.2 and 1.1.1.2 and 2.2.2.3
@@ -49,7 +49,7 @@ Action: {"action":"ExfiltrateData", "parameters":"{'target_host': '2.2.2.2', 'da
 End of example.
 """
 
-instructions_template = """
+INSTRUCTIONS_TEMPLATE = """
 You are a pentester and you want to exfiltrate data.
 Your goal is to exfiltrate data, but first you need to know where they are and access them.
 The valid actions are: FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData.
@@ -69,6 +69,7 @@ Select a valid action with the correct format and parameters.
 """
 
 def validate_action_in_state(response, state):
+    """Check the LLM response and validate it against the current state."""
     contr_hosts = [str(host) for host in state.controlled_hosts]
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
@@ -104,6 +105,7 @@ def validate_action_in_state(response, state):
         return False
 
 def create_status_from_state(state, memories):
+    """Create a status prompt using the current state and the sae memories."""
     contr_hosts = [str(host) for host in state.controlled_hosts]
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
@@ -141,9 +143,7 @@ def create_status_from_state(state, memories):
 
 
 def summary_prompt(memories):
-    """
-    Summarize a list of memories into a few sentences.
-    """
+    """Summarize a list of memories into a few sentences."""
     prompt = "You are a pentester trying to exfiltrate data.\n"
     # prompt += "You need find the best available action out of the valid options.\n"
     for memory in memories:
@@ -155,6 +155,9 @@ def summary_prompt(memories):
 
 @retry(stop=stop_after_attempt(3))
 def openai_query(messages, max_tokens=60):
+    """
+    Send messages to OpenAI API and return the response.
+    """
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=messages,
@@ -236,7 +239,7 @@ if __name__ == "__main__":
 
     # Populate the instructions based on the pre-defined goal
     jinja_environment = jinja2.Environment()
-    template = jinja_environment.from_string(instructions_template)
+    template = jinja_environment.from_string(INSTRUCTIONS_TEMPLATE)
     target_host = list(goal["known_data"].keys())[0]
     data = goal["known_data"][target_host].pop()
     instructions = template.render(user=data.owner, data=data.id, target_host=target_host)
@@ -261,7 +264,7 @@ if __name__ == "__main__":
         status_prompt = create_status_from_state(observation.state, memories)
         messages = [
                 {"role": "user", "content": instructions},
-                {"role": "user", "content": example_prompt},
+                {"role": "user", "content": EXAMPLE_PROMPT},
                 {"role": "user", "content": status_prompt},
                 {"role": "user", "content": "Action: "}
             ]
