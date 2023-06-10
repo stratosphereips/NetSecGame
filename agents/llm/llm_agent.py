@@ -4,7 +4,8 @@ sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__)
 
 from env.network_security_game import Network_Security_Environment
 from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from env.game_components import *
+from env.game_components import ActionType, Action, IP, Data
+
 
 from cyst.api.configuration import *
 import openai
@@ -180,12 +181,12 @@ if __name__ == "__main__":
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":"random"}
+            "known_data":{IP("213.47.23.195"):"random"}
         }
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195"},
+            "controlled_hosts":{IP("213.47.23.195")},
             "known_services":{},
             "known_data":{}
         }
@@ -195,13 +196,13 @@ if __name__ == "__main__":
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services":{},
-            "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
+            "known_data":{IP("213.47.23.195"):Data("User1", "DataFromServer1")}
         }
 
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{"213.47.23.195","192.168.2.2"},
+            "controlled_hosts":{IP("213.47.23.195"),IP("192.168.2.2")},
             "known_services":{},
             "known_data":{}
         }
@@ -234,14 +235,18 @@ if __name__ == "__main__":
     num_actions = 0
     
     # Populate the instructions based on the pre-defined goal
-    # Later we should read the goal from the environment probably
-    # This will not work for the random setup
     jinja_environment = jinja2.Environment()
     template = jinja_environment.from_string(instructions_template)
     target_host = list(goal["known_data"].keys())[0]
-    user = list(goal["known_data"][target_host])[0][0]
-    data = list(goal["known_data"][target_host])[0][1]
-    instructions = template.render(user=user, data=data, target_host=target_host)
+    if args.random_start:
+        data = goal["known_data"][target_host].pop()
+        user = data.owner
+        data_id = data.id
+    else:
+        user = goal["known_data"][target_host].owner
+        data_id = goal["known_data"][target_host].id
+
+    instructions = template.render(user=user, data=data_id, target_host=target_host)
 
     for i in range(num_iterations):
         good_action = False
