@@ -1,26 +1,28 @@
 # Author: Ondrej Lukas, ondrej.lukas@aic.cvut.cz
 # This agent allows to manually play the Network Security Game
+import sys
 import argparse
 import logging
-
 import random
-# This is used so the agent can see the environment and game components
-import sys
 from os import path
-sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__)))))
+# This is used so the agent can see the environment and game components
+sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
 #with the path fixed, we can import now
 from env.network_security_game import Network_Security_Environment
 from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
 from env.game_components import *
 
-
-
 class InteractiveAgent:
+    """
+    Author: Ondrej Lukas, ondrej.lukas@aic.cvut.cz
+    This agent allows to manually play the Network Security Game
+
+    """
 
     def __init__(self, env)->None:
-        self.env = env
-    
+        self._env = env
+
     def _generate_valid_actions(self, state: GameState)->list:
         valid_actions = set()
         #Network Scans
@@ -37,7 +39,7 @@ class InteractiveAgent:
         # Data Scans
         for host in state.controlled_hosts:
             valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
-        
+
         # Data Exfiltration
         for src_host, data_list in state.known_data.items():
             for data in data_list:
@@ -46,7 +48,7 @@ class InteractiveAgent:
                         valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
         return list(valid_actions)
 
-    def move(self, observation:Observation)->Action:
+    def move(self, observation: Observation)->Action:
         """
         Perform a move of the agent by
         - Selecting the action
@@ -67,7 +69,7 @@ class InteractiveAgent:
         # If something failed, avoid doing the move
         return False
 
-    def _print_current_state(self, state:GameState, reward:int=None):
+    def _print_current_state(self, state: GameState, reward: int = None):
         print(f"\n+========================================== CURRENT STATE (reward={reward}) ===========================================")
         print(f"| NETWORKS: {', '.join([str(net) for net in state.known_networks])}")
         print("+----------------------------------------------------------------------------------------------------------------------")
@@ -79,7 +81,7 @@ class InteractiveAgent:
             print("| SERVICES: N/A")
         else:
             first = True
-            for host,services in state.known_services.items():
+            for host, services in state.known_services.items():
                 if first:
                     print(f"| SERVICES: {host}:")
                     for service in services:
@@ -114,8 +116,8 @@ class InteractiveAgent:
         print("Available Actions:")
         action_type = self._get_selection_from_user(ActionType, f"Select an action to play [0-{len(ActionType)-1}]: ")
         return action_type
-    
-    def _get_action_params_from_stdin(self, action_type:ActionType, current:GameState)->dict:
+
+    def _get_action_params_from_stdin(self, action_type: ActionType, current: GameState)->dict:
         if action_type == ActionType.ScanNetwork:
             user_input = input(f"Provide network for selected action {action_type}: ")
             net_ip, net_mask = user_input.split("/")
@@ -181,7 +183,7 @@ if __name__ == '__main__':
     parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
-    logging.basicConfig(filename='interactive_agent.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.CRITICAL)
+    logging.basicConfig(filename='interactive_agent.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S', level=logging.CRITICAL)
     logger = logging.getLogger('Interactive-agent')
     random.seed(args.seed)
 
@@ -224,11 +226,10 @@ if __name__ == '__main__':
         attacker_start = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{IP("213.47.23.195"),IP("192.168.2.2")},
+            "controlled_hosts":{IP("213.47.23.195"), IP("192.168.2.2")},
             "known_services":{},
             "known_data":{}
         }
-    
 
     # Create agent
     observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
