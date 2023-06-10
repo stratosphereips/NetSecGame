@@ -25,31 +25,6 @@ class InteractiveAgent:
     def __init__(self, env)->None:
         self._env = env
 
-    def _generate_valid_actions(self, state: GameState)->list:
-        valid_actions = set()
-        #Network Scans
-        for network in state.known_networks:
-            # TODO ADD neighbouring networks
-            valid_actions.add(Action(ActionType.ScanNetwork, params={"target_network": network}))
-        # Service Scans
-        for host in state.known_hosts:
-            valid_actions.add(Action(ActionType.FindServices, params={"target_host": host}))
-        # Service Exploits
-        for host, service_list in state.known_services.items():
-            for service in service_list:
-                valid_actions.add(Action(ActionType.ExploitService, params={"target_host": host, "target_service": service}))
-        # Data Scans
-        for host in state.controlled_hosts:
-            valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
-
-        # Data Exfiltration
-        for src_host, data_list in state.known_data.items():
-            for data in data_list:
-                for trg_host in state.controlled_hosts:
-                    if trg_host != src_host:
-                        valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
-        return list(valid_actions)
-
     def move(self, observation: Observation)->Action:
         """
         Perform a move of the agent by
@@ -71,47 +46,6 @@ class InteractiveAgent:
         # If something failed, avoid doing the move
         return False
 
-    def print_current_state(self, state: GameState, reward: int = None):
-        """
-        Prints GameState to stdout in formatted way
-        """
-        print(f"\n+========================================== CURRENT STATE (reward={reward}) ===========================================")
-        print(f"| NETWORKS: {', '.join([str(net) for net in state.known_networks])}")
-        print("+----------------------------------------------------------------------------------------------------------------------")
-        print(f"| KNOWN_H: {', '.join([str(host) for host in state.known_hosts])}")
-        print("+----------------------------------------------------------------------------------------------------------------------")
-        print(f"| OWNED_H: {', '.join([str(host) for host in state.controlled_hosts])}")
-        print("+----------------------------------------------------------------------------------------------------------------------")
-        if len(state.known_services) == 0:
-            print("| SERVICES: N/A")
-        else:
-            first = True
-            for host, services in state.known_services.items():
-                if first:
-                    print(f"| SERVICES: {host}:")
-                    for service in services:
-                        print(f"|\t\t{service}")
-                    first = False
-                else:
-                    print(f"|           {host}:")
-                    for service in services:
-                        print(f"|\t\t{service}")
-        print("+----------------------------------------------------------------------------------------------------------------------")
-        if len(state.known_data) == 0:
-            print("| DATA: N/A")
-        else:
-            first = True
-            for host, data_list in state.known_data.items():
-                if first:
-                    print(f"| DATA: {host}:")
-                    for data in data_list:
-                        print(f"|\t\t{data}")
-                    first = False
-                else:
-                    print(f"|       {host}:")
-                    for data in data_list:
-                        print(f"|\t\t{data}")
-        print("+======================================================================================================================\n")
 
     def _get_action_type_from_stdin(self)->ActionType:
         """
@@ -179,6 +113,71 @@ class InteractiveAgent:
         return selected_option
 
 
+# def generate_valid_actions(state: GameState)->list:
+#     valid_actions = set()
+#     #Network Scans
+#     for network in state.known_networks:
+#         # TODO ADD neighbouring networks
+#         valid_actions.add(Action(ActionType.ScanNetwork, params={"target_network": network}))
+#     # Service Scans
+#     for host in state.known_hosts:
+#         valid_actions.add(Action(ActionType.FindServices, params={"target_host": host}))
+#     # Service Exploits
+#     for host, service_list in state.known_services.items():
+#         for service in service_list:
+#             valid_actions.add(Action(ActionType.ExploitService, params={"target_host": host, "target_service": service}))
+#     # Data Scans
+#     for host in state.controlled_hosts:
+#         valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
+
+#     # Data Exfiltration
+#     for src_host, data_list in state.known_data.items():
+#         for data in data_list:
+#             for trg_host in state.controlled_hosts:
+#                 if trg_host != src_host:
+#                     valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
+#     return list(valid_actions)
+def print_current_state(state: GameState, reward: int = None):
+    """
+    Prints GameState to stdout in formatted way
+    """
+    print(f"\n+========================================== CURRENT STATE (reward={reward}) ===========================================")
+    print(f"| NETWORKS: {', '.join([str(net) for net in state.known_networks])}")
+    print("+----------------------------------------------------------------------------------------------------------------------")
+    print(f"| KNOWN_H: {', '.join([str(host) for host in state.known_hosts])}")
+    print("+----------------------------------------------------------------------------------------------------------------------")
+    print(f"| OWNED_H: {', '.join([str(host) for host in state.controlled_hosts])}")
+    print("+----------------------------------------------------------------------------------------------------------------------")
+    if len(state.known_services) == 0:
+        print("| SERVICES: N/A")
+    else:
+        first = True
+        for host, services in state.known_services.items():
+            if first:
+                print(f"| SERVICES: {host}:")
+                for service in services:
+                    print(f"|\t\t{service}")
+                first = False
+            else:
+                print(f"|           {host}:")
+                for service in services:
+                    print(f"|\t\t{service}")
+    print("+----------------------------------------------------------------------------------------------------------------------")
+    if len(state.known_data) == 0:
+        print("| DATA: N/A")
+    else:
+        first = True
+        for host, data_list in state.known_data.items():
+            if first:
+                print(f"| DATA: {host}:")
+                for data in data_list:
+                    print(f"|\t\t{data}")
+                first = False
+            else:
+                print(f"|       {host}:")
+                for data in data_list:
+                    print(f"|\t\t{data}")
+    print("+======================================================================================================================\n")
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -246,7 +245,7 @@ def main() -> None:
     print("Welcome to the Network Security Game!\n")
     while not observation.done:
         # Be sure the agent can do the move before giving to the env.
-        agent.print_current_state(observation.state, observation.reward)
+        print_current_state(observation.state, observation.reward)
         action = agent.move(observation)
         if action:
             observation = env.step(action)
