@@ -72,6 +72,9 @@ class InteractiveAgent:
         return False
 
     def print_current_state(self, state: GameState, reward: int = None):
+        """
+        Prints GameState to stdout in formatted way
+        """
         print(f"\n+========================================== CURRENT STATE (reward={reward}) ===========================================")
         print(f"| NETWORKS: {', '.join([str(net) for net in state.known_networks])}")
         print("+----------------------------------------------------------------------------------------------------------------------")
