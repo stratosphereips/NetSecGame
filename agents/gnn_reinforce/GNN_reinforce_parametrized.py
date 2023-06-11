@@ -9,7 +9,6 @@ import argparse
 from timeit import default_timer as timer
 import logging
 #from torch.utils.tensorboard import SummaryWriter
-import time
 from scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
 
 import tensorflow_gnn as tfgnn
