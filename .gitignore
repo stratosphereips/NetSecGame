@@ -139,3 +139,6 @@ agents/*/logs/
 ai-dojo-venv-sebas/
 .DS_Store
 *tensorboard-logs*
+
+# ignore swap files
+*.swp
