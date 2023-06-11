@@ -23,7 +23,7 @@ from env.game_components import *
 class RandomAgent:
     def __init__(self, env):
         self.env = env
-    
+
     def _generate_valid_actions(self, state: GameState)->list:
         valid_actions = set()
         #Network Scans
@@ -40,7 +40,7 @@ class RandomAgent:
         # Data Scans
         for host in state.controlled_hosts:
             valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
-        
+
         # Data Exfiltration
         for src_host, data_list in state.known_data.items():
             for data in data_list:
@@ -48,13 +48,13 @@ class RandomAgent:
                     if trg_host != src_host:
                         valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
         return list(valid_actions)
-    
+
     def move(self, observation:Observation) -> Action:
         state = observation.state
         # Randomly choose from the available actions
         actions = self._generate_valid_actions(state)
         return choice(actions)
-    
+
     def play(self, observation:Observation) -> tuple:
         return_value = 0
         while not observation.done:
@@ -80,7 +80,7 @@ class RandomAgent:
 
 
 if __name__ == '__main__':
-    # set seed 
+    # set seed
     seed(42)
     parser = argparse.ArgumentParser()
     parser.add_argument("--episodes", help="Sets number of training episodes", default=1000, type=int)
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     run_name = f"netsecgame__qlearning__{args.seed}__{int(time.time())}"
     writer = SummaryWriter(f"agents/tensorboard-logs/{run_name}")
     writer.add_text(
-        "hypherparameters", 
+        "hypherparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
     )
 
@@ -150,20 +150,20 @@ if __name__ == '__main__':
             "known_services":{},
             "known_data":{}
         }
-    
+
 
     # Create agent
     logger.info(f'Initializing the environment')
     observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
     logger.info(f'Creating the agent')
     agent = RandomAgent(env)
-    
+
     # Testing
     wins = 0
     detected = 0
     returns = []
     num_steps = []
-    num_win_steps = [] 
+    num_win_steps = []
     num_detected_steps = []
     logger.info(f'Starting the training')
     for i in range(1, args.episodes + 1):
@@ -191,13 +191,13 @@ if __name__ == '__main__':
 
 
         if i % args.test_each == 0 and i != 0:
-            text = f'''Tested after {i} episodes. 
-                Wins={wins}, 
-                Detections={detected}, 
-                winrate={test_win_rate:.3f}%, 
-                detection_rate={test_detection_rate:.3f}%, 
-                average_returns={test_average_returns:.3f} +- {test_std_returns:.3f}, 
-                average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f}, 
+            text = f'''Tested after {i} episodes.
+                Wins={wins},
+                Detections={detected},
+                winrate={test_win_rate:.3f}%,
+                detection_rate={test_detection_rate:.3f}%,
+                average_returns={test_average_returns:.3f} +- {test_std_returns:.3f},
+                average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f},
                 average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
                 average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
                 '''
@@ -215,13 +215,13 @@ if __name__ == '__main__':
             writer.add_scalar("charts/test_std_detected_steps", test_std_detected_steps , i)
 
 
-    text = f'''Final test after {i} episodes, for {args.test_for} steps. 
-        Wins={wins}, 
-        Detections={detected}, 
-        winrate={test_win_rate:.3f}%, 
-        detection_rate={test_detection_rate:.3f}%, 
-        average_returns={test_average_returns:.3f} +- {test_std_returns:.3f}, 
-        average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f}, 
+    text = f'''Final test after {i} episodes, for {args.test_for} steps.
+        Wins={wins},
+        Detections={detected},
+        winrate={test_win_rate:.3f}%,
+        detection_rate={test_detection_rate:.3f}%,
+        average_returns={test_average_returns:.3f} +- {test_std_returns:.3f},
+        average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f},
         average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
         average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
         '''
