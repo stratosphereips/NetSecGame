@@ -5,7 +5,6 @@ from network_security_game import Network_Security_Environment
 from game_components import *
 import numpy as np
 from random import random
-import random
 import argparse
 from timeit import default_timer as timer
 import logging
