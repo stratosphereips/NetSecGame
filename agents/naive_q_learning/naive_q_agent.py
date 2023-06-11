@@ -5,7 +5,6 @@ import env.game_components as components
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from random import choice, random
-import random
 import pickle
 import argparse
 from timeit import default_timer as timer
