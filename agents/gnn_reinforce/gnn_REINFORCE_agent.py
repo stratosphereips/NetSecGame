@@ -12,7 +12,6 @@ from random import choice, random, seed, choices
 from timeit import default_timer as timer
 
 # This is used so the agent can see the environment and game components
-import sys
 from os import path
 sys.path.append( path.dirname(path.dirname(path.dirname( path.abspath(__file__) ) ) ))
 
