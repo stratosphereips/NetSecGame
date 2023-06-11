@@ -7,7 +7,6 @@ import env.game_components as components
 
 import numpy as np
 from random import choice, random, uniform
-import random
 import pickle
 import sys
 import argparse
