@@ -49,7 +49,7 @@ def test_winning_action():
 
     env = Network_Security_Environment(random_start=random_start, verbosity=0)
 
-    # Do we have a defender? 
+    # Do we have a defender?
     defender = None
 
     # Initialize the game
