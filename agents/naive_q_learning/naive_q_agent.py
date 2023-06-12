@@ -196,7 +196,7 @@ if __name__ == '__main__':
     # Training
     # Set the configuration of the game in the env
     logger.info(f'Initializing the environment')
-    observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+    observation = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
     # Instantiate the agent
     logger.info(f'Creating the agent')
     agent = NaiveQAgent(env, args.alpha, args.gamma, args.epsilon)
