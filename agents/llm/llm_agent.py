@@ -76,32 +76,34 @@ def validate_action_in_state(llm_response, state):
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
-    action_params = llm_response["parameters"]
-    if isinstance(action_params, str):
-        action_params = eval(action_params)
     try:
-        if llm_response["action"] == 'ScanNetwork':
-            if llm_response["parameters"]["target_network"] in known_nets:
-                return True
-        elif llm_response["action"] == 'FindServices':
-            if llm_response["parameters"]["target_host"] in known_hosts:
-                return True
-        elif llm_response["action"] == 'ExploitService':
-            ip_addr = llm_response["parameters"]["target_host"]
-            if ip_addr in known_hosts:
-                for service in state.known_services[IP(ip_addr)]:
-                    if service.name == llm_response["parameters"]["target_service"]:
-                        return True
-        elif llm_response["action"] == 'FindData':
-            if llm_response["parameters"]["target_host"] in contr_hosts:
-                return True
-        else:
-            for ip_data in state.known_data:
-                ip_addr = action_params["source_host"]
-                if ip_data == IP(ip_addr) and ip_addr in contr_hosts:
+        action_str = llm_response["action"]
+        action_params = llm_response["parameters"]
+        if isinstance(action_params, str):
+            action_params = eval(action_params)
+        match action_str:
+            case 'ScanNetwork':
+                if action_params["target_network"] in known_nets:
+                    return True        
+            case 'FindServices':
+                if action_params["target_host"] in known_hosts:
                     return True
-                    # if action_params["data"][0] in list(state.known_data[ip_data]):
-                        # return True
+            case 'ExploitService':
+                ip_addr = action_params["target_host"]
+                if ip_addr in known_hosts:
+                    for service in state.known_services[IP(ip_addr)]:
+                        if service.name == action_params["target_service"]:
+                            return True    
+            case 'FindData':
+                if action_params["target_host"] in contr_hosts:
+                    return True    
+            case 'ExfiltrateData':
+                for ip_data in state.known_data:
+                    ip_addr = action_params["source_host"]
+                    if ip_data == IP(ip_addr) and ip_addr in contr_hosts:
+                        return True
+            case _:
+                return False
         return False
     except:
         logging.info("Exception during validation of %s", llm_response)
@@ -208,7 +210,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, required=False, default=42, help="Random seed for the agent.")
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=True, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument("--defender", help="Is defender present", default=True, action=argparse.BooleanOptionalAction)
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
@@ -326,17 +328,20 @@ if __name__ == "__main__":
         if observation.done:
             break
 
-        if not is_valid:
-            memories.append((response["action"], response["parameters"], "This action was not valid based on your status."))
-        else:
-            # This is based on the assumption that more valid actions in the state are better/more helpful.
-            # But we could a manual evaluation based on the prior knowledge and weight the different components.
-            # For example: finding new data is better than discovering hosts (?)
-            if good_action:
-                memories.append((response["action"], response["parameters"], "This action was helpful."))
+        try:
+            if not is_valid:
+                memories.append((response["action"], response["parameters"], "This action was not valid based on your status."))
             else:
-                memories.append((response["action"], response["parameters"], "This action was not helpful."))
-
+                # This is based on the assumption that more valid actions in the state are better/more helpful.
+                # But we could a manual evaluation based on the prior knowledge and weight the different components.
+                # For example: finding new data is better than discovering hosts (?)
+                if good_action:
+                    memories.append((response["action"], response["parameters"], "This action was helpful."))
+                else:
+                    memories.append((response["action"], response["parameters"], "This action was not helpful."))
+        except TypeError:
+            # if the LLM sends a response that is not properly formatted.
+            memories.append(f"Response '{response}' was badly formatted.")
 
 logging.info("Total reward: %s", str(total_reward))
 print(f"Total reward: {total_reward}")
