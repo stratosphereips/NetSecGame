@@ -20,8 +20,8 @@ from dotenv import dotenv_values
 config = dotenv_values(".env")
 openai.api_key = config["OPENAI_API_KEY"]
 
-local_services = ['bash', 'powershell', 'remote desktop service', 'windows login', 'can_attack_start_here']
-
+# local_services = ['bash', 'powershell', 'remote desktop service', 'windows login', 'can_attack_start_here']
+local_services = ['can_attack_start_here']
 # Set the logging
 import logging
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ Known services for host 1.1.1.1 are openssh
 
 Here are some examples of actions:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
-Action: {"action":"FindServices", "parameters":{"target_host":"192.168.2.0"}}
+Action: {"action":"FindServices", "parameters":{"target_host":"2.2.2.3"}}
 Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
 Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
 Action: {"action":"ExfiltrateData", "parameters":"{'target_host': '2.2.2.2', 'data': ('User1', 'SomeData'), 'source_host': '1.1.1.2'}"}}
@@ -52,7 +52,7 @@ End of example.
 """
 
 INSTRUCTIONS_TEMPLATE = """
-You are a pentester and you want to exfiltrate data.
+You are a pentester and you want to exfiltrate data to target host {{target_host}}.
 The actions you can take are FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
 
 The rules of the game are:
@@ -62,17 +62,7 @@ The rules of the game are:
 4. You can find data in hosts you control.
 5. You can exfiltrate data that you know to and from hosts you control.
 
-Your plan is to:
-1. Scan all known networks one at a time.
-2. Find services for the known hosts one at a time.
-3. Exploit the known services of each host.
-4. Find data only in controlled hosts.
-5. If you find '{{data}}' of '{{user}}' exfiltrate to target host {{target_host}}.
-Do not repeat actions.
-
-If an action is not valid do not try it again.
-If an action is not helpful do not try it again.
-
+Do not repeat actions you have take in the past.
 Select a valid action with the correct format and parameters.
 """
 
@@ -82,6 +72,7 @@ def validate_action_in_state(llm_response, state):
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
+    valid = False
     try:
         action_str = llm_response["action"]
         action_params = llm_response["parameters"]
@@ -90,27 +81,27 @@ def validate_action_in_state(llm_response, state):
         match action_str:
             case 'ScanNetwork':
                 if action_params["target_network"] in known_nets:
-                    return True        
+                    valid = True        
             case 'FindServices':
                 if action_params["target_host"] in known_hosts:
-                    return True
+                    valid = True
             case 'ExploitService':
                 ip_addr = action_params["target_host"]
                 if ip_addr in known_hosts:
                     for service in state.known_services[IP(ip_addr)]:
                         if service.name == action_params["target_service"]:
-                            return True    
+                            valid = True    
             case 'FindData':
                 if action_params["target_host"] in contr_hosts:
-                    return True    
+                    valid = True    
             case 'ExfiltrateData':
                 for ip_data in state.known_data:
                     ip_addr = action_params["source_host"]
                     if ip_data == IP(ip_addr) and ip_addr in contr_hosts:
-                        return True
+                        valid = True
             case _:
-                return False
-        return False
+                valid = False
+        return valid
     except:
         logging.info("Exception during validation of %s", llm_response)
         return False
@@ -161,8 +152,8 @@ def create_status_from_state(state, memory_list):
         if len(state.known_data[ip_data]) > 0:
 
             host_data = ""
-            for data in list(state.known_data[ip_data]):
-                host_data += f"({data.owner}, {data.id}) and "
+            for known_data in list(state.known_data[ip_data]):
+                host_data += f"({known_data.owner}, {known_data.id}) and "
             prompt += f"Known data for host {ip_data} are {host_data}\n"
             logging.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
@@ -172,13 +163,13 @@ def create_action_from_response(llm_response, state):
     """Build the action object from the llm response"""
     try:
         # Validate action based on current states
-        is_valid = validate_action_in_state(llm_response, observation.state)
+        valid = validate_action_in_state(llm_response, observation.state)
         action = None
         action_str = llm_response["action"]
         action_params = llm_response["parameters"]
         if isinstance(action_params, str):
             action_params = eval(action_params)
-        if is_valid:  
+        if valid:  
             match action_str:
                 case 'ScanNetwork':
                     target_net, mask = action_params["target_network"].split('/')
@@ -203,9 +194,9 @@ def create_action_from_response(llm_response, state):
 
     except SyntaxError:
         logging.error(f"Cannol parse the response from the LLM: {llm_response}")
-        is_valid = False
+        valid = False
 
-    return is_valid, action
+    return valid, action
 
 @retry(stop=stop_after_attempt(3))
 def openai_query(msg_list, max_tokens=60):
