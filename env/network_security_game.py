@@ -107,7 +107,7 @@ class Network_Security_Environment(object):
                         actions.add(components.Action(components.ActionType.ExploitService, {"target_host":ip, "target_service":service}))
         return {k:v for k,v in enumerate(actions)}
 
-    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, agent_seed=42, cyst_config=None)-> components.Observation:
+    def initialize(self, win_conditions:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, agent_seed=42, cyst_config=None)-> components.Observation:
         """
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
@@ -124,7 +124,7 @@ class Network_Security_Environment(object):
         self._place_defences(defender_positions)
 
         # check if win condition
-        self._win_conditions = win_conditons
+        self._win_conditions = win_conditions
 
         # Set the seed if passed by the agent
         if agent_seed:
@@ -141,7 +141,7 @@ class Network_Security_Environment(object):
             logger.info(f"Checking if we need to set the data to win in a random location.")
             # For each known data point in the conditions to win
 
-            for key, value in win_conditons["known_data"].items():
+            for key, value in win_conditions["known_data"].items():
                 # Was the position defined as random?
                 if isinstance(value, str) and value.lower() == "random":
                     logger.info(f"\tData was requested to be put in a random location.")

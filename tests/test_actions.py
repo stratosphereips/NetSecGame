@@ -33,7 +33,7 @@ START = {
 def env_obs():
     """After init step"""
     env = Network_Security_Environment(random_start=False, verbosity=0)
-    observation = env.initialize(win_conditons=GOAL, defender_positions=None, attacker_start_position=START, max_steps=500, agent_seed=42, cyst_config=scenario_configuration.configuration_objects)
+    observation = env.initialize(win_conditions=GOAL, defender_positions=None, attacker_start_position=START, max_steps=500, agent_seed=42, cyst_config=scenario_configuration.configuration_objects)
     return (env, observation)
 
 @pytest.fixture

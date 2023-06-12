@@ -226,7 +226,7 @@ def main() -> None:
         }
 
     # Create agent
-    observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
+    observation = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
     logger.info('Creating the agent')
     agent = InteractiveAgent(env)
 

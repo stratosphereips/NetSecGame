@@ -172,7 +172,7 @@ The defender can be present in the network or not. In case you defined in the co
 Each agent must initialize the game environment with options. The function is:
 
 ```python
-state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+state = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
 ```
 
 The `goal` is defined as a dictionary of conditions that must be met for the attacker to win. Example:

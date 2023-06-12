@@ -430,7 +430,7 @@ if __name__ == '__main__':
 
     # Training
     logger.info(f'Initializing the environment')
-    state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+    state = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
     logger.info(f'Creating the agent')
     # #initialize agent
     agent = GNN_REINFORCE_Agent(env, args)
