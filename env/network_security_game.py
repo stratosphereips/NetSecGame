@@ -1,7 +1,6 @@
 #Author: Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import netaddr
 import env.game_components as components
-import yaml
 #from random import choice, seed
 import random
 import copy
@@ -18,7 +17,7 @@ from pathlib import Path
 # Set the logging
 log_filename=Path('env/logs/netsecenv.log')
 if not log_filename.parent.exists():
-    os.makedirs(log_filename.parent) 
+    os.makedirs(log_filename.parent)
 logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
 logger = logging.getLogger('Netsecenv')
 
@@ -53,14 +52,14 @@ class Network_Security_Environment(object):
         self._done = False
         # ?
         self._src_file = None
-        # Verbosity. 
+        # Verbosity.
         # If the episode/action was detected by the defender
         self._detected = False
         # To hold all the services we know
         self._services = {}
         self._data = {}
         self._fw_rules = []
-    
+
     @property
     def timestamp(self)->int:
         """
@@ -71,17 +70,17 @@ class Network_Security_Environment(object):
     @property
     def done(self):
         return self._done
-    
+
     @property
     def detected(self):
         if self.done: #Only tell if detected when the interaction ends
             return self._detected
         else: return None
-    
+
     @property
     def num_actions(self):
         return len(components.ActionType)
-    
+
     def get_all_actions(self):
         actions = set()
         # Get Network scans, Service Find and Data Find
@@ -113,7 +112,7 @@ class Network_Security_Environment(object):
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
         It ALSO resets the environment, so it returns a full state. This is different from other gym envs.
-        
+
         """
         logger.info(f"Initializing NetSetGame environment")
 
@@ -132,16 +131,16 @@ class Network_Security_Environment(object):
             np.random.seed(agent_seed)
             random.seed(agent_seed)
             logger.info(f'Agent passed a seed, setting to {agent_seed}')
-        
+
         if cyst_config:
             logger.info(f"Reading from CYST configuration:")
             self.process_cyst_config(cyst_config)
 
-            # Check if position of data is randomized 
+            # Check if position of data is randomized
             # This code should be moved into create_starting_state()
             logger.info(f"Checking if we need to set the data to win in a random location.")
             # For each known data point in the conditions to win
-            
+
             for key, value in win_conditons["known_data"].items():
                 # Was the position defined as random?
                 if isinstance(value, str) and value.lower() == "random":
@@ -150,7 +149,7 @@ class Network_Security_Environment(object):
                     available_data = []
                     for node in self._node_objects.values():
                         # For each node, independent of what type of node they are...
-                        try:                   
+                        try:
                             # Search for passive services, since this is where the 'DataConfig' is
                             for service in node.passive_services:
                                 # Search for private data
@@ -164,19 +163,19 @@ class Network_Security_Environment(object):
                     self._win_conditions["known_data"][key] = {random.choice(available_data)}
                 else:
                     logger.info(f"\tData was not requested to be put in a random location.")
-            
+
             logger.info(f"\tWinning condition of `known_data` set to {self._win_conditions['known_data']}")
             logger.info(f"CYST configuration processed successfully")
-            
+
             #save self_data original state so we can go back to it in reset
             self._data_original = copy.deepcopy(self._data)
-            
+
             # Return an observation
             return self.reset()
         else:
             logger.error(f"CYST configuration has to be provided for envrionment initialization!")
             raise ValueError("CYST configuration has to be provided for envrionment initialization!")
-    
+
     def _create_starting_state(self) -> components.GameState:
         """
         Builds the starting GameState. Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
@@ -206,7 +205,7 @@ class Network_Security_Environment(object):
                 # Add the controlled hosts to the list of known hosts
                 known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
                 logger.info(f'\tThe attacker has control of host {str(controlled_host)}.')
-        
+
         # Extend the known networks with the neighbouring networks
         # This is to solve in the env (and not in the agent) the problem
         # of not knowing other networks appart from the one the agent is in
@@ -233,7 +232,7 @@ class Network_Security_Environment(object):
         known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
         game_state = components.GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
-    
+
     def _place_defences(self, placements:dict)->None:
         """
         Place the defender
@@ -246,7 +245,7 @@ class Network_Security_Environment(object):
         else:
             logger.info(f"\t\tNo defender present in the environment")
             self._defender_placements = False
-   
+
 
 
     def process_cyst_config(self, configuration_objects:list)-> None:
@@ -264,26 +263,26 @@ class Network_Security_Environment(object):
             if isinstance(o, NodeConfig):
                 nodes.append(o)
             elif isinstance(o, RouterConfig):
-                routers.append(o)    
+                routers.append(o)
             elif isinstance(o, ConnectionConfig):
                 connections.append(o)
             elif isinstance(o, ExploitConfig):
                 exploits.append(o)
-        
+
         def process_node_config(node_obj:NodeConfig) -> None:
             logger.info(f"\tProcessing config of node '{node_obj.id}'")
             #save the complete object
             self._node_objects[node_obj.id] = node_obj
             logger.info(f'\t\tAdded {node_obj.id} to the list of available nodes.')
             node_to_id[node_obj.id] = len(node_to_id)
-            
+
             #examine interfaces
             logger.info(f"\t\tProcessing interfaces in node '{node_obj.id}'")
             for interface in node_obj.interfaces:
                 net_ip, net_mask = str(interface.net).split("/")
                 net = components.Network(net_ip,int(net_mask))
                 ip = components.IP(str(interface.ip))
-                self._ip_to_hostname[ip] = node_obj.id            
+                self._ip_to_hostname[ip] = node_obj.id
                 if net not in self._networks:
                     self._networks[net] = []
                 self._networks[net].append(ip)
@@ -309,7 +308,7 @@ class Network_Security_Environment(object):
                         if node_obj.id not in self._data:
                             self._data[node_obj.id] = set()
                         self._data[node_obj.id].add(components.Data(data.owner, data.description))
-                    
+
                 except AttributeError:
                     pass
                     #service does not contain any data
@@ -333,11 +332,11 @@ class Network_Security_Environment(object):
                 net_ip, net_mask = str(interface.net).split("/")
                 net = components.Network(net_ip,int(net_mask))
                 ip = components.IP(str(interface.ip))
-                self._ip_to_hostname[ip] = router_obj.id       
+                self._ip_to_hostname[ip] = router_obj.id
                 if net not in self._networks:
                     self._networks[net] = []
                 self._networks[net].append(ip)
-        
+
             #add Firewall rules
             logger.info(f"\t\tProcessing FW rules in router '{router_obj.id}'")
             for tp in router_obj.traffic_processors:
@@ -351,7 +350,7 @@ class Network_Security_Environment(object):
         #process routers
         for r in routers:
             process_router_config(r)
-        
+
         #connections
         logger.info(f"\tProcessing connections in the network")
         self._connections = np.zeros([len(node_to_id),len(node_to_id)])
@@ -363,7 +362,7 @@ class Network_Security_Environment(object):
 
         #exploits
         self._exploits = exploits
-    
+
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
         """
         Returns set of Service tuples from given hostIP
@@ -391,7 +390,7 @@ class Network_Security_Environment(object):
             if host_ip in values:
                 networks.add(net)
         return networks
-    
+
     def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
         """
         Returns set of Data tuples from given host IP
@@ -405,7 +404,7 @@ class Network_Security_Environment(object):
         else:
             logger.info(f"\t\t\tCan't get data in host. The host is not controlled.")
         return data
-  
+
     def _execute_action(self, current:components.GameState, action:components.Action)-> components.GameState:
         """
         Execute the action and update the values in the state
@@ -474,9 +473,9 @@ class Network_Security_Environment(object):
                         if action.parameters["target_host"] not in next_known_hosts:
                             next_known_hosts.add(action.parameters["target_host"])
                             logger.info(f"\t\tAdding to known_hosts")
-                        logger.info(f"\t\tSearching for new networks in host {action.parameters['target_host']}")      
+
                         new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                        logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}") 
+                        logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
                         next_known_networks = next_known_networks.union(new_networks)
                     else:
                         logger.info(f"\t\t\tCan not exploit. Target host does not the service that was attempted.")
@@ -512,9 +511,9 @@ class Network_Security_Environment(object):
                 logger.info(f"\t\t\tCan not exfiltrate. Target host is not controlled.")
         else:
             raise ValueError(f"Unknown Action type: '{action.type}'")
-        
+
         return components.GameState(next_controlled_hosts, next_known_hosts, next_known_services, next_known_data, next_known_networks)
-        
+
 
     def is_goal(self, state:components.GameState)->bool:
         """
@@ -585,22 +584,22 @@ class Network_Security_Environment(object):
         based on the probabilitiy distribution in the action configuration
         """
         if self._defender_placements:
-            value = random.random() < action.type.default_detection_p     
+            value = random.random() < action.type.default_detection_p
             logger.info(f"\tAction detected?: {value}")
             return value
         else: #no defender
             logger.info(f"\tNo defender present")
-            return False 
+            return False
 
     def reset(self)->components.Observation:
         """
-        Function to reset the state of the game 
+        Function to reset the state of the game
         and play a new episode
         """
         logger.info(f'--- Reseting env to its initial state ---')
         self._done = False
         self._step_counter = 0
-        self._detected = False  
+        self._detected = False
         #reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         self._current_state = self._create_starting_state()
@@ -612,7 +611,7 @@ class Network_Security_Environment(object):
         return components.Observation(self._current_state, initial_reward, self._done, info)
 
     def step(self, action:components.Action)-> components.Observation:
-        
+
         """
         Take a step in the environment given an action
 
@@ -635,8 +634,8 @@ class Network_Security_Environment(object):
                 # Get the next state given the action
                 next_state = self._execute_action(self._current_state, action)
                 # Reard for making an action
-                reward = -1     
-            else: 
+                reward = -1
+            else:
                 # The action was not successful
                 logger.info(f"\tAction NOT sucessful")
 
@@ -651,7 +650,7 @@ class Network_Security_Environment(object):
             logger.info(f"\tGoal reached?: {is_goal}")
             if is_goal:
                 # Give reward
-                reward += 100  
+                reward += 100
                 # Game ended
                 self._done = True
                 reason = {'end_reason':'goal_reached'}
@@ -681,7 +680,7 @@ class Network_Security_Environment(object):
                 self._done = True
                 reason = {'end_reason':'max_steps'}
                 logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
-            
+
             # Return an observation
             return components.Observation(self._current_state, reward, self._done, reason)
         else:

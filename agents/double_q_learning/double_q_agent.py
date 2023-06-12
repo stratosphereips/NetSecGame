@@ -5,10 +5,8 @@ from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
 import env.game_components as components
 
-from os import stat
 import numpy as np
-from random import choice, random, uniform
-import random
+from random import choice, random
 import pickle
 import sys
 import argparse
