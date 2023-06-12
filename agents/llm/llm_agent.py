@@ -78,6 +78,9 @@ def validate_action_in_state(llm_response, state):
     known_hosts = [str(host) for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
+    action_params = llm_response["parameters"]
+    if isinstance(action_params, str):
+        action_params = eval(action_params)
     try:
         if llm_response["action"] == 'ScanNetwork':
             if llm_response["parameters"]["target_network"] in known_nets:
@@ -88,7 +91,7 @@ def validate_action_in_state(llm_response, state):
         elif llm_response["action"] == 'ExploitService':
             ip_addr = llm_response["parameters"]["target_host"]
             if ip_addr in known_hosts:
-                for service in list(state.known_services[ip_addr]):
+                for service in state.known_services[IP(ip_addr)]:
                     if service.name == llm_response["parameters"]["target_service"]:
                         return True
         elif llm_response["action"] == 'FindData':
@@ -96,13 +99,11 @@ def validate_action_in_state(llm_response, state):
                 return True
         else:
             for ip_data in state.known_data:
-                parameters = llm_response["parameters"]
-                if isinstance(parameters, str):
-                    parameters = eval(parameters)
-                ip_addr = parameters["source_host"]
-                if ip_data == ip_addr and ip_addr in contr_hosts:
-                    if parameters["data"] in list(state.known_data[ip_data]):
-                        return True
+                ip_addr = action_params["source_host"]
+                if ip_data == IP(ip_addr) and ip_addr in contr_hosts:
+                    return True
+                    # if action_params["data"][0] in list(state.known_data[ip_data]):
+                        # return True
         return False
     except:
         logging.info("Exception during validation of %s", llm_response)
@@ -136,16 +137,23 @@ def create_status_from_state(state, memory_list):
                     services.append(serv.name)
             if len(services) > 0:
                 logging.info(f"Known services {ip_service, services}")
-                prompt += f"Known services for host {ip_service} are {' and '.join(str(services))}\n"
+                serv_str = ""
+                for serv in services:
+                    serv_str += serv + " and "
+                prompt += f"Known services for host {ip_service} are {serv_str}\n"
 
     for ip_data in state.known_data:
         if len(state.known_data[ip_data]) > 0:
-            prompt += f"Known data for host {ip_data} are {' and '.join(list(state.known_data[ip_data]))}\n"
+
+            host_data = ""
+            for data in list(state.known_data[ip_data]):
+                host_data += f"({data.owner}, {data.id}) and "
+            prompt += f"Known data for host {ip_data} are {host_data}\n"
             logging.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
     return prompt
 
-def create_action_from_response(llm_response):
+def create_action_from_response(llm_response, state):
     """Build the action object from the llm response"""
     try:
         # Validate action based on current states
@@ -155,7 +163,7 @@ def create_action_from_response(llm_response):
         action_params = llm_response["parameters"]
         if isinstance(action_params, str):
             action_params = eval(action_params)
-        if is_valid:
+        if is_valid:  
             match action_str:
                 case 'ScanNetwork':
                     target_net, mask = action_params["target_network"].split('/')
@@ -163,9 +171,13 @@ def create_action_from_response(llm_response):
                 case 'FindServices':
                     action  = Action(ActionType.FindServices, {"target_host":IP(action_params["target_host"])})
                 case 'ExploitService':
-                    # Not finished yet
-                    parameters = {"target_host":IP(action_params["target_host"]), "target_service":Service('postgresql', 'passive', '14.3.0', False)}
-                    action = Action(ActionType.ExploitService, parameters)
+                    target_ip = action_params["target_host"]
+                    target_service = action_params["target_service"]
+                    if len(list(state.known_services[IP(target_ip)])) > 0:
+                        for serv in state.known_services[IP(target_ip)]:
+                            if serv.name == target_service:
+                                parameters = {"target_host":IP(target_ip), "target_service":Service(serv.name, serv.type, serv.version, serv.is_local)}
+                                action = Action(ActionType.ExploitService, parameters)
                 case 'FindData':
                     action = Action(ActionType.FindData, {"target_host":IP(action_params["target_host"])})
                 case 'ExfiltrateData':
@@ -175,7 +187,7 @@ def create_action_from_response(llm_response):
                     return False, action
 
     except SyntaxError:
-        logging.error(f"Cannol parse the response from the LLM: {response_str}")
+        logging.error(f"Cannol parse the response from the LLM: {llm_response}")
         is_valid = False
 
     return is_valid, action
@@ -301,7 +313,7 @@ if __name__ == "__main__":
 
         try:
             response = eval(response)
-            is_valid, action = create_action_from_response(response)
+            is_valid, action = create_action_from_response(response, observation.state)
         except:
             is_valid = False
 
