@@ -10,6 +10,7 @@ from random import choice, seed, choices
 from timeit import default_timer as timer
 
 # This is used so the agent can see the environment and game components
+import sys
 from os import path
 sys.path.append( path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
@@ -243,33 +244,40 @@ class GNN_REINFORCE_Agent:
         
             #evaluate
             if episode > 0 and episode % args.eval_each == 0:
-                returns = []
-                for _ in range(self.args.eval_for):
-                    state, done = env.reset().state, False
-                    ret = 0
-                    #print("--------------")
-                    while not done:
-                        state_node_f,controlled, state_edges,_ = state.as_graph
-                        state_g = self._create_graph_tensor(state_node_f,controlled,state_edges)
-                        #predict action probabilities
-                        probabilities = self.predict(state_g)
-                        probabilities = tf.squeeze(tf.nn.softmax(probabilities))
-                        action_idx = np.argmax(probabilities)
-                        action = self._transition_mapping[action_idx]
-                        #print(action)
-                        #select action and perform it
-                        next_state = self.env.step(action)
-                        ret += next_state.reward
-                        state = next_state.state
-                        done = next_state.done
-
-                    returns.append(ret)
+                returns = self.get_eval_retrurns(self.args.eval_for)
                 print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}")
                 with self._tf_writer.as_default():
                     tf.summary.scalar('test/eval_win', np.mean(returns), step=episode)
-            else:
-                pass
-                #print(f"Episode {episode} done.")
+    
+    def evaluate(self):
+        print(f"Starting final evaluation ({self.args.final_eval_for} episodes)")
+        eval_returns = self.get_eval_retrurns(num_eval_episodes=self.args.final_eval_for)
+        print(f"Evaluation finished - (mean of {len(eval_returns)} runs): {np.mean(eval_returns)}+-{np.std(eval_returns)}")
+    
+    def get_eval_retrurns(self, num_eval_episodes) -> list:
+        eval_returns = []
+        for _ in range(num_eval_episodes):
+            state, done = env.reset().state, False
+            ret = 0
+            while not done:
+                state_node_f,controlled, state_edges,_ = state.as_graph
+                state_g = self._create_graph_tensor(state_node_f,controlled,state_edges)
+                #predict action probabilities
+                probabilities = self.predict(state_g)
+                probabilities = tf.squeeze(probabilities)
+                action_idx = np.argmax(probabilities)
+                action = self._transition_mapping[action_idx]
+                
+                #select action and perform it
+                next_state = self.env.step(action)
+                ret += next_state.reward
+                state = next_state.state
+                done = next_state.done
+
+            eval_returns.append(ret)
+        return  eval_returns
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -280,9 +288,10 @@ if __name__ == '__main__':
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_tiny", type=str)
     parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
+    parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=5000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=3000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
     parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
@@ -290,22 +299,12 @@ if __name__ == '__main__':
     #training arguments
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=200, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
-    
-    parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
-
+    parser.add_argument("--final_eval_for", help="Sets evaluation length", default=100, type=int )
     args = parser.parse_args()
     args.filename = "GNN_Reinforce_Agent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
     logging.basicConfig(filename='GNN_Reinforce_Agent.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     logger = logging.getLogger('GNN_Reinforce_Agent')
-
-    # Setup tensorboard
-    # run_name = f"netsecgame__GNN_Reinforce__{args.seed}__{int(time.time())}"
-    # writer = SummaryWriter(f"agents/tensorboard-logs/{run_name}")
-    # writer.add_text(
-    #     "hypherparameters",
-    #     "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
-    # )
 
     #set random seed
     np.random.seed(args.seed)
@@ -346,8 +345,7 @@ if __name__ == '__main__':
             "known_hosts":{},
             "controlled_hosts":{components.IP("192.168.1.2")},
             "known_services":{},
-            "known_data":{components.IP("192.168.1.2"):{components.Data("User1", "DataFromServer1")}},
-            #"known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
+            "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
         }
 
         attacker_start = {
@@ -362,6 +360,8 @@ if __name__ == '__main__':
     logger.info(f'Initializing the environment')
     state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
     logger.info(f'Creating the agent')
+    
     # #initialize agent
     agent = GNN_REINFORCE_Agent(env, args)
     agent.train()
+    agent.evaluate()
