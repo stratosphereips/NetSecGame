@@ -10,8 +10,6 @@ from env.network_security_game import Network_Security_Environment
 from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
 from env.game_components import ActionType, Action, IP, Data, Network, Service
 
-
-from cyst.api.configuration import *
 import openai
 from tenacity import retry, stop_after_attempt
 import argparse
