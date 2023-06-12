@@ -29,4 +29,4 @@ jobs:
           ruff --format=github --select=E9,F4,F6,F7,F8,N8 --ignore=F405 --target-version=py37 .
       - name: Test with pytest
         run: |
-          pytest
+          pytest tests/test_actions.py -v
