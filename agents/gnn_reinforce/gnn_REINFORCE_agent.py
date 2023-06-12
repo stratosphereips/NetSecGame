@@ -275,16 +275,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     #env arguments
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=10, type=int)
+    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=20, type=int)
     parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_tiny", type=str)
     parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=2000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=20000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
-    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=48)
+    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
     parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
 
     #training arguments
@@ -343,11 +343,11 @@ if __name__ == '__main__':
     else:
         goal = {
             "known_networks":set(),
-            "known_hosts":{"192.168.1.2"},
+            "known_hosts":{},
             "controlled_hosts":{components.IP("192.168.1.2")},
             "known_services":{},
-            #"known_data":{"192.168.1.2":{("User1", "DataFromServer1")}},
-            "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}}
+            "known_data":{components.IP("192.168.1.2"):{components.Data("User1", "DataFromServer1")}},
+            #"known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
         }
 
         attacker_start = {
