@@ -282,7 +282,7 @@ if __name__ == '__main__':
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=20000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=5000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
     parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)

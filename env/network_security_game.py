@@ -520,7 +520,29 @@ class Network_Security_Environment(object):
         Check if the goal was reached for the game
         """
         # For each part of the state of the game, check if the conditions are met
+        
 
+        def goal_dict_satistfied(goal_dict:dict, known_dict: dict)-> bool:
+            """
+            Helper function for checking if a goal dictionary condition is satisfied
+            """
+            # check if we have all IPs that should have some values (are keys in goal_dict)
+            if goal_dict.keys() <= known_dict.keys():
+                logger.info(f'\t\tKey comparison OK')
+                try:
+                    # Check if values (sets) for EACH key (host) in goal_dict are subsets of known_dict, keep matching_keys
+                    matching_keys = [host for host in goal_dict.keys() if goal_dict[host]<= known_dict[host]]
+                    # Check we have the amount of mathing keys as in the goal_dict
+                    logger.info(f"\t\tMathing sets: {len(matching_keys)}, required: {len(goal_dict.keys())}")
+                    if len(matching_keys) == len(goal_dict.keys()):
+                        return True
+                except KeyError:
+                    #some keys are missing in the known_dict
+                    return False
+            return False
+        
+        
+        
         # Networks
         # If empty goal, then should be true for this element
         if set(self._win_conditions["known_networks"]) <= set(state.known_networks):
@@ -539,40 +561,18 @@ class Network_Security_Environment(object):
             controlled_hosts_goal = True
         else:
             controlled_hosts_goal = False
+        
         # Services
         # If empty goal, then should be true for this element
-        try:
-            services_goal = True
-            missing_keys_services = [k for k in self._win_conditions["known_services"].keys() if k not in state.known_services]
-            if len(missing_keys_services) == 0:
-                for ip in self._win_conditions["known_services"].keys():
-                    for service in self._win_conditions["known_services"][ip]:
-                        if service not in state.known_services[ip]:
-                            services_goal = False
-                            break
-            else:
-                services_goal = False
-        except KeyError:
-            services_goal = False
+        logger.info(f'Checking the goal of services')
+        logger.info(f'\tServices needed to win {self._win_conditions["known_services"]}')
+        services_goal = goal_dict_satistfied(self._win_conditions["known_services"], state.known_services)
 
+        # Data
+        logger.info(f'Checking the goal of data')
+        logger.info(f'\tData needed to win {self._win_conditions["known_data"]}')
+        known_data_goal = goal_dict_satistfied(self._win_conditions["known_data"], state.known_data)
 
-        try:
-            logger.info(f'Checking the goal of data')
-            logger.info(f'\tData needed to win {self._win_conditions["known_data"]}')
-            known_data_goal = True
-            keys_data = [k for k in self._win_conditions["known_data"].keys() if k not in state.known_data]
-            if len(keys_data) == 0:
-                for ip_win in self._win_conditions["known_data"].keys():
-                    logger.info(f'\t\tChecking data in ip {ip_win}')
-                    logger.info(f'\t\t\tData in state: {state.known_data[ip_win]}')
-                    if set(self._win_conditions["known_data"][ip_win]) > set(state.known_data[ip_win]):
-                        logger.info(f'\t\t\tnot set(self._win_conditions["known_data"][ip_win]) <= set(state.known_data[ip_win]): {set(self._win_conditions["known_data"][ip_win]) > set(state.known_data[ip_win])}')
-                        known_data_goal = False
-                        break
-            else:
-                known_data_goal = False
-        except KeyError:
-            known_data_goal = False
         logger.info(f"\tnets:{networks_goal}, known_hosts:{known_hosts_goal}, controlled_hosts:{controlled_hosts_goal},services:{services_goal}, data:{known_data_goal}")
         goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
 
@@ -686,4 +686,3 @@ class Network_Security_Environment(object):
         else:
             logger.warning(f"Interaction over! No more steps can be made in the environment")
             raise ValueError("Interaction over! No more steps can be made in the environment")
-
