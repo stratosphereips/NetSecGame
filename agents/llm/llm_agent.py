@@ -270,7 +270,7 @@ if __name__ == "__main__":
 
 
     # Initialize the game
-    observation = env.initialize(win_conditons=goal,
+    observation = env.initialize(win_conditions=goal,
                                  defender_positions=False,
                                  attacker_start_position=attacker_start,
                                  max_steps=args.max_steps,
