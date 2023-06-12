@@ -53,17 +53,23 @@ End of example.
 
 INSTRUCTIONS_TEMPLATE = """
 You are a pentester and you want to exfiltrate data.
-Your goal is to exfiltrate data, but first you need to know where they are and access them.
-The valid actions are: FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData.
-You can only use one of the 5 actions.
+The actions you can take are FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
+
+The rules of the game are:
+1. You can only scan networks that you know.
+2. You can only find services in hosts that you know.
+3. You can exploit services that you know.
+4. You can find data in hosts you control.
+5. You can exfiltrate data that you know to and from hosts you control.
 
 Your plan is to:
 1. Scan all known networks one at a time.
-2. Find services for the list of known hosts one at a time.
-3. Exploit the list of known services of each host.
+2. Find services for the known hosts one at a time.
+3. Exploit the known services of each host.
 4. Find data only in controlled hosts.
 5. If you find '{{data}}' of '{{user}}' exfiltrate to target host {{target_host}}.
-Repeat the steps but only for new hosts, services, and data you discovered.
+Do not repeat actions.
+
 If an action is not valid do not try it again.
 If an action is not helpful do not try it again.
 
@@ -127,8 +133,11 @@ def create_status_from_state(state, memory_list):
     prompt += f"Known networks are {' and '.join(known_nets)}\n"
     logging.info("Known networks are %s", ' and '.join(known_nets))
     prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
-    logging.info("Known hosts are %s", ' and '.join(contr_hosts))
+    logging.info("Known hosts are %s", ' and '.join(known_hosts))
 
+    if len(state.known_services.keys()) == 0:
+        prompt += "Known services are none\n"
+        logging.info(f"Known services: None")
     for ip_service in state.known_services:
         services = []
         if len(list(state.known_services[ip_service])) > 0:
@@ -136,12 +145,18 @@ def create_status_from_state(state, memory_list):
                 if serv.name not in local_services:
                     services.append(serv.name)
             if len(services) > 0:
-                logging.info(f"Known services {ip_service, services}")
                 serv_str = ""
                 for serv in services:
                     serv_str += serv + " and "
                 prompt += f"Known services for host {ip_service} are {serv_str}\n"
+                logging.info(f"Known services {ip_service, services}")
+            else:
+                prompt += "Known services are none\n"
+                logging.info(f"Known services: None")
 
+    if len(state.known_data.keys()) == 0:
+        prompt += "Known data are none\n"
+        logging.info(f"Known data: None")
     for ip_data in state.known_data:
         if len(state.known_data[ip_data]) > 0:
 
