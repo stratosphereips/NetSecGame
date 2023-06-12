@@ -17,7 +17,7 @@ GOAL = {
     "known_hosts":set(),
     "controlled_hosts":set(),
     "known_services":{},
-    "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "Data1FromServer1")}}
+    "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DatabaseData")}}
 }
 START = {
     "known_networks":set(),
