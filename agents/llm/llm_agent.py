@@ -38,8 +38,8 @@ EXAMPLE_PROMPT = """
 Example:
 Known networks are 1.1.1.0/24
 Known hosts are 2.2.2.2 and 1.1.1.2 and 2.2.2.3
-Controlled hosts are '2.2.2.2' and 1.1.1.2
-Known data for source host 1.1.1.2: are ('User1', 'SomeData')
+Controlled hosts are 2.2.2.2 and 1.1.1.2
+Known data for source host 1.1.1.2: are (User1, WebData)
 Known services for host 1.1.1.1 are openssh
 
 Here are some examples of actions:
@@ -47,7 +47,7 @@ Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
 Action: {"action":"FindServices", "parameters":{"target_host":"2.2.2.3"}}
 Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
 Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
-Action: {"action":"ExfiltrateData", "parameters":"{'target_host': '2.2.2.2', 'data': ('User1', 'SomeData'), 'source_host': '1.1.1.2'}"}}
+Action: {"action":"ExfiltrateData", "parameters":"{'target_host': '2.2.2.2', 'data': ('User1', 'WebData'), 'source_host': '1.1.1.2'}"}}
 End of example.
 """
 
@@ -56,8 +56,8 @@ You are a pentester and you want to exfiltrate data to target host {{target_host
 The actions you can take are FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
 
 The rules of the game are:
-1. You can only scan networks that you know.
-2. You can only find services in hosts that you know.
+1. You can scan networks that you know.
+2. You can find services in hosts that you know.
 3. You can exploit services that you know.
 4. You can find data in hosts you control.
 5. You can exfiltrate data that you know to and from hosts you control.
@@ -112,12 +112,14 @@ def create_status_from_state(state, memory_list):
     known_hosts = [host.ip for host in state.known_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
-    prompt = "Current status:\n"
+    prompt = "Memories:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
-            prompt += f'You have taken action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} in the past. {memory[2]}\n'
+            prompt += f'You have taken action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} in the past and {memory[2]}\n'
     else:
         prompt += ""
+
+    prompt += "Current status:\n"
     prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
     logging.info("Controlled hosts are %s", ' and '.join(contr_hosts))
 
@@ -313,7 +315,7 @@ if __name__ == "__main__":
                 {"role": "user", "content": status_prompt},
                 {"role": "user", "content": "Action: "}
             ]
-
+        print(status_prompt)
         response = openai_query(messages)
         logging.info(f"Action from LLM: {response}")
 
@@ -336,15 +338,15 @@ if __name__ == "__main__":
 
         try:
             if not is_valid:
-                memories.append((response["action"], response["parameters"], "This action was not valid based on your status."))
+                memories.append((response["action"], response["parameters"], "it was not valid based on your status."))
             else:
                 # This is based on the assumption that more valid actions in the state are better/more helpful.
                 # But we could a manual evaluation based on the prior knowledge and weight the different components.
                 # For example: finding new data is better than discovering hosts (?)
                 if good_action:
-                    memories.append((response["action"], response["parameters"], "This action was helpful."))
+                    memories.append((response["action"], response["parameters"], "it was helpful."))
                 else:
-                    memories.append((response["action"], response["parameters"], "This action was not helpful."))
+                    memories.append((response["action"], response["parameters"], "it was not helpful."))
         except TypeError:
             # if the LLM sends a response that is not properly formatted.
             memories.append(f"Response '{response}' was badly formatted.")
