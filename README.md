@@ -166,16 +166,16 @@ The game environment has a function called ```get_valid_actions(state)```, which
 
 ## State of the game
 The state of the game is an object with the following parts:
-* `known_networks` (list of networks known to the attacker)
-* `known_hosts` (list of hosts known to the attacker)
-* `controlled_hosts` (list of hosts controlled by the attacker)
+* `known_networks` (set of networks known to the attacker)
+* `known_hosts` (set of hosts known to the attacker)
+* `controlled_hosts` (set of hosts controlled by the attacker)
 * `known_services` (dict of host:service pairs. A service is a port)
-* `known_data` (dict of host:path pairs. path is where data was found)
+* `known_data` (dict of host:path pairs. path is where the data was found)
 
 An observation is the object received by an agent that has its view of the state, the reward, if the game ended and information about the observation.
 
 ## Defining starting position of the attacker
-The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts` so there is no need to include these in both lists. `known_networks` is also extended with a list of **all** networks accessible from the `controlled_hosts`.
+The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts` so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`.
 
 ## Defining defender position
 The defender can be present in the network or not. In case you defined in the configuration of the game that the defender is present (see below), then the detection probabilities of each actions are taken into account. If the defender is not present, then there is no detection and the game can only end in two ways: timeout or the goal of the attacker was acchieved.
@@ -195,7 +195,7 @@ goal = {
     "known_hosts":set(),
     "controlled_hosts":set(),
     "known_services":{},
-    "known_data":{"213.47.23.195":{("User1", "DataFromServer1")}}
+    "known_data":{IP("213.47.23.195"):{Data("User1", "DataFromServer1")}}
        }
 ```
 Empty set() mean that any value is ok. So it doesn't matter which networks are known, or hosts known or host controlled, or known servi ces. Only that the known data "DataFromServer1" is *successfully* exfiltrated to IP 213.47.23.195 using user "User1".
@@ -206,7 +206,7 @@ The start position of the attacker is defined in a dictionary. For example:
 attacker_start = {
     "known_networks":set(),
     "known_hosts":set(),
-    "controlled_hosts":{"213.47.23.195","192.168.2.2"},
+    "controlled_hosts":{IP("213.47.23.195"), IP("192.168.2.2")},
     "known_services":{},
     "known_data":{}
 }
