@@ -142,3 +142,4 @@ ai-dojo-venv-sebas/
 
 # ignore swap files
 *.swp
+.vscode/launch.json
