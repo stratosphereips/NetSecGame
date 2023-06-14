@@ -8,13 +8,10 @@ from os import path
 # This is used so the agent can see the environment and game components
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
-#with the path fixed, we can import now
 from env.network_security_game import Network_Security_Environment
-from env.scenarios import scenario_configuration
-from env.scenarios import smaller_scenario_configuration
-from env.scenarios import tiny_scenario_configuration
 from env.game_components import Network, IP, Data
 from env.game_components import ActionType, Action, GameState, Observation
+
 class InteractiveAgent:
     """
     Author: Ondrej Lukas, ondrej.lukas@aic.cvut.cz
@@ -175,23 +172,18 @@ def main() -> None:
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
     parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action='store_true')
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.conf'), action='store', required=False)
     args = parser.parse_args()
 
     logging.basicConfig(filename='interactive_agent.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S', level=logging.CRITICAL)
     logger = logging.getLogger('Interactive-agent')
     random.seed(args.seed)
 
-    env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
-    if args.scenario == "scenario1":
-        cyst_config = scenario_configuration.configuration_objects
-    elif args.scenario == "scenario1_small":
-        cyst_config = smaller_scenario_configuration.configuration_objects
-    elif args.scenario == "scenario1_tiny":
-        cyst_config = tiny_scenario_configuration.configuration_objects
-    else:
-        print("unknown scenario")
-        sys.exit(1)
 
+    # Create the env
+    env = Network_Security_Environment(args.task_config_file)
+
+    """
     # define attacker goal and initial location
     if args.random_start:
         goal = {
@@ -227,6 +219,8 @@ def main() -> None:
 
     # Create agent
     observation = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
+    """
+
     logger.info('Creating the agent')
     agent = InteractiveAgent(env)
 
