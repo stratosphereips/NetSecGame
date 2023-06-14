@@ -1,5 +1,5 @@
 # Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
-#           Arti       
+#           Arti
 #           Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
 import sys
 from os import path
@@ -33,18 +33,18 @@ class QAgent:
     def __init__(self, env, alpha=0.1, gamma=0.6, epsilon=0.1):
         self.env = env
         self.alpha = alpha
-        self.gamma = gamma 
+        self.gamma = gamma
         self.epsilon = epsilon
         self.q_values = {}
 
     def store_q_table(self,filename):
         with open(filename, "wb") as f:
             pickle.dump(self.q_values, f)
-    
+
     def load_q_table(self,filename):
         with open(filename, "rb") as f:
             self.q_values = pickle.load(f)
-    
+
     def get_valid_actions(self, state) -> list:
         """
         Given a state, choose the valid actions
@@ -64,7 +64,7 @@ class QAgent:
         # Data Scans
         for host in state.controlled_hosts:
             valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
-        
+
         # Data Exfiltration
         for src_host, data_list in state.known_data.items():
             for data in data_list:
@@ -72,7 +72,7 @@ class QAgent:
                     if trg_host != src_host:
                         valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
         return list(valid_actions)
-    
+
     def move(self, observation:Observation, testing=False) -> Action:
         state = observation.state
         actions = self.get_valid_actions(state)
@@ -90,19 +90,19 @@ class QAgent:
             if max_q_key not in self.q_values:
                 self.q_values[max_q_key] = 0
             return max_q_key[1]
-    
+
     def max_action_q(self, observation:Observation) -> Action:
         state = observation.state
         actions = self.get_valid_actions(state)
         state = '1'
         tmp = dict(((state,a), self.q_values.get((state,a), 0)) for a in actions)
         return tmp[max(tmp,key=tmp.get)] #return maximum Q_value for a given state (out of available actions)
-    
+
     def play(self, observation:Observation, testing=False) -> tuple:
         """
         Play a complete episode from beginning to end
 
-        1. Get next action 
+        1. Get next action
         2. Step and get next state
         3. Get max action of next state
         4. Update q table
@@ -114,7 +114,7 @@ class QAgent:
             # Select action
             action = self.move(observation, testing)
             # Get next state of the environment
-            next_observation = self.env.step(action)           
+            next_observation = self.env.step(action)
 
             # Find max Q-Value for next state
             if next_observation.done:
@@ -124,16 +124,16 @@ class QAgent:
 
             # Update q values
             state = observation.state
-            
+
             raise Exception(" This is broken dont use!")
-            
+
             state = '1'
             new_Q = self.q_values[state, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[state, action])
             self.q_values[state, action] = new_Q
             # This is broken dont use!
             state = observation.state
 
-            
+
             rewards += next_observation.reward
 
             # Move to next observation
@@ -197,7 +197,7 @@ if __name__ == '__main__':
     run_name = f"netsecgame__qlearning__{args.seed}__{int(time.time())}"
     writer = SummaryWriter(f"agents/tensorboard-logs/logs/{run_name}")
     writer.add_text(
-        "hypherparameters", 
+        "hypherparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
     )
 
@@ -248,8 +248,8 @@ if __name__ == '__main__':
             "known_services":{},
             "known_data":{}
         }
-    
-    
+
+
     # Training
     logger.info(f'Initializing the environment')
     observation = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, agent_seed=args.seed, cyst_config=cyst_config)
@@ -261,10 +261,10 @@ if __name__ == '__main__':
         agent.load_q_table(args.filename)
     except FileNotFoundError:
         logger.info(f"No previous qtable file found to load, starting with an emptly zeroed qtable")
-    
+
     # If we are not evaluating the model
     if not args.test:
-        # Run for some episodes 
+        # Run for some episodes
         logger.info(f'Starting the training')
         for i in range(1, args.episodes + 1):
             # Reset
@@ -277,7 +277,7 @@ if __name__ == '__main__':
                 wins = 0
                 detected = 0
                 returns = []
-                num_steps = [] 
+                num_steps = []
                 num_win_steps = []
                 num_detected_steps = []
                 for j in range(args.eval_for):
@@ -303,13 +303,13 @@ if __name__ == '__main__':
                 eval_average_detected_steps = np.mean(num_detected_steps)
                 eval_std_detected_steps = np.std(num_detected_steps)
 
-                text = f'''Evaluated after {i} episodes, for {args.eval_for} episodes. 
-                    Wins={wins}, 
-                    Detections={detected}, 
-                    winrate={eval_win_rate:.3f}%, 
-                    detection_rate={eval_detection_rate:.3f}%, 
-                    average_returns={eval_average_returns:.3f} +- {eval_std_returns:.3f}, 
-                    average_episode_steps={eval_average_episode_steps:.3f} +- {eval_std_episode_steps:.3f}, 
+                text = f'''Evaluated after {i} episodes, for {args.eval_for} episodes.
+                    Wins={wins},
+                    Detections={detected},
+                    winrate={eval_win_rate:.3f}%,
+                    detection_rate={eval_detection_rate:.3f}%,
+                    average_returns={eval_average_returns:.3f} +- {eval_std_returns:.3f},
+                    average_episode_steps={eval_average_episode_steps:.3f} +- {eval_std_episode_steps:.3f},
                     average_win_steps={eval_average_win_steps:.3f} +- {eval_std_win_steps:.3f},
                     average_detected_steps={eval_average_detected_steps:.3f} +- {eval_std_detected_steps:.3f}
                     '''
@@ -335,7 +335,7 @@ if __name__ == '__main__':
     detected = 0
     returns = []
     num_steps = []
-    num_win_steps = []  
+    num_win_steps = []
     num_detected_steps = []
     for i in range(args.test_for + 1):
         observation = env.reset()
@@ -348,7 +348,7 @@ if __name__ == '__main__':
             num_detected_steps += [steps]
         returns += [ret]
         num_steps += [steps]
-  
+
         test_win_rate = (wins/(args.test_for+1))*100
         test_detection_rate = (detected/(args.test_for+1))*100
         test_average_returns = np.mean(returns)
@@ -363,13 +363,13 @@ if __name__ == '__main__':
 
         # Print and report every 100 test episodes
         if i % 100 == 0 and i != 0:
-            text = f'''Test results after {i} episodes. 
-                Wins={wins}, 
-                Detections={detected}, 
-                winrate={test_win_rate:.3f}%, 
-                detection_rate={test_detection_rate:.3f}%, 
-                average_returns={test_average_returns:.3f} +- {test_std_returns:.3f}, 
-                average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f}, 
+            text = f'''Test results after {i} episodes.
+                Wins={wins},
+                Detections={detected},
+                winrate={test_win_rate:.3f}%,
+                detection_rate={test_detection_rate:.3f}%,
+                average_returns={test_average_returns:.3f} +- {test_std_returns:.3f},
+                average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f},
                 average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
                 average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
                 '''
@@ -390,13 +390,13 @@ if __name__ == '__main__':
         writer.add_scalar("charts/test_std_detected_steps", test_std_detected_steps , i)
 
 
-    text = f'''Final test after {i} episodes 
-        Wins={wins}, 
-        Detections={detected}, 
-        winrate={test_win_rate:.3f}%, 
-        detection_rate={test_detection_rate:.3f}%, 
-        average_returns={test_average_returns:.3f} +- {test_std_returns:.3f}, 
-        average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f}, 
+    text = f'''Final test after {i} episodes
+        Wins={wins},
+        Detections={detected},
+        winrate={test_win_rate:.3f}%,
+        detection_rate={test_detection_rate:.3f}%,
+        average_returns={test_average_returns:.3f} +- {test_std_returns:.3f},
+        average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f},
         average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
         average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
         '''
