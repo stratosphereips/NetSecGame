@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
     # Create agent
     logger.info(f'Initializing the environment')
-    observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
+    observation = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
     logger.info(f'Creating the agent')
     agent = RandomAgent(env)
 
