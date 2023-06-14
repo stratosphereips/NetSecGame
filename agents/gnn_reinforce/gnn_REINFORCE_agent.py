@@ -152,12 +152,6 @@ class GNN_REINFORCE_Agent:
             cce = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
             loss = cce(labels, logits, sample_weight=weights)
         grads = tape.gradient(loss, self._model.trainable_weights)
-        tf.summary.experimental.set_step(self._model.optimizer.iterations)
-        with self._tf_writer.as_default():
-                for index, grad in enumerate(grads):
-                    tf.summary.histogram("{}-grad".format(index), grad[index])
-                tf.summary.scalar('train/CCE_actor',loss, step=self._model.optimizer.iterations)
-                tf.summary.scalar('train/avg_weights_actor',np.mean(weights), step=self._model.optimizer.iterations)
         #grads, _ = tf.clip_by_global_norm(grads, 5.0)
         self._model.optimizer.apply_gradients(zip(grads, self._model.trainable_weights))
 
