@@ -154,7 +154,10 @@ class TestActionsNoDefender:
         assert obs.done is False
 
     def test_find_data_no_access(self, env_obs_exploited_service):
-        """No access to the host"""
+        """
+        No access to the host
+        Exploited service is 192.168.1.3
+        """
         env, observation = env_obs_exploited_service
         parameters = {"target_host":components.IP('192.168.1.4')}
         action = components.Action(components.ActionType.FindData, parameters)
@@ -220,6 +223,22 @@ class TestActionsNoDefender:
         """Try to exfiltrate data to a host we don't control"""
         env, observation = env_obs_found_data
         parameters = {"target_host":components.IP('192.168.2.5'), "data":components.Data("User1", "DatabaseData"), "source_host":components.IP("192.168.1.4")}
+        action = components.Action(components.ActionType.ExfiltrateData, parameters)
+        obs = env.step(action)
+        assert obs.state == observation.state
+        assert obs.reward == -1
+        assert obs.done is False
+
+    def test_exfiltrate_data_not_found(self, env_obs_exploited_service):
+        """
+        Try to exfiltrate data that was not found before. 
+        Data is winning data, but it should not matter
+        Source host is the correct host that has this data.
+        Target host is correct CC host
+        Test should fail.
+        """
+        env, observation = env_obs_exploited_service
+        parameters = {"target_host":components.IP('213.47.23.195'), "data":components.Data("User1", "DatabaseData"), "source_host":components.IP("192.168.1.3")}
         action = components.Action(components.ActionType.ExfiltrateData, parameters)
         obs = env.step(action)
         assert obs.state == observation.state
