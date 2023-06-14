@@ -12,7 +12,7 @@ from scenarios import scenario_configuration, smaller_scenario_configuration, ti
 
 import tensorflow_gnn as tfgnn
 import tensorflow as tf
-import tensorflow_probability as tfp
+#import tensorflow_probability as tfp
 
 tf.get_logger().setLevel('ERROR')
 
