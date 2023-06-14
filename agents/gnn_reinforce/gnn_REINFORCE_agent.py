@@ -3,9 +3,7 @@ import numpy as np
 import argparse
 import logging
 import time
-import tensorflow_gnn as tfgnn
-import tensorflow as tf
-from tensorflow_gnn.models.gcn import gcn_conv
+
 from random import choice, seed, choices
 from timeit import default_timer as timer
 
@@ -19,7 +17,13 @@ from env.network_security_game import Network_Security_Environment
 from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
 import env.game_components as components
 
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+import tensorflow_gnn as tfgnn
+import tensorflow as tf
+from tensorflow_gnn.models.gcn import gcn_conv
 tf.get_logger().setLevel('ERROR')
 
 class GNN_REINFORCE_Agent:
@@ -283,23 +287,23 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     #env arguments
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=20, type=int)
+    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=30, type=int)
     parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
-    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_tiny", type=str)
+    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=3000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=5000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
+    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-4)
 
     #training arguments
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=200, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
-    parser.add_argument("--final_eval_for", help="Sets evaluation length", default=100, type=int )
+    parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
     args = parser.parse_args()
     args.filename = "GNN_Reinforce_Agent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
