@@ -9,7 +9,6 @@ import tensorflow_gnn as tfgnn
 import tensorflow as tf
 from tensorflow_gnn.models.gcn import gcn_conv
 from random import choice, seed, choices
-from timeit import default_timer as timer
 
 # This is used so the agent can see the environment and game components
 from os import path

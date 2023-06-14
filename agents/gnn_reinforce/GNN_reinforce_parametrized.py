@@ -6,7 +6,6 @@ from game_components import *
 import numpy as np
 from random import random
 import argparse
-from timeit import default_timer as timer
 import logging
 #from torch.utils.tensorboard import SummaryWriter
 from scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
