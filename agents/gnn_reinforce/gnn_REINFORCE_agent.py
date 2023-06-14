@@ -154,6 +154,9 @@ class GNN_REINFORCE_Agent:
         grads = tape.gradient(loss, self._model.trainable_weights)
         #grads, _ = tf.clip_by_global_norm(grads, 5.0)
         self._model.optimizer.apply_gradients(zip(grads, self._model.trainable_weights))
+        with self._tf_writer.as_default():
+                tf.summary.scalar('train/CCE_actor',loss, step=self._model.optimizer.iterations)
+                tf.summary.scalar('train/avg_weights_actor',np.mean(weights), step=self._model.optimizer.iterations)
 
     def _make_training_step_baseline(self, inputs, rewards)->None:
         #perform training step
@@ -334,7 +337,8 @@ if __name__ == '__main__':
             "known_hosts":set(),
             "controlled_hosts":{components.IP("192.168.1.2")},
             "known_services":{},
-            "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
+            #"known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
+            "known_data":{}
         }
 
         attacker_start = {
