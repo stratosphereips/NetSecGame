@@ -132,13 +132,22 @@ Currently the implemented agents are:
 6. If you want to exfiltrate data to an external IP, that IP must be in the 'controlled_hosts' part of the configuration. Or the agent will not controll that IP.
 
 ## Actions for the Attacker
-| Action name          | Description                                                              | Preconditions                         | Effects                                          |
+| Action name          | Description                                                              | Parameters                         | Effects                                          |
 |----------------------|--------------------------------------------------------------------------|---------------------------------------|--------------------------------------------------|
-| ScanNetwork          | Scans the given network for active hosts | network + mask                        | extends 'known_hosts'                            |
-| FindServices         | Scans given host for running services                                    | host IP                               | extends 'known_services' with host:service pairs |
-| ExploitService | Runs exploit in service to gain control                                  | host:service pair                     | extends 'controlled_hosts'                       |
-| Find Data            | Runs code to discover data either in given service or in controlled host | host:service pair  OR controlled host | extends 'known_data' with host:data pairs        |
-| Exfiltrate data      | Runds code to move data from host to host                                | host:data pair + known_host (target)  | extends 'known_data with "target:data" pair      |
+| Scan Network          | Scans the given network for active hosts | network, mask                        | extends 'known_hosts'                            |
+| Find Services         | Scans given host for running services                                    | target IP                               | extends 'known_services' with host:service pairs |
+| Exploit Service | Runs exploit in service to gain control                                  | target IP, target service                     | extends 'controlled_hosts'                       |
+| Find Data            | Runs code to discover data either in given service or in controlled host | target IP, target service | extends 'known_data' with host:data pairs        |
+| Exfiltrate data      | Runds code to move data from host to host                                | source IP, data, target IP  | extends 'known_data with "target:data" pair      |
+
+### Conditions on the actions
+For each action to succed there are some conditions that must be fulfilled:
+- Scan Network: The target network should be in the list of known networks by the agent.
+- Find Services: The target IP should be in the list of known hosts.
+- Exploit Service: The target IP should be in the list of known hosts. The service should be in the list of known services.
+- Find Data: The target IP should be in the list of known hosts and in the list of controlled hosts. The service should be in the list of known services. 
+- Exfiltrate Data: The source IP should be in the list of known hosts and in the list of controlled hosts. The target IP should be in the list of known hosts and in the list of controlled hosts. The data should be in the list of known data. 
+
 
 ## Actions for the defender
 In this version of the game the defender does not have actions and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks the admins have tools that consume logs from all computers at the same time and they can detect actions from a central position (such as a SIEM). The defender has, however, probabilities to detect or not each action, which are defined in the file `game_components.py`.
