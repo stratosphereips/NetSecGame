@@ -145,7 +145,6 @@ class GNN_REINFORCE_Agent:
 
     #@tf.function
     def _make_training_step_actor(self, inputs, labels, weights)->None:
-        #print("Updating actor model")
         #perform training step
         with tf.GradientTape() as tape:
             logits = self.predict(inputs, training=True)
@@ -166,7 +165,6 @@ class GNN_REINFORCE_Agent:
         grads = tape.gradient(loss, self._baseline.trainable_weights)
         with self._tf_writer.as_default():
             tf.summary.scalar('train/MSE_baseline',loss, step=self._baseline.optimizer.iterations)
-        #grads, _ = tf.clip_by_global_norm(grads, 5.0)
         self._baseline.optimizer.apply_gradients(zip(grads, self._baseline.trainable_weights))
 
     def _preprocess_inputs(self, replay_buffer):
@@ -181,47 +179,38 @@ class GNN_REINFORCE_Agent:
     #@profile
     def train(self):
         for episode in range(self.args.episodes):
-            #collect data
-            #batch_states, batch_actions, batch_returns = [], [], []
-            #while len(batch_states) < args.batch_size:
-            #    #perform episode
-            #    states, actions, rewards = [], [], []
-            #    state, done = env.reset().state, False
             states, actions, rewards = [], [], []
             state, done = env.reset().state, False
-            while not done:
-                state_node_f,controlled, state_edges,_ = state.as_graph
-                state_g = self._create_graph_tensor(state_node_f, controlled, state_edges)
-                #predict action probabilities
-                probabilities = self.predict(state_g)
-                #print(probabilities)
-                assert not np.isnan(np.sum(probabilities))
-                probabilities = tf.squeeze(probabilities)
-                
-                action = choices([x for x in range(len(self._transition_mapping))], weights=probabilities, k=1)[0]
-                #select action and perform it
-                next_state = self.env.step(self._transition_mapping[action])
+            self._replay_buffer.clear()
+            while len(self._replay_buffer) < self.args.batch_size:
+                while not done:
+                    state_node_f,controlled, state_edges,_ = state.as_graph
+                    state_g = self._create_graph_tensor(state_node_f, controlled, state_edges)
+                    #predict action probabilities
+                    probabilities = self.predict(state_g)
+                    
+                    assert not np.isnan(np.sum(probabilities))
+                    probabilities = tf.squeeze(probabilities)
+                    
+                    action = choices([x for x in range(len(self._transition_mapping))], weights=probabilities, k=1)[0]
+                    #select action and perform it
+                    next_state = self.env.step(self._transition_mapping[action])
 
+                    states.append(state_g)
+                    actions.append(action)
+                    rewards.append(next_state.reward)
 
-                #print(self._transition_mapping[action])
-                states.append(state_g)
-                actions.append(action)
-                rewards.append(next_state.reward)
+                    #move to the next state
+                    state = next_state.state
+                    done = next_state.done
 
-                #move to the next state
-                state = next_state.state
-                done = next_state.done
-
-            discounted_returns = self._get_discounted_rewards(rewards)
-            for step in zip(states, actions, discounted_returns):
-                self._replay_buffer.append(step)
-            # batch_states += states
-            # batch_actions += actions
-            # batch_returns += discounted_returns         
+                discounted_returns = self._get_discounted_rewards(rewards)
+                for step in zip(states, actions, discounted_returns):
+                    self._replay_buffer.append(step)   
 
             # # prepare batch data
             if len(self._replay_buffer) >= self.args.batch_size:
-                batch = np.random.choice(len(self._replay_buffer), size=self.args.batch_size, replace=False)
+                batch = np.random.choice(len(self._replay_buffer), size=len(self._replay_buffer), replace=False)
                 batch_states, batch_actions, updated_batch_returns = zip(*[self._replay_buffer[i] for i in batch])
                 batch_returns = np.array(updated_batch_returns)
                 scalar_graph_tensor = self._build_batch_graph(batch_states)
@@ -276,16 +265,16 @@ if __name__ == '__main__':
     #env arguments
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=30, type=int)
     parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
-    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
+    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_tiny", type=str)
     parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=50000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=10000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
-    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=48)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-4)
+    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
+    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=5e-4)
     parser.add_argument("--buffer_size", help="Capacity of replay buffer", type=float, default=5000)
 
     #training arguments
@@ -335,10 +324,9 @@ if __name__ == '__main__':
         goal = {
             "known_networks":set(),
             "known_hosts":set(),
-            "controlled_hosts":{components.IP("192.168.1.2")},
+            "controlled_hosts":set(),
             "known_services":{},
-            #"known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
-            "known_data":{}
+            "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
         }
 
         attacker_start = {
