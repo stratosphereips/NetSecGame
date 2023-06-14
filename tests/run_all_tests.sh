@@ -4,3 +4,5 @@
 # -s to see print statements as they are executed
 
 python3  -m pytest tests/test_actions.py -p no:warnings -vvvv -s --full-trace
+python3  -m pytest tests/test_components.py -p no:warnings -vvvv -s --full-trace
+
