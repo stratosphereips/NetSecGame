@@ -127,9 +127,12 @@ Currently the implemented agents are:
 ## Assumptions of the NetSecGame
 1. We work with the closed-world assumption. Only the defined entities exist in the simulation.
 2. No actions have a "delete" effect (the attacker does not give up ownership of nodes, does not forget nodes or services, and when data is transfered we assume its copied and therefore present in both nodes).
-4. The `Find Data` action finds all the available data in the host if successful.
-5. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty and the game ends.
-6. If you want to exfiltrate data to an external IP, that IP must be in the 'controlled_hosts' part of the configuration. Or the agent will not controll that IP.
+3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty and the game ends.
+4. If you want to exfiltrate data to an external IP, that IP must be in the 'controlled_hosts' part of the configuration. Or the agent will not controll that IP.
+
+### Assumption for actions
+1. When playing `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` prior to this action)
+2. The `Find Data` action finds all the available data in the host if successful.
 
 ## Actions for the Attacker
 | Action name          | Description                                                              | Parameters                         | Effects                                          |
