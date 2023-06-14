@@ -107,7 +107,47 @@ class Network_Security_Environment(object):
                         actions.add(components.Action(components.ActionType.ExploitService, {"target_host":ip, "target_service":service}))
         return {k:v for k,v in enumerate(actions)}
 
-    def initialize(self, win_conditons:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, agent_seed=42, cyst_config=None)-> components.Observation:
+    def validate_win_conditions(self, input_win_conditions: dict) -> bool:
+        try:
+            # validate networks
+            assert isinstance(input_win_conditions["known_networks"], set)
+            for net in input_win_conditions["known_networks"]:
+                assert isinstance(net, components.Network)
+            # validate known_host
+            assert isinstance(input_win_conditions["known_hosts"], set)
+            for host in input_win_conditions["known_hosts"]:
+                assert isinstance(host, components.IP)
+            
+            # validate controlled hosts (can be 'random')
+            assert isinstance(input_win_conditions["controlled_hosts"], set) or input_win_conditions["controlled_hosts"] == "random"
+            if input_win_conditions["controlled_hosts"] != "random":
+                for host in input_win_conditions["controlled_hosts"]:
+                        assert isinstance(host, components.IP)
+            
+            #validate known services
+            assert isinstance(input_win_conditions["known_services"], dict)
+            for host, service_set in input_win_conditions["known_services"].items():
+                assert isinstance(host, components.IP)
+                assert isinstance(service_set, set)
+                for service in service_set:
+                    assert isinstance(service, components.Service)
+            
+            #validate known data 
+            assert isinstance(input_win_conditions["known_data"], dict)
+            for host, data_set in input_win_conditions["known_data"].items():
+                assert isinstance(host, components.IP)
+                assert isinstance(data_set, set) or data_set == "random"
+                for data in data_set:
+                    if data_set != "random":
+                        assert isinstance(data, components.Data)
+                
+            return True
+        except AssertionError as error:
+            logger.error(f"Incorrect format of the 'win_conditions!' {error}")
+            return False
+
+    
+    def initialize(self, win_conditions:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, agent_seed=42, cyst_config=None)-> components.Observation:
         """
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
@@ -123,8 +163,12 @@ class Network_Security_Environment(object):
 
         self._place_defences(defender_positions)
 
-        # check if win condition
-        self._win_conditions = win_conditons
+        # Make a copy of the win_conditions and
+        if self.validate_win_conditions(win_conditions):
+            self._win_conditions = copy.deepcopy(win_conditions)
+        else:
+            raise ValueError("Incorrect format of the 'win_conditions'!")
+
 
         # Set the seed if passed by the agent
         if agent_seed:
@@ -141,7 +185,7 @@ class Network_Security_Environment(object):
             logger.info(f"Checking if we need to set the data to win in a random location.")
             # For each known data point in the conditions to win
 
-            for key, value in win_conditons["known_data"].items():
+            for key, value in win_conditions["known_data"].items():
                 # Was the position defined as random?
                 if isinstance(value, str) and value.lower() == "random":
                     logger.info(f"\tData was requested to be put in a random location.")
@@ -466,17 +510,19 @@ class Network_Security_Environment(object):
                 logger.info(f"\t\t\tValid host")
                 if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
                     if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
-                        logger.info(f"\t\t\tValid service")
-                        if action.parameters["target_host"] not in next_controlled_hosts:
-                            next_controlled_hosts.add(action.parameters["target_host"])
-                            logger.info(f"\t\tAdding to controlled_hosts")
-                        if action.parameters["target_host"] not in next_known_hosts:
-                            next_known_hosts.add(action.parameters["target_host"])
-                            logger.info(f"\t\tAdding to known_hosts")
-
-                        new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                        logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
-                        next_known_networks = next_known_networks.union(new_networks)
+                        if action.parameters["target_host"] in next_known_services: #does the agent know about any services this host have?
+                            if action.parameters["target_service"] in next_known_services[action.parameters["target_host"]]:
+                                logger.info(f"\t\t\tValid service")
+                                if action.parameters["target_host"] not in next_controlled_hosts:
+                                    next_controlled_hosts.add(action.parameters["target_host"])
+                                    logger.info(f"\t\tAdding to controlled_hosts")
+                                new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                                logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
+                                next_known_networks = next_known_networks.union(new_networks)
+                            else:
+                                logger.info(f"\t\t\tCan not exploit. Agent does not know about target host selected service")
+                        else:
+                            logger.info(f"\t\t\tCan not exploit. Agent does not know about target host having any service")
                     else:
                         logger.info(f"\t\t\tCan not exploit. Target host does not the service that was attempted.")
                 else:
@@ -485,32 +531,41 @@ class Network_Security_Environment(object):
                 logger.info(f"\t\t\tCan not exploit. Target host does not exist.")
         elif action.type == components.ActionType.ExfiltrateData:
             logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
+            # Is the target host controlled?
             if action.parameters["target_host"] in current.controlled_hosts:
                 logger.info(f"\t\t\t {action.parameters['target_host']} is under-control: {current.controlled_hosts}")
+                # Is the source host controlled?
                 if action.parameters["source_host"] in current.controlled_hosts:
                     logger.info(f"\t\t\t {action.parameters['source_host']} is under-control: {current.controlled_hosts}")
-                    if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
-                        if action.parameters["data"] in self._data[self._ip_to_hostname[action.parameters["source_host"]]]:
-                            logger.info(f"\t\t\t Data present in the source_host")
-                            if action.parameters["target_host"] not in next_known_data.keys():
-                                next_known_data[action.parameters["target_host"]] = {action.parameters["data"]}
+                    # Is the source host in the list of hosts we know data from? (this is to avoid the keyerror later in the if)
+                    # Does the current state for THIS source already know about this data?
+                    if action.parameters['source_host'] in current.known_data.keys() and action.parameters["data"] in current.known_data[action.parameters["source_host"]]:
+                        # Does the source host have any data?
+                        if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
+                            # Does the source host have this data?
+                            if action.parameters["data"] in self._data[self._ip_to_hostname[action.parameters["source_host"]]]:
+                                logger.info(f"\t\t\t Data present in the source_host")
+                                if action.parameters["target_host"] not in next_known_data.keys():
+                                    next_known_data[action.parameters["target_host"]] = {action.parameters["data"]}
+                                else:
+                                    next_known_data[action.parameters["target_host"]].add(action.parameters["data"])
+                                # If the data was exfiltrated to a new host, remember the data in the new nost in the env
+                                if self._ip_to_hostname[action.parameters["target_host"]] not in self._data.keys():
+                                    self._data[self._ip_to_hostname[action.parameters["target_host"]]] = {action.parameters["data"]}
+                                else:
+                                    self._data[self._ip_to_hostname[action.parameters["target_host"]]].add(action.parameters["data"])
                             else:
-                                next_known_data[action.parameters["target_host"]].add(action.parameters["data"])
-                            # If the data was exfiltrated to a new host, remember the data in the new nost in the env
-                            if self._ip_to_hostname[action.parameters["target_host"]] not in self._data.keys():
-                                self._data[self._ip_to_hostname[action.parameters["target_host"]]] = {action.parameters["data"]}
-                            else:
-                                self._data[self._ip_to_hostname[action.parameters["target_host"]]].add(action.parameters["data"])
+                                logger.info(f"\t\t\tCan not exfiltrate. Source host does not have this data.")
                         else:
-                            logger.info(f"\t\t\tCan not exfiltrate. Source host does not have this data.")
+                            logger.info(f"\t\t\tCan not exfiltrate. Source host does not have any data.")
                     else:
-                        logger.info(f"\t\t\tCan not exfiltrate. Source host does not have any data.")
+                        logger.info(f"\t\t\tCan not exfiltrate. Agent did not find this data yet.")
                 else:
                     logger.info(f"\t\t\tCan not exfiltrate. Source host is not controlled.")
             else:
                 logger.info(f"\t\t\tCan not exfiltrate. Target host is not controlled.")
         else:
-            raise ValueError(f"Unknown Action type: '{action.type}'")
+            raise ValueError(f"Unknown Action type or other error: '{action.type}'")
 
         return components.GameState(next_controlled_hosts, next_known_hosts, next_known_services, next_known_data, next_known_networks)
 

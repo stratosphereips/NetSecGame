@@ -362,7 +362,7 @@ if __name__ == '__main__':
 
     # Training
     logger.info(f'Initializing the environment')
-    state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
+    state = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
     logger.info(f'Creating the agent')
     
     # #initialize agent

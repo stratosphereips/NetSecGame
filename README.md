@@ -127,18 +127,30 @@ Currently the implemented agents are:
 ## Assumptions of the NetSecGame
 1. We work with the closed-world assumption. Only the defined entities exist in the simulation.
 2. No actions have a "delete" effect (the attacker does not give up ownership of nodes, does not forget nodes or services, and when data is transfered we assume its copied and therefore present in both nodes).
-4. The `Find Data` action finds all the available data in the host if successful.
-5. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty and the game ends.
-6. If you want to exfiltrate data to an external IP, that IP must be in the 'controlled_hosts' part of the configuration. Or the agent will not controll that IP.
+3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty and the game ends.
+4. If you want to exfiltrate data to an external IP, that IP must be in the 'controlled_hosts' part of the configuration. Or the agent will not controll that IP.
+
+### Assumption for actions
+1. When playing `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` prior to this action)
+2. The `Find Data` action finds all the available data in the host if successful.
 
 ## Actions for the Attacker
-| Action name          | Description                                                              | Preconditions                         | Effects                                          |
+| Action name          | Description                                                              | Parameters                         | Effects                                          |
 |----------------------|--------------------------------------------------------------------------|---------------------------------------|--------------------------------------------------|
-| ScanNetwork          | Scans the given network for active hosts | network + mask                        | extends 'known_hosts'                            |
-| FindServices         | Scans given host for running services                                    | host IP                               | extends 'known_services' with host:service pairs |
-| ExploitService | Runs exploit in service to gain control                                  | host:service pair                     | extends 'controlled_hosts'                       |
-| Find Data            | Runs code to discover data either in given service or in controlled host | host:service pair  OR controlled host | extends 'known_data' with host:data pairs        |
-| Exfiltrate data      | Runds code to move data from host to host                                | host:data pair + known_host (target)  | extends 'known_data with "target:data" pair      |
+| Scan Network          | Scans the given network for active hosts | network, mask                        | extends 'known_hosts'                            |
+| Find Services         | Scans given host for running services                                    | target IP                               | extends 'known_services' with host:service pairs |
+| Exploit Service | Runs exploit in service to gain control                                  | target IP, target service                     | extends 'controlled_hosts'                       |
+| Find Data            | Runs code to discover data either in given service or in controlled host | target IP, target service | extends 'known_data' with host:data pairs        |
+| Exfiltrate data      | Runds code to move data from host to host                                | source IP, data, target IP  | extends 'known_data with "target:data" pair      |
+
+### Conditions on the actions
+For each action to succed there are some conditions that must be fulfilled:
+- Scan Network: The target network should be in the list of known networks by the agent.
+- Find Services: The target IP should be in the list of known hosts.
+- Exploit Service: The target IP should be in the list of known hosts. The service should be in the list of known services.
+- Find Data: The target IP should be in the list of known hosts and in the list of controlled hosts. The service should be in the list of known services. 
+- Exfiltrate Data: The source IP should be in the list of known hosts and in the list of controlled hosts. The target IP should be in the list of known hosts and in the list of controlled hosts. The data should be in the list of known data. 
+
 
 ## Actions for the defender
 In this version of the game the defender does not have actions and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks the admins have tools that consume logs from all computers at the same time and they can detect actions from a central position (such as a SIEM). The defender has, however, probabilities to detect or not each action, which are defined in the file `game_components.py`.
@@ -172,7 +184,7 @@ The defender can be present in the network or not. In case you defined in the co
 Each agent must initialize the game environment with options. The function is:
 
 ```python
-state = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+state = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
 ```
 
 The `goal` is defined as a dictionary of conditions that must be met for the attacker to win. Example:

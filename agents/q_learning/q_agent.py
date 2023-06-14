@@ -253,7 +253,7 @@ if __name__ == '__main__':
     
     # Training
     logger.info(f'Initializing the environment')
-    observation = env.initialize(win_conditons=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, agent_seed=args.seed, cyst_config=cyst_config)
+    observation = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, agent_seed=args.seed, cyst_config=cyst_config)
     logger.info(f'Creating the agent')
     agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
     try:
