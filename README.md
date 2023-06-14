@@ -196,7 +196,7 @@ goal = {
     "controlled_hosts":set(),
     "known_services":{},
     "known_data":{IP("213.47.23.195"):{Data("User1", "DataFromServer1")}}
-       }
+}
 ```
 Empty set() mean that any value is ok. So it doesn't matter which networks are known, or hosts known or host controlled, or known servi ces. Only that the known data "DataFromServer1" is *successfully* exfiltrated to IP 213.47.23.195 using user "User1".
 
