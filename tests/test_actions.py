@@ -7,7 +7,7 @@ from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
 from env.network_security_game import Network_Security_Environment
 import env.game_components as components
-from env.scenarios import scenario_configuration
+from env.scenarios import test_scenario_configuration
 
 import pytest
 
@@ -33,7 +33,7 @@ START = {
 def env_obs():
     """After init step"""
     env = Network_Security_Environment(random_start=False, verbosity=0)
-    observation = env.initialize(win_conditions=GOAL, defender_positions=None, attacker_start_position=START, max_steps=500, agent_seed=42, cyst_config=scenario_configuration.configuration_objects)
+    observation = env.initialize(win_conditions=GOAL, defender_positions=None, attacker_start_position=START, max_steps=500, agent_seed=42, cyst_config=test_scenario_configuration.configuration_objects)
     return (env, observation)
 
 @pytest.fixture
