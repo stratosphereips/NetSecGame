@@ -485,32 +485,41 @@ class Network_Security_Environment(object):
                 logger.info(f"\t\t\tCan not exploit. Target host does not exist.")
         elif action.type == components.ActionType.ExfiltrateData:
             logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
+            # Is the target host controlled?
             if action.parameters["target_host"] in current.controlled_hosts:
                 logger.info(f"\t\t\t {action.parameters['target_host']} is under-control: {current.controlled_hosts}")
+                # Is the source host controlled?
                 if action.parameters["source_host"] in current.controlled_hosts:
                     logger.info(f"\t\t\t {action.parameters['source_host']} is under-control: {current.controlled_hosts}")
-                    if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
-                        if action.parameters["data"] in self._data[self._ip_to_hostname[action.parameters["source_host"]]]:
-                            logger.info(f"\t\t\t Data present in the source_host")
-                            if action.parameters["target_host"] not in next_known_data.keys():
-                                next_known_data[action.parameters["target_host"]] = {action.parameters["data"]}
+                    # Is the source host in the list of hosts we know data from? (this is to avoid the keyerror later in the if)
+                    # Does the current state for THIS source already know about this data?
+                    if action.parameters['source_host'] in current.known_data.keys() and action.parameters["data"] in current.known_data[action.parameters["source_host"]]:
+                        # Does the source host have any data?
+                        if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
+                            # Does the source host have this data?
+                            if action.parameters["data"] in self._data[self._ip_to_hostname[action.parameters["source_host"]]]:
+                                logger.info(f"\t\t\t Data present in the source_host")
+                                if action.parameters["target_host"] not in next_known_data.keys():
+                                    next_known_data[action.parameters["target_host"]] = {action.parameters["data"]}
+                                else:
+                                    next_known_data[action.parameters["target_host"]].add(action.parameters["data"])
+                                # If the data was exfiltrated to a new host, remember the data in the new nost in the env
+                                if self._ip_to_hostname[action.parameters["target_host"]] not in self._data.keys():
+                                    self._data[self._ip_to_hostname[action.parameters["target_host"]]] = {action.parameters["data"]}
+                                else:
+                                    self._data[self._ip_to_hostname[action.parameters["target_host"]]].add(action.parameters["data"])
                             else:
-                                next_known_data[action.parameters["target_host"]].add(action.parameters["data"])
-                            # If the data was exfiltrated to a new host, remember the data in the new nost in the env
-                            if self._ip_to_hostname[action.parameters["target_host"]] not in self._data.keys():
-                                self._data[self._ip_to_hostname[action.parameters["target_host"]]] = {action.parameters["data"]}
-                            else:
-                                self._data[self._ip_to_hostname[action.parameters["target_host"]]].add(action.parameters["data"])
+                                logger.info(f"\t\t\tCan not exfiltrate. Source host does not have this data.")
                         else:
-                            logger.info(f"\t\t\tCan not exfiltrate. Source host does not have this data.")
+                            logger.info(f"\t\t\tCan not exfiltrate. Source host does not have any data.")
                     else:
-                        logger.info(f"\t\t\tCan not exfiltrate. Source host does not have any data.")
+                        logger.info(f"\t\t\tCan not exfiltrate. Agent did not find this data yet.")
                 else:
                     logger.info(f"\t\t\tCan not exfiltrate. Source host is not controlled.")
             else:
                 logger.info(f"\t\t\tCan not exfiltrate. Target host is not controlled.")
         else:
-            raise ValueError(f"Unknown Action type: '{action.type}'")
+            raise ValueError(f"Unknown Action type or other error: '{action.type}'")
 
         return components.GameState(next_controlled_hosts, next_known_hosts, next_known_services, next_known_data, next_known_networks)
 
