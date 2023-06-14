@@ -466,17 +466,19 @@ class Network_Security_Environment(object):
                 logger.info(f"\t\t\tValid host")
                 if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
                     if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
-                        logger.info(f"\t\t\tValid service")
-                        if action.parameters["target_host"] not in next_controlled_hosts:
-                            next_controlled_hosts.add(action.parameters["target_host"])
-                            logger.info(f"\t\tAdding to controlled_hosts")
-                        if action.parameters["target_host"] not in next_known_hosts:
-                            next_known_hosts.add(action.parameters["target_host"])
-                            logger.info(f"\t\tAdding to known_hosts")
-
-                        new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                        logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
-                        next_known_networks = next_known_networks.union(new_networks)
+                        if action.parameters["target_host"] in next_known_services: #does the agent know about any services this host have?
+                            if action.parameters["target_service"] in next_known_services[action.parameters["target_host"]]:
+                                logger.info(f"\t\t\tValid service")
+                                if action.parameters["target_host"] not in next_controlled_hosts:
+                                    next_controlled_hosts.add(action.parameters["target_host"])
+                                    logger.info(f"\t\tAdding to controlled_hosts")
+                                new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                                logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
+                                next_known_networks = next_known_networks.union(new_networks)
+                            else:
+                                logger.info(f"\t\t\tCan not exploit. Agent does not know about target host selected service")
+                        else:
+                            logger.info(f"\t\t\tCan not exploit. Agent does not know about target host having any service")
                     else:
                         logger.info(f"\t\t\tCan not exploit. Target host does not the service that was attempted.")
                 else:

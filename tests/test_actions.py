@@ -225,3 +225,13 @@ class TestActionsNoDefender:
         assert obs.state == observation.state
         assert obs.reward == -1
         assert obs.done is False
+
+
+    def test_exploit_service_witout_find_service_in_host(self, env_obs_scan):
+        """Try to exploit service without running FindServices first"""
+        env, observation = env_obs_scan
+        parameters = {"target_host":components.IP('192.168.1.3'), "target_service":components.Service('postgresql', 'passive', '14.3.0', False)}
+        action = components.Action(components.ActionType.ExploitService, parameters)
+        obs = env.step(action)
+        assert obs.state == observation.state
+        assert components.IP('192.168.1.3') not in obs.state.known_services
