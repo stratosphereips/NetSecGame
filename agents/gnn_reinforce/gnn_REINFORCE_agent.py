@@ -3,6 +3,7 @@ import numpy as np
 import argparse
 import logging
 import time
+import collections
 
 from random import choice, seed, choices
 from timeit import default_timer as timer
@@ -37,6 +38,7 @@ class GNN_REINFORCE_Agent:
         self._transition_mapping = env.get_all_actions()
         graph_schema = tfgnn.read_schema("schema.pbtxt")
         self._example_input_spec = tfgnn.create_graph_spec_from_schema_pb(graph_schema)
+        self._replay_buffer = collections.deque(maxlen=args.buffer_size)
         run_name = f"netsecgame__GNN_Reinforce__{args.seed}__{int(time.time())}"
         self._tf_writer = tf.summary.create_file_writer("./logs/"+ run_name)
 
@@ -81,18 +83,6 @@ class GNN_REINFORCE_Agent:
         # input_graph = tf.keras.layers.Input(type_spec=self._example_input_spec)
         # #process node features with FC layer
         # graph = tfgnn.keras.layers.MapFeatures(node_sets_fn=set_initial_node_state,)(input_graph)
-
-        # #Graph conv
-        # graph_updates = 3 # TODO Add to args
-        # for i in range(graph_updates):
-        #     graph = tfgnn.keras.layers.GraphUpdate(
-        #         node_sets = {
-        #             'nodes': tfgnn.keras.layers.NodeSetUpdate({
-        #                 'related_to': tfgnn.keras.layers.SimpleConv(
-        #                     message_fn = dense_layer(units=128), #TODO add num_units to args
-        #                     reduce_type="sum",
-        #                     receiver_tag=tfgnn.TARGET)},
-        #                 tfgnn.keras.layers.NextStateFromConcat(dense_layer(64)))}, name=f"graph_update_{i}")(graph)  #TODO add num_units to args
 
         #SHARE embedding from ACTOR
         # # Pool to get a single vector representing the graph
@@ -195,63 +185,63 @@ class GNN_REINFORCE_Agent:
     def train(self):
         for episode in range(self.args.episodes):
             #collect data
-            batch_states, batch_actions, batch_returns = [], [], []
-            while len(batch_states) < args.batch_size:
-                #perform episode
-                states, actions, rewards = [], [], []
-                state, done = env.reset().state, False
-
-                while not done:
-                    state_node_f,controlled, state_edges,_ = state.as_graph
-                    state_g = self._create_graph_tensor(state_node_f, controlled, state_edges)
-                    #predict action probabilities
-                    probabilities = self.predict(state_g)
-                    #print(probabilities)
-                    assert not np.isnan(np.sum(probabilities))
-                    probabilities = tf.squeeze(tf.nn.softmax(probabilities))
-                    probabilities = tf.squeeze(probabilities)
-
-
-                    if np.random.random() < 0.85:
-                        action = choices([x for x in range(len(self._transition_mapping))], weights=probabilities, k=1)[0]
-                    else:
-                        action = choice([x for x in range(len(self._transition_mapping))])
-                    #select action and perform it
-                    next_state = self.env.step(self._transition_mapping[action])
+            #batch_states, batch_actions, batch_returns = [], [], []
+            #while len(batch_states) < args.batch_size:
+            #    #perform episode
+            #    states, actions, rewards = [], [], []
+            #    state, done = env.reset().state, False
+            states, actions, rewards = [], [], []
+            state, done = env.reset().state, False
+            while not done:
+                state_node_f,controlled, state_edges,_ = state.as_graph
+                state_g = self._create_graph_tensor(state_node_f, controlled, state_edges)
+                #predict action probabilities
+                probabilities = self.predict(state_g)
+                #print(probabilities)
+                assert not np.isnan(np.sum(probabilities))
+                probabilities = tf.squeeze(probabilities)
+                
+                action = choices([x for x in range(len(self._transition_mapping))], weights=probabilities, k=1)[0]
+                #select action and perform it
+                next_state = self.env.step(self._transition_mapping[action])
 
 
-                    #print(self._transition_mapping[action])
-                    states.append(state_g)
-                    actions.append(action)
-                    rewards.append(next_state.reward)
+                #print(self._transition_mapping[action])
+                states.append(state_g)
+                actions.append(action)
+                rewards.append(next_state.reward)
 
-                    #move to the next state
-                    state = next_state.state
-                    done = next_state.done
+                #move to the next state
+                state = next_state.state
+                done = next_state.done
 
-                discounted_returns = self._get_discounted_rewards(rewards)
+            discounted_returns = self._get_discounted_rewards(rewards)
+            for step in zip(states, actions, discounted_returns):
+                self._replay_buffer.append(step)
+            # batch_states += states
+            # batch_actions += actions
+            # batch_returns += discounted_returns         
 
-                batch_states += states
-                batch_actions += actions
-                batch_returns += discounted_returns         
-
-            # prepare batch data
-            batch_returns = np.array(batch_returns)
-            scalar_graph_tensor = self._build_batch_graph(batch_states)
+            # # prepare batch data
+            if len(self._replay_buffer) >= self.args.batch_size:
+                batch = np.random.choice(len(self._replay_buffer), size=self.args.batch_size, replace=False)
+                batch_states, batch_actions, updated_batch_returns = zip(*[self._replay_buffer[i] for i in batch])
+                batch_returns = np.array(updated_batch_returns)
+                scalar_graph_tensor = self._build_batch_graph(batch_states)
+                
+                #perform training step
+                baseline = tf.squeeze(self._baseline(scalar_graph_tensor))
+                assert not np.isnan(np.sum(baseline))
+                self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
+                updated_batch_returns = batch_returns-baseline
+                self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns)
             
-            #perform training step
-            baseline = tf.squeeze(self._baseline(scalar_graph_tensor))
-            assert not np.isnan(np.sum(baseline))
-            self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
-            updated_batch_returns = batch_returns-baseline
-            self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns)
-        
-            #evaluate
-            if episode > 0 and episode % args.eval_each == 0:
-                returns = self.get_eval_retrurns(self.args.eval_for)
-                print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}")
-                with self._tf_writer.as_default():
-                    tf.summary.scalar('test/eval_win', np.mean(returns), step=episode)
+                #evaluate
+                if episode > 0 and episode % args.eval_each == 0:
+                    returns = self.get_eval_retrurns(self.args.eval_for)
+                    print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}")
+                    with self._tf_writer.as_default():
+                        tf.summary.scalar('test/eval_win', np.mean(returns), step=episode)
     
     def evaluate(self):
         print(f"Starting final evaluation ({self.args.final_eval_for} episodes)")
@@ -295,10 +285,11 @@ if __name__ == '__main__':
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=5000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=50000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
-    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
+    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=48)
     parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-4)
+    parser.add_argument("--buffer_size", help="Capacity of replay buffer", type=float, default=5000)
 
     #training arguments
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=200, type=int)
@@ -346,7 +337,7 @@ if __name__ == '__main__':
     else:
         goal = {
             "known_networks":set(),
-            "known_hosts":{},
+            "known_hosts":set(),
             "controlled_hosts":{components.IP("192.168.1.2")},
             "known_services":{},
             "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
