@@ -108,32 +108,37 @@ class Network_Security_Environment(object):
         return {k:v for k,v in enumerate(actions)}
 
     def validate_win_conditions(self, input_win_conditions: dict) -> bool:
-        # validate networks
-        for net in input_win_conditions["known_networks"]:
-            assert isinstance(net, components.Network)
-        # validate known_host
-        for host in input_win_conditions["known_hosts"]:
-            assert isinstance(host, components.IP) or host
-        
-        # validate controlled hosts (can be 'random')
-        for host in input_win_conditions["controlled_hosts"]:
-            assert isinstance(host, components.IP) or host == "random"
-        
-        #validate known services
-        for host, service_set in input_win_conditions["known_services"].items():
-            assert isinstance(host, components.IP)
-            assert isinstance(service_set, set)
-            for service in service_set:
-                assert isinstance(service, components.Service)
-        #validate known data 
-        for host, data_set in input_win_conditions["known_data"].items():
-            assert isinstance(host, components.IP)
-            assert isinstance(data_set, set) or data_set == "random"
-            for data in data_set:
-                if data_set != "random":
-                    assert isinstance(data, components.Data)
+        try:
+            # validate networks
+            for net in input_win_conditions["known_networks"]:
+                assert isinstance(net, components.Network)
+            # validate known_host
+            for host in input_win_conditions["known_hosts"]:
+                assert isinstance(host, components.IP) or host
             
-        return True
+            # validate controlled hosts (can be 'random')
+            for host in input_win_conditions["controlled_hosts"]:
+                assert isinstance(host, components.IP) or host == "random"
+            
+            #validate known services
+            for host, service_set in input_win_conditions["known_services"].items():
+                assert isinstance(host, components.IP)
+                assert isinstance(service_set, set)
+                for service in service_set:
+                    assert isinstance(service, components.Service)
+            #validate known data 
+            for host, data_set in input_win_conditions["known_data"].items():
+                assert isinstance(host, components.IP)
+                assert isinstance(data_set, set) or data_set == "random"
+                for data in data_set:
+                    if data_set != "random":
+                        assert isinstance(data, components.Data)
+                
+            return True
+        except AssertionError as error:
+            logger.error(f"Incorrect format of the 'win_conditions!' {error}")
+            return False
+
     
     def initialize(self, win_conditions:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, agent_seed=42, cyst_config=None)-> components.Observation:
         """
@@ -151,9 +156,12 @@ class Network_Security_Environment(object):
 
         self._place_defences(defender_positions)
 
-        # Make a copy of the win_conditions and 
-        self.validate_win_conditions(win_conditions)
-        self._win_conditions = copy.deepcopy(win_conditions)
+        # Make a copy of the win_conditions and
+        if self.validate_win_conditions(win_conditions):
+            self._win_conditions = copy.deepcopy(win_conditions)
+        else:
+            raise ValueError("Incorrect format of the 'win_conditions'!")
+
 
         # Set the seed if passed by the agent
         if agent_seed:
