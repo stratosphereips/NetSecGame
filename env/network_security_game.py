@@ -7,7 +7,7 @@ import copy
 from cyst.api.configuration import *
 import numpy as np
 import env.scenarios.scenario_configuration
-import env.scenarios.smaller_scenario_configuration
+#unused: import env.scenarios.smaller_scenario_configuration
 #unused: import env.scenarios.tiny_scenario_configuration
 import logging
 import os
