@@ -165,7 +165,8 @@ class TestAction:
         """
         Test the creation of the FindServices action
         """
-        action = Action(action_type=ActionType.FindServices, params={"target_host":IP("192.168.12.12")})
+        action = Action(action_type=ActionType.FindServices,
+                        params={"target_host":IP("192.168.12.12")})
         assert action.type == ActionType.FindServices
         assert action.parameters["target_host"] == IP("192.168.12.12")
 
@@ -173,7 +174,8 @@ class TestAction:
         """
         Test the creation of the ScanNetwork action
         """
-        action = Action(action_type=ActionType.ScanNetwork, params={"target_network":Network("172.16.1.12", 24)})
+        action = Action(action_type=ActionType.ScanNetwork,
+                        params={"target_network":Network("172.16.1.12", 24)})
         assert action.type == ActionType.ScanNetwork
         assert action.parameters["target_network"] == Network("172.16.1.12", 24)
 
@@ -194,24 +196,30 @@ class TestAction:
         """
         Test that two actions with the same parameters are equal
         """
-        action = Action(action_type=ActionType.FindServices, params={"target_host":IP("172.16.1.22")})
-        action2 = Action(action_type=ActionType.FindServices, params={"target_host":IP("172.16.1.22")})
+        action = Action(action_type=ActionType.FindServices,
+                        params={"target_host":IP("172.16.1.22")})
+        action2 = Action(action_type=ActionType.FindServices,
+                         params={"target_host":IP("172.16.1.22")})
         assert action == action2
 
     def test_action_not_equal_different_target(self):
         """
         Test that two actions with different parameters are not equal
         """
-        action = Action(action_type=ActionType.FindServices, params={"target_host":IP("172.16.1.22")})
-        action2 = Action(action_type=ActionType.FindServices, params={"target_host":IP("172.15.1.22")})
+        action = Action(action_type=ActionType.FindServices,
+                        params={"target_host":IP("172.16.1.22")})
+        action2 = Action(action_type=ActionType.FindServices,
+                         params={"target_host":IP("172.15.1.22")})
         assert action != action2
 
     def test_action_not_equal_different_action_type(self):
         """
         Test that two actions with different parameters are not equal
         """
-        action = Action(action_type=ActionType.FindServices, params={"target_host":IP("172.16.1.22")})
-        action2 = Action(action_type=ActionType.FindData, params={"target_host":IP("172.16.1.22")})
+        action = Action(action_type=ActionType.FindServices,
+                        params={"target_host":IP("172.16.1.22")})
+        action2 = Action(action_type=ActionType.FindData,
+                         params={"target_host":IP("172.16.1.22")})
         assert action != action2
 
 class TestGameState:
