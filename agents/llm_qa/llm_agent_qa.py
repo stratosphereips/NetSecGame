@@ -190,7 +190,7 @@ if __name__ == "__main__":
     parser.add_argument("--defender", help="Is defender present", default=True, action=argparse.BooleanOptionalAction)
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
-
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
     if args.random_start:
