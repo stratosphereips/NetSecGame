@@ -226,7 +226,7 @@ class GNN_REINFORCE_Agent:
             self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns)
             
             with self._tf_writer.as_default():
-                tf.summary.scalar('train/accuracy',self._actor_train_acc_metric.result(), step=epoch)
+                tf.summary.scalar('train/accuracy',self._actor_train_acc_metric.result(), step=episode)
             #evaluate
             if episode > 0 and episode % args.eval_each == 0:
                 returns = self.get_eval_retrurns(self.args.eval_for)
@@ -330,7 +330,7 @@ if __name__ == '__main__':
             "known_networks":set(),
             "known_hosts":set(),
             "controlled_hosts":set(),
-            "known_services":{},
+            "known_services":set(),
             "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
         }
 
