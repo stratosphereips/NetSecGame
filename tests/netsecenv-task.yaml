@@ -57,12 +57,17 @@ env:
   max_steps: 15
   actions:
     scan_network:
-      prob_detection: 0.1
+      prob_success: 0.9
+      prob_detection: 0.2
     find_services:
-      prob_detection: 0.1
-    exploit_serivice:
-      prob_detection: 0.1
+      prob_success: 0.9
+      prob_detection: 0.3
+    exploit_services:
+      prob_success: 0.7
+      prob_detection: 0.4
     find_data:
+      prob_success: 0.8
       prob_detection: 0.1
     exfiltrate_data:
+      prob_success: 0.8
       prob_detection: 0.1
