@@ -36,11 +36,12 @@ class GNN_REINFORCE_Agent:
         self.env = env
         self.args = args
         self._transition_mapping = env.get_all_actions()
-        graph_schema = tfgnn.read_schema("schema.pbtxt")
+        graph_schema = tfgnn.read_schema(os.path.join(path.dirname(path.abspath(__file__)),"./schema.pbtxt"))
         self._example_input_spec = tfgnn.create_graph_spec_from_schema_pb(graph_schema)
         self._replay_buffer = collections.deque(maxlen=args.buffer_size)
         run_name = f"netsecgame__GNN_Reinforce__{args.seed}__{int(time.time())}"
         self._tf_writer = tf.summary.create_file_writer("./logs/"+ run_name)
+        self._actor_train_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
 
         #model building blocks
         def set_initial_node_state(node_set, node_set_name):
@@ -53,10 +54,9 @@ class GNN_REINFORCE_Agent:
 
         #input
         input_graph = tf.keras.layers.Input(type_spec=self._example_input_spec, name="input_actor")
+        input
         #process node features with FC layer
         graph = tfgnn.keras.layers.MapFeatures(node_sets_fn=set_initial_node_state, name="preprocessing_actor")(input_graph)
-        tmp = graph
-
 
         #Graph conv
         graph_updates = 3 # TODO Add to args
@@ -153,6 +153,7 @@ class GNN_REINFORCE_Agent:
         grads = tape.gradient(loss, self._model.trainable_weights)
         #grads, _ = tf.clip_by_global_norm(grads, 5.0)
         self._model.optimizer.apply_gradients(zip(grads, self._model.trainable_weights))
+        self._actor_train_acc_metric.update_state(labels, logits, sample_weight=weights)
         with self._tf_writer.as_default():
                 tf.summary.scalar('train/CCE_actor',loss, step=self._model.optimizer.iterations)
                 tf.summary.scalar('train/avg_weights_actor',np.mean(weights), step=self._model.optimizer.iterations)
@@ -178,6 +179,7 @@ class GNN_REINFORCE_Agent:
 
     #@profile
     def train(self):
+        self._actor_train_acc_metric.reset_state()
         for episode in range(self.args.episodes):
             #collect data
             batch_states, batch_actions, batch_returns = [], [], []
@@ -223,6 +225,8 @@ class GNN_REINFORCE_Agent:
             updated_batch_returns = batch_returns-baseline
             self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns)
             
+            with self._tf_writer.as_default():
+                tf.summary.scalar('train/accuracy',self._actor_train_acc_metric.result(), step=epoch)
             #evaluate
             if episode > 0 and episode % args.eval_each == 0:
                 returns = self.get_eval_retrurns(self.args.eval_for)
@@ -272,15 +276,15 @@ if __name__ == '__main__':
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=10000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=50000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=5e-4)
+    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=5e-5)
     parser.add_argument("--buffer_size", help="Capacity of replay buffer", type=float, default=5000)
 
     #training arguments
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=200, type=int)
-    parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=500, type=int)
+    parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
     parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
     args = parser.parse_args()
     args.filename = "GNN_Reinforce_Agent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
