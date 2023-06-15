@@ -35,6 +35,14 @@ class ConfigParser():
             self.logger.error(f'Error loading the configuration file')
             pass
 
+    def read_env_action_data(self, action_name: str) -> dict:
+        """
+        Generic function to read the known data for any agent and goal of position
+        """
+        action_success_p = self.config['env']['actions'][action_name]['prob_success']
+        action_detect_p = self.config['env']['actions'][action_name]['prob_detection']
+        return action_success_p, action_detect_p
+
     def read_agents_known_data(self, type_agent: str, type_data: str) -> dict:
         """
         Generic function to read the known data for any agent and goal of position
