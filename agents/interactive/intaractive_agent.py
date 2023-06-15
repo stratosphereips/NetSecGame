@@ -183,44 +183,6 @@ def main() -> None:
     # Create the env
     env = Network_Security_Environment(args.task_config_file)
 
-    """
-    # define attacker goal and initial location
-    if args.random_start:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{IP("213.47.23.195"):"random"}
-        }
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{IP("213.47.23.195")},
-            "known_services":{},
-            "known_data":{}
-        }
-    else:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{IP("213.47.23.195"):{Data("User1", "DataFromServer1")}}
-        }
-
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{IP("213.47.23.195"), IP("192.168.2.2")},
-            "known_services":{},
-            "known_data":{}
-        }
-
-    # Create agent
-    observation = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
-    """
-
     observation = env.reset()
 
     logger.info('Creating the agent')
