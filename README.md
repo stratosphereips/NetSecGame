@@ -71,7 +71,7 @@ The default configuration is defined in two places:
 
 2. The configuration of the run
 
-    This is defined inside each agent by a set of dictionaries that define if the defender is present, if the start position of the agent is random, etc.
+    This is defined in a configuration file in the directory on the agent. 
 
 ## Tensorboard logs
 
@@ -87,8 +87,6 @@ tests/run_all_tests.sh
 ```
 
 This will load and run the unit tests in the `tests` folder.
-
-
 
 
 ## Definition of the network topology
@@ -119,10 +117,14 @@ Very important is that we made an addition to the NodeConfig objects in our Cyst
 ## Agents Implemented
 Currently the implemented agents are:
 
-- Q learning agent in `agents/q_learning/q_agent.py`
-- Double Q learning agent in `agents/double_q_learning/double_q_agent.py`
-- Naive Q learning agent in `agents/naive_naive_q_agent.py`
-- Random agent in `random_agent.py`
+- Q learning agent in `agents/q_learning/`
+- Double Q learning agent in `agents/double_q_learning/`
+- Naive Q learning agent in `agents/naive_q_learning/`
+- Random agent in `agents/random/`
+- Interactive agent in `agents/interactive/`
+- LLM agent in `agents/llm/`
+- LLM QA agent in `agents/llm_qa/`
+- GNN Reinforce agent in `agents/gnn_reinforce/`
 
 ## Assumptions of the NetSecGame
 1. We work with the closed-world assumption. Only the defined entities exist in the simulation.
@@ -152,6 +154,20 @@ For each action to succed there are some conditions that must be fulfilled:
 - Exfiltrate Data: The source IP should be in the list of known hosts and in the list of controlled hosts. The target IP should be in the list of known hosts and in the list of controlled hosts. The data should be in the list of known data. 
 
 In particular there are some actions that are possible, such as Scan a network that you don't know.
+
+
+## Configuration of the game and agents
+All the configuration of the environment and agents is done from the configuration file that is on the directory of the agents. For example, for the agent q_learning it is stored in the file `agents/double_q_learning/netsecenv-task.yaml`.
+
+The configuration is a yaml file and allows for the setting of 
+- random seeds
+- the start position of the agent (state)
+- if the agent will start from a random position
+- the whole conditions to win (state)
+- if the goal of the agent is random or fixed
+- the scenario with the topology
+- the max steps
+- the probability of detection of each action 
 
 ## Actions for the defender
 In this version of the game the defender does not have actions and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks the admins have tools that consume logs from all computers at the same time and they can detect actions from a central position (such as a SIEM). The defender has, however, probabilities to detect or not each action, which are defined in the file `game_components.py`.
