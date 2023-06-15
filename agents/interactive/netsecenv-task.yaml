@@ -37,7 +37,7 @@ agents:
       # Example of fixing the starting point of the agent in a local host
       controlled_hosts: [213.47.23.195, 192.168.2.2]
       # Example of asking a random position to start the agent
-      controlled_hosts: [213.47.23.195, random]
+      # controlled_hosts: [213.47.23.195, random]
 
       # Services are defined as a target host where the service must be, and then a description in the form 'name,type,version,is_local'
       known_services: {}
