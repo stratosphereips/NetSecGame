@@ -172,7 +172,7 @@ def main() -> None:
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
     parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action='store_true')
-    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.conf'), action='store', required=False)
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
     logging.basicConfig(filename='interactive_agent.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S', level=logging.CRITICAL)
@@ -220,6 +220,8 @@ def main() -> None:
     # Create agent
     observation = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
     """
+
+    observation = env.reset()
 
     logger.info('Creating the agent')
     agent = InteractiveAgent(env)
