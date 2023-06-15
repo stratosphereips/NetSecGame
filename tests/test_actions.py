@@ -8,7 +8,6 @@ sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
 from env.network_security_game import Network_Security_Environment
 import env.game_components as components
 from env.scenarios import test_scenario_configuration
-
 import pytest
 
 
