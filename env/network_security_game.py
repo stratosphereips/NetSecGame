@@ -114,6 +114,48 @@ class Network_Security_Environment(object):
                         actions.add(components.Action(components.ActionType.ExploitService, {"target_host":ip, "target_service":service}))
         return {k:v for k,v in enumerate(actions)}
 
+    def validate_win_conditions(self, input_win_conditions: dict) -> bool:
+        """
+        What is this doing Ondra???
+        """
+        try:
+            # validate networks
+            assert isinstance(input_win_conditions["known_networks"], set)
+            for net in input_win_conditions["known_networks"]:
+                assert isinstance(net, components.Network)
+            # validate known_host
+            assert isinstance(input_win_conditions["known_hosts"], set)
+            for host in input_win_conditions["known_hosts"]:
+                assert isinstance(host, components.IP)
+            
+            # validate controlled hosts (can be 'random')
+            assert isinstance(input_win_conditions["controlled_hosts"], set) or input_win_conditions["controlled_hosts"] == "random"
+            if input_win_conditions["controlled_hosts"] != "random":
+                for host in input_win_conditions["controlled_hosts"]:
+                        assert isinstance(host, components.IP)
+            
+            #validate known services
+            assert isinstance(input_win_conditions["known_services"], dict)
+            for host, service_set in input_win_conditions["known_services"].items():
+                assert isinstance(host, components.IP)
+                assert isinstance(service_set, set)
+                for service in service_set:
+                    assert isinstance(service, components.Service)
+            
+            #validate known data 
+            assert isinstance(input_win_conditions["known_data"], dict)
+            for host, data_set in input_win_conditions["known_data"].items():
+                assert isinstance(host, components.IP)
+                assert isinstance(data_set, set) or data_set == "random"
+                for data in data_set:
+                    if data_set != "random":
+                        assert isinstance(data, components.Data)
+                
+            return True
+        except AssertionError as error:
+            logger.error(f"Incorrect format of the 'win_conditions!' {error}")
+            return False
+    
     def initialize(self)-> components.Observation:
         """
         Initializes the environment with start and goal configuraions.
@@ -135,7 +177,13 @@ class Network_Security_Environment(object):
         self._place_defences()
 
         # Get the win condition as a dict
-        self._win_conditions = self.task_config.get_attacker_win_conditions()
+        temp_win_conditions = self.task_config.get_attacker_win_conditions()
+
+        # Make a copy of the win_conditions and
+        if self.validate_win_conditions(temp_win_conditions):
+            self._win_conditions = copy.deepcopy(temp_win_conditions)
+        else:
+            raise ValueError("Incorrect format of the 'win_conditions'!")
 
         # Set the seed if passed by the agent
         seed = self.task_config.get_seed('env')
