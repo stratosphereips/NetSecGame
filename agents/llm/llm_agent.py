@@ -14,17 +14,14 @@ import openai
 from tenacity import retry, stop_after_attempt
 import argparse
 import jinja2
+import logging
 
 from dotenv import dotenv_values
-
 config = dotenv_values(".env")
 openai.api_key = config["OPENAI_API_KEY"]
 
 # local_services = ['bash', 'powershell', 'remote desktop service', 'windows login', 'can_attack_start_here']
 local_services = ['can_attack_start_here']
-# Set the logging
-import logging
-logger = logging.getLogger(__name__)
 
 action_mapper = {
     "ScanNetwork": ActionType.ScanNetwork,
@@ -47,7 +44,7 @@ Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
 Action: {"action":"FindServices", "parameters":{"target_host":"2.2.2.3"}}
 Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
 Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
-Action: {"action":"ExfiltrateData", "parameters":"{'target_host': '2.2.2.2', 'data': ('User1', 'WebData'), 'source_host': '1.1.1.2'}"}}
+Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "data": ("User1", "WebData"), "source_host": "1.1.1.2"}}}
 End of example.
 """
 
@@ -81,7 +78,7 @@ def validate_action_in_state(llm_response, state):
         match action_str:
             case 'ScanNetwork':
                 if action_params["target_network"] in known_nets:
-                    valid = True        
+                    valid = True       
             case 'FindServices':
                 if action_params["target_host"] in known_hosts:
                     valid = True
@@ -90,10 +87,10 @@ def validate_action_in_state(llm_response, state):
                 if ip_addr in known_hosts:
                     for service in state.known_services[IP(ip_addr)]:
                         if service.name == action_params["target_service"]:
-                            valid = True    
+                            valid = True
             case 'FindData':
                 if action_params["target_host"] in contr_hosts:
-                    valid = True    
+                    valid = True
             case 'ExfiltrateData':
                 for ip_data in state.known_data:
                     ip_addr = action_params["source_host"]
@@ -103,7 +100,7 @@ def validate_action_in_state(llm_response, state):
                 valid = False
         return valid
     except:
-        logging.info("Exception during validation of %s", llm_response)
+        logger.info("Exception during validation of %s", llm_response)
         return False
 
 def create_status_from_state(state, memory_list):
@@ -121,16 +118,16 @@ def create_status_from_state(state, memory_list):
 
     prompt += "Current status:\n"
     prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
-    logging.info("Controlled hosts are %s", ' and '.join(contr_hosts))
+    logger.info("Controlled hosts are %s", ' and '.join(contr_hosts))
 
     prompt += f"Known networks are {' and '.join(known_nets)}\n"
-    logging.info("Known networks are %s", ' and '.join(known_nets))
+    logger.info("Known networks are %s", ' and '.join(known_nets))
     prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
-    logging.info("Known hosts are %s", ' and '.join(known_hosts))
+    logger.info("Known hosts are %s", ' and '.join(known_hosts))
 
     if len(state.known_services.keys()) == 0:
         prompt += "Known services are none\n"
-        logging.info(f"Known services: None")
+        logger.info(f"Known services: None")
     for ip_service in state.known_services:
         services = []
         if len(list(state.known_services[ip_service])) > 0:
@@ -142,14 +139,14 @@ def create_status_from_state(state, memory_list):
                 for serv in services:
                     serv_str += serv + " and "
                 prompt += f"Known services for host {ip_service} are {serv_str}\n"
-                logging.info(f"Known services {ip_service, services}")
+                logger.info(f"Known services {ip_service, services}")
             else:
                 prompt += "Known services are none\n"
-                logging.info(f"Known services: None")
+                logger.info(f"Known services: None")
 
     if len(state.known_data.keys()) == 0:
         prompt += "Known data are none\n"
-        logging.info(f"Known data: None")
+        logger.info(f"Known data: None")
     for ip_data in state.known_data:
         if len(state.known_data[ip_data]) > 0:
 
@@ -157,7 +154,7 @@ def create_status_from_state(state, memory_list):
             for known_data in list(state.known_data[ip_data]):
                 host_data += f"({known_data.owner}, {known_data.id}) and "
             prompt += f"Known data for host {ip_data} are {host_data}\n"
-            logging.info(f"Known data: {ip_data, state.known_data[ip_data]}")
+            logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
     return prompt
 
@@ -171,7 +168,7 @@ def create_action_from_response(llm_response, state):
         action_params = llm_response["parameters"]
         if isinstance(action_params, str):
             action_params = eval(action_params)
-        if valid:  
+        if valid:
             match action_str:
                 case 'ScanNetwork':
                     target_net, mask = action_params["target_network"].split('/')
@@ -195,7 +192,7 @@ def create_action_from_response(llm_response, state):
                     return False, action
 
     except SyntaxError:
-        logging.error(f"Cannol parse the response from the LLM: {llm_response}")
+        logger.error(f"Cannol parse the response from the LLM: {llm_response}")
         valid = False
 
     return valid, action
@@ -215,6 +212,10 @@ def openai_query(msg_list, max_tokens=60):
 
 
 if __name__ == "__main__":
+
+    # logger.basicConfig(filename='llm_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S', level=logger.INFO)
+    logger = logging.getLogger('llm')
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, required=False, default=42, help="Random seed for the agent.")
     parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
@@ -222,7 +223,7 @@ if __name__ == "__main__":
     parser.add_argument("--defender", help="Is defender present", default=True, action=argparse.BooleanOptionalAction)
     parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
-
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
     if args.random_start:
@@ -268,7 +269,6 @@ if __name__ == "__main__":
         print("unknown scenario")
         sys.exit(1)
 
-
     # Initialize the game
     observation = env.initialize(win_conditions=goal,
                                  defender_positions=False,
@@ -295,19 +295,6 @@ if __name__ == "__main__":
     for i in range(num_iterations):
         good_action = False
 
-        # maybe add an argument for the memory part
-        # if (i+1) % 10 == 0:
-        #     # logging.debug("Memories:", memories)
-        #     prompt = summary_prompt(memories)
-        #     messages = [
-        #         {"role": "system", "content": "You are a pentester trying to find the best available action out of the possible options."},
-        #         {"role": "system", "content": "Your goal is to exfiltrate data."},
-        #         {"role": "user", "content": prompt }
-        #     ]
-        #     response = openai_query(messages, max_tokens=180)
-        #     logging.info(f"Memory summary: {response}")
-        #     memories = [response]
-
         status_prompt = create_status_from_state(observation.state, memories)
         messages = [
                 {"role": "user", "content": instructions},
@@ -317,7 +304,7 @@ if __name__ == "__main__":
             ]
         print(status_prompt)
         response = openai_query(messages)
-        logging.info(f"Action from LLM: {response}")
+        logger.info(f"Action from LLM: {response}")
 
         try:
             response = eval(response)
@@ -332,7 +319,7 @@ if __name__ == "__main__":
                 good_action = True
                 current_state = observation.state
 
-        logging.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
+        logger.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
         if observation.done:
             break
 
@@ -351,5 +338,5 @@ if __name__ == "__main__":
             # if the LLM sends a response that is not properly formatted.
             memories.append(f"Response '{response}' was badly formatted.")
 
-logging.info("Total reward: %s", str(total_reward))
+logger.info("Total reward: %s", str(total_reward))
 print(f"Total reward: {total_reward}")

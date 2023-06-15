@@ -25,7 +25,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Test with pytest
         run: |
-          pytest tests/test_actions.py -v
+          tests/run_all_tests.sh
       - name: Lint with ruff
         run: |
           # stop the build if there are Python syntax errors or undefined names

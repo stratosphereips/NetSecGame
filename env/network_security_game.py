@@ -1,7 +1,9 @@
-#Author: Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
+#Authors
+# Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
+# Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
+
 import netaddr
 import env.game_components as components
-#from random import choice, seed
 import random
 import copy
 from cyst.api.configuration import *
@@ -12,6 +14,7 @@ import env.scenarios.scenario_configuration
 import logging
 import os
 from pathlib import Path
+from utils.utils import ConfigParser
 
 
 # Set the logging
@@ -22,7 +25,7 @@ logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(n
 logger = logging.getLogger('Netsecenv')
 
 class Network_Security_Environment(object):
-    def __init__(self, random_start=True, verbosity=0, seed=42) -> None:
+    def __init__(self, task_config_file, seed=42) -> None:
         """
         Class to manage the whole network security game
         It uses some Cyst libraries for the network topology
@@ -42,8 +45,6 @@ class Network_Security_Environment(object):
         self.hosts_to_start = []
         # All the exploits in the game
         self._exploits = {}
-        # If the game starts randomly or not
-        self._random_start = random_start
         # Place of the defender
         self._defender_placements = None
         # Current state of the game
@@ -59,6 +60,12 @@ class Network_Security_Environment(object):
         self._services = {}
         self._data = {}
         self._fw_rules = []
+
+        # Read the conf file passed by the agent for the rest of values
+        self.task_config = ConfigParser(task_config_file)
+
+        # Initialize the environment
+        self.initialize()
 
     @property
     def timestamp(self)->int:
@@ -80,7 +87,7 @@ class Network_Security_Environment(object):
     @property
     def num_actions(self):
         return len(components.ActionType)
-
+    
     def get_all_actions(self):
         actions = set()
         # Get Network scans, Service Find and Data Find
@@ -108,6 +115,9 @@ class Network_Security_Environment(object):
         return {k:v for k,v in enumerate(actions)}
 
     def validate_win_conditions(self, input_win_conditions: dict) -> bool:
+        """
+        What is this doing Ondra???
+        """
         try:
             # validate networks
             assert isinstance(input_win_conditions["known_networks"], set)
@@ -145,9 +155,8 @@ class Network_Security_Environment(object):
         except AssertionError as error:
             logger.error(f"Incorrect format of the 'win_conditions!' {error}")
             return False
-
     
-    def initialize(self, win_conditions:dict, defender_positions:dict, attacker_start_position:dict, max_steps=10, agent_seed=42, cyst_config=None)-> components.Observation:
+    def initialize(self)-> components.Observation:
         """
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
@@ -155,70 +164,74 @@ class Network_Security_Environment(object):
 
         """
         logger.info(f"Initializing NetSetGame environment")
+        # Get random start
+        self._attacker_start_position = self.task_config.get_attacker_start_position()
+        # self._attacker_start_position = attacker_start_position
+        self.cyst_config = self.task_config.get_scenario()
 
         # Process parameters
-        self._attacker_start_position = attacker_start_position
-        logger.info(f"\tSetting max steps to {max_steps}")
-        self._max_steps = max_steps
+        self._max_steps = self.task_config.get_max_steps()
+        logger.info(f"\tSetting max steps to {self._max_steps}")
 
-        self._place_defences(defender_positions)
+        # Place the defender
+        self._place_defences()
+
+        # Get the win condition as a dict
+        temp_win_conditions = self.task_config.get_attacker_win_conditions()
 
         # Make a copy of the win_conditions and
-        if self.validate_win_conditions(win_conditions):
-            self._win_conditions = copy.deepcopy(win_conditions)
+        if self.validate_win_conditions(temp_win_conditions):
+            self._win_conditions = copy.deepcopy(temp_win_conditions)
         else:
             raise ValueError("Incorrect format of the 'win_conditions'!")
 
-
         # Set the seed if passed by the agent
-        if agent_seed:
-            np.random.seed(agent_seed)
-            random.seed(agent_seed)
-            logger.info(f'Agent passed a seed, setting to {agent_seed}')
+        seed = self.task_config.get_seed('env')
+        np.random.seed(seed)
+        random.seed(seed)
+        logger.info(f'Setting env seed to {seed}')
 
-        if cyst_config:
-            logger.info(f"Reading from CYST configuration:")
-            self.process_cyst_config(cyst_config)
+        # Cyst config
+        logger.info(f"Reading from CYST configuration:")
+        cyst_config = self.task_config.get_scenario()
+        self.process_cyst_config(cyst_config)
 
-            # Check if position of data is randomized
-            # This code should be moved into create_starting_state()
-            logger.info(f"Checking if we need to set the data to win in a random location.")
-            # For each known data point in the conditions to win
+        # Check if position of data is randomized
+        # This code should be moved into create_starting_state()
+        logger.info(f"Checking if we need to set the data to win in a random location.")
+        # For each known data point in the conditions to win
 
-            for key, value in win_conditions["known_data"].items():
-                # Was the position defined as random?
-                if isinstance(value, str) and value.lower() == "random":
-                    logger.info(f"\tData was requested to be put in a random location.")
-                    # Load all the available data from all hosts
-                    available_data = []
-                    for node in self._node_objects.values():
-                        # For each node, independent of what type of node they are...
-                        try:
-                            # Search for passive services, since this is where the 'DataConfig' is
-                            for service in node.passive_services:
-                                # Search for private data
-                                for dataconfig in service.private_data:
-                                    # Store all places where we can put the data
-                                    available_data.append(components.Data(dataconfig.owner, dataconfig.description))
-                        except AttributeError:
-                            pass
-                    # From all available data, randomly pick the one that is going to be used to win the game
-                    # It seems there can be only one data to win for now
-                    self._win_conditions["known_data"][key] = {random.choice(available_data)}
-                else:
-                    logger.info(f"\tData was not requested to be put in a random location.")
+        for key, value in self._win_conditions["known_data"].items():
+            # Was the position defined as random?
+            if isinstance(value, str) and value.lower() == "random":
+                logger.info(f"\tData was requested to be put in a random location.")
+                # Load all the available data from all hosts
+                available_data = []
+                for node in self._node_objects.values():
+                    # For each node, independent of what type of node they are...
+                    try:
+                        # Search for passive services, since this is where the 'DataConfig' is
+                        for service in node.passive_services:
+                            # Search for private data
+                            for dataconfig in service.private_data:
+                                # Store all places where we can put the data
+                                available_data.append(components.Data(dataconfig.owner, dataconfig.description))
+                    except AttributeError:
+                        pass
+                # From all available data, randomly pick the one that is going to be used to win the game
+                # It seems there can be only one data to win for now
+                self._win_conditions["known_data"][key] = {random.choice(available_data)}
+            else:
+                logger.info(f"\tData was not requested to be put in a random location.")
 
-            logger.info(f"\tWinning condition of `known_data` set to {self._win_conditions['known_data']}")
-            logger.info(f"CYST configuration processed successfully")
+        logger.info(f"\tWinning condition of `known_data` set to {self._win_conditions['known_data']}")
+        logger.info(f"CYST configuration processed successfully")
 
-            #save self_data original state so we can go back to it in reset
-            self._data_original = copy.deepcopy(self._data)
+        #save self_data original state so we can go back to it in reset
+        self._data_original = copy.deepcopy(self._data)
 
-            # Return an observation
-            return self.reset()
-        else:
-            logger.error(f"CYST configuration has to be provided for envrionment initialization!")
-            raise ValueError("CYST configuration has to be provided for envrionment initialization!")
+        # Return an observation
+        return True
 
     def _create_starting_state(self) -> components.GameState:
         """
@@ -229,13 +242,17 @@ class Network_Security_Environment(object):
 
         logger.info('Creating the starting state')
 
-        if self._random_start:
-            # Random start
-            logger.info('\tStart position of agent is random')
-            logger.info(f'\tChoosing from {self.hosts_to_start}')
-            controlled_hosts.add(random.choice(self.hosts_to_start))
-            logger.info(f'\t\tMaking agent start in {controlled_hosts}')
-        else:
+        # Only for logging
+        random_start_position = False
+        for controlled_host in self._attacker_start_position['controlled_hosts']:
+            if controlled_host == 'random':
+                # Random start
+                logger.info('\tStart position of agent is random')
+                logger.info(f'\tChoosing from {self.hosts_to_start}')
+                controlled_hosts.add(random.choice(self.hosts_to_start))
+                logger.info(f'\t\tMaking agent start in {controlled_hosts}')
+                random_start_position = True
+        if not random_start_position:
             # Not random start
             logger.info('\tStart position of agent is not random.')
 
@@ -277,20 +294,22 @@ class Network_Security_Environment(object):
         game_state = components.GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
 
-    def _place_defences(self, placements:dict)->None:
+    def _place_defences(self)->None:
         """
         Place the defender
         For now only if it is present
         """
         logger.info("\tStoring defender placement")
-        if placements:
-            logger.info(f"\t\tDefender placed in {self._defender_placements}")
+        placements = self.task_config.get_defender_placement()
+        if placements == 'StochasticDefender':
+            logger.info(f"\t\tDefender placed as type {placements}")
+            # For now there is only one type of defender
             self._defender_placements = True
-        else:
+        elif placements == 'NoDefender':
             logger.info(f"\t\tNo defender present in the environment")
             self._defender_placements = False
-
-
+        else:
+            self._defender_placements = False
 
     def process_cyst_config(self, configuration_objects:list)-> None:
         """
@@ -588,7 +607,7 @@ class Network_Security_Environment(object):
                     # Check if values (sets) for EACH key (host) in goal_dict are subsets of known_dict, keep matching_keys
                     matching_keys = [host for host in goal_dict.keys() if goal_dict[host]<= known_dict[host]]
                     # Check we have the amount of mathing keys as in the goal_dict
-                    logger.info(f"\t\tMathing sets: {len(matching_keys)}, required: {len(goal_dict.keys())}")
+                    logger.info(f"\t\tMatching sets: {len(matching_keys)}, required: {len(goal_dict.keys())}")
                     if len(matching_keys) == len(goal_dict.keys()):
                         return True
                 except KeyError:
