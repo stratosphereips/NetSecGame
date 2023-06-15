@@ -164,6 +164,14 @@ class Network_Security_Environment(object):
 
         """
         logger.info(f"Initializing NetSetGame environment")
+
+        # Check and change if the values of the actions were updated in the configuration file
+        components.ActionType.ScanNetwork.default_success_p, components.ActionType.ScanNetwork.default_detection_p = self.task_config.read_env_action_data('scan_network')
+        components.ActionType.FindServices.default_success_p, components.ActionType.FindServices.default_detection_p = self.task_config.read_env_action_data('find_services')
+        components.ActionType.ExploitService.default_success_p, components.ActionType.ExploitService.default_detection_p = self.task_config.read_env_action_data('exploit_services')
+        components.ActionType.FindData.default_success_p, components.ActionType.FindData.default_detection_p = self.task_config.read_env_action_data('find_data')
+        components.ActionType.ExfiltrateData.default_success_p, components.ActionType.ExfiltrateData.default_detection_p = self.task_config.read_env_action_data('exfiltrate_data')
+
         # Get random start
         self._attacker_start_position = self.task_config.get_attacker_start_position()
         # self._attacker_start_position = attacker_start_position
