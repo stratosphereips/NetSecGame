@@ -12,28 +12,13 @@ from env.scenarios import scenario_configuration
 import pytest
 
 
-GOAL = {
-    "known_networks":set(),
-    "known_hosts":set(),
-    "controlled_hosts":set(),
-    "known_services":{},
-    "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DatabaseData")}}
-}
-START = {
-    "known_networks":set(),
-    "known_hosts":set(),
-    "controlled_hosts":{components.IP("213.47.23.195"), components.IP("192.168.2.4")},
-    "known_services":{},
-    "known_data":{}
-}
-
 # Fixture are used to hold the current state and the environment
 # Each step takes the previous one as input and returns the env and new obseravation variables
 @pytest.fixture
 def env_obs():
     """After init step"""
-    env = Network_Security_Environment(random_start=False, verbosity=0)
-    observation = env.initialize(win_conditions=GOAL, defender_positions=None, attacker_start_position=START, max_steps=500, agent_seed=42, cyst_config=scenario_configuration.configuration_objects)
+    env = Network_Security_Environment('tests/netsecenv-task.yaml')
+    observation = env.reset()
     return (env, observation)
 
 @pytest.fixture
