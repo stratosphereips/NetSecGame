@@ -151,6 +151,7 @@ For each action to succed there are some conditions that must be fulfilled:
 - Find Data: The target IP should be in the list of known hosts and in the list of controlled hosts. The service should be in the list of known services. 
 - Exfiltrate Data: The source IP should be in the list of known hosts and in the list of controlled hosts. The target IP should be in the list of known hosts and in the list of controlled hosts. The data should be in the list of known data. 
 
+In particular there are some actions that are possible, such as Scan a network that you don't know.
 
 ## Actions for the defender
 In this version of the game the defender does not have actions and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks the admins have tools that consume logs from all computers at the same time and they can detect actions from a central position (such as a SIEM). The defender has, however, probabilities to detect or not each action, which are defined in the file `game_components.py`.
