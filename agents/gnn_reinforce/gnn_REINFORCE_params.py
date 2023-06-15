@@ -330,7 +330,7 @@ if __name__ == '__main__':
             "known_networks":set(),
             "known_hosts":set(),
             "controlled_hosts":set(),
-            "known_services":set(),
+            "known_services":{},
             "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
         }
 
