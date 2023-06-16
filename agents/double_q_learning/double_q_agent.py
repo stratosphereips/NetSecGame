@@ -3,7 +3,7 @@ import sys
 from os import path
 # This is used so the agent can see the environment and game components
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
-import env.game_components as components
+# import env.game_components as components
 
 import numpy as np
 from random import choice, random
@@ -15,8 +15,7 @@ import logging
 from torch.utils.tensorboard import SummaryWriter
 import time
 from env.network_security_game import Network_Security_Environment
-from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from env.game_components import *
+from env.game_components import Action, Observation, GameState
 
 class DoubleQAgent:
 
@@ -93,8 +92,8 @@ class DoubleQAgent:
                 else:
                     max_a_next = self.max_action(next_observation.state, self.q_values1)
                     max_q_next = self.get_q_value2(next_observation.state, max_a_next)
-                new_Q = self.q_values1[observation.state, action] + self.alpha * (next_observation.reward + self.gamma*max_q_next - self.q_values1[observation.state, action])
-                self.q_values1[observation.state, action] = new_Q
+                new_q = self.q_values1[observation.state, action] + self.alpha * (next_observation.reward + self.gamma*max_q_next - self.q_values1[observation.state, action])
+                self.q_values1[observation.state, action] = new_q
             else:
                 #find max Q-Value for next state
                 if next_observation.done:
@@ -103,8 +102,8 @@ class DoubleQAgent:
                     max_a_next = self.max_action(next_observation.state, self.q_values2)
                     max_q_next = self.get_q_value1(next_observation.state, max_a_next)
                 #update q values
-                new_Q = self.q_values2[observation.state, action] + self.alpha*(next_observation.reward + self.gamma*max_q_next - self.q_values2[observation.state, action])
-                self.q_values2[observation.state, action] = new_Q
+                new_q= self.q_values2[observation.state, action] + self.alpha*(next_observation.reward + self.gamma*max_q_next - self.q_values2[observation.state, action])
+                self.q_values2[observation.state, action] = new_q
 
             rewards += next_observation.reward
             #move to next state
@@ -150,6 +149,7 @@ if __name__ == '__main__':
     parser.add_argument("--test_each", help="Sets periodic evaluation during testing", default=100, type=int)
     parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=True, action=argparse.BooleanOptionalAction)
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
     args.filename = "DoubleQAgent_2goal_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in["evaluate", "eval_each", "eval_each"])) + ".pickle"
@@ -166,7 +166,7 @@ if __name__ == '__main__':
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
     )
 
-    random.seed(args.seed)
+    # random.seed(args.seed)
 
     # Training
     logger.info(f'Initializing the environment')
