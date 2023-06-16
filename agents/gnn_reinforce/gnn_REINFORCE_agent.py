@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
 
     logger.info('Setting the network security environment')
-    env = Network_Security_Environment(args.task_config_file)
+    env = NetworkSecurityEnvironment(args.task_config_file)
     tf.random.set_seed(env.seed)
     state = env.reset()
 
