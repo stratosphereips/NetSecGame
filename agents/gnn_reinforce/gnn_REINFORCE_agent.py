@@ -6,6 +6,7 @@ import time
 import collections
 
 from random import choice, seed, choices
+from timeit import default_timer as timer
 
 # This is used so the agent can see the environment and game components
 import sys
@@ -26,7 +27,8 @@ import tensorflow as tf
 from tensorflow_gnn.models.gcn import gcn_conv
 tf.get_logger().setLevel('ERROR')
 
-class GNN_REINFORCE_Agent:
+
+class GnnReinforceAgent:
     """
     Class implementing the REINFORCE algorithm with GNN as input layer
     """
@@ -35,11 +37,11 @@ class GNN_REINFORCE_Agent:
         self.env = env
         self.args = args
         self._transition_mapping = env.get_all_actions()
-        graph_schema = tfgnn.read_schema("schema.pbtxt")
+        graph_schema = tfgnn.read_schema(os.path.join(path.dirname(path.abspath(__file__)),"./schema.pbtxt"))
         self._example_input_spec = tfgnn.create_graph_spec_from_schema_pb(graph_schema)
-        self._replay_buffer = collections.deque(maxlen=args.buffer_size)
-        run_name = f"netsecgame__GNN_Reinforce__{args.seed}__{int(time.time())}"
+        run_name = f"netsecgame__GNN_Reinforce__{env.seed}__{int(time.time())}"
         self._tf_writer = tf.summary.create_file_writer("./logs/"+ run_name)
+        self._actor_train_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
 
         #model building blocks
         def set_initial_node_state(node_set, node_set_name):
@@ -52,6 +54,7 @@ class GNN_REINFORCE_Agent:
 
         #input
         input_graph = tf.keras.layers.Input(type_spec=self._example_input_spec, name="input_actor")
+        input
         #process node features with FC layer
         graph = tfgnn.keras.layers.MapFeatures(node_sets_fn=set_initial_node_state, name="preprocessing_actor")(input_graph)
 
@@ -59,7 +62,8 @@ class GNN_REINFORCE_Agent:
         graph_updates = 3 # TODO Add to args
         for i in range(graph_updates):
             graph = gcn_conv.GCNHomGraphUpdate(units=128, add_self_loops=True, name=f"GCN_{i+1}")(graph)
-
+        
+        node_emb = tfgnn.keras.layers.Readout(node_set_name="nodes")(graph)
         #### ACTOR ######
         # Pool to get a single vector representing the graph
         pooling = tfgnn.keras.layers.Pool(tfgnn.CONTEXT, "sum",node_set_name="nodes", name="pooling_actor")(graph)
@@ -72,8 +76,8 @@ class GNN_REINFORCE_Agent:
         out  = tf.keras.layers.Dense(len(self._transition_mapping), activation="softmax", name="output_logits")(hidden2)
 
         #Build the model
-        self._model = tf.keras.Model(input_graph, out, name="Actor")
-        self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr))
+        self._model = tf.keras.Model(input_graph, [out, node_emb], name="Actor")
+        self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr_actor))
 
         #baseline
         # #input
@@ -92,7 +96,7 @@ class GNN_REINFORCE_Agent:
 
         #Build the model
         self._baseline = tf.keras.Model(input_graph, out_baseline, name="Baseline model")
-        self._baseline.compile(tf.keras.optimizers.Adam(learning_rate=args.lr), loss=tf.losses.MeanSquaredError())
+        self._baseline.compile(tf.keras.optimizers.Adam(learning_rate=args.lr_baseline), loss=tf.losses.MeanSquaredError())
 
 
         self._model.summary()
@@ -144,15 +148,17 @@ class GNN_REINFORCE_Agent:
     def _make_training_step_actor(self, inputs, labels, weights)->None:
         #perform training step
         with tf.GradientTape() as tape:
-            logits = self.predict(inputs, training=True)
+            logits, node_emb = self.predict(inputs, training=True)
             cce = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
             loss = cce(labels, logits, sample_weight=weights)
         grads = tape.gradient(loss, self._model.trainable_weights)
         #grads, _ = tf.clip_by_global_norm(grads, 5.0)
         self._model.optimizer.apply_gradients(zip(grads, self._model.trainable_weights))
+        self._actor_train_acc_metric.update_state(labels, logits, sample_weight=weights)
         with self._tf_writer.as_default():
-                tf.summary.scalar('train/CCE_actor',loss, step=self._model.optimizer.iterations)
-                tf.summary.scalar('train/avg_weights_actor',np.mean(weights), step=self._model.optimizer.iterations)
+            tf.summary.scalar('train/CCE_actor',loss, step=self._model.optimizer.iterations)
+            tf.summary.scalar('train/avg_weights_actor',np.mean(weights), step=self._model.optimizer.iterations)
+            tf.summary.scalar('train/mean_std_node_em', np.mean(np.std(node_emb, axis=0)), step=self._model.optimizer.iterations)
 
     def _make_training_step_baseline(self, inputs, rewards)->None:
         #perform training step
@@ -175,24 +181,29 @@ class GNN_REINFORCE_Agent:
 
     #@profile
     def train(self):
+        self._actor_train_acc_metric.reset_state()
+        successful_steps = []
         for episode in range(self.args.episodes):
-            states, actions, rewards = [], [], []
-            state, done = env.reset().state, False
-            self._replay_buffer.clear()
-            while len(self._replay_buffer) < self.args.batch_size:
+            #collect data
+            batch_states, batch_actions, batch_returns = [], [], []
+            while len(batch_states) < args.batch_size:
+                #perform episode
+                states, actions, rewards = [], [], []
+                state, done = env.reset().state, False
+
                 while not done:
                     state_node_f,controlled, state_edges,_ = state.as_graph
                     state_g = self._create_graph_tensor(state_node_f, controlled, state_edges)
                     #predict action probabilities
-                    probabilities = self.predict(state_g)
-                    
-                    assert not np.isnan(np.sum(probabilities))
-                    probabilities = tf.squeeze(probabilities)
-                    
+                    probabilities, node_emb = self.predict(state_g)
+                    probabilities = tf.squeeze(tf.nn.softmax(probabilities))
+
                     action = choices([x for x in range(len(self._transition_mapping))], weights=probabilities, k=1)[0]
                     #select action and perform it
                     next_state = self.env.step(self._transition_mapping[action])
 
+
+                    #print(self._transition_mapping[action])
                     states.append(state_g)
                     actions.append(action)
                     rewards.append(next_state.reward)
@@ -202,29 +213,38 @@ class GNN_REINFORCE_Agent:
                     done = next_state.done
 
                 discounted_returns = self._get_discounted_rewards(rewards)
-                for step in zip(states, actions, discounted_returns):
-                    self._replay_buffer.append(step)   
+                if rewards[-1] > 0: # GOAL WAS REACHED IN THIS EPISODE
+                    successful_steps += list(zip(states, actions, discounted_returns))
 
-            # # prepare batch data
-            if len(self._replay_buffer) >= self.args.batch_size:
-                batch = np.random.choice(len(self._replay_buffer), size=len(self._replay_buffer), replace=False)
-                batch_states, batch_actions, updated_batch_returns = zip(*[self._replay_buffer[i] for i in batch])
-                batch_returns = np.array(updated_batch_returns)
-                scalar_graph_tensor = self._build_batch_graph(batch_states)
-                
-                #perform training step
-                baseline = tf.squeeze(self._baseline(scalar_graph_tensor))
-                assert not np.isnan(np.sum(baseline))
-                self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
-                updated_batch_returns = batch_returns-baseline
-                self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns)
+                batch_states += states
+                batch_actions += actions
+                batch_returns += discounted_returns
+
+            # ENRICH THE BATCH WITH AT LEAST ONE SUCCESSFUL STEPS
+            if len(successful_steps) > 0:
+                sampled = choice(successful_steps)
+                batch_states += [sampled[0]]
+                batch_actions += [sampled[1]]
+                batch_returns += [sampled[2]]
             
-                #evaluate
-                if episode > 0 and episode % args.eval_each == 0:
-                    returns = self.get_eval_retrurns(self.args.eval_for)
-                    print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}")
-                    with self._tf_writer.as_default():
-                        tf.summary.scalar('test/eval_win', np.mean(returns), step=episode)
+            # prepare batch data
+            batch_returns = np.array(batch_returns)
+
+            scalar_graph_tensor = self._build_batch_graph(batch_states)
+            #perform training step
+            baseline = tf.squeeze(self._baseline(scalar_graph_tensor))
+            self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
+            updated_batch_returns = batch_returns-baseline
+            self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns)
+            
+            with self._tf_writer.as_default():
+                tf.summary.scalar('train/accuracy',self._actor_train_acc_metric.result(), step=episode)
+            #evaluate
+            if episode > 0 and episode % args.eval_each == 0:
+                returns = self.get_eval_retrurns(self.args.eval_for)
+                print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}")
+                with self._tf_writer.as_default():
+                    tf.summary.scalar('test/eval_win', np.mean(returns), step=episode)
     
     def evaluate(self):
         print(f"Starting final evaluation ({self.args.final_eval_for} episodes)")
@@ -240,7 +260,7 @@ class GNN_REINFORCE_Agent:
                 state_node_f,controlled, state_edges,_ = state.as_graph
                 state_g = self._create_graph_tensor(state_node_f,controlled,state_edges)
                 #predict action probabilities
-                probabilities = self.predict(state_g)
+                probabilities, node_emb = self.predict(state_g)
                 probabilities = tf.squeeze(probabilities)
                 action_idx = np.argmax(probabilities)
                 action = self._transition_mapping[action_idx]
@@ -259,49 +279,39 @@ class GNN_REINFORCE_Agent:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    #env arguments
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=30, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
-    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_tiny", type=str)
-    parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
-    parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
-    parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
+    #task config file
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=10000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=5e-4)
-    parser.add_argument("--buffer_size", help="Capacity of replay buffer", type=float, default=5000)
+    parser.add_argument("--lr_actor", help="Learnining rate of the NN", type=float, default=1e-3)
+    parser.add_argument("--lr_baseline", help="Learnining rate of the NN", type=float, default=1e-4)
 
     #training arguments
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=200, type=int)
-    parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=1000, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=100, type=int)
+    parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
     parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
-    parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
-    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
+
+
     args = parser.parse_args()
     args.filename = "GNN_Reinforce_Agent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
     logging.basicConfig(filename='GNN_Reinforce_Agent.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     logger = logging.getLogger('GNN_Reinforce_Agent')
-
-    #set random seed
-    np.random.seed(args.seed)
-    tf.random.set_seed(args.seed)
-    seed(args.seed)
+  
 
 
-    # Training
     logger.info(f'Setting the network security environment')
-    logger.info(f'Initializing the environment')
     env = Network_Security_Environment(args.task_config_file)
+    tf.random.set_seed(env.seed)
     state = env.reset()
 
     # Training
     logger.info(f'Creating the agent')
     
     # #initialize agent
-    agent = GNN_REINFORCE_Agent(env, args)
+    agent = GnnReinforceAgent(env, args)
     agent.train()
     agent.evaluate()
