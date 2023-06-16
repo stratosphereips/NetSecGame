@@ -92,6 +92,7 @@ if __name__ == '__main__':
     parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=True, action=argparse.BooleanOptionalAction)
     parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
     parser.add_argument("--test_each", help="Sets periodic evaluation during testing", default=100, type=int)
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
     logging.basicConfig(filename='agents/random/random_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.CRITICAL)
@@ -107,55 +108,13 @@ if __name__ == '__main__':
 
     random.seed(args.seed)
 
-    env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
-    if args.scenario == "scenario1":
-        cyst_config = scenario_configuration.configuration_objects
-    elif args.scenario == "scenario1_small":
-        cyst_config = smaller_scenario_configuration.configuration_objects
-    elif args.scenario == "scenario1_tiny":
-        cyst_config = tiny_scenario_configuration.configuration_objects
-    else:
-        print("unknown scenario")
-        exit(1)
-
-    # define attacker goal and initial location
-    if args.random_start:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{components.IP("213.47.23.195"):"random"}
-        }
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{components.IP("213.47.23.195")},
-            "known_services":{},
-            "known_data":{}
-        }
-    else:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{components.IP("213.47.23.195"):components.Data("User1", "DataFromServer1")}
-        }
-
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{components.IP("213.47.23.195"),components.IP("192.168.2.2")},
-            "known_services":{},
-            "known_data":{}
-        }
+    # Training
+    logger.info(f'Initializing the environment')
+    env = Network_Security_Environment(args.task_config_file)
+    observation = env.reset()
 
 
     # Create agent
-    logger.info(f'Initializing the environment')
-    observation = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
-    logger.info(f'Creating the agent')
     agent = RandomAgent(env)
 
     # Testing

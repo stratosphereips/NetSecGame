@@ -16,6 +16,7 @@ from tenacity import retry, stop_after_attempt
 import re
 import argparse
 import jinja2
+import copy
 
 from dotenv import dotenv_values
 
@@ -26,7 +27,6 @@ local_services = ['bash', 'powershell', 'remote desktop service', 'windows login
 
 # Set the logging
 import logging
-logger = logging.getLogger(__name__)
 
 ACTION_MAPPER = {
     "ScanNetwork": ActionType.ScanNetwork,
@@ -114,7 +114,7 @@ def validate_action_in_state(llm_response, state):
                         return True
         return False
     except:
-        logging.info("Exception during validation of %s", llm_response)
+        logger.info("Exception during validation of %s", llm_response)
         return False
 
 def create_status_from_state(state):
@@ -125,11 +125,11 @@ def create_status_from_state(state):
 
     prompt = "Current status:\n"
     prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
-    logging.info("Controlled hosts are %s", ' and '.join(contr_hosts))
+    logger.info("Controlled hosts are %s", ' and '.join(contr_hosts))
     prompt += f"Known networks are {' and '.join(known_nets)}\n"
-    logging.info("Known networks are %s", ' and '.join(known_nets))
+    logger.info("Known networks are %s", ' and '.join(known_nets))
     prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
-    logging.info("Known hosts are %s", ' and '.join(contr_hosts))
+    logger.info("Known hosts are %s", ' and '.join(contr_hosts))
 
     for ip_service in state.known_services:
         services = []
@@ -138,13 +138,13 @@ def create_status_from_state(state):
                 if serv.name not in local_services:
                     services.append(serv.name)
             if len(services) > 0:
-                logging.debug(f"Known services {ip_service, services}")
+                logger.debug(f"Known services {ip_service, services}")
                 prompt += f"Known services for host {ip_service} are {' and '.join(str(services))}\n"
 
     for ip_data in state.known_data:
         if len(state.known_data[ip_data]) > 0:
             prompt += f"Known data for host {ip_data} are {' and '.join(list(state.known_data[ip_data]))}\n"
-            logging.info(f"Known data: {ip_data, state.known_data[ip_data]}")
+            logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
     return prompt
 
@@ -184,67 +184,14 @@ def openai_query(msg_list, max_tokens=60):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type=int, required=False, default=42, help="Random seed for the agent.")
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=True, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--defender", help="Is defender present", default=True, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
-    parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
-
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
-    if args.random_start:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{IP("213.47.23.195"):"random"}
-        }
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{IP("213.47.23.195")},
-            "known_services":{},
-            "known_data":{}
-        }
-    else:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{IP("213.47.23.195"):{Data("User1", "DataFromServer1")}}
-        }
+    logger = logging.getLogger('llm_qa')
 
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{IP("213.47.23.195"),IP("192.168.2.2")},
-            "known_services":{},
-            "known_data":{}
-        }
-
-    env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
-    if args.scenario == "scenario1":
-        cyst_config = scenario_configuration.configuration_objects
-    elif args.scenario == "scenario1_small":
-        cyst_config = smaller_scenario_configuration.configuration_objects
-    elif args.scenario == "scenario1_tiny":
-        cyst_config = tiny_scenario_configuration.configuration_objects
-    else:
-        print("unknown scenario")
-        sys.exit(1)
-
-
+    env = Network_Security_Environment(args.task_config_file)
     # Initialize the game
-    # Initialize the game
-    observation = env.initialize(win_conditions=goal,
-                                 defender_positions=False,
-                                 attacker_start_position=attacker_start,
-                                 max_steps=args.max_steps,
-                                 agent_seed=args.seed,
-                                 cyst_config=cyst_config)
+    observation = env.reset()
     current_state = observation.state
 
     num_iterations = 100
@@ -254,6 +201,7 @@ if __name__ == "__main__":
     num_actions = 0
 
     # Populate the instructions based on the pre-defined goal
+    goal = copy.deepcopy(env._win_conditions)
     jinja_environment = jinja2.Environment()
     template = jinja_environment.from_string(INSTRUCTIONS_TEMPLATE)
     target_host = list(goal["known_data"].keys())[0]
@@ -300,7 +248,7 @@ if __name__ == "__main__":
         response = openai_query(messages, max_tokens=80)
 
         print(f"LLM (step 3): {response}")
-        logging.info("LLM (step 3): %s", response)
+        logger.info("LLM (step 3): %s", response)
 
         try:
             response = eval(response)
@@ -326,7 +274,7 @@ if __name__ == "__main__":
                 good_action = True
                 current_state = observation.state
 
-        logging.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
+        logger.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
         if observation.done:
             break
 
@@ -342,5 +290,5 @@ if __name__ == "__main__":
                 memories.append((response["action"], response["parameters"], "This action was not helpful."))
 
 
-logging.info("Total reward: %s", str(total_reward))
+logger.info("Total reward: %s", str(total_reward))
 print(f"Total reward: {total_reward}")
