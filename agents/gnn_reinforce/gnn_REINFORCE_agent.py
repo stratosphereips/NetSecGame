@@ -3,7 +3,6 @@ import numpy as np
 import argparse
 import logging
 import time
-import collections
 
 from random import choice, seed, choices
 from timeit import default_timer as timer
@@ -15,8 +14,6 @@ sys.path.append( path.dirname(path.dirname(path.dirname(path.abspath(__file__)))
 
 #with the path fixed, we can import now
 from env.network_security_game import Network_Security_Environment
-from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-import env.game_components as components
 
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
