@@ -3,7 +3,6 @@
 import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
-import env.game_components as components
 from random import choice, seed
 import random
 import argparse
@@ -16,8 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 #with the path fixed, we can import now
 from env.network_security_game import Network_Security_Environment
-from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from env.game_components import *
+from env.game_components import Action, ActionType, GameState, Observation
 
 
 class RandomAgent:
