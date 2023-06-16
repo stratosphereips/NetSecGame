@@ -4,7 +4,7 @@ sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__)
 import env.game_components as components
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
-from random import choice, random
+from random import choice, random, seed
 import pickle
 import argparse
 from timeit import default_timer as timer
@@ -19,7 +19,7 @@ sys.path.append( path.dirname(path.dirname(path.dirname( path.abspath(__file__) 
 #with the path fixed, we can import now
 from env.network_security_game import Network_Security_Environment
 from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from env.game_components import *
+from env.game_components import Action, Observation
 
 class NaiveQAgent:
 
@@ -143,10 +143,10 @@ if __name__ == '__main__':
     writer = SummaryWriter(f"agents/tensorboard-logs/{run_name}")
     writer.add_text(
         "hypherparameters",
-        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
+        "|param|value|\n|-|-|\n%s"% ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
     )
 
-    random.seed(args.seed)
+    seed(args.seed)
 
     logger.info(f'Setting the network security environment')
     env = Network_Security_Environment(verbosity=0)
