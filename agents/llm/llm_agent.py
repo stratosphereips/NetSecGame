@@ -7,7 +7,6 @@ from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
 
 from env.network_security_game import Network_Security_Environment
-from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
 from env.game_components import ActionType, Action, IP, Data, Network, Service
 
 import openai
