@@ -162,7 +162,7 @@ class GameState():
                 #add to proper network if host is in the network
                 try:
                     for net in self.known_networks:
-                        if host in netaddr.IPNetwork(net):
+                        if str(host) in netaddr.IPNetwork(str(net)):
                             edges.append((graph_nodes[net], graph_nodes[host]))
                             edges.append((graph_nodes[host], graph_nodes[net]))
                 except netaddr.core.AddrFormatError as error:
