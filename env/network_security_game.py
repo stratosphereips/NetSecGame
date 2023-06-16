@@ -6,9 +6,9 @@ import netaddr
 import env.game_components as components
 import random
 import copy
-from cyst.api.configuration import *
+from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 import numpy as np
-import env.scenarios.scenario_configuration
+# import env.scenarios.scenario_configuration
 #unused: import env.scenarios.smaller_scenario_configuration
 #unused: import env.scenarios.tiny_scenario_configuration
 import logging
