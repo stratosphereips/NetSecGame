@@ -27,7 +27,8 @@ import tensorflow as tf
 from tensorflow_gnn.models.gcn import gcn_conv
 tf.get_logger().setLevel('ERROR')
 
-class GNN_REINFORCE_Agent:
+
+class GnnReinforceAgent:
     """
     Class implementing the REINFORCE algorithm with GNN as input layer
     """
@@ -297,6 +298,9 @@ if __name__ == '__main__':
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=500, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
     parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
+
+
     args = parser.parse_args()
     args.filename = "GNN_Reinforce_Agent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
@@ -310,55 +314,13 @@ if __name__ == '__main__':
 
 
     logger.info(f'Setting the network security environment')
-    env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
-    if args.scenario == "scenario1":
-        cyst_config = scenario_configuration.configuration_objects
-    elif args.scenario == "scenario1_small":
-        cyst_config = smaller_scenario_configuration.configuration_objects
-    elif args.scenario == "scenario1_tiny":
-        cyst_config = tiny_scenario_configuration.configuration_objects
-    else:
-        print("unknown scenario")
-        exit(1)
-
-    # define attacker goal and initial location
-    if args.random_start:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{components.IP("213.47.23.195"):"random"}        }
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{components.IP("213.47.23.195")},
-            "known_services":{},
-            "known_data":{}
-        }
-    else:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{components.IP("213.47.23.195"):{components.Data("User1", "DataFromServer1")}},
-        }
-
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{components.IP("213.47.23.195"),components.IP("192.168.2.2")},
-            "known_services":{},
-            "known_data":{}
-        }
+    env = Network_Security_Environment(args.task_config_file)
+    state = env.reset()
 
     # Training
-    logger.info(f'Initializing the environment')
-    state = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps, cyst_config=cyst_config)
     logger.info(f'Creating the agent')
     
     # #initialize agent
-    agent = GNN_REINFORCE_Agent(env, args)
+    agent = GnnReinforceAgent(env, args)
     agent.train()
     agent.evaluate()
