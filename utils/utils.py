@@ -82,7 +82,7 @@ class ConfigParser():
                 version = data[2]
                 is_local = data[3]
 
-                known_services[ip] = Service(name, type, version, is_local)
+                known_services[known_services_host] = Service(name, type, version, is_local)
 
             except (ValueError, netaddr.AddrFormatError):
                 known_services = {}
