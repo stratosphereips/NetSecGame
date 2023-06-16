@@ -24,7 +24,7 @@ if not log_filename.parent.exists():
 logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
 logger = logging.getLogger('Netsecenv')
 
-class Network_Security_Environment(object):
+class NetworkSecurityEnvironment(object):
     def __init__(self, task_config_file, seed=42) -> None:
         """
         Class to manage the whole network security game

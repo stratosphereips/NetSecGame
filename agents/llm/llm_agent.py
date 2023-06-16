@@ -6,7 +6,7 @@ import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
 
-from env.network_security_game import Network_Security_Environment
+from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import ActionType, Action, IP, Data, Network, Service
 
 import openai
@@ -219,7 +219,7 @@ if __name__ == "__main__":
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
-    env = Network_Security_Environment(args.task_config_file)
+    env = NetworkSecurityEnvironment(args.task_config_file)
     observation = env.reset()
     current_state = observation.state
 

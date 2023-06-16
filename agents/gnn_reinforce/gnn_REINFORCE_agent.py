@@ -15,7 +15,7 @@ from os import path
 sys.path.append( path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
 #with the path fixed, we can import now
-from env.network_security_game import Network_Security_Environment
+from env.network_security_game import NetworkSecurityEnvironment
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -27,7 +27,7 @@ class GnnReinforceAgent:
     Class implementing the REINFORCE algorithm with GNN as input layer
     """
 
-    def __init__(self, env:Network_Security_Environment, args: argparse.Namespace):
+    def __init__(self, env:NetworkSecurityEnvironment, args: argparse.Namespace):
         self.env = env
         self.args = args
         self._transition_mapping = env.get_all_actions()
@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
 
     logger.info('Setting the network security environment')
-    env = Network_Security_Environment(args.task_config_file)
+    env = NetworkSecurityEnvironment(args.task_config_file)
     tf.random.set_seed(env.seed)
     state = env.reset()
 
