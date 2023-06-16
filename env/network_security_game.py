@@ -56,6 +56,10 @@ class Network_Security_Environment(object):
         # Verbosity.
         # If the episode/action was detected by the defender
         self._detected = False
+        # Random seed
+        self._seed = None
+
+
         # To hold all the services we know
         self._services = {}
         self._data = {}
@@ -67,6 +71,13 @@ class Network_Security_Environment(object):
         # Initialize the environment
         self.initialize()
 
+    @property
+    def seed(self)->int:
+        """
+        Can be used by agents to use the same random seed as the environment
+        """
+        return self._seed
+    
     @property
     def timestamp(self)->int:
         """
@@ -197,6 +208,7 @@ class Network_Security_Environment(object):
         seed = self.task_config.get_seed('env')
         np.random.seed(seed)
         random.seed(seed)
+        self._seed = seed
         logger.info(f'Setting env seed to {seed}')
 
         # Cyst config
