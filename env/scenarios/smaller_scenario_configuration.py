@@ -1,6 +1,5 @@
 # This file defines the hosts and their characteristics, the services they run, the users they have and their security levels, the data they have, and in the router/FW all the rules of which host can access what
 import cyst.api.configuration as cyst_cfg
-#from cyst.api.configuration import *
 from cyst.api.configuration.network.elements import RouteConfig
 from cyst.api.logic.access import AuthenticationProviderType, AuthenticationTokenType, AuthenticationTokenSecurity
 
