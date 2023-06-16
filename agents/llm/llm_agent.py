@@ -15,6 +15,7 @@ from tenacity import retry, stop_after_attempt
 import argparse
 import jinja2
 import logging
+import copy
 
 from dotenv import dotenv_values
 config = dotenv_values(".env")
@@ -213,69 +214,14 @@ def openai_query(msg_list, max_tokens=60):
 
 if __name__ == "__main__":
 
-    # logger.basicConfig(filename='llm_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S', level=logger.INFO)
     logger = logging.getLogger('llm')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seed", type=int, required=False, default=42, help="Random seed for the agent.")
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--defender", help="Is defender present", default=True, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
-    parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
-    if args.random_start:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{IP("213.47.23.195"):"random"}
-        }
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{IP("213.47.23.195")},
-            "known_services":{},
-            "known_data":{}
-        }
-    else:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{IP("213.47.23.195"):{Data("User1", "DataFromServer1")}}
-        }
-
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{IP("213.47.23.195"),IP("192.168.2.2")},
-            "known_services":{},
-            "known_data":{}
-        }
-
-    env = Network_Security_Environment(random_start=args.random_start, verbosity=args.verbosity)
-    if args.scenario == "scenario1":
-        cyst_config = scenario_configuration.configuration_objects
-    elif args.scenario == "scenario1_small":
-        cyst_config = smaller_scenario_configuration.configuration_objects
-    elif args.scenario == "scenario1_tiny":
-        cyst_config = tiny_scenario_configuration.configuration_objects
-    else:
-        print("unknown scenario")
-        sys.exit(1)
-
-    # Initialize the game
-    observation = env.initialize(win_conditions=goal,
-                                 defender_positions=False,
-                                 attacker_start_position=attacker_start,
-                                 max_steps=args.max_steps,
-                                 agent_seed=args.seed,
-                                 cyst_config=cyst_config)
+    env = Network_Security_Environment(args.task_config_file)
+    observation = env.reset()
     current_state = observation.state
 
     num_iterations = 100
@@ -285,6 +231,7 @@ if __name__ == "__main__":
     num_actions = 0
 
     # Populate the instructions based on the pre-defined goal
+    goal = copy.deepcopy(env._win_conditions)
     jinja_environment = jinja2.Environment()
     template = jinja_environment.from_string(INSTRUCTIONS_TEMPLATE)
     target_host = list(goal["known_data"].keys())[0]
