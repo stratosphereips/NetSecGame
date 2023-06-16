@@ -9,7 +9,7 @@ from os import path
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
 from env.network_security_game import Network_Security_Environment
-from env.game_components import Network, IP, Data
+from env.game_components import Network, IP
 from env.game_components import ActionType, Action, GameState, Observation
 
 class InteractiveAgent:
