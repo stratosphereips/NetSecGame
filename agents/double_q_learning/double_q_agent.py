@@ -168,53 +168,12 @@ if __name__ == '__main__':
 
     random.seed(args.seed)
 
-    env = Network_Security_Environment(verbosity=0, random_start=args.random_start)
-    if args.scenario == "scenario1":
-        env.process_cyst_config(scenario_configuration.configuration_objects)
-    elif args.scenario == "scenario1_small":
-        env.process_cyst_config(smaller_scenario_configuration.configuration_objects)
-    elif args.scenario == "scenario1_tiny":
-        env.process_cyst_config(tiny_scenario_configuration.configuration_objects)
-    else:
-        print("unknown scenario")
-        exit(1)
-
-    # define attacker goal and initial location
-    if args.random_start:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{components.IP("213.47.23.195"):"random"}
-        }
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{components.IP("213.47.23.195")},
-            "known_services":{},
-            "known_data":{}
-        }
-    else:
-        goal = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services":{},
-            "known_data":{components.IP("213.47.23.195"):components.Data("User1", "DataFromServer1")}
-        }
-
-        attacker_start = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":{components.IP("213.47.23.195"),components.IP("192.168.2.2")},
-            "known_services":{},
-            "known_data":{}
-        }
-
     # Training
     logger.info(f'Initializing the environment')
-    obs = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+    env = Network_Security_Environment(args.task_config_file)
+
+    obs = env.reset()
+
     logger.info(f'Creating the agent')
     agent = DoubleQAgent(env, args.alpha, args.gamma, args.epsilon)
     try:
