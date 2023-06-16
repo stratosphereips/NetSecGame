@@ -5,7 +5,7 @@ Author: Maria Rigaki - maria.rigaki@fel.cvut.cz
 import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
-from env.network_security_game import Network_Security_Environment
+from env.network_security_game import NetworkSecurityEnvironment
 import env.game_components as components
 import pytest
 
@@ -15,7 +15,7 @@ import pytest
 @pytest.fixture
 def env_obs():
     """After init step"""
-    env = Network_Security_Environment('tests/netsecenv-task.yaml')
+    env = NetworkSecurityEnvironment('tests/netsecenv-task.yaml')
     observation = env.reset()
     return (env, observation)
 

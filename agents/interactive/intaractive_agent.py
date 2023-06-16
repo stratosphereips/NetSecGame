@@ -8,7 +8,7 @@ from os import path
 # This is used so the agent can see the environment and game components
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
 
-from env.network_security_game import Network_Security_Environment
+from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Network, IP
 from env.game_components import ActionType, Action, GameState, Observation
 
@@ -181,7 +181,7 @@ def main() -> None:
 
 
     # Create the env
-    env = Network_Security_Environment(args.task_config_file)
+    env = NetworkSecurityEnvironment(args.task_config_file)
 
     observation = env.reset()
 
