@@ -38,7 +38,6 @@ class GNN_REINFORCE_Agent:
         self._transition_mapping = env.get_all_actions()
         graph_schema = tfgnn.read_schema(os.path.join(path.dirname(path.abspath(__file__)),"./schema.pbtxt"))
         self._example_input_spec = tfgnn.create_graph_spec_from_schema_pb(graph_schema)
-        self._replay_buffer = collections.deque(maxlen=args.buffer_size)
         run_name = f"netsecgame__GNN_Reinforce__{args.seed}__{int(time.time())}"
         self._tf_writer = tf.summary.create_file_writer("./logs/"+ run_name)
         self._actor_train_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
@@ -62,7 +61,8 @@ class GNN_REINFORCE_Agent:
         graph_updates = 3 # TODO Add to args
         for i in range(graph_updates):
             graph = gcn_conv.GCNHomGraphUpdate(units=128, add_self_loops=True, name=f"GCN_{i+1}")(graph)
-
+        
+        node_emb = tfgnn.keras.layers.Readout(node_set_name="nodes")(graph)
         #### ACTOR ######
         # Pool to get a single vector representing the graph
         pooling = tfgnn.keras.layers.Pool(tfgnn.CONTEXT, "sum",node_set_name="nodes", name="pooling_actor")(graph)
@@ -75,8 +75,8 @@ class GNN_REINFORCE_Agent:
         out  = tf.keras.layers.Dense(len(self._transition_mapping), activation="softmax", name="output_logits")(hidden2)
 
         #Build the model
-        self._model = tf.keras.Model(input_graph, out, name="Actor")
-        self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr))
+        self._model = tf.keras.Model(input_graph, [out, node_emb], name="Actor")
+        self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr_actor))
 
         #baseline
         # #input
@@ -95,7 +95,7 @@ class GNN_REINFORCE_Agent:
 
         #Build the model
         self._baseline = tf.keras.Model(input_graph, out_baseline, name="Baseline model")
-        self._baseline.compile(tf.keras.optimizers.Adam(learning_rate=args.lr), loss=tf.losses.MeanSquaredError())
+        self._baseline.compile(tf.keras.optimizers.Adam(learning_rate=args.lr_baseline), loss=tf.losses.MeanSquaredError())
 
 
         self._model.summary()
@@ -147,7 +147,7 @@ class GNN_REINFORCE_Agent:
     def _make_training_step_actor(self, inputs, labels, weights)->None:
         #perform training step
         with tf.GradientTape() as tape:
-            logits = self.predict(inputs, training=True)
+            logits, node_emb = self.predict(inputs, training=True)
             cce = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
             loss = cce(labels, logits, sample_weight=weights)
         grads = tape.gradient(loss, self._model.trainable_weights)
@@ -155,8 +155,9 @@ class GNN_REINFORCE_Agent:
         self._model.optimizer.apply_gradients(zip(grads, self._model.trainable_weights))
         self._actor_train_acc_metric.update_state(labels, logits, sample_weight=weights)
         with self._tf_writer.as_default():
-                tf.summary.scalar('train/CCE_actor',loss, step=self._model.optimizer.iterations)
-                tf.summary.scalar('train/avg_weights_actor',np.mean(weights), step=self._model.optimizer.iterations)
+            tf.summary.scalar('train/CCE_actor',loss, step=self._model.optimizer.iterations)
+            tf.summary.scalar('train/avg_weights_actor',np.mean(weights), step=self._model.optimizer.iterations)
+            tf.summary.scalar('train/mean_std_node_em', np.mean(np.std(node_emb, axis=0)), step=self._model.optimizer.iterations)
 
     def _make_training_step_baseline(self, inputs, rewards)->None:
         #perform training step
@@ -180,6 +181,7 @@ class GNN_REINFORCE_Agent:
     #@profile
     def train(self):
         self._actor_train_acc_metric.reset_state()
+        successful_steps = []
         for episode in range(self.args.episodes):
             #collect data
             batch_states, batch_actions, batch_returns = [], [], []
@@ -192,7 +194,7 @@ class GNN_REINFORCE_Agent:
                     state_node_f,controlled, state_edges,_ = state.as_graph
                     state_g = self._create_graph_tensor(state_node_f, controlled, state_edges)
                     #predict action probabilities
-                    probabilities = self.predict(state_g)
+                    probabilities, node_emb = self.predict(state_g)
                     probabilities = tf.squeeze(tf.nn.softmax(probabilities))
 
                     action = choices([x for x in range(len(self._transition_mapping))], weights=probabilities, k=1)[0]
@@ -210,11 +212,20 @@ class GNN_REINFORCE_Agent:
                     done = next_state.done
 
                 discounted_returns = self._get_discounted_rewards(rewards)
+                if rewards[-1] > 0: # GOAL WAS REACHED IN THIS EPISODE
+                    successful_steps += list(zip(states, actions, discounted_returns))
 
                 batch_states += states
                 batch_actions += actions
                 batch_returns += discounted_returns
 
+            # ENRICH THE BATCH WITH AT LEAST ONE SUCCESSFUL STEPS
+            if len(successful_steps) > 0:
+                sampled = choice(successful_steps)
+                batch_states += [sampled[0]]
+                batch_actions += [sampled[1]]
+                batch_returns += [sampled[2]]
+            
             # prepare batch data
             batch_returns = np.array(batch_returns)
 
@@ -248,7 +259,7 @@ class GNN_REINFORCE_Agent:
                 state_node_f,controlled, state_edges,_ = state.as_graph
                 state_g = self._create_graph_tensor(state_node_f,controlled,state_edges)
                 #predict action probabilities
-                probabilities = self.predict(state_g)
+                probabilities, node_emb = self.predict(state_g)
                 probabilities = tf.squeeze(probabilities)
                 action_idx = np.argmax(probabilities)
                 action = self._transition_mapping[action_idx]
@@ -276,11 +287,11 @@ if __name__ == '__main__':
     parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=50000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=10000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=5e-5)
-    parser.add_argument("--buffer_size", help="Capacity of replay buffer", type=float, default=5000)
+    parser.add_argument("--lr_actor", help="Learnining rate of the NN", type=float, default=1e-3)
+    parser.add_argument("--lr_baseline", help="Learnining rate of the NN", type=float, default=1e-4)
 
     #training arguments
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=500, type=int)
