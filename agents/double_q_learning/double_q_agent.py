@@ -14,7 +14,7 @@ from timeit import default_timer as timer
 import logging
 from torch.utils.tensorboard import SummaryWriter
 import time
-from env.network_security_game import Network_Security_Environment
+from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, Observation, GameState
 
 class DoubleQAgent:
@@ -170,7 +170,7 @@ if __name__ == '__main__':
 
     # Training
     logger.info(f'Initializing the environment')
-    env = Network_Security_Environment(args.task_config_file)
+    env = NetworkSecurityEnvironment(args.task_config_file)
 
     obs = env.reset()
 

@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 # This is used so the agent can see the environment and game components
 
 #with the path fixed, we can import now
-from env.network_security_game import Network_Security_Environment
+from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, ActionType, GameState, Observation
 
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
     # Training
     logger.info(f'Initializing the environment')
-    env = Network_Security_Environment(args.task_config_file)
+    env = NetworkSecurityEnvironment(args.task_config_file)
     observation = env.reset()
 
 

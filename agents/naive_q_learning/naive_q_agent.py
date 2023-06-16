@@ -17,7 +17,7 @@ from os import path
 sys.path.append( path.dirname(path.dirname(path.dirname( path.abspath(__file__) ) ) ))
 
 #with the path fixed, we can import now
-from env.network_security_game import Network_Security_Environment
+from env.network_security_game import NetworkSecurityEnvironment
 from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
 from env.game_components import Action, Observation
 
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     seed(args.seed)
 
     logger.info(f'Setting the network security environment')
-    env = Network_Security_Environment(verbosity=0)
+    env = NetworkSecurityEnvironment(verbosity=0)
     if args.scenario == "scenario1":
         env.process_cyst_config(scenario_configuration.configuration_objects)
     elif args.scenario == "scenario1_small":

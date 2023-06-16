@@ -6,7 +6,7 @@ import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
 
-from env.network_security_game import Network_Security_Environment
+from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import ActionType, Action, IP, Data, Network, Service
 
 import openai
@@ -248,7 +248,7 @@ if __name__ == "__main__":
 
     logger = logging.getLogger('llm_qa')
 
-    env = Network_Security_Environment(args.task_config_file)
+    env = NetworkSecurityEnvironment(args.task_config_file)
     # Initialize the game
     observation = env.reset()
     current_state = observation.state
