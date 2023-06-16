@@ -39,7 +39,7 @@ class GnnReinforceAgent:
         self._transition_mapping = env.get_all_actions()
         graph_schema = tfgnn.read_schema(os.path.join(path.dirname(path.abspath(__file__)),"./schema.pbtxt"))
         self._example_input_spec = tfgnn.create_graph_spec_from_schema_pb(graph_schema)
-        run_name = f"netsecgame__GNN_Reinforce__{args.seed}__{int(time.time())}"
+        run_name = f"netsecgame__GNN_Reinforce__{env.seed}__{int(time.time())}"
         self._tf_writer = tf.summary.create_file_writer("./logs/"+ run_name)
         self._actor_train_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
 
@@ -279,26 +279,20 @@ class GnnReinforceAgent:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    #env arguments
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=30, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=False, action="store_true")
-    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_tiny", type=str)
-    parser.add_argument("--random_start", help="Sets evaluation length", default=False, action="store_true")
-    parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
-    parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
+    #task config file
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
 
     #model arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=10000, type=int)
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
     parser.add_argument("--lr_actor", help="Learnining rate of the NN", type=float, default=1e-3)
     parser.add_argument("--lr_baseline", help="Learnining rate of the NN", type=float, default=1e-4)
 
     #training arguments
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=500, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=1000, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=100, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
     parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
-    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
 
 
     args = parser.parse_args()
@@ -306,15 +300,12 @@ if __name__ == '__main__':
 
     logging.basicConfig(filename='GNN_Reinforce_Agent.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     logger = logging.getLogger('GNN_Reinforce_Agent')
-
-    #set random seed
-    np.random.seed(args.seed)
-    tf.random.set_seed(args.seed)
-    seed(args.seed)
+  
 
 
     logger.info(f'Setting the network security environment')
     env = Network_Security_Environment(args.task_config_file)
+    tf.random.set_seed(env.seed)
     state = env.reset()
 
     # Training
