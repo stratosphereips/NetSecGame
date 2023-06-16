@@ -98,9 +98,8 @@ class ConfigParser():
             try:
                 if '/' in net:
                     _ = netaddr.IPNetwork(net)
-                    host_part = net.split('/')[0]
-                    net_part = net.split('/')[1]
-                    known_networks.add(Network(host_part, net_part))
+                    host_part, net_part = net.split('/')
+                    known_networks.add(Network(host_part, int(net_part)))
             except (ValueError, TypeError, netaddr.AddrFormatError):
                 self.logger(f'Configuration problem with the known networks')
         return known_networks
