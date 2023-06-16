@@ -20,7 +20,7 @@ from os import path
 sys.path.append( path.dirname(path.dirname(path.dirname( path.abspath(__file__) ) ) ))
 
 #with the path fixed, we can import now
-from env.network_security_game import Network_Security_Environment
+from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, ActionType, Observation
 
 class QAgent:
@@ -205,7 +205,7 @@ if __name__ == '__main__':
 
     # Training
     logger.info(f'Initializing the environment')
-    env = Network_Security_Environment(args.task_config_file)
+    env = NetworkSecurityEnvironment(args.task_config_file)
     observation = env.reset()
 
     logger.info('Creating the agent')
