@@ -114,7 +114,7 @@ def validate_action_in_state(llm_response, state):
                         return True
         return False
     except:
-        logging.info("Exception during validation of %s", llm_response)
+        logger.info("Exception during validation of %s", llm_response)
         return False
 
 def create_status_from_state(state):
@@ -125,11 +125,11 @@ def create_status_from_state(state):
 
     prompt = "Current status:\n"
     prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
-    logging.info("Controlled hosts are %s", ' and '.join(contr_hosts))
+    logger.info("Controlled hosts are %s", ' and '.join(contr_hosts))
     prompt += f"Known networks are {' and '.join(known_nets)}\n"
-    logging.info("Known networks are %s", ' and '.join(known_nets))
+    logger.info("Known networks are %s", ' and '.join(known_nets))
     prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
-    logging.info("Known hosts are %s", ' and '.join(contr_hosts))
+    logger.info("Known hosts are %s", ' and '.join(contr_hosts))
 
     for ip_service in state.known_services:
         services = []
@@ -138,13 +138,13 @@ def create_status_from_state(state):
                 if serv.name not in local_services:
                     services.append(serv.name)
             if len(services) > 0:
-                logging.debug(f"Known services {ip_service, services}")
+                logger.debug(f"Known services {ip_service, services}")
                 prompt += f"Known services for host {ip_service} are {' and '.join(str(services))}\n"
 
     for ip_data in state.known_data:
         if len(state.known_data[ip_data]) > 0:
             prompt += f"Known data for host {ip_data} are {' and '.join(list(state.known_data[ip_data]))}\n"
-            logging.info(f"Known data: {ip_data, state.known_data[ip_data]}")
+            logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
     return prompt
 
@@ -187,7 +187,8 @@ if __name__ == "__main__":
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
-    
+    logger = logging.getLogger('llm_qa')
+
     env = Network_Security_Environment(args.task_config_file)
     # Initialize the game
     observation = env.reset()
@@ -247,7 +248,7 @@ if __name__ == "__main__":
         response = openai_query(messages, max_tokens=80)
 
         print(f"LLM (step 3): {response}")
-        logging.info("LLM (step 3): %s", response)
+        logger.info("LLM (step 3): %s", response)
 
         try:
             response = eval(response)
@@ -273,7 +274,7 @@ if __name__ == "__main__":
                 good_action = True
                 current_state = observation.state
 
-        logging.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
+        logger.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
         if observation.done:
             break
 
@@ -289,5 +290,5 @@ if __name__ == "__main__":
                 memories.append((response["action"], response["parameters"], "This action was not helpful."))
 
 
-logging.info("Total reward: %s", str(total_reward))
+logger.info("Total reward: %s", str(total_reward))
 print(f"Total reward: {total_reward}")
