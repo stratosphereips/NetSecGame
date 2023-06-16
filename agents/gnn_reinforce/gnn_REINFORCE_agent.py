@@ -4,8 +4,7 @@ import argparse
 import logging
 import time
 
-from random import choice, seed, choices
-from timeit import default_timer as timer
+from random import choice, choices
 
 # This is used so the agent can see the environment and game components
 import sys
