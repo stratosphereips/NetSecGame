@@ -299,12 +299,12 @@ class NetworkSecurityEnvironment(object):
                     known_networks.add(net)
                     net_obj.value += 256
                     if net_obj.is_private():
-                        ip = components.IP(str(net_obj))
+                        ip = components.Network(str(net_obj.ip), net_obj.prefixlen)
                         logger.info(f'\tAdding {ip} to agent')
                         known_networks.add(ip)
                     net_obj.value -= 2*256
                     if net_obj.is_private():
-                        ip = components.IP(str(net_obj))
+                        ip = components.Network(str(net_obj.ip), net_obj.prefixlen)
                         logger.info(f'\tAdding {ip} to agent')
                         known_networks.add(ip)
                     #return value back to the original
