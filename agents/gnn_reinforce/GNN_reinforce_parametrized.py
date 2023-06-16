@@ -89,7 +89,7 @@ class GNN_REINFORCE_Agent:
         g_a_p2_emb = tf.keras.layers.Dense(32,activation="relu")(g_a_p2)
 
         #p3 attention
-        p3_arg, p3_attention_weights = tf.keras.layers.Attention()([g_a_p2_emb,node_embeddings],return_attention_scores=True)
+        _, p3_attention_weights = tf.keras.layers.Attention()([g_a_p2_emb,node_embeddings],return_attention_scores=True)
 
 
         #Build the model
@@ -322,9 +322,9 @@ class GNN_REINFORCE_Agent:
 
 
                         action = self._transition_mapping[np.argmax(tf.squeeze(tf.nn.softmax(a_logits)))]
-                        p1 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(p1_logits)))]
-                        p2 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(p2_logits)))]
-                        p3 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(p3_logits)))]
+                        # p1 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(p1_logits)))]
+                        # p2 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(p2_logits)))]
+                        # p3 = node_mapping[np.argmax(tf.squeeze(tf.nn.softmax(p3_logits)))]
 
 
                         next_state = self.env.step(action)

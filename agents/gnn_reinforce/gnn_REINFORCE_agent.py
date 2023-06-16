@@ -55,8 +55,6 @@ class GNN_REINFORCE_Agent:
         input_graph = tf.keras.layers.Input(type_spec=self._example_input_spec, name="input_actor")
         #process node features with FC layer
         graph = tfgnn.keras.layers.MapFeatures(node_sets_fn=set_initial_node_state, name="preprocessing_actor")(input_graph)
-        tmp = graph
-
 
         #Graph conv
         graph_updates = 3 # TODO Add to args
