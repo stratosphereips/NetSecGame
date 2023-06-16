@@ -4,7 +4,6 @@
 import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
-import env.game_components as components
 import numpy as np
 #from random import choice, seed
 import random
@@ -22,8 +21,7 @@ sys.path.append( path.dirname(path.dirname(path.dirname( path.abspath(__file__) 
 
 #with the path fixed, we can import now
 from env.network_security_game import Network_Security_Environment
-from env.scenarios import scenario_configuration, smaller_scenario_configuration, tiny_scenario_configuration
-from env.game_components import *
+from env.game_components import Action, ActionType, Observation
 
 class QAgent:
     """
@@ -128,8 +126,8 @@ class QAgent:
             raise Exception(" This is broken dont use!")
 
             state = '1'
-            new_Q = self.q_values[state, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[state, action])
-            self.q_values[state, action] = new_Q
+            new_q = self.q_values[state, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[state, action])
+            self.q_values[state, action] = new_q
             # This is broken dont use!
             state = observation.state
 
