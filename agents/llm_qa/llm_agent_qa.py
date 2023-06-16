@@ -9,10 +9,8 @@ sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__)
 from env.network_security_game import Network_Security_Environment
 from env.game_components import ActionType, Action, IP, Data, Network, Service
 
-# from cyst.api.configuration import *
 import openai
 from tenacity import retry, stop_after_attempt
-import re
 import argparse
 import jinja2
 import copy
@@ -22,7 +20,8 @@ from dotenv import dotenv_values
 config = dotenv_values(".env")
 openai.api_key = config["OPENAI_API_KEY"]
 
-local_services = ['bash', 'powershell', 'remote desktop service', 'windows login', 'can_attack_start_here']
+# local_services = ['bash', 'powershell', 'remote desktop service', 'windows login', 'can_attack_start_here']
+local_services = ['can_attack_start_here']
 
 # Set the logging
 import logging
@@ -37,13 +36,13 @@ ACTION_MAPPER = {
 
 COT_PROMPT = """
 Example status:
-Known networks are '1.1.1.0/24'
-Known hosts are '2.2.2.2', '1.1.1.2', '2.2.2.3'
-Controlled hosts are '2.2.2.2', '1.1.1.2'
+Known networks are 1.1.1.0/24
+Known hosts are 2.2.2.2, 1.1.1.2, 2.2.2.3
+Controlled hosts are 2.2.2.2, 1.1.1.2
 Known data for source host 1.1.1.2: are ('User1', 'SomeData')
 Known services for host 1.1.1.1 are "openssh"
 
-Valid examples of actions:
+Here are some examples of actions:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
 Action: {"action":"FindServices", "parameters":{"target_host":"192.168.2.0"}}
 Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
@@ -53,28 +52,29 @@ End of example.
 """
 
 COT_PROMPT2 = """
-Valid format of each action:
-Action: {"action":"ScanNetwork", "parameters": {"target_network": "<known_network>"}}
-Action: {"action":"FindServices", "parameters":{"target_host":"<known_host>"}}
-Action: {"action":"ExploitService", "parameters":{"target_host":"<known_host>", "target_service":"<known_service>"}}
-Action: {"action":"FindData", "parameters":{"target_host":"<controlled_host>"}}
-Action: {"action":"ExfiltrateData", "parameters":"{"target_host": "<controlled_host>", "data": ("<User>", "Data"), "source_host": "<controlled_host>"}}
+Here are some examples of actions:
+{"action":"ScanNetwork", "parameters": {"target_network": "<known_network>"}}
+{"action":"FindServices", "parameters":{"target_host":"<known_host>"}}
+{"action":"ExploitService", "parameters":{"target_host":"<known_host>", "target_service":"<known_service>"}}
+{"action":"FindData", "parameters":{"target_host":"<controlled_host>"}}
+{"action":"ExfiltrateData", "parameters":"{"target_host": "<controlled_host>", "data": ("<User>", "Data"), "source_host": "<controlled_host>"}}
 """
 
 INSTRUCTIONS_TEMPLATE = """
-You are a pentester and you want to exfiltrate data.
-Your goal is to find '{{data}}' of '{{user}}' and exfiltrate to target host {{target_host}}
+You are a pentester and you want to exfiltrate data to target host {{target_host}}.
 The actions you can take are FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
 
 The rules of the game are:
-1. You can only scan networks that you know.
-2. You can only find services in hosts that you know.
+1. You can scan networks that you know.
+2. You can find services in hosts that you know.
 3. You can exploit services that you know.
 4. You can find data in hosts you control.
 5. You can exfiltrate data that you know to and from hosts you control.
+
+Do not repeat actions you have take in the past because you will be detected.
 """
 
-Q1 = "List the objects in the current status and for each object the actions they can be used. Be specific."
+Q1 = "List the objects in the current status and the actions they can be used. Be specific."
 Q2 = "List top 3 sub-tasks you should follow with specific parameters. Indicate their priority out of 5."
 Q3 = """Provide one exact action and its parameters in the correct format.
 Action: 
@@ -95,7 +95,7 @@ def validate_action_in_state(llm_response, state):
         match action_str:
             case 'ScanNetwork':
                 if action_params["target_network"] in known_nets:
-                    valid = True       
+                    valid = True 
             case 'FindServices':
                 if action_params["target_host"] in known_hosts:
                     valid = True
@@ -312,19 +312,12 @@ if __name__ == "__main__":
         try:
             response = eval(response)
             # Validate action based on current states
-            is_valid = validate_action_in_state(response, observation.state)
+            is_valid, action = create_action_from_response(response, observation.state)
         except SyntaxError:
-            start = response.find('{')
-            end = [x.start() for x in re.finditer('}', response)][-1]
-            response = eval(response[start:end+1])
-            is_valid = validate_action_in_state(response, observation.state)
+            print("Eval failed")
+            is_valid = False
 
         if is_valid:
-            params = response["parameters"]
-            # In some actions we need to run another eval to get the dictionary
-            if isinstance(params, str):
-                params = eval(params)
-            action = create_action_from_response(response, observation.state)
             observation = env.step(action)
             taken_action = action
             total_reward += observation.reward
@@ -337,17 +330,20 @@ if __name__ == "__main__":
         if observation.done:
             break
 
-        if not is_valid:
-            memories.append((response["action"], response["parameters"], "This action was not valid based on your status."))
-        else:
-            # This is based on the assumption that more valid actions in the state are better/more helpful.
-            # But we could a manual evaluation based on the prior knowledge and weight the different components.
-            # For example: finding new data is better than discovering hosts (?)
-            if good_action:
-                memories.append((response["action"], response["parameters"], "This action was helpful."))
+        try:
+            if not is_valid:
+                memories.append((response["action"], response["parameters"], "This action was not valid based on your status."))
             else:
-                memories.append((response["action"], response["parameters"], "This action was not helpful."))
-
+                # This is based on the assumption that more valid actions in the state are better/more helpful.
+                # But we could a manual evaluation based on the prior knowledge and weight the different components.
+                # For example: finding new data is better than discovering hosts (?)
+                if good_action:
+                    memories.append((response["action"], response["parameters"], "This action was helpful."))
+                else:
+                    memories.append((response["action"], response["parameters"], "This action was not helpful."))
+        except TypeError:
+            # if the LLM sends a response that is not properly formatted.
+            memories.append(f"Response '{response}' was badly formatted.")
 
 logger.info("Total reward: %s", str(total_reward))
 print(f"Total reward: {total_reward}")
