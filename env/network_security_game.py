@@ -780,4 +780,3 @@ class Network_Security_Environment(object):
         else:
             logger.warning(f"Interaction over! No more steps can be made in the environment")
             raise ValueError("Interaction over! No more steps can be made in the environment")
-

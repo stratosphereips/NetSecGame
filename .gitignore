@@ -132,7 +132,6 @@ dmypy.json
 
 images
 nohup.out
-*.pbtxt
 # ignorre agent's logs
 agents/*/logs/
 # ignore venv
@@ -143,3 +142,4 @@ ai-dojo-venv-sebas/
 # ignore swap files
 *.swp
 .vscode/launch.json
+logs/*
