@@ -79,7 +79,7 @@ class LLMEmbedAgent:
         self.num_episodes = args.num_episodes
         self.gamma = args.gamma
         # self.loss_fn = torch.nn.MSELoss(reduction='mean')
-        self.loss_fn = nn.HuberLoss()
+        self.loss_fn = nn.SmoothL1Loss()
         self.summary_writer = SummaryWriter()
 
     def _create_status_from_state(self, state):
@@ -223,7 +223,8 @@ class LLMEmbedAgent:
         policy_loss = torch.cat(policy_loss).sum()
         policy_loss.backward()
 
-        torch.nn.utils.clip_grad_value_(self.policy.parameters(), 100)
+        torch.nn.utils.clip_grad_value_(self.policy.parameters(), 5)
+        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
         self.optimizer.step()
 
         self.summary_writer.add_scalar("loss", policy_loss, episode)
@@ -331,8 +332,8 @@ if __name__ == '__main__':
 
     # Model arguments
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
-    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-2)
+    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=32)
+    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
 
     # Training arguments
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
