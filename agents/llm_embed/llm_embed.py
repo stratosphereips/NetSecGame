@@ -17,6 +17,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.utils.tensorboard import SummaryWriter
 
 from chromadb.utils import embedding_functions
 from chromadb.config import Settings
@@ -42,9 +43,11 @@ class Policy(nn.Module):
     """
     def __init__(self, embedding_size=384):
         super(Policy, self).__init__()
-        self.linear1 = nn.Linear(embedding_size, 128)
-        self.dropout = nn.Dropout(p=0.2)
-        self.linear2 = nn.Linear(128, embedding_size)
+        self.linear1 = nn.Linear(embedding_size, 512)
+        self.dropout = nn.Dropout(p=0.5)
+        self.linear2 = nn.Linear(512, embedding_size)
+        # self.dropout2 = nn.Dropout(p=0.5)
+        # self.linear3 = nn.Linear(512, embedding_size)
 
         self.saved_log_probs = []
         self.rewards = []
@@ -53,6 +56,9 @@ class Policy(nn.Module):
         x = self.linear1(x)
         x = self.dropout(x)
         x = F.relu(x)
+        # x = self.linear2(x)
+        # x = self.dropout2(x)
+        # x = F.relu(x)
         action_embedding = self.linear2(x)
         return action_embedding
 
@@ -68,38 +74,18 @@ class LLMEmbedAgent:
         self.eps = np.finfo(np.float32).eps.item()
         print(self.policy)
 
-        self.db_client = Client()
-        self.ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
-        self.collection = self.db_client.create_collection(name="actions", embedding_function=self.ef)
-        self.all_actions = self.env.get_all_actions()
-
-        self.all_actions_str = [str(action) for action in self.all_actions.values()]
-        self.ids = ["a"+str(i) for i in range(len(self.all_actions))]
-        self.metadata = [{"action":str(action.type), "params":str(action.parameters)} for action in self.all_actions.values()]
-        self.collection.add(ids=self.ids, 
-                            documents=self.all_actions_str, 
-                            metadatas=self.metadata)
+        self.db_client = Client(Settings(anonymized_telemetry=False))
+        self.ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L12-v2")
         
-        self.transformer_model = SentenceTransformer('all-MiniLM-L6-v2')
+        self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2")
         self.max_t = args.max_t
         self.num_episodes = args.num_episodes
         self.gamma = args.gamma
-        self.loss_fn = torch.nn.MSELoss()
+        # self.loss_fn = torch.nn.MSELoss(reduction='mean')
+        self.loss_fn = nn.L1Loss()
+        self.summary_writer = SummaryWriter()
+        # self.summary_writer.add_graph(self.policy, torch.tensor[384])
 
-    # def _parse_action_string(self, action_str):
-    #     """
-    #     Get the action string stored as metadata
-    #     and return an action to use in the environment.
-    #     """
-    #     params_start = action_str.find('{')
-    #     params_end = action_str.find('}')
-
-    #     action_params = eval(action_str[params_start:params_end])
-    #     acttion_start = action_str.find('.')
-    #     action_end = action_str.find('|')
-
-    #     return Action(action_type=label_mapper[action_str[acttion_start:action_end]],
-    #            params=action_params)
 
     def _create_status_from_state(self, state):
         """Create a status prompt using the current state and the sae memories."""
@@ -145,42 +131,81 @@ class LLMEmbedAgent:
                     host_data += f"({known_data.owner}, {known_data.id}) and "
                 prompt += f"Known data for host {ip_data} are {host_data}\n"
                 # logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
+        
+        del contr_hosts
+        del known_hosts
+        del known_nets
 
         return prompt
 
+    def _create_collection_from_actions(self, actions):
+        collection = self.db_client.create_collection(name="actions", embedding_function=self.ef)
 
-    def _convert_embedding_to_action(self, new_action_embedding):
+        all_actions_str = [str(action) for action in actions]
+        ids = ["a"+str(i) for i in range(len(actions))]
+        # metadata = [{"action":str(action.type), "params":str(action.parameters)} for action in actions]
+        collection.add(ids=ids, 
+                        documents=all_actions_str) #, 
+                        # metadatas=metadata)
+        return collection
+
+    def _convert_embedding_to_action(self, new_action_embedding, valid_actions):
         """
         Take an embedding, and the valid actions for the state
         and find the closest embedding using cosine similarity
         Return an Action object and the closest neighbor
         """
-        result = self.collection.query(query_embeddings=new_action_embedding,
+        collection = self._create_collection_from_actions(valid_actions)
+
+        result = collection.query(query_embeddings=new_action_embedding,
                                        n_results=1,
                                        include=["embeddings"])
-        
-        # where conditions can be added
-
+        self.db_client.delete_collection(name="actions")
+        # print(f"Results:", result["documents"])
         # Get the action id -> "aX"
         action_id = result["ids"][0][0]
-        return self.all_actions[int(action_id[1:])], result["embeddings"][0][0]
+        return valid_actions[int(action_id[1:])], result["embeddings"][0][0]
         
-    def _get_valid_actions(self):
-        """
-        From the current state find all valid actions and return their ids
-        """
-        raise NotImplementedError
-    
-    def _training_step(self, rewards, out_embeddings, real_embeddings):
-        eps = np.finfo(np.float32).eps.item()
+    def _generate_valid_actions(self, state):
+        valid_actions = set()
+        #Network Scans
+        for network in state.known_networks:
+            # TODO ADD neighbouring networks
+            valid_actions.add(Action(ActionType.ScanNetwork, params={"target_network": network}))
+        # Service Scans
+        for host in state.known_hosts:
+            valid_actions.add(Action(ActionType.FindServices, params={"target_host": host}))
+        # Service Exploits
+        for host, service_list in state.known_services.items():
+            for service in service_list:
+                valid_actions.add(Action(ActionType.ExploitService, params={"target_host": host , "target_service": service}))
+        # Data Scans
+        for host in state.controlled_hosts:
+            valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
 
+        # Data Exfiltration
+        for src_host, data_list in state.known_data.items():
+            for data in data_list:
+                for trg_host in state.controlled_hosts:
+                    if trg_host != src_host:
+                        valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
+        return list(valid_actions)
+
+    
+    def _training_step(self, rewards, out_embeddings, real_embeddings, episode):
         # Calculate the discounted rewards
-        R = 0
+        # R = 0
         policy_loss = []
         returns = deque()
-        for r in rewards[::-1]:
-            R = r + args.gamma * R
-            returns.appendleft(R)
+        # for r in rewards[::-1]:
+        #     R = r + args.gamma * R
+        #     returns.appendleft(R)
+        n_steps = len(rewards)
+        for t in range(n_steps)[::-1]:
+            disc_return_t = (returns[0] if len(returns)>0 else 0)
+            returns.appendleft(self.gamma*disc_return_t + rewards[t]) 
+
+        eps = np.finfo(np.float32).eps.item()
         returns = torch.tensor(returns)
         returns = (returns - returns.mean()) / (returns.std() + eps)
         
@@ -190,11 +215,15 @@ class LLMEmbedAgent:
 
         self.optimizer.zero_grad()
         policy_loss = torch.cat(policy_loss).sum()
+        self.summary_writer.add_scalar("loss", policy_loss, episode)
         policy_loss.backward()
         self.optimizer.step()
 
+        del policy_loss
+        del returns
+
     def train(self):
-        scores_deque = deque(maxlen=100)
+        # scores_deque = deque()
         scores = []
         for i in range(1, self.num_episodes+1):
             out_embeddings = []
@@ -216,7 +245,8 @@ class LLMEmbedAgent:
                 out_embeddings.append(action_emb)
 
                 # Convert the action embedding to a valid action and its embedding
-                action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0])
+                valid_actions = self._generate_valid_actions(observation.state)
+                action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
                 # print(f"Action: {action}")
                 real_embeddings.append(real_emb)
 
@@ -226,11 +256,15 @@ class LLMEmbedAgent:
                 if observation.done:
                     break
 
-            scores_deque.append(sum(rewards))
+            # scores_deque.append(sum(rewards))
             scores.append(sum(rewards))
-            print(f"Scores: ", scores)
-            
-            self._training_step(rewards, out_embeddings, real_embeddings)
+            # print(f"Scores: ", scores)
+            self.summary_writer.add_scalar("valid actions", len(valid_actions), i)
+            self._training_step(rewards, out_embeddings, real_embeddings, i)
+            del out_embeddings
+            del real_embeddings
+            del rewards
+            del valid_actions
 
     def evaluate(self, num_eval_episodes):
         eval_returns = []
@@ -249,8 +283,9 @@ class LLMEmbedAgent:
                 action_emb = self.policy.forward(state_embed)
 
                 # Convert the action embedding to a valid action and its embedding
-                action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0])
-                print(f"Action: {action}")
+                valid_actions = self._generate_valid_actions(observation.state)
+                action, _ = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
+                # print(f"Action: {action}")
 
                 # Take the new action and get the observation from the policy
                 observation = self.env.step(action)
@@ -276,28 +311,26 @@ if __name__ == '__main__':
     # Model arguments
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
+    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-2)
 
     # Training arguments
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--max_t", type=int, default=128, help="Max episode length")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=128, type=int)
-    parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
+    # parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
     parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
 
     args = parser.parse_args()
 
-    logger = logging.getLogger('llm_embed_agent')
+    # logger = logging.getLogger('llm_embed_agent')
 
 
-    logger.info('Setting the network security environment')
+    # logger.info('Setting the network security environment')
     env = NetworkSecurityEnvironment(args.task_config_file)
-    state = env.reset()
 
     # Training
-    logger.info('Creating the agent')
-    
-    # # initialize agent
+    # logger.info('Creating the agent')
     agent = LLMEmbedAgent(env, args)
     agent.train()
+
     agent.evaluate(args.final_eval_for)
