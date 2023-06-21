@@ -1,5 +1,7 @@
-# This agent uses LLm embeddings for the state and the actions
-# Authors:  Maria Rigaki - maria.rigaki@aic.fel.cvut.cz    
+"""
+This agent uses LLm embeddings for the state and the actions
+Authors:  Maria Rigaki - maria.rigaki@aic.fel.cvut.cz
+"""
 import argparse
 import sys
 from collections import deque
@@ -27,7 +29,8 @@ label_mapper = {
     "ExfiltrateData":ActionType.ExfiltrateData
 }
 
-# local_services = ['bash', 'powershell', 'remote desktop service', 'windows login', 'can_attack_start_here']
+# local_services = ['bash', 'powershell', 'remote desktop service',
+# 'windows login', 'can_attack_start_here']
 local_services = ['can_attack_start_here']
 
 
@@ -37,7 +40,7 @@ class Policy(nn.Module):
     and outputs an action embedding
     """
     def __init__(self, embedding_size=384):
-        super(Policy, self).__init__()
+        super().__init__()
         self.linear1 = nn.Linear(embedding_size, 512)
         self.dropout = nn.Dropout(p=0.5)
         self.linear2 = nn.Linear(512, embedding_size)
@@ -57,11 +60,15 @@ class Policy(nn.Module):
         return self.linear2(x)
 
 class LLMEmbedAgent:
-    def __init__(self, env, args) -> None:
+    """
+    An agent for the NetSec Game environemnt that uses LLM embeddings.
+    The agent is using the REINFORCE algorithm.
+    """
+    def __init__(self, game_env, args) -> None:
         """
         Create and initialize the agent and the transformer model.
         """
-        self.env = env
+        self.env = game_env
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.policy = Policy(embedding_size=384)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
@@ -74,7 +81,6 @@ class LLMEmbedAgent:
         # self.loss_fn = torch.nn.MSELoss(reduction='mean')
         self.loss_fn = nn.HuberLoss()
         self.summary_writer = SummaryWriter()
-        self.summary_writer.add_graph(self.policy, torch.zeros((1, 384)))
 
     def _create_status_from_state(self, state):
         """
@@ -122,7 +128,7 @@ class LLMEmbedAgent:
                     host_data += f"({known_data.owner}, {known_data.id}) and "
                 prompt += f"Known data for host {ip_data} are {host_data}\n"
                 # logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
-    
+
         return prompt
 
     def _convert_embedding_to_action(self, new_action_embedding, valid_actions):
@@ -136,7 +142,7 @@ class LLMEmbedAgent:
         action_id = np.argmax(util.cos_sim(valid_embeddings, new_action_embedding), axis=0)
 
         return valid_actions[action_id], valid_embeddings[action_id]
-    
+
     def _generate_valid_actions(self, state):
         """
         Generate a list of valid actions from the current state.
@@ -151,7 +157,8 @@ class LLMEmbedAgent:
         # Service Exploits
         for host, service_list in state.known_services.items():
             for service in service_list:
-                valid_actions.add(Action(ActionType.ExploitService, params={"target_host": host , "target_service": service}))
+                valid_actions.add(Action(ActionType.ExploitService,
+                                         params={"target_host": host , "target_service": service}))
         # Data Scans
         for host in state.controlled_hosts:
             valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
@@ -161,7 +168,10 @@ class LLMEmbedAgent:
             for data in data_list:
                 for trg_host in state.controlled_hosts:
                     if trg_host != src_host:
-                        valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
+                        valid_actions.add(Action(
+                            ActionType.ExfiltrateData, params={"target_host": trg_host,
+                                                               "source_host": src_host, 
+                                                               "data": data}))
         return list(valid_actions)
 
     def _weight_histograms_linear(self, step, weights, layer_name):
@@ -170,7 +180,10 @@ class LLMEmbedAgent:
         """
         flattened_weights = weights.flatten()
         tag = f"layer_{layer_name}"
-        self.summary_writer.add_histogram(tag, flattened_weights, global_step=step, bins='tensorflow')
+        self.summary_writer.add_histogram(tag,
+                                          flattened_weights,
+                                          global_step=step,
+                                          bins='tensorflow')
 
     def _weight_histograms(self, step):
         """
@@ -194,26 +207,27 @@ class LLMEmbedAgent:
         policy_loss = []
         returns = deque()
 
-        n_steps = len(rewards)
-        for t in range(n_steps)[::-1]:
+        for time_step in range(len(rewards))[::-1]:
             disc_return_t = (returns[0] if len(returns)>0 else 0)
-            returns.appendleft(self.gamma*disc_return_t + rewards[t]) 
+            returns.appendleft(self.gamma*disc_return_t + rewards[time_step])
 
         eps = np.finfo(np.float32).eps.item()
         returns = torch.Tensor(returns)
         returns = (returns - returns.mean()) / (returns.std() + eps)
-        
+
         for out_emb, real_emb, disc_ret in zip(out_embeddings, real_embeddings, returns):
-            rmse_loss = torch.sqrt(self.loss_fn(out_emb, torch.Tensor(real_emb).float().unsqueeze(0))) 
+            rmse_loss = torch.sqrt(self.loss_fn(out_emb, torch.Tensor(real_emb).float().unsqueeze(0)))
             policy_loss.append((-rmse_loss * disc_ret).reshape(1))
 
         self.optimizer.zero_grad()
         policy_loss = torch.cat(policy_loss).sum()
-        self.summary_writer.add_scalar("loss", policy_loss, episode)
         policy_loss.backward()
 
         torch.nn.utils.clip_grad_value_(self.policy.parameters(), 100)
         self.optimizer.step()
+
+        self.summary_writer.add_scalar("loss", policy_loss, episode)
+
 
         for tag, param in self.policy.named_parameters():
             self.summary_writer.add_histogram(f"grad_{tag}", param.grad.data.cpu().numpy(), episode)
@@ -224,6 +238,7 @@ class LLMEmbedAgent:
         Main training loop that runs for a number of episodes.
         """
         scores = []
+        self.summary_writer.add_graph(self.policy, torch.zeros((1, 384)))
         for episode in range(1, self.num_episodes+1):
             out_embeddings = []
             real_embeddings = []
@@ -233,7 +248,6 @@ class LLMEmbedAgent:
 
             # Visualize the weights in tensorboard
             self._weight_histograms(episode)
-            
             for _ in range(self.max_t):
                 # Create the status string from the observed state
                 status_str = self._create_status_from_state(observation.state)
@@ -265,8 +279,7 @@ class LLMEmbedAgent:
 
             if episode > 0 and episode % self.max_t == 0:
                 returns = self.evaluate(50)
-                print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}")
-                self.summary_writer.add_scalar('test/eval_win', np.mean(returns), step=episode)
+                self.summary_writer.add_scalar('test/eval_win', np.mean(returns), episode)
 
     def evaluate(self, num_eval_episodes):
         """
@@ -297,9 +310,7 @@ class LLMEmbedAgent:
                 done = observation.done
 
             eval_returns.append(ret)
-        print(f"Evaluation finished - (mean of {len(eval_returns)} runs): {np.mean(eval_returns)}+-{np.std(eval_returns)}")
         return eval_returns
-        
 
     def save_model(self, file_name):
         raise NotImplementedError
@@ -312,7 +323,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # Task config file
-    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
+    parser.add_argument("--task_config_file",
+                        help="Reads the task definition from a configuration file",
+                        default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'),
+                        action='store',
+                        required=False)
 
     # Model arguments
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
@@ -338,4 +353,5 @@ if __name__ == '__main__':
     agent.train()
 
     # Evaluate the agent
-    agent.evaluate(args.final_eval_for)
+    final_returns = agent.evaluate(args.final_eval_for)
+    print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
