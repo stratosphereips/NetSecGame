@@ -18,12 +18,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-
-from chromadb.utils import embedding_functions
-from chromadb.config import Settings
-from chromadb import Client
-
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, util
 
 label_mapper = {
     "FindData":ActionType.FindData,
@@ -74,10 +69,7 @@ class LLMEmbedAgent:
         self.eps = np.finfo(np.float32).eps.item()
         print(self.policy)
 
-        self.db_client = Client(Settings(anonymized_telemetry=False))
-        self.ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L12-v2")
-        
-        self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2")
+        self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2").eval()
         self.max_t = args.max_t
         self.num_episodes = args.num_episodes
         self.gamma = args.gamma
@@ -85,7 +77,6 @@ class LLMEmbedAgent:
         self.loss_fn = nn.L1Loss()
         self.summary_writer = SummaryWriter()
         # self.summary_writer.add_graph(self.policy, torch.tensor[384])
-
 
     def _create_status_from_state(self, state):
         """Create a status prompt using the current state and the sae memories."""
@@ -155,17 +146,12 @@ class LLMEmbedAgent:
         and find the closest embedding using cosine similarity
         Return an Action object and the closest neighbor
         """
-        collection = self._create_collection_from_actions(valid_actions)
+        all_actions_str = [str(action) for action in valid_actions]
+        valid_embeddings = self.transformer_model.encode(all_actions_str)
+        action_id = np.argmax(util.cos_sim(valid_embeddings, new_action_embedding), axis=0)
 
-        result = collection.query(query_embeddings=new_action_embedding,
-                                       n_results=1,
-                                       include=["embeddings"])
-        self.db_client.delete_collection(name="actions")
-        # print(f"Results:", result["documents"])
-        # Get the action id -> "aX"
-        action_id = result["ids"][0][0]
-        return valid_actions[int(action_id[1:])], result["embeddings"][0][0]
-        
+        return valid_actions[action_id], valid_embeddings[action_id]
+    
     def _generate_valid_actions(self, state):
         valid_actions = set()
         #Network Scans
@@ -191,15 +177,11 @@ class LLMEmbedAgent:
                         valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
         return list(valid_actions)
 
-    
     def _training_step(self, rewards, out_embeddings, real_embeddings, episode):
         # Calculate the discounted rewards
-        # R = 0
         policy_loss = []
         returns = deque()
-        # for r in rewards[::-1]:
-        #     R = r + args.gamma * R
-        #     returns.appendleft(R)
+
         n_steps = len(rewards)
         for t in range(n_steps)[::-1]:
             disc_return_t = (returns[0] if len(returns)>0 else 0)
@@ -219,11 +201,10 @@ class LLMEmbedAgent:
         policy_loss.backward()
         self.optimizer.step()
 
-        del policy_loss
-        del returns
+        policy_loss = None
+        returns = None
 
     def train(self):
-        # scores_deque = deque()
         scores = []
         for i in range(1, self.num_episodes+1):
             out_embeddings = []
@@ -237,17 +218,17 @@ class LLMEmbedAgent:
                 status_str = self._create_status_from_state(observation.state)
 
                 # Get the embedding of the string from the policy
-                state_embed = self.transformer_model.encode(status_str)
-                state_embed = torch.from_numpy(state_embed).float().unsqueeze(0)
+                with torch.no_grad():
+                    state_embed = self.transformer_model.encode(status_str)
+                    state_embed_t = torch.from_numpy(state_embed).float().unsqueeze(0)
 
                 # Pass the state embedding to the model and get the action
-                action_emb = self.policy.forward(state_embed)
+                action_emb = self.policy.forward(state_embed_t)
                 out_embeddings.append(action_emb)
 
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
                 action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
-                # print(f"Action: {action}")
                 real_embeddings.append(real_emb)
 
                 # Take the new action and get the observation from the policy
@@ -256,9 +237,7 @@ class LLMEmbedAgent:
                 if observation.done:
                     break
 
-            # scores_deque.append(sum(rewards))
             scores.append(sum(rewards))
-            # print(f"Scores: ", scores)
             self.summary_writer.add_scalar("valid actions", len(valid_actions), i)
             self._training_step(rewards, out_embeddings, real_embeddings, i)
             del out_embeddings
@@ -285,7 +264,6 @@ class LLMEmbedAgent:
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
                 action, _ = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
-                # print(f"Action: {action}")
 
                 # Take the new action and get the observation from the policy
                 observation = self.env.step(action)
@@ -333,4 +311,4 @@ if __name__ == '__main__':
     agent = LLMEmbedAgent(env, args)
     agent.train()
 
-    agent.evaluate(args.final_eval_for)
+    # agent.evaluate(args.final_eval_for)
