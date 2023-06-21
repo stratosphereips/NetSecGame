@@ -1,7 +1,6 @@
 # This agent uses LLm embeddings for the state and the actions
 # Authors:  Maria Rigaki - maria.rigaki@aic.fel.cvut.cz    
 import argparse
-# import logging
 import sys
 from collections import deque
 
@@ -31,6 +30,7 @@ label_mapper = {
 # local_services = ['bash', 'powershell', 'remote desktop service', 'windows login', 'can_attack_start_here']
 local_services = ['can_attack_start_here']
 
+
 class Policy(nn.Module):
     """
     This is the policy that takes as input the observation embedding
@@ -54,32 +54,32 @@ class Policy(nn.Module):
         # x = self.linear2(x)
         # x = self.dropout2(x)
         # x = F.relu(x)
-        action_embedding = self.linear2(x)
-        return action_embedding
+        return self.linear2(x)
 
 class LLMEmbedAgent:
     def __init__(self, env, args) -> None:
         """
-        Create and initialize the agent.
+        Create and initialize the agent and the transformer model.
         """
         self.env = env
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.policy = Policy(embedding_size=384)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
         self.eps = np.finfo(np.float32).eps.item()
-        print(self.policy)
 
         self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2").eval()
         self.max_t = args.max_t
         self.num_episodes = args.num_episodes
         self.gamma = args.gamma
         # self.loss_fn = torch.nn.MSELoss(reduction='mean')
-        self.loss_fn = nn.L1Loss()
+        self.loss_fn = nn.HuberLoss()
         self.summary_writer = SummaryWriter()
-        # self.summary_writer.add_graph(self.policy, torch.tensor[384])
+        self.summary_writer.add_graph(self.policy, torch.zeros((1, 384)))
 
     def _create_status_from_state(self, state):
-        """Create a status prompt using the current state and the sae memories."""
+        """
+        Create a status prompt using the current state.
+        """
         contr_hosts = [host.ip for host in state.controlled_hosts]
         known_hosts = [host.ip for host in state.known_hosts]
         known_nets = [str(net) for net in list(state.known_networks)]
@@ -122,23 +122,8 @@ class LLMEmbedAgent:
                     host_data += f"({known_data.owner}, {known_data.id}) and "
                 prompt += f"Known data for host {ip_data} are {host_data}\n"
                 # logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
-        
-        del contr_hosts
-        del known_hosts
-        del known_nets
-
+    
         return prompt
-
-    def _create_collection_from_actions(self, actions):
-        collection = self.db_client.create_collection(name="actions", embedding_function=self.ef)
-
-        all_actions_str = [str(action) for action in actions]
-        ids = ["a"+str(i) for i in range(len(actions))]
-        # metadata = [{"action":str(action.type), "params":str(action.parameters)} for action in actions]
-        collection.add(ids=ids, 
-                        documents=all_actions_str) #, 
-                        # metadatas=metadata)
-        return collection
 
     def _convert_embedding_to_action(self, new_action_embedding, valid_actions):
         """
@@ -153,6 +138,9 @@ class LLMEmbedAgent:
         return valid_actions[action_id], valid_embeddings[action_id]
     
     def _generate_valid_actions(self, state):
+        """
+        Generate a list of valid actions from the current state.
+        """
         valid_actions = set()
         #Network Scans
         for network in state.known_networks:
@@ -176,7 +164,32 @@ class LLMEmbedAgent:
                         valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
         return list(valid_actions)
 
+    def _weight_histograms_linear(self, step, weights, layer_name):
+        """
+        Log the histograms of the weight of a specific layer to tensorboard
+        """
+        flattened_weights = weights.flatten()
+        tag = f"layer_{layer_name}"
+        self.summary_writer.add_histogram(tag, flattened_weights, global_step=step, bins='tensorflow')
+
+    def _weight_histograms(self, step):
+        """
+        Go over each layer and if it is a linear layer send it to the
+        logger function.
+        """
+        # Iterate over all model layers
+        for layer_name in self.policy._modules.keys():
+            layer = self.policy._modules[layer_name]
+            # Compute weight histograms for appropriate layer
+            if isinstance(layer, nn.Linear):
+                weights = layer.weight
+                self._weight_histograms_linear(step, weights, layer_name)
+
     def _training_step(self, rewards, out_embeddings, real_embeddings, episode):
+        """
+        The training step that calculates that discounted rewards and losses.
+        It also performs the backpropagation step for the policy network.
+        """
         # Calculate the discounted rewards
         policy_loss = []
         returns = deque()
@@ -198,19 +211,28 @@ class LLMEmbedAgent:
         policy_loss = torch.cat(policy_loss).sum()
         self.summary_writer.add_scalar("loss", policy_loss, episode)
         policy_loss.backward()
+
+        torch.nn.utils.clip_grad_value_(self.policy.parameters(), 100)
         self.optimizer.step()
 
-        policy_loss = None
-        returns = None
+        for tag, param in self.policy.named_parameters():
+            self.summary_writer.add_histogram(f"grad_{tag}", param.grad.data.cpu().numpy(), episode)
+
 
     def train(self):
+        """
+        Main training loop that runs for a number of episodes.
+        """
         scores = []
-        for i in range(1, self.num_episodes+1):
+        for episode in range(1, self.num_episodes+1):
             out_embeddings = []
             real_embeddings = []
             rewards = []
 
             observation = self.env.reset()
+
+            # Visualize the weights in tensorboard
+            self._weight_histograms(episode)
             
             for _ in range(self.max_t):
                 # Create the status string from the observed state
@@ -237,14 +259,19 @@ class LLMEmbedAgent:
                     break
 
             scores.append(sum(rewards))
-            self.summary_writer.add_scalar("valid actions", len(valid_actions), i)
-            self._training_step(rewards, out_embeddings, real_embeddings, i)
-            del out_embeddings
-            del real_embeddings
-            del rewards
-            del valid_actions
+            self.summary_writer.add_scalar("valid actions", len(valid_actions), episode)
+            self.summary_writer.add_scalar("mean reward", np.mean(scores), episode)
+            self._training_step(rewards, out_embeddings, real_embeddings, episode)
+
+            if episode > 0 and episode % self.max_t == 0:
+                returns = self.evaluate(50)
+                print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}")
+                self.summary_writer.add_scalar('test/eval_win', np.mean(returns), step=episode)
 
     def evaluate(self, num_eval_episodes):
+        """
+        Evaluation function.
+        """
         eval_returns = []
         for _ in range(num_eval_episodes):
             observation, done = env.reset(), False
@@ -270,7 +297,9 @@ class LLMEmbedAgent:
                 done = observation.done
 
             eval_returns.append(ret)
-            print(f"Evaluation finished - (mean of {len(eval_returns)} runs): {np.mean(eval_returns)}+-{np.std(eval_returns)}")
+        print(f"Evaluation finished - (mean of {len(eval_returns)} runs): {np.mean(eval_returns)}+-{np.std(eval_returns)}")
+        return eval_returns
+        
 
     def save_model(self, file_name):
         raise NotImplementedError
@@ -299,15 +328,14 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # logger = logging.getLogger('llm_embed_agent')
-
-
-    # logger.info('Setting the network security environment')
+    # Create the environment
     env = NetworkSecurityEnvironment(args.task_config_file)
 
-    # Training
-    # logger.info('Creating the agent')
+    # Initializr the agent
     agent = LLMEmbedAgent(env, args)
+
+    # Train the agent using reinforce
     agent.train()
 
+    # Evaluate the agent
     agent.evaluate(args.final_eval_for)
