@@ -1,7 +1,7 @@
 # This agent uses LLm embeddings for the state and the actions
 # Authors:  Maria Rigaki - maria.rigaki@aic.fel.cvut.cz    
 import argparse
-import logging
+# import logging
 import sys
 from collections import deque
 
@@ -15,7 +15,7 @@ from env.game_components import Action, ActionType
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as func
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from sentence_transformers import SentenceTransformer, util
@@ -50,7 +50,7 @@ class Policy(nn.Module):
     def forward(self, x):
         x = self.linear1(x)
         x = self.dropout(x)
-        x = F.relu(x)
+        x = func.relu(x)
         # x = self.linear2(x)
         # x = self.dropout2(x)
         # x = F.relu(x)
@@ -156,7 +156,6 @@ class LLMEmbedAgent:
         valid_actions = set()
         #Network Scans
         for network in state.known_networks:
-            # TODO ADD neighbouring networks
             valid_actions.add(Action(ActionType.ScanNetwork, params={"target_network": network}))
         # Service Scans
         for host in state.known_hosts:
@@ -188,7 +187,7 @@ class LLMEmbedAgent:
             returns.appendleft(self.gamma*disc_return_t + rewards[t]) 
 
         eps = np.finfo(np.float32).eps.item()
-        returns = torch.tensor(returns)
+        returns = torch.Tensor(returns)
         returns = (returns - returns.mean()) / (returns.std() + eps)
         
         for out_emb, real_emb, disc_ret in zip(out_embeddings, real_embeddings, returns):
@@ -213,7 +212,7 @@ class LLMEmbedAgent:
 
             observation = self.env.reset()
             
-            for t in range(self.max_t):
+            for _ in range(self.max_t):
                 # Create the status string from the observed state
                 status_str = self._create_status_from_state(observation.state)
 
@@ -311,4 +310,4 @@ if __name__ == '__main__':
     agent = LLMEmbedAgent(env, args)
     agent.train()
 
-    # agent.evaluate(args.final_eval_for)
+    agent.evaluate(args.final_eval_for)
