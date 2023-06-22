@@ -33,6 +33,8 @@ label_mapper = {
 # 'windows login', 'can_attack_start_here']
 local_services = ['can_attack_start_here']
 
+# if GPU is to be used
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Policy(nn.Module):
     """
@@ -41,9 +43,9 @@ class Policy(nn.Module):
     """
     def __init__(self, embedding_size=384):
         super().__init__()
-        self.linear1 = nn.Linear(embedding_size, 512)
-        self.dropout = nn.Dropout(p=0.5)
-        self.linear2 = nn.Linear(512, embedding_size)
+        self.linear1 = nn.Linear(embedding_size, 128)
+        # self.dropout = nn.Dropout(p=0.5)
+        self.linear2 = nn.Linear(1024, embedding_size)
         # self.dropout2 = nn.Dropout(p=0.5)
         # self.linear3 = nn.Linear(512, embedding_size)
 
@@ -52,7 +54,7 @@ class Policy(nn.Module):
 
     def forward(self, x):
         x = self.linear1(x)
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = func.relu(x)
         # x = self.linear2(x)
         # x = self.dropout2(x)
@@ -70,7 +72,7 @@ class LLMEmbedAgent:
         """
         self.env = game_env
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.policy = Policy(embedding_size=384)
+        self.policy = Policy(embedding_size=384).to(device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
         self.eps = np.finfo(np.float32).eps.item()
 
@@ -78,8 +80,8 @@ class LLMEmbedAgent:
         self.max_t = args.max_t
         self.num_episodes = args.num_episodes
         self.gamma = args.gamma
-        # self.loss_fn = torch.nn.MSELoss(reduction='mean')
-        self.loss_fn = nn.SmoothL1Loss()
+        self.loss_fn = nn.MSELoss(reduction='mean')
+        # self.loss_fn = nn.SmoothL1Loss()
         self.summary_writer = SummaryWriter()
 
     def _create_status_from_state(self, state):
@@ -216,14 +218,14 @@ class LLMEmbedAgent:
         returns = (returns - returns.mean()) / (returns.std() + eps)
 
         for out_emb, real_emb, disc_ret in zip(out_embeddings, real_embeddings, returns):
-            rmse_loss = torch.sqrt(self.loss_fn(out_emb, torch.Tensor(real_emb).float().unsqueeze(0)))
+            rmse_loss = torch.sqrt(self.loss_fn(out_emb, torch.tensor(real_emb, device=device).float().unsqueeze(0)))
             policy_loss.append((-rmse_loss * disc_ret).reshape(1))
 
         self.optimizer.zero_grad()
         policy_loss = torch.cat(policy_loss).sum()
         policy_loss.backward()
 
-        torch.nn.utils.clip_grad_value_(self.policy.parameters(), 5)
+        # torch.nn.utils.clip_grad_value_(self.policy.parameters(), 5)
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
         self.optimizer.step()
 
@@ -239,7 +241,7 @@ class LLMEmbedAgent:
         Main training loop that runs for a number of episodes.
         """
         scores = []
-        self.summary_writer.add_graph(self.policy, torch.zeros((1, 384)))
+        self.summary_writer.add_graph(self.policy, torch.zeros((1, 384), device=device))
         for episode in range(1, self.num_episodes+1):
             out_embeddings = []
             real_embeddings = []
@@ -254,9 +256,8 @@ class LLMEmbedAgent:
                 status_str = self._create_status_from_state(observation.state)
 
                 # Get the embedding of the string from the policy
-                with torch.no_grad():
-                    state_embed = self.transformer_model.encode(status_str)
-                    state_embed_t = torch.from_numpy(state_embed).float().unsqueeze(0)
+                state_embed = self.transformer_model.encode(status_str)
+                state_embed_t = torch.tensor(state_embed, device=device).unsqueeze(0)
 
                 # Pass the state embedding to the model and get the action
                 action_emb = self.policy.forward(state_embed_t)
@@ -296,7 +297,7 @@ class LLMEmbedAgent:
 
                 # Get the embedding of the string from the policy
                 state_embed = self.transformer_model.encode(status_str)
-                state_embed = torch.from_numpy(state_embed).float().unsqueeze(0)
+                state_embed = torch.tensor(state_embed, device=device).unsqueeze(0)
 
                 # Pass the state embedding to the model and get the action
                 action_emb = self.policy.forward(state_embed)
