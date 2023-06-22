@@ -305,7 +305,7 @@ class LLMEmbedAgent:
             scores.append(sum(rewards))
             self.summary_writer.add_scalar("valid actions", len(valid_actions), episode)
             self.summary_writer.add_scalar("reward/mean", np.mean(scores), episode)
-            self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-128:]))
+            self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-128:]), episode)
             self._training_step(rewards, out_embeddings, real_embeddings, episode)
 
             if episode > 0 and episode % self.max_t == 0:
