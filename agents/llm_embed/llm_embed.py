@@ -43,18 +43,18 @@ class Policy(nn.Module):
     """
     def __init__(self, embedding_size=384):
         super().__init__()
-        self.linear1 = nn.Linear(embedding_size, 128)
-        # self.dropout = nn.Dropout(p=0.5)
-        self.linear2 = nn.Linear(1024, embedding_size)
+        self.linear1 = nn.Linear(embedding_size, 256)
+        self.dropout = nn.Dropout(p=0.2)
+        self.linear2 = nn.Linear(256, 384)
         # self.dropout2 = nn.Dropout(p=0.5)
         # self.linear3 = nn.Linear(512, embedding_size)
 
         self.saved_log_probs = []
         self.rewards = []
 
-    def forward(self, x):
-        x = self.linear1(x)
-        # x = self.dropout(x)
+    def forward(self, input1):
+        x = self.linear1(input1)
+        x = self.dropout(x)
         x = func.relu(x)
         # x = self.linear2(x)
         # x = self.dropout2(x)
@@ -72,7 +72,7 @@ class LLMEmbedAgent:
         """
         self.env = game_env
         # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.policy = Policy(embedding_size=384).to(device)
+        self.policy = Policy(embedding_size=384*2).to(device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
         self.eps = np.finfo(np.float32).eps.item()
 
@@ -131,6 +131,15 @@ class LLMEmbedAgent:
                 prompt += f"Known data for host {ip_data} are {host_data}\n"
                 # logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
+        return prompt
+    
+    def _create_memory_prompt(self, memory_list):
+        prompt = "Memories:\n"
+        if len(memory_list) > 0:
+            for memory in memory_list:
+                prompt += f'You have taken action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} in the past.\n'
+        else:
+            prompt += "No memories yet."
         return prompt
 
     def _convert_embedding_to_action(self, new_action_embedding, valid_actions):
@@ -231,7 +240,6 @@ class LLMEmbedAgent:
 
         self.summary_writer.add_scalar("loss", policy_loss, episode)
 
-
         for tag, param in self.policy.named_parameters():
             self.summary_writer.add_histogram(f"grad_{tag}", param.grad.data.cpu().numpy(), episode)
 
@@ -241,32 +249,49 @@ class LLMEmbedAgent:
         Main training loop that runs for a number of episodes.
         """
         scores = []
-        self.summary_writer.add_graph(self.policy, torch.zeros((1, 384), device=device))
+        self.summary_writer.add_graph(self.policy, torch.zeros((1, 768), device=device))
         for episode in range(1, self.num_episodes+1):
             out_embeddings = []
             real_embeddings = []
             rewards = []
+            memories = []
 
             observation = self.env.reset()
 
             # Visualize the weights in tensorboard
             self._weight_histograms(episode)
             for _ in range(self.max_t):
+
                 # Create the status string from the observed state
                 status_str = self._create_status_from_state(observation.state)
+                memory_str = self._create_memory_prompt(memories[-5:])
 
-                # Get the embedding of the string from the policy
+                # Get the embedding of the string from the transformer
                 state_embed = self.transformer_model.encode(status_str)
                 state_embed_t = torch.tensor(state_embed, device=device).unsqueeze(0)
 
+                # Get the embedding of the memory string from the transformer
+                memory_embed = self.transformer_model.encode(memory_str)
+                memory_embed_t = torch.tensor(memory_embed, device=device).unsqueeze(0)
+
+                input_emb = torch.concat([state_embed_t, memory_embed_t], dim=1)
+
                 # Pass the state embedding to the model and get the action
-                action_emb = self.policy.forward(state_embed_t)
+                action_emb = self.policy.forward(input_emb)
                 out_embeddings.append(action_emb)
 
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
-                action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
+
+                # take a random action with p=0.05 to help exploration
+                if np.random.uniform(0.0, 1.0, 1) < 0.95:
+                    action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
+                else:
+                    action = np.random.choice(valid_actions)
+                    real_emb = self.transformer_model.encode(str(action))
+                
                 real_embeddings.append(real_emb)
+                memories.append((str(action.type), str(action.parameters)))
 
                 # Take the new action and get the observation from the policy
                 observation = self.env.step(action)
@@ -291,20 +316,29 @@ class LLMEmbedAgent:
         for _ in range(num_eval_episodes):
             observation, done = env.reset(), False
             ret = 0
+            memories = []
             while not done:
                 # Create the status string from the observed state
                 status_str = self._create_status_from_state(observation.state)
+                memory_str = self._create_memory_prompt(memories)
 
-                # Get the embedding of the string from the policy
+                # Get the embedding of the string from the transformer
                 state_embed = self.transformer_model.encode(status_str)
-                state_embed = torch.tensor(state_embed, device=device).unsqueeze(0)
+                state_embed_t = torch.tensor(state_embed, device=device).unsqueeze(0)
+
+                # Get the embedding of the memory string from the transformer
+                memory_embed = self.transformer_model.encode(memory_str)
+                memory_embed_t = torch.tensor(memory_embed, device=device).unsqueeze(0)
+
+                input_emb = torch.concat([state_embed_t, memory_embed_t], dim=1)
 
                 # Pass the state embedding to the model and get the action
-                action_emb = self.policy.forward(state_embed)
+                action_emb = self.policy.forward(input_emb)
 
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
                 action, _ = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
+                memories.append((str(action.type), str(action.parameters)))
 
                 # Take the new action and get the observation from the policy
                 observation = self.env.step(action)
@@ -332,9 +366,9 @@ if __name__ == '__main__':
                         required=False)
 
     # Model arguments
-    parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
+    parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.5, type=float)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=32)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
+    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-2)
 
     # Training arguments
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
