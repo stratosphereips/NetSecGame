@@ -202,6 +202,16 @@ class TestAction:
                          params={"target_host":IP("172.16.1.22")})
         assert action == action2
     
+    def test_action_equal_params_order(self):
+        """
+        Test that two actions with the same parameters are equal
+        """
+        action = Action(action_type=ActionType.ExploitService,
+                    params={"target_host":IP("172.16.1.22") ,"target_service": Service("ssh", "passive", "0.23", False)})
+        action2 = Action(action_type=ActionType.ExploitService,
+                    params={"target_service": Service("ssh", "passive", "0.23", False), "target_host":IP("172.16.1.22")})
+        assert action == action2
+
     def test_action_not_equal_different_target(self):
         """
         Test that two actions with different parameters are not equal
