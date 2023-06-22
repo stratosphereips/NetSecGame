@@ -83,6 +83,7 @@ class LLMEmbedAgent:
         self.loss_fn = nn.MSELoss(reduction='mean')
         # self.loss_fn = nn.SmoothL1Loss()
         self.summary_writer = SummaryWriter()
+        self.eval_episodes = args.eval_episodes
 
     def _create_status_from_state(self, state):
         """
@@ -284,6 +285,8 @@ class LLMEmbedAgent:
                 valid_actions = self._generate_valid_actions(observation.state)
 
                 # take a random action with p=0.05 to help exploration
+                # TODO: check if we need to remove the random actions after some episodes
+                # TODO: how to calculate the rmse between a proposed action and the randomly chosen
                 if np.random.uniform(0.0, 1.0, 1) < 0.95:
                     action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
                 else:
@@ -301,11 +304,12 @@ class LLMEmbedAgent:
 
             scores.append(sum(rewards))
             self.summary_writer.add_scalar("valid actions", len(valid_actions), episode)
-            self.summary_writer.add_scalar("mean reward", np.mean(scores), episode)
+            self.summary_writer.add_scalar("reward/mean", np.mean(scores), episode)
+            self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-128:]))
             self._training_step(rewards, out_embeddings, real_embeddings, episode)
 
             if episode > 0 and episode % self.max_t == 0:
-                returns = self.evaluate(50)
+                returns = self.evaluate(args.eval_episodes)
                 self.summary_writer.add_scalar('test/eval_win', np.mean(returns), episode)
 
     def evaluate(self, num_eval_episodes):
@@ -367,15 +371,16 @@ if __name__ == '__main__':
 
     # Model arguments
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.5, type=float)
-    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=32)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-2)
+    # TODO: handle batches ?
+    # parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=32)
+    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
 
     # Training arguments
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--max_t", type=int, default=128, help="Max episode length")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=128, type=int)
     # parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
-    parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
+    parser.add_argument("--eval_episodes", help="Sets evaluation length", default=1000, type=int )
 
     args = parser.parse_args()
 
@@ -389,5 +394,5 @@ if __name__ == '__main__':
     agent.train()
 
     # Evaluate the agent
-    final_returns = agent.evaluate(args.final_eval_for)
+    final_returns = agent.evaluate(args.eval_episodes)
     print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
