@@ -238,8 +238,12 @@ class TestAction:
         assert Action(action_type=ActionType.FindServices, params={"target_host":IP("172.16.1.22")}) in action_set
         assert Action(action_type=ActionType.FindData, params={"target_host":IP("172.16.1.24")}) in action_set
         assert Action(action_type=ActionType.ExploitService, params={"target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)})in action_set
+        #reverse params order
+        assert Action(action_type=ActionType.ExploitService, params={"target_service": Service("ssh", "passive", "0.23", False), "target_host":IP("172.16.1.24")})in action_set
         assert Action(action_type=ActionType.ScanNetwork, params={"target_network":Network("172.16.1.12", 24)}) in action_set
         assert Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"), "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")}) in action_set
+        #reverse params orders
+        assert Action(action_type=ActionType.ExfiltrateData, params={"source_host": IP("172.16.1.2"), "target_host":IP("172.16.1.3"), "data":Data("User2", "PublicKey")}) in action_set
         
 class TestGameState:
     """
