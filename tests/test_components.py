@@ -201,6 +201,16 @@ class TestAction:
         action2 = Action(action_type=ActionType.FindServices,
                          params={"target_host":IP("172.16.1.22")})
         assert action == action2
+    
+    def test_action_equal_params_order(self):
+        """
+        Test that two actions with the same parameters are equal
+        """
+        action = Action(action_type=ActionType.ExploitService,
+                    params={"target_host":IP("172.16.1.22") ,"target_service": Service("ssh", "passive", "0.23", False)})
+        action2 = Action(action_type=ActionType.ExploitService,
+                    params={"target_service": Service("ssh", "passive", "0.23", False), "target_host":IP("172.16.1.22")})
+        assert action == action2
 
     def test_action_not_equal_different_target(self):
         """
@@ -221,7 +231,30 @@ class TestAction:
         action2 = Action(action_type=ActionType.FindData,
                          params={"target_host":IP("172.16.1.22")})
         assert action != action2
-
+    
+    def test_action_set_member(self):
+        action_set = set()
+        action_set.add(Action(action_type=ActionType.FindServices,
+                        params={"target_host":IP("172.16.1.22")}))
+        action_set.add(Action(action_type=ActionType.FindData,
+                        params={"target_host":IP("172.16.1.24")}))
+        action_set.add(Action(action_type=ActionType.ExploitService,
+                        params={"target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)}))
+        action_set.add(Action(action_type=ActionType.ScanNetwork,
+                        params={"target_network":Network("172.16.1.12", 24)}))
+        action_set.add(Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"),
+                         "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")}))
+        
+        assert Action(action_type=ActionType.FindServices, params={"target_host":IP("172.16.1.22")}) in action_set
+        assert Action(action_type=ActionType.FindData, params={"target_host":IP("172.16.1.24")}) in action_set
+        assert Action(action_type=ActionType.ExploitService, params={"target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)})in action_set
+        #reverse params order
+        assert Action(action_type=ActionType.ExploitService, params={"target_service": Service("ssh", "passive", "0.23", False), "target_host":IP("172.16.1.24")})in action_set
+        assert Action(action_type=ActionType.ScanNetwork, params={"target_network":Network("172.16.1.12", 24)}) in action_set
+        assert Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"), "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")}) in action_set
+        #reverse params orders
+        assert Action(action_type=ActionType.ExfiltrateData, params={"source_host": IP("172.16.1.2"), "target_host":IP("172.16.1.3"), "data":Data("User2", "PublicKey")}) in action_set
+        
 class TestGameState:
     """
     Test cases related to the GameState class
