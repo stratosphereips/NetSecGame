@@ -16,7 +16,7 @@ sys.path.append( path.dirname(path.dirname(path.dirname(path.abspath(__file__)))
 
 #with the path fixed, we can import now
 from env.network_security_game import NetworkSecurityEnvironment
-
+from env.game_components import Action, ActionType, GameState, IP, Network, Data
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.get_logger().setLevel('ERROR')
@@ -36,19 +36,16 @@ class GnnReinforceAgent:
         run_name = f"netsecgame__GNN_Reinforce__{env.seed}__{int(time.time())}"
         self._tf_writer = tf.summary.create_file_writer("./logs/"+ run_name)
         self._actor_train_acc_metric = tf.keras.metrics.SparseCategoricalAccuracy()
-
+           
         #model building blocks
         def set_initial_node_state(node_set, node_set_name):
             d1 = tf.keras.layers.Dense(128,activation="relu")(node_set['node_type'])
             return tf.keras.layers.Dense(64,activation="relu")(d1)
         
-        def dense_layer(units=64,l2_reg=0.1,dropout=0.25,activation='relu'):
-            regularizer = tf.keras.regularizers.l2(l2_reg)
-            return tf.keras.Sequential([tf.keras.layers.Dense(units, activation=activation, kernel_regularizer=regularizer, bias_regularizer=regularizer),  tf.keras.layers.Dropout(dropout)])
-
         #input
         input_graph = tf.keras.layers.Input(type_spec=self._example_input_spec, name="input_actor")
-        input
+        input_action_mask = tf.keras.layers.Input(shape=(None, len(self._transition_mapping)), name="Action_mask")
+        
         #process node features with FC layer
         graph = tfgnn.keras.layers.MapFeatures(node_sets_fn=set_initial_node_state, name="preprocessing_actor")(input_graph)
 
@@ -67,12 +64,15 @@ class GnnReinforceAgent:
         hidden2 = tf.keras.layers.Dense(64, activation="relu", name="hidden2_actor")(hidden1)
 
         # Output layer
-        out  = tf.keras.layers.Dense(len(self._transition_mapping), activation="softmax", name="output_logits")(hidden2)
-
+        logits  = tf.keras.layers.Dense(len(self._transition_mapping), activation=None, name="output_logits")(hidden2)
+        out = tf.keras.layers.Softmax()(logits, mask=input_action_mask)
+        
         #Build the model
-        self._model = tf.keras.Model(input_graph, [out, node_emb], name="Actor")
+        self._model = tf.keras.Model([input_graph, input_action_mask], [out, node_emb], name="Actor")
         self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr_actor))
 
+
+        self._model.summary()
         #baseline
         # #input
         # input_graph = tf.keras.layers.Input(type_spec=self._example_input_spec)
@@ -93,9 +93,7 @@ class GnnReinforceAgent:
         self._baseline.compile(tf.keras.optimizers.Adam(learning_rate=args.lr_baseline), loss=tf.losses.MeanSquaredError())
 
 
-        self._model.summary()
         self._baseline.summary()
-
 
     def _create_graph_tensor(self, node_features, controlled, edges):
         src,trg = [x[0] for x in edges],[x[1] for x in edges]
@@ -134,19 +132,65 @@ class GnnReinforceAgent:
         returns =  np.flip(np.cumsum(np.flip(returns)))
         return returns.tolist()
 
+    def _generate_valid_actions(self, state: GameState)->set:
+        valid_actions = set()
+        #Network Scans
+        for network in state.known_networks:
+            # TODO ADD neighbouring networks
+            valid_actions.add(Action(ActionType.ScanNetwork, params={"target_network": network}))
+        # Service Scans
+        for host in state.known_hosts:
+            valid_actions.add(Action(ActionType.FindServices, params={"target_host": host}))
+        # Service Exploits
+        for host, service_list in state.known_services.items():
+            for service in service_list:
+                valid_actions.add(Action(ActionType.ExploitService, params={"target_host": host , "target_service": service}))
+        # Data Scans
+        for host in state.controlled_hosts:
+            valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
+
+        # Data Exfiltration
+        for src_host, data_list in state.known_data.items():
+            for data in data_list:
+                for trg_host in state.controlled_hosts:
+                    if trg_host != src_host:
+                        assert type(data) is Data
+                        assert type(trg_host) is IP
+                        assert type(src_host) is IP
+                        valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
+                        print(f"Adding exfiltration of {data}from {src_host} to {trg_host}")
+        return valid_actions
+    
+    def get_valid_action_mask(self, state:GameState):
+        mask = np.zeros(len(self._transition_mapping))
+        valid_actions = self._generate_valid_actions(state)
+        for k, action in self._transition_mapping.items():
+            is_member = action in valid_actions
+            if is_member:
+                if action.type == ActionType.ExfiltrateData:
+                    print(f"Allowing mask for action {action}")
+                mask[k] = 1
+            else:
+                if action.type == ActionType.ExfiltrateData and action.parameters["source_host"] == IP("192.168.1.2") and action.parameters["target_host"]== IP("213.47.23.195"):
+                    print(valid_actions)
+                    print(f"invalid action {action}")
+        print("-------------------------")
+
+        mask = np.array(mask, dtype=bool)
+        return mask
+
     @tf.function
-    def predict(self, state_graph, training=True):
-        return self._model(state_graph, training=training)
+    def predict(self, state_graph, valid_action_mask, training=True):
+        return self._model([state_graph, valid_action_mask], training=training)
 
     #@tf.function
-    def _make_training_step_actor(self, inputs, labels, weights)->None:
+    def _make_training_step_actor(self, inputs, labels, weights, masks)->None:
         #perform training step
         with tf.GradientTape() as tape:
-            logits, node_emb = self.predict(inputs, training=True)
+            logits, node_emb = self.predict(inputs, masks, training=True)
             cce = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False)
             loss = cce(labels, logits, sample_weight=weights)
         grads = tape.gradient(loss, self._model.trainable_weights)
-        #grads, _ = tf.clip_by_global_norm(grads, 5.0)
         self._model.optimizer.apply_gradients(zip(grads, self._model.trainable_weights))
         self._actor_train_acc_metric.update_state(labels, logits, sample_weight=weights)
         with self._tf_writer.as_default():
@@ -172,25 +216,30 @@ class GnnReinforceAgent:
 
     def load_model(self, filename):
         raise NotImplementedError
-
-    #@profile
+    
     def train(self):
         self._actor_train_acc_metric.reset_state()
-        successful_steps = []
+        # successful_steps = []
         for episode in range(self.args.episodes):
             #collect data
-            batch_states, batch_actions, batch_returns = [], [], []
+            batch_states, batch_actions, batch_returns, batch_masks = [], [], [], []
             while len(batch_states) < args.batch_size:
                 #perform episode
-                states, actions, rewards = [], [], []
+                states, actions, rewards, masks = [], [], [], []
                 state, done = env.reset().state, False
 
                 while not done:
                     state_node_f,controlled, state_edges,_ = state.as_graph
                     state_g = self._create_graph_tensor(state_node_f, controlled, state_edges)
+                    
+                    #valida action map
+                    mask = self.get_valid_action_mask(state)
+
                     #predict action probabilities
-                    probabilities, node_emb = self.predict(state_g)
-                    probabilities = tf.squeeze(tf.nn.softmax(probabilities))
+                    logits, node_emb = self.predict(state_g, [mask])
+
+                    #mask probabilities with valid actions
+                    probabilities = tf.squeeze(logits)
 
                     action = choices([x for x in range(len(self._transition_mapping))], weights=probabilities, k=1)[0]
                     #select action and perform it
@@ -201,35 +250,38 @@ class GnnReinforceAgent:
                     states.append(state_g)
                     actions.append(action)
                     rewards.append(next_state.reward)
+                    masks.append(mask)
 
                     #move to the next state
                     state = next_state.state
                     done = next_state.done
 
                 discounted_returns = self._get_discounted_rewards(rewards)
-                if rewards[-1] > 0: # GOAL WAS REACHED IN THIS EPISODE
-                    successful_steps += list(zip(states, actions, discounted_returns))
+                # if rewards[-1] > 0: # GOAL WAS REACHED IN THIS EPISODE
+                #     successful_steps += list(zip(states, actions, discounted_returns))
 
                 batch_states += states
                 batch_actions += actions
                 batch_returns += discounted_returns
-
-            # ENRICH THE BATCH WITH AT LEAST ONE SUCCESSFUL STEPS
-            if len(successful_steps) > 0:
-                sampled = choice(successful_steps)
-                batch_states += [sampled[0]]
-                batch_actions += [sampled[1]]
-                batch_returns += [sampled[2]]
+                batch_masks += masks
+            # # ENRICH THE BATCH WITH AT LEAST ONE SUCCESSFUL STEPS
+            # if len(successful_steps) > 0:
+            #     sampled = choice(successful_steps)
+            #     batch_states += [sampled[0]]
+            #     batch_actions += [sampled[1]]
+            #     batch_returns += [sampled[2]]
             
             # prepare batch data
             batch_returns = np.array(batch_returns)
+            batch_masks = np.array(batch_masks)
+            print(batch_masks.shape, batch_returns.shape)
 
             scalar_graph_tensor = self._build_batch_graph(batch_states)
             #perform training step
             baseline = tf.squeeze(self._baseline(scalar_graph_tensor))
             self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
             updated_batch_returns = batch_returns-baseline
-            self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns)
+            self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns, batch_masks)
             
             with self._tf_writer.as_default():
                 tf.summary.scalar('train/accuracy',self._actor_train_acc_metric.result(), step=episode)
@@ -253,9 +305,13 @@ class GnnReinforceAgent:
             while not done:
                 state_node_f,controlled, state_edges,_ = state.as_graph
                 state_g = self._create_graph_tensor(state_node_f,controlled,state_edges)
+                mask = self.get_valid_action_mask(state)
                 #predict action probabilities
-                probabilities, node_emb = self.predict(state_g)
-                probabilities = tf.squeeze(probabilities)
+
+                logits, node_emb = self.predict(state_g, [mask])
+                
+                #mask probabilities with valid actions 
+                probabilities = tf.squeeze(logits)
                 action_idx = np.argmax(probabilities)
                 action = self._transition_mapping[action_idx]
                 
@@ -283,7 +339,7 @@ if __name__ == '__main__':
     parser.add_argument("--lr_baseline", help="Learnining rate of the NN", type=float, default=1e-4)
 
     #training arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=1000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=3000, type=int)
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=100, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
     parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
