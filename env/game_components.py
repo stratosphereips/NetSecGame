@@ -123,7 +123,7 @@ class Action():
         return False
 
     def __hash__(self) -> int:
-        return hash(self._type) + hash("".join(self._parameters))
+        return hash(self._type) + hash("".join(sorted(self._parameters)))
 
 
 @dataclass(frozen=True)
