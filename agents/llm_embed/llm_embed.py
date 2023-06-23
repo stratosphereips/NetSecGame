@@ -5,6 +5,8 @@ Authors:  Maria Rigaki - maria.rigaki@aic.fel.cvut.cz
 import argparse
 import sys
 from collections import deque
+import random
+from sklearn import preprocessing
 
 # This is used so the agent can see the environment and game components
 from os import path
@@ -43,7 +45,7 @@ class Policy(nn.Module):
     """
     def __init__(self, embedding_size=384):
         super().__init__()
-        self.linear1 = nn.Linear(embedding_size, 256)
+        self.linear1 = nn.Linear(2*embedding_size, 256)
         self.dropout = nn.Dropout(p=0.2)
         self.linear2 = nn.Linear(256, 384)
         # self.dropout2 = nn.Dropout(p=0.5)
@@ -54,7 +56,7 @@ class Policy(nn.Module):
 
     def forward(self, input1):
         x = self.linear1(input1)
-        x = self.dropout(x)
+        # x = self.dropout(x)
         x = func.relu(x)
         # x = self.linear2(x)
         # x = self.dropout2(x)
@@ -71,10 +73,8 @@ class LLMEmbedAgent:
         Create and initialize the agent and the transformer model.
         """
         self.env = game_env
-        # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.policy = Policy(embedding_size=384*2).to(device)
+        self.policy = Policy(embedding_size=384).to(device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
-        self.eps = np.finfo(np.float32).eps.item()
 
         self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2").eval()
         self.max_t = args.max_t
@@ -151,7 +151,19 @@ class LLMEmbedAgent:
         """
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
-        action_id = np.argmax(util.cos_sim(valid_embeddings, new_action_embedding), axis=0)
+
+        # TODO: Select the top-10 and use 
+        # action_id = np.argmax(util.cos_sim(valid_embeddings, new_action_embedding), axis=0)
+        similarities = util.cos_sim(valid_embeddings, new_action_embedding).reshape(1, -1)
+        # print(len(valid_actions), similarities.shape)
+        # action_ids = np.argpartition(similarities, -7)[-7:]
+
+        # Select the action using the similarity measure as weight
+        # print(action_ids, similarities[action_ids])
+        norm_sims = [s+1. for s in similarities]
+        # print(norm_sims)
+        action_id = random.choices(range(len(valid_actions)), norm_sims[0])[0]
+        # print(action_id)
 
         return valid_actions[action_id], valid_embeddings[action_id]
 
@@ -250,7 +262,7 @@ class LLMEmbedAgent:
         Main training loop that runs for a number of episodes.
         """
         scores = []
-        self.summary_writer.add_graph(self.policy, torch.zeros((1, 768), device=device))
+        self.summary_writer.add_graph(self.policy, torch.zeros((1, 2*384), device=device))
         for episode in range(1, self.num_episodes+1):
             out_embeddings = []
             real_embeddings = []
@@ -284,15 +296,8 @@ class LLMEmbedAgent:
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
 
-                # take a random action with p=0.05 to help exploration
-                # TODO: check if we need to remove the random actions after some episodes
-                # TODO: how to calculate the rmse between a proposed action and the randomly chosen
-                if np.random.uniform(0.0, 1.0, 1) < 0.95:
-                    action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
-                else:
-                    action = np.random.choice(valid_actions)
-                    real_emb = self.transformer_model.encode(str(action))
-                
+                action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
+               
                 real_embeddings.append(real_emb)
                 memories.append((str(action.type), str(action.parameters)))
 
@@ -316,6 +321,8 @@ class LLMEmbedAgent:
         """
         Evaluation function.
         """
+
+        self.policy.eval()
         eval_returns = []
         for _ in range(num_eval_episodes):
             observation, done = env.reset(), False
@@ -350,6 +357,7 @@ class LLMEmbedAgent:
                 done = observation.done
 
             eval_returns.append(ret)
+        self.policy.train()
         return eval_returns
 
     def save_model(self, file_name):
@@ -370,17 +378,16 @@ if __name__ == '__main__':
                         required=False)
 
     # Model arguments
-    parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.5, type=float)
+    parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     # TODO: handle batches ?
-    # parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=32)
+    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
     parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
 
     # Training arguments
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--max_t", type=int, default=128, help="Max episode length")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=128, type=int)
-    # parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
-    parser.add_argument("--eval_episodes", help="Sets evaluation length", default=1000, type=int )
+    parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int )
 
     args = parser.parse_args()
 
