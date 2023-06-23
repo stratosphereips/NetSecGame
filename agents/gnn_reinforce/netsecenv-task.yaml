@@ -54,7 +54,7 @@ agents:
 
 env:
   random_seed: 42
-  scenario: 'scenario1_tiny'
+  scenario: 'scenario1_small'
   max_steps: 15
   actions:
     scan_network:

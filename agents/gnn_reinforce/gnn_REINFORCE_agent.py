@@ -154,11 +154,7 @@ class GnnReinforceAgent:
             for data in data_list:
                 for trg_host in state.controlled_hosts:
                     if trg_host != src_host:
-                        assert type(data) is Data
-                        assert type(trg_host) is IP
-                        assert type(src_host) is IP
                         valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
-                        print(f"Adding exfiltration of {data}from {src_host} to {trg_host}")
         return valid_actions
     
     def get_valid_action_mask(self, state:GameState):
@@ -167,15 +163,7 @@ class GnnReinforceAgent:
         for k, action in self._transition_mapping.items():
             is_member = action in valid_actions
             if is_member:
-                if action.type == ActionType.ExfiltrateData:
-                    print(f"Allowing mask for action {action}")
                 mask[k] = 1
-            else:
-                if action.type == ActionType.ExfiltrateData and action.parameters["source_host"] == IP("192.168.1.2") and action.parameters["target_host"]== IP("213.47.23.195"):
-                    print(valid_actions)
-                    print(f"invalid action {action}")
-        print("-------------------------")
-
         mask = np.array(mask, dtype=bool)
         return mask
 
@@ -274,7 +262,6 @@ class GnnReinforceAgent:
             # prepare batch data
             batch_returns = np.array(batch_returns)
             batch_masks = np.array(batch_masks)
-            print(batch_masks.shape, batch_returns.shape)
 
             scalar_graph_tensor = self._build_batch_graph(batch_states)
             #perform training step
@@ -334,13 +321,13 @@ if __name__ == '__main__':
 
     #model arguments
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
-    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
-    parser.add_argument("--lr_actor", help="Learnining rate of the NN", type=float, default=1e-3)
-    parser.add_argument("--lr_baseline", help="Learnining rate of the NN", type=float, default=1e-4)
+    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=128)
+    parser.add_argument("--lr_actor", help="Learnining rate of the NN", type=float, default=1e-5)
+    parser.add_argument("--lr_baseline", help="Learnining rate of the NN", type=float, default=1e-5)
 
     #training arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=3000, type=int)
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=100, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=50000, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=200, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
     parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
 
