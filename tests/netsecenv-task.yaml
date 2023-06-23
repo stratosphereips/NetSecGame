@@ -57,7 +57,11 @@ env:
   # random_seed: 'random'
   # Or you can fix the seed
   random_seed: 42
+<<<<<<< HEAD:tests/netsecenv-task.yaml
   scenario: 'scenario1'
+=======
+  scenario: 'scenario1_small'
+>>>>>>> Remove extensive prints:agents/gnn_reinforce/netsecenv-task.yaml
   max_steps: 15
   actions:
     scan_network:
