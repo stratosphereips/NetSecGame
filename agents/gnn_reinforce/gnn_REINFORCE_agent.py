@@ -50,11 +50,11 @@ class GnnReinforceAgent:
         graph = tfgnn.keras.layers.MapFeatures(node_sets_fn=set_initial_node_state, name="preprocessing_actor")(input_graph)
 
         #Graph conv
-        graph_updates = 3 # TODO Add to args
-        for i in range(graph_updates):
+        for i in range(args.graph_updates):
             graph = gcn_conv.GCNHomGraphUpdate(units=128, add_self_loops=True, name=f"GCN_{i+1}")(graph)
         
         node_emb = tfgnn.keras.layers.Readout(node_set_name="nodes")(graph)
+        
         #### ACTOR ######
         # Pool to get a single vector representing the graph
         pooling = tfgnn.keras.layers.Pool(tfgnn.CONTEXT, "sum",node_set_name="nodes", name="pooling_actor")(graph)
@@ -70,19 +70,14 @@ class GnnReinforceAgent:
         #Build the model
         self._model = tf.keras.Model([input_graph, input_action_mask], [out, node_emb], name="Actor")
         self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr_actor))
-
-
         self._model.summary()
-        #baseline
-        # #input
-        # input_graph = tf.keras.layers.Input(type_spec=self._example_input_spec)
-        # #process node features with FC layer
-        # graph = tfgnn.keras.layers.MapFeatures(node_sets_fn=set_initial_node_state,)(input_graph)
-
+        
+        #### BASEINE ######
+        
         #SHARE embedding from ACTOR
         # # Pool to get a single vector representing the graph
         pooling = tfgnn.keras.layers.Pool(tfgnn.CONTEXT, "sum",node_set_name="nodes")(graph)
-        # Two hidden layers (Followin the REINFORCE)
+        # Two hidden layers (Following the REINFORCE)
         hidden2 = tf.keras.layers.Dense(64, activation="relu", name="baseline_hidden")(pooling)
 
         # Output layer
@@ -91,8 +86,6 @@ class GnnReinforceAgent:
         #Build the model
         self._baseline = tf.keras.Model(input_graph, out_baseline, name="Baseline model")
         self._baseline.compile(tf.keras.optimizers.Adam(learning_rate=args.lr_baseline), loss=tf.losses.MeanSquaredError())
-
-
         self._baseline.summary()
 
     def _create_graph_tensor(self, node_features, controlled, edges):
@@ -200,14 +193,13 @@ class GnnReinforceAgent:
         raise NotImplementedError
 
     def save_model(self, filename):
-        raise NotImplementedError
+        self._model.save(filename)
 
     def load_model(self, filename):
-        raise NotImplementedError
+        self._model = tf.keras.models.load_model(filename)
     
     def train(self):
         self._actor_train_acc_metric.reset_state()
-        # successful_steps = []
         for episode in range(self.args.episodes):
             #collect data
             batch_states, batch_actions, batch_returns, batch_masks = [], [], [], []
@@ -219,7 +211,7 @@ class GnnReinforceAgent:
                 while not done:
                     state_node_f,controlled, state_edges,_ = state.as_graph
                     state_g = self._create_graph_tensor(state_node_f, controlled, state_edges)
-                    
+           
                     #valida action map
                     mask = self.get_valid_action_mask(state)
 
@@ -233,8 +225,7 @@ class GnnReinforceAgent:
                     #select action and perform it
                     next_state = self.env.step(self._transition_mapping[action])
 
-
-                    #print(self._transition_mapping[action])
+                    #append step data to lists
                     states.append(state_g)
                     actions.append(action)
                     rewards.append(next_state.reward)
@@ -244,30 +235,24 @@ class GnnReinforceAgent:
                     state = next_state.state
                     done = next_state.done
 
+                # episode over, add data to replay buffer
                 discounted_returns = self._get_discounted_rewards(rewards)
-                # if rewards[-1] > 0: # GOAL WAS REACHED IN THIS EPISODE
-                #     successful_steps += list(zip(states, actions, discounted_returns))
-
                 batch_states += states
                 batch_actions += actions
                 batch_returns += discounted_returns
                 batch_masks += masks
-            # # ENRICH THE BATCH WITH AT LEAST ONE SUCCESSFUL STEPS
-            # if len(successful_steps) > 0:
-            #     sampled = choice(successful_steps)
-            #     batch_states += [sampled[0]]
-            #     batch_actions += [sampled[1]]
-            #     batch_returns += [sampled[2]]
-            
+
             # prepare batch data
             batch_returns = np.array(batch_returns)
             batch_masks = np.array(batch_masks)
 
             scalar_graph_tensor = self._build_batch_graph(batch_states)
-            #perform training step
+            
+            #update returns with baseline
             baseline = tf.squeeze(self._baseline(scalar_graph_tensor))
-            self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
             updated_batch_returns = batch_returns-baseline
+            #perform training step
+            self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
             self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns, batch_masks)
             
             with self._tf_writer.as_default():
@@ -278,6 +263,7 @@ class GnnReinforceAgent:
                 print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}")
                 with self._tf_writer.as_default():
                     tf.summary.scalar('test/eval_win', np.mean(returns), step=episode)
+                self.save_model('./gnn_reinforce_actor_trained_tmp.h5')
     
     def evaluate(self):
         print(f"Starting final evaluation ({self.args.final_eval_for} episodes)")
@@ -321,14 +307,15 @@ if __name__ == '__main__':
 
     #model arguments
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
+    parser.add_argument("--graph_updates", help="Number of GCN updates", type=int, default=3)
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=128)
-    parser.add_argument("--lr_actor", help="Learnining rate of the NN", type=float, default=1e-5)
-    parser.add_argument("--lr_baseline", help="Learnining rate of the NN", type=float, default=1e-5)
+    parser.add_argument("--lr_actor", help="Learnining rate of the NN", type=float, default=1e-4)
+    parser.add_argument("--lr_baseline", help="Learnining rate of the NN", type=float, default=1e-4)
 
     #training arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=50000, type=int)
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=200, type=int)
-    parser.add_argument("--eval_for", help="Sets evaluation length", default=250, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=10000, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=1000, type=int)
+    parser.add_argument("--eval_for", help="Sets evaluation length", default=500, type=int)
     parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
 
 
@@ -352,3 +339,4 @@ if __name__ == '__main__':
     agent = GnnReinforceAgent(env, args)
     agent.train()
     agent.evaluate()
+    agent.save_model('./gnn_reinforce_actor_trained_final.h5')
