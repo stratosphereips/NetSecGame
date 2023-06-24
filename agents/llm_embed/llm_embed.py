@@ -46,9 +46,9 @@ class Policy(nn.Module):
         super().__init__()
         self.linear1 = nn.Linear(embedding_size, 256)
         # self.dropout = nn.Dropout(p=0.2)
-        self.linear2 = nn.Linear(256, 128)
+        # self.linear2 = nn.Linear(256, 128)
         # self.dropout2 = nn.Dropout(p=0.2)
-        self.linear3 = nn.Linear(128, 384)
+        self.output = nn.Linear(256, 384)
 
         self.saved_log_probs = []
         self.rewards = []
@@ -56,11 +56,11 @@ class Policy(nn.Module):
     def forward(self, input1):
         x = self.linear1(input1)
         # x = self.dropout(x)
-        x = func.relu(x)
-        x = self.linear2(x)
+        # x = func.relu(x)
+        # x = self.linear2(x)
         # x = self.dropout2(x)
         x = func.relu(x)
-        return self.linear3(x)
+        return self.output(x)
 
 class Baseline(nn.Module):
     """
@@ -69,9 +69,9 @@ class Baseline(nn.Module):
     def __init__(self, embedding_size=256):
         super().__init__()
 
-        self.linear1 = nn.Linear(embedding_size, 256)
+        self.linear1 = nn.Linear(embedding_size, 128)
         # self.dropout = nn.Dropout(p=0.2)
-        self.linear2 = nn.Linear(256, 128)
+        # self.linear2 = nn.Linear(256, 128)
         # self.dropout2 = nn.Dropout(p=0.2)
         self.output_layer = nn.Linear(128, 1)
 
@@ -79,8 +79,8 @@ class Baseline(nn.Module):
         x = self.linear1(x)
         x = func.relu(x)
 
-        x = self.linear2(x)
-        x = func.relu(x)
+        # x = self.linear2(x)
+        # x = func.relu(x)
 
         return self.output_layer(x)
 
@@ -103,7 +103,7 @@ class LLMEmbedAgent:
         self.optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
 
         self.baseline = Baseline(embedding_size=embedding_size).to(device)
-        self.baseline_optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
+        self.baseline_optimizer = optim.Adam(self.baseline.parameters(), lr=args.lr)
 
         self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2").eval()
         self.max_t = args.max_t
@@ -163,6 +163,9 @@ class LLMEmbedAgent:
         return prompt
 
     def _create_memory_prompt(self, memory_list):
+        """
+        Create a string that contains the past actions and their parameters.
+        """
         prompt = "Memories:\n"
         if len(memory_list) > 0:
             for memory in memory_list:
@@ -227,11 +230,24 @@ class LLMEmbedAgent:
         Log the histograms of the weight of a specific layer to tensorboard
         """
         flattened_weights = weights.flatten()
-        tag = f"layer_{layer_name}"
+        tag = f"policy_layer_{layer_name}"
         self.summary_writer.add_histogram(tag,
                                           flattened_weights,
                                           global_step=step,
                                           bins='tensorflow')
+
+    def _weight_histograms(self, step):
+        """
+        Go over each layer and if it is a linear layer send it to the
+        logger function.
+        """
+        # Iterate over all model layers
+        for layer_name in self.policy._modules.keys():
+            layer = self.policy._modules[layer_name]
+            # Compute weight histograms for appropriate layer
+            if isinstance(layer, nn.Linear):
+                weights = layer.weight
+                self._weight_histograms_linear(step, weights, layer_name)
 
     def _get_discounted_rewards(self, rewards):
         """
@@ -248,19 +264,6 @@ class LLMEmbedAgent:
         returns = (returns - returns.mean()) / (returns.std() + eps)
 
         return returns
-
-    def _weight_histograms(self, step):
-        """
-        Go over each layer and if it is a linear layer send it to the
-        logger function.
-        """
-        # Iterate over all model layers
-        for layer_name in self.policy._modules.keys():
-            layer = self.policy._modules[layer_name]
-            # Compute weight histograms for appropriate layer
-            if isinstance(layer, nn.Linear):
-                weights = layer.weight
-                self._weight_histograms_linear(step, weights, layer_name)
 
     def _training_step(self, returns, out_embeddings, real_embeddings, episode):
         """
@@ -319,6 +322,8 @@ class LLMEmbedAgent:
         else:
             embedding_size = 384
         self.summary_writer.add_graph(self.policy, torch.zeros((1, embedding_size), device=device))
+        self.summary_writer.add_graph(self.baseline, torch.zeros((1, embedding_size), device=device))
+
         for episode in range(1, self.num_episodes+1):
             out_embeddings = []
             real_embeddings = []
