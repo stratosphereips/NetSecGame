@@ -284,7 +284,7 @@ class LLMEmbedAgent:
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
         self.optimizer.step()
 
-        self.summary_writer.add_scalar("loss", policy_loss, episode)
+        self.summary_writer.add_scalar("losses/policy_loss", policy_loss, episode)
 
         for tag, param in self.policy.named_parameters():
             self.summary_writer.add_histogram(f"grad_{tag}", param.grad.data.cpu().numpy(), episode)
@@ -306,7 +306,7 @@ class LLMEmbedAgent:
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
         self.baseline_optimizer.step()
 
-        self.summary_writer.add_scalar("value loss", value_loss, episode)
+        self.summary_writer.add_scalar("losses/value_loss", value_loss, episode)
 
         for tag, param in self.baseline.named_parameters():
             self.summary_writer.add_histogram(f"baseline_grad_{tag}", param.grad.data.cpu().numpy(), episode)
