@@ -6,7 +6,6 @@ import argparse
 import sys
 from collections import deque
 import random
-from sklearn import preprocessing
 
 # This is used so the agent can see the environment and game components
 from os import path
@@ -62,24 +61,24 @@ class Policy(nn.Module):
         # x = self.dropout2(x)
         x = func.relu(x)
         return self.linear3(x)
-    
+
 class Baseline(nn.Module):
-    
-    #Takes in state
+    """
+    Baseline network that takes a state an calculate the value
+    """
     def __init__(self, embedding_size=256):
         super().__init__()
-        
+
         self.linear1 = nn.Linear(embedding_size, 256)
         # self.dropout = nn.Dropout(p=0.2)
         self.linear2 = nn.Linear(256, 128)
         # self.dropout2 = nn.Dropout(p=0.2)
         self.output_layer = nn.Linear(128, 1)
-        
+
     def forward(self, x):
-        #input layer
         x = self.linear1(x)
         x = func.relu(x)
-        
+
         x = self.linear2(x)
         x = func.relu(x)
 
@@ -162,7 +161,7 @@ class LLMEmbedAgent:
                 # logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
         return prompt
-    
+
     def _create_memory_prompt(self, memory_list):
         prompt = "Memories:\n"
         if len(memory_list) > 0:
@@ -233,8 +232,11 @@ class LLMEmbedAgent:
                                           flattened_weights,
                                           global_step=step,
                                           bins='tensorflow')
-        
+
     def _get_discounted_rewards(self, rewards):
+        """
+        Calculate the return G
+        """
         returns = deque()
 
         for time_step in range(len(rewards))[::-1]:
@@ -246,7 +248,6 @@ class LLMEmbedAgent:
         returns = (returns - returns.mean()) / (returns.std() + eps)
 
         return returns
-
 
     def _weight_histograms(self, step):
         """
@@ -263,12 +264,11 @@ class LLMEmbedAgent:
 
     def _training_step(self, returns, out_embeddings, real_embeddings, episode):
         """
-        The training step that calculates that discounted rewards and losses.
-        It also performs the backpropagation step for the policy network.
+        Backpropagation step for the policy network.
         """
         # Calculate the discounted rewards
         policy_loss = []
-        
+
         for out_emb, real_emb, disc_ret in zip(out_embeddings, real_embeddings, returns):
             rmse_loss = torch.sqrt(self.loss_fn(out_emb, torch.tensor(real_emb, device=device).float().unsqueeze(0)))
             policy_loss.append((-rmse_loss * disc_ret).reshape(1))
@@ -289,14 +289,13 @@ class LLMEmbedAgent:
 
     def _training_step_baseline(self, state_vals, returns, episode):
         """
-        The training step that calculates that discounted rewards and losses.
-        It also performs the backpropagation step for the policy network.
+        Backpropagation step for the baseline network.
         """
         state_vals = torch.stack(state_vals).squeeze()
 
         # Calculate MSE loss
         value_loss = func.mse_loss(state_vals, returns)
-        
+
         self.baseline_optimizer.zero_grad()
         value_loss.backward()
 
@@ -366,7 +365,6 @@ class LLMEmbedAgent:
                 valid_actions = self._generate_valid_actions(observation.state)
 
                 action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
-               
                 real_embeddings.append(real_emb)
                 memories.append((str(action.type), str(action.parameters)))
 
@@ -382,10 +380,10 @@ class LLMEmbedAgent:
             self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-128:]), episode)
             returns = self._get_discounted_rewards(rewards).to(device)
             self._training_step_baseline(state_vals, returns, episode)
+
             #calculate deltas and train policy network
             deltas = [gt - val for gt, val in zip(returns, state_vals)]
             deltas = torch.tensor(deltas).to(device)
-            
             self._training_step(deltas, out_embeddings, real_embeddings, episode)
 
             if episode > 0 and episode % self.max_t == 0:
@@ -438,11 +436,11 @@ class LLMEmbedAgent:
         self.policy.train()
         return eval_returns
 
-    def save_model(self, file_name):
-        raise NotImplementedError
+    # def save_model(self, file_name):
+    #     raise NotImplementedError
 
-    def load_model(self, file_name):
-        raise NotImplementedError
+    # def load_model(self, file_name):
+    #     raise NotImplementedError
 
 
 if __name__ == '__main__':
