@@ -46,10 +46,10 @@ class Policy(nn.Module):
     def __init__(self, embedding_size=384):
         super().__init__()
         self.linear1 = nn.Linear(embedding_size, 256)
-        self.dropout = nn.Dropout(p=0.2)
-        self.linear2 = nn.Linear(256, 384)
-        # self.dropout2 = nn.Dropout(p=0.5)
-        # self.linear3 = nn.Linear(512, embedding_size)
+        # self.dropout = nn.Dropout(p=0.2)
+        self.linear2 = nn.Linear(256, 128)
+        # self.dropout2 = nn.Dropout(p=0.2)
+        self.linear3 = nn.Linear(128, 384)
 
         self.saved_log_probs = []
         self.rewards = []
@@ -58,10 +58,32 @@ class Policy(nn.Module):
         x = self.linear1(input1)
         # x = self.dropout(x)
         x = func.relu(x)
-        # x = self.linear2(x)
+        x = self.linear2(x)
         # x = self.dropout2(x)
-        # x = F.relu(x)
-        return self.linear2(x)
+        x = func.relu(x)
+        return self.linear3(x)
+    
+class Baseline(nn.Module):
+    
+    #Takes in state
+    def __init__(self, embedding_size=256):
+        super().__init__()
+        
+        self.linear1 = nn.Linear(embedding_size, 256)
+        # self.dropout = nn.Dropout(p=0.2)
+        self.linear2 = nn.Linear(256, 128)
+        # self.dropout2 = nn.Dropout(p=0.2)
+        self.output_layer = nn.Linear(128, 1)
+        
+    def forward(self, x):
+        #input layer
+        x = self.linear1(x)
+        x = func.relu(x)
+        
+        x = self.linear2(x)
+        x = func.relu(x)
+
+        return self.output_layer(x)
 
 class LLMEmbedAgent:
     """
@@ -80,6 +102,9 @@ class LLMEmbedAgent:
             embedding_size = 384
         self.policy = Policy(embedding_size=embedding_size).to(device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
+
+        self.baseline = Baseline(embedding_size=embedding_size).to(device)
+        self.baseline_optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
 
         self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2").eval()
         self.max_t = args.max_t
@@ -208,6 +233,20 @@ class LLMEmbedAgent:
                                           flattened_weights,
                                           global_step=step,
                                           bins='tensorflow')
+        
+    def _get_discounted_rewards(self, rewards):
+        returns = deque()
+
+        for time_step in range(len(rewards))[::-1]:
+            disc_return_t = (returns[0] if len(returns)>0 else 0)
+            returns.appendleft(self.gamma*disc_return_t + rewards[time_step])
+
+        eps = np.finfo(np.float32).eps.item()
+        returns = torch.Tensor(returns)
+        returns = (returns - returns.mean()) / (returns.std() + eps)
+
+        return returns
+
 
     def _weight_histograms(self, step):
         """
@@ -222,23 +261,14 @@ class LLMEmbedAgent:
                 weights = layer.weight
                 self._weight_histograms_linear(step, weights, layer_name)
 
-    def _training_step(self, rewards, out_embeddings, real_embeddings, episode):
+    def _training_step(self, returns, out_embeddings, real_embeddings, episode):
         """
         The training step that calculates that discounted rewards and losses.
         It also performs the backpropagation step for the policy network.
         """
         # Calculate the discounted rewards
         policy_loss = []
-        returns = deque()
-
-        for time_step in range(len(rewards))[::-1]:
-            disc_return_t = (returns[0] if len(returns)>0 else 0)
-            returns.appendleft(self.gamma*disc_return_t + rewards[time_step])
-
-        eps = np.finfo(np.float32).eps.item()
-        returns = torch.Tensor(returns)
-        returns = (returns - returns.mean()) / (returns.std() + eps)
-
+        
         for out_emb, real_emb, disc_ret in zip(out_embeddings, real_embeddings, returns):
             rmse_loss = torch.sqrt(self.loss_fn(out_emb, torch.tensor(real_emb, device=device).float().unsqueeze(0)))
             policy_loss.append((-rmse_loss * disc_ret).reshape(1))
@@ -257,6 +287,29 @@ class LLMEmbedAgent:
             self.summary_writer.add_histogram(f"grad_{tag}", param.grad.data.cpu().numpy(), episode)
 
 
+    def _training_step_baseline(self, state_vals, returns, episode):
+        """
+        The training step that calculates that discounted rewards and losses.
+        It also performs the backpropagation step for the policy network.
+        """
+        state_vals = torch.stack(state_vals).squeeze()
+
+        # Calculate MSE loss
+        value_loss = func.mse_loss(state_vals, returns)
+        
+        self.baseline_optimizer.zero_grad()
+        value_loss.backward()
+
+        # torch.nn.utils.clip_grad_value_(self.policy.parameters(), 5)
+        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
+        self.baseline_optimizer.step()
+
+        self.summary_writer.add_scalar("value loss", value_loss, episode)
+
+        for tag, param in self.baseline.named_parameters():
+            self.summary_writer.add_histogram(f"baseline_grad_{tag}", param.grad.data.cpu().numpy(), episode)
+
+
     def train(self):
         """
         Main training loop that runs for a number of episodes.
@@ -272,6 +325,7 @@ class LLMEmbedAgent:
             real_embeddings = []
             rewards = []
             memories = []
+            state_vals = []
             observation = self.env.reset()
 
             # Visualize the weights in tensorboard
@@ -295,10 +349,18 @@ class LLMEmbedAgent:
 
                     # Pass the state embedding to the model and get the action
                     action_emb = self.policy.forward(input_emb)
+
+                    # Pass the state embedding to the baseline and get the value
+                    state_val = self.baseline.forward(input_emb)
                 else:
+                    # Pass the state embedding to the model and get the action
                     action_emb = self.policy.forward(state_embed_t)
 
+                    # Pass the state embedding to the baseline and get the value
+                    state_val = self.baseline.forward(state_embed_t)
+
                 out_embeddings.append(action_emb)
+                state_vals.append(state_val)
 
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
@@ -318,7 +380,13 @@ class LLMEmbedAgent:
             self.summary_writer.add_scalar("valid actions", len(valid_actions), episode)
             self.summary_writer.add_scalar("reward/mean", np.mean(scores), episode)
             self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-128:]), episode)
-            self._training_step(rewards, out_embeddings, real_embeddings, episode)
+            returns = self._get_discounted_rewards(rewards).to(device)
+            self._training_step_baseline(state_vals, returns, episode)
+            #calculate deltas and train policy network
+            deltas = [gt - val for gt, val in zip(returns, state_vals)]
+            deltas = torch.tensor(deltas).to(device)
+            
+            self._training_step(deltas, out_embeddings, real_embeddings, episode)
 
             if episode > 0 and episode % self.max_t == 0:
                 returns = self.evaluate(args.eval_episodes)
@@ -391,7 +459,7 @@ if __name__ == '__main__':
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     # TODO: handle batches ?
     parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
-    parser.add_argument("--lr", help="Learnining rate of the NN", type=float, default=1e-3)
+    parser.add_argument("--lr", help="Learning rate of the NN", type=float, default=1e-3)
     parser.add_argument("--memory_len", type=int, default=0, help="Number of memories to keep. Zero means no memory")
 
     # Training arguments
