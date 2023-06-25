@@ -339,8 +339,8 @@ if __name__ == '__main__':
     
     # #initialize agent
     agent = GnnReinforceAgent(env, args)
-    # agent.train()
-    # agent.save_model("./gnn_reinforce_actor_trained_final")
-    # agent.evaluate()
+    agent.train()
+    agent.save_model("./gnn_reinforce_actor_trained_final")
+    agent.evaluate()
     agent.load_model("./gnn_reinforce_actor_trained_final")
     agent.evaluate()
