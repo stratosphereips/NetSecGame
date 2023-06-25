@@ -182,8 +182,7 @@ class NetworkSecurityEnvironment(object):
         components.ActionType.FindData.default_success_p, components.ActionType.FindData.default_detection_p = self.task_config.read_env_action_data('find_data')
         components.ActionType.ExfiltrateData.default_success_p, components.ActionType.ExfiltrateData.default_detection_p = self.task_config.read_env_action_data('exfiltrate_data')
 
-        # Get random start
-        self._attacker_start_position = self.task_config.get_attacker_start_position()
+        # Load CYST configuration
         self.cyst_config = self.task_config.get_scenario()
 
         # Process parameters
@@ -196,7 +195,7 @@ class NetworkSecurityEnvironment(object):
         # Get the win condition as a dict
         temp_win_conditions = self.task_config.get_attacker_win_conditions()
 
-        # Make a copy of the win_conditions and
+        # Make a copy of the win_condition
         if self.validate_win_conditions(temp_win_conditions):
             self._win_conditions = copy.deepcopy(temp_win_conditions)
         else:
@@ -217,6 +216,14 @@ class NetworkSecurityEnvironment(object):
 
         #save self_data original state so we can go back to it in reset
         self._data_original = copy.deepcopy(self._data)
+
+        # Get attacker start
+        self._attacker_start_position = self.task_config.get_attacker_start_position()
+        # Make a copy of the win_condition
+        if self.validate_win_conditions(temp_win_conditions):
+            self._goal_conditions = copy.deepcopy(temp_win_conditions)
+        else:
+            raise ValueError("Incorrect format of the 'win_conditions'!")
 
         # Return an observation
         return True
@@ -281,7 +288,7 @@ class NetworkSecurityEnvironment(object):
         game_state = components.GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
 
-    def _register_goal_state(self, win_conditions)->dict:
+    def _generate_win_conditions(self, win_conditions)->dict:
         """
         Method which analyses win_conditions and randomizes parts if required
         """
@@ -728,6 +735,9 @@ class NetworkSecurityEnvironment(object):
         
         #create starting state (randomized if needed)
         self._current_state = self._create_starting_state()
+
+        #create win conditions for this episode (randomize if needed)
+        self._win_conditions = self._generate_win_conditions(self._goal_conditions)
 
         logger.info(f'Current state: {self._current_state} ')
         initial_reward = 0
