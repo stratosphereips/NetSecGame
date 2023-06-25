@@ -333,7 +333,7 @@ class NetworkSecurityEnvironment(object):
                 available_data.add(components.Data(datapoint.owner, datapoint.id))
         
         updated_win_conditions["known_data"] = {}
-        for host, data_set in self._win_conditions["known_data"].items():
+        for host, data_set in win_conditions["known_data"].items():
             # Was random data required in this host?
             if isinstance(data_set, str) and data_set.lower() == "random":
                 # From all available data, randomly pick the one that is going to be requested in this host
