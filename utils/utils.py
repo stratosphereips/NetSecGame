@@ -56,7 +56,7 @@ class ConfigParser():
                 known_data_host = IP(ip)
                 known_data[known_data_host] = set()
                 for datum in data:
-                    if datum.lower() == "random":
+                    if not isinstance(datum, list) and datum.lower() == "random":
                         known_data[known_data_host] = "random"
                     else:
                         known_data_content_str_user =  datum[0]
