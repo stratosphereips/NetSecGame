@@ -69,11 +69,11 @@ class Baseline(nn.Module):
     def __init__(self, embedding_size=256):
         super().__init__()
 
-        self.linear1 = nn.Linear(embedding_size, 128)
+        self.linear1 = nn.Linear(embedding_size, 256)
         # self.dropout = nn.Dropout(p=0.2)
         # self.linear2 = nn.Linear(256, 128)
         # self.dropout2 = nn.Dropout(p=0.2)
-        self.output_layer = nn.Linear(128, 1)
+        self.output_layer = nn.Linear(256, 1)
 
     def forward(self, x):
         x = self.linear1(x)
@@ -317,12 +317,12 @@ class LLMEmbedAgent:
         Main training loop that runs for a number of episodes.
         """
         scores = []
-        if self.memory_len > 0:
-            embedding_size = 2*384
-        else:
-            embedding_size = 384
-        self.summary_writer.add_graph(self.policy, torch.zeros((1, embedding_size), device=device))
-        self.summary_writer.add_graph(self.baseline, torch.zeros((1, embedding_size), device=device))
+        # if self.memory_len > 0:
+        #     embedding_size = 2*384
+        # else:
+        #     embedding_size = 384
+        # self.summary_writer.add_graph(self.policy, torch.zeros((1, embedding_size), device=device))
+        # self.summary_writer.add_graph(self.baseline, torch.zeros((1, embedding_size), device=device))
 
         for episode in range(1, self.num_episodes+1):
             out_embeddings = []
@@ -380,9 +380,9 @@ class LLMEmbedAgent:
                     break
 
             scores.append(sum(rewards))
-            self.summary_writer.add_scalar("valid actions", len(valid_actions), episode)
+            self.summary_writer.add_scalar("actions/valid_actions", len(valid_actions), episode)
             self.summary_writer.add_scalar("reward/mean", np.mean(scores), episode)
-            self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-128:]), episode)
+            self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-self.max_t:]), episode)
             returns = self._get_discounted_rewards(rewards).to(device)
             self._training_step_baseline(state_vals, returns, episode)
 
@@ -469,7 +469,7 @@ if __name__ == '__main__':
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--max_t", type=int, default=128, help="Max episode length")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=128, type=int)
-    parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int )
+    parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int)
 
     args = parser.parse_args()
 
