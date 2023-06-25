@@ -333,18 +333,19 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"\tGoal known_services: {updated_win_conditions['known_services']}")
         
         # data
+    
+        # prepare all available data if randomization is needed
+        available_data = set()
+        for data in self._data.values():
+            for datapoint in data:
+                available_data.add(components.Data(datapoint.owner, datapoint.id))
+        
         updated_win_conditions["known_data"] = {}
         for host, data_set in self._win_conditions["known_data"].items():
-            # Was the position defined as random?
+            # Was random data required in this host?
             if isinstance(data_set, str) and data_set.lower() == "random":
-                logger.info(f"\tRandom data was requested in {host}")
-                available_data = set()
-                # Load all the available data from all hosts
-                for data in self._data.values():
-                    for datapoint in data:
-                        available_data.add(components.Data(datapoint.owner, datapoint.description))
                 # From all available data, randomly pick the one that is going to be requested in this host
-                self._win_conditions["known_data"][host] = {random.choice(list(available_data))}
+                updated_win_conditions["known_data"][host] = {random.choice(list(available_data))}
                 logger.info(f"\tRandomizing known_data in {host}")
             else:
                 updated_win_conditions["known_data"][host] = copy.deepcopy(win_conditions["known_data"][host])
