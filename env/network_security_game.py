@@ -8,9 +8,6 @@ import random
 import copy
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 import numpy as np
-# import env.scenarios.scenario_configuration
-#unused: import env.scenarios.smaller_scenario_configuration
-#unused: import env.scenarios.tiny_scenario_configuration
 import logging
 import os
 from pathlib import Path
@@ -31,6 +28,7 @@ class NetworkSecurityEnvironment(object):
         It uses some Cyst libraries for the network topology
         It presents a env environment to play
         """
+        
         # Dictionary of all the nodes in environment
         # All the nodes in the game. Node are hosts, attackers, etc (but not router, connections or exploits)
         self._node_objects = {}
@@ -51,10 +49,10 @@ class NetworkSecurityEnvironment(object):
         self._current_state = None
         self._current_goal = None
         # If the game finished
-        self._done = False
+        self._done = None
         # Verbosity.
         # If the episode/action was detected by the defender
-        self._detected = False
+        self._detected = None
         # Random seed
         self._seed = None
 
@@ -170,8 +168,6 @@ class NetworkSecurityEnvironment(object):
         """
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
-        It ALSO resets the environment, so it returns a full state. This is different from other gym envs.
-
         """
         logger.info(f"Initializing NetSetGame environment")
 
@@ -192,15 +188,6 @@ class NetworkSecurityEnvironment(object):
         # Place the defender
         self._place_defences()
 
-        # Get the win condition as a dict
-        temp_win_conditions = self.task_config.get_attacker_win_conditions()
-
-        # Make a copy of the win_condition
-        if self.validate_win_conditions(temp_win_conditions):
-            self._win_conditions = copy.deepcopy(temp_win_conditions)
-        else:
-            raise ValueError("Incorrect format of the 'win_conditions'!")
-
         # Set the seed if passed by the agent
         seed = self.task_config.get_seed('env')
         np.random.seed(seed)
@@ -219,7 +206,10 @@ class NetworkSecurityEnvironment(object):
 
         # Get attacker start
         self._attacker_start_position = self.task_config.get_attacker_start_position()
+        
         # Make a copy of the win_condition
+        # Get the win condition as a dict
+        temp_win_conditions = self.task_config.get_attacker_win_conditions()
         if self.validate_win_conditions(temp_win_conditions):
             self._goal_conditions = copy.deepcopy(temp_win_conditions)
         else:
@@ -283,8 +273,10 @@ class NetworkSecurityEnvironment(object):
                         known_networks.add(ip)
                     #return value back to the original
                     net_obj.value += 256
+        
         # Be sure the controlled hosts are also known hosts
         known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
+        
         game_state = components.GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
 
@@ -740,7 +732,7 @@ class NetworkSecurityEnvironment(object):
         #create win conditions for this episode (randomize if needed)
         self._win_conditions = self._generate_win_conditions(self._goal_conditions)
 
-        logger.info(f'Current state: {self._current_state} ')
+        logger.info(f'Current state: {self._current_state}')
         initial_reward = 0
         info = {}
         # An observation has inside ["state", "reward", "done", "info"]
