@@ -127,7 +127,7 @@ class NetworkSecurityEnvironment(object):
 
     def validate_win_conditions(self, input_win_conditions: dict) -> bool:
         """
-        What is this doing Ondra???
+        Function to check if the win condition definition is valid (correct usage of objects, formatting etc)
         """
         try:
             # validate networks
