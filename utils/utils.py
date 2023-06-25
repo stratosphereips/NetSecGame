@@ -56,10 +56,13 @@ class ConfigParser():
                 known_data_host = IP(ip)
                 known_data[known_data_host] = set()
                 for datum in data:
-                    known_data_content_str_user =  datum[0]
-                    known_data_content_str_data =  datum[1]
-                    known_data_content = Data(known_data_content_str_user, known_data_content_str_data)
-                    known_data[known_data_host].add(known_data_content)
+                    if datum.lower() == "random":
+                        known_data[known_data_host] = "random"
+                    else:
+                        known_data_content_str_user =  datum[0]
+                        known_data_content_str_data =  datum[1]
+                        known_data_content = Data(known_data_content_str_user, known_data_content_str_data)
+                        known_data[known_data_host].add(known_data_content)
 
             except (ValueError, netaddr.AddrFormatError):
                 known_data = {}
@@ -154,6 +157,7 @@ class ConfigParser():
 
         # Goal data
         known_data = self.read_agents_known_data('attacker', 'goal')
+        print(known_data)
 
         attacker_goal = {}
         attacker_goal['known_networks'] = known_networks
