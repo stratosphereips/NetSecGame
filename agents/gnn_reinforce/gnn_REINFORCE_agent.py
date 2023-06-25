@@ -84,7 +84,7 @@ class GnnReinforceAgent:
         out_baseline  = tf.keras.layers.Dense(1, activation=None, name="baseline_value")(hidden2)
 
         #Build the model
-        self._baseline = tf.keras.Model(input_graph, out_baseline, name="Baseline model")
+        self._baseline = tf.keras.Model(input_graph, out_baseline, name="Baseline_model")
         self._baseline.compile(tf.keras.optimizers.Adam(learning_rate=args.lr_baseline), loss=tf.losses.MeanSquaredError())
         self._baseline.summary()
 
@@ -164,7 +164,7 @@ class GnnReinforceAgent:
     def predict(self, state_graph, valid_action_mask, training=True):
         return self._model([state_graph, valid_action_mask], training=training)
 
-    #@tf.function
+    @tf.function
     def _make_training_step_actor(self, inputs, labels, weights, masks)->None:
         #perform training step
         with tf.GradientTape() as tape:
@@ -176,9 +176,10 @@ class GnnReinforceAgent:
         self._actor_train_acc_metric.update_state(labels, logits, sample_weight=weights)
         with self._tf_writer.as_default():
             tf.summary.scalar('train/CCE_actor',loss, step=self._model.optimizer.iterations)
-            tf.summary.scalar('train/avg_weights_actor',np.mean(weights), step=self._model.optimizer.iterations)
-            tf.summary.scalar('train/mean_std_node_em', np.mean(np.std(node_emb, axis=0)), step=self._model.optimizer.iterations)
+            tf.summary.scalar('train/avg_weights_actor', tf.reduce_mean(weights), step=self._model.optimizer.iterations)
+            tf.summary.scalar('train/mean_std_node_em', tf.reduce_mean(tf.math.reduce_std(node_emb, axis=0)), step=self._model.optimizer.iterations)
 
+    @tf.function
     def _make_training_step_baseline(self, inputs, rewards)->None:
         #perform training step
         with tf.GradientTape() as tape:
@@ -196,7 +197,8 @@ class GnnReinforceAgent:
         self._model.save(filename)
 
     def load_model(self, filename):
-        self._model = tf.keras.models.load_model(filename)
+        self._model = tf.keras.saving.load_model(filename)
+        self._model.compile(tf.keras.optimizers.Adam(learning_rate=args.lr_actor))
     
     def train(self):
         self._actor_train_acc_metric.reset_state()
@@ -263,7 +265,7 @@ class GnnReinforceAgent:
                 print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}")
                 with self._tf_writer.as_default():
                     tf.summary.scalar('test/eval_win', np.mean(returns), step=episode)
-                self.save_model('./gnn_reinforce_actor_trained_tmp.h5')
+                self.save_model('./gnn_reinforce_actor_trained_tmp')
     
     def evaluate(self):
         print(f"Starting final evaluation ({self.args.final_eval_for} episodes)")
@@ -281,7 +283,7 @@ class GnnReinforceAgent:
                 mask = self.get_valid_action_mask(state)
                 #predict action probabilities
 
-                logits, node_emb = self.predict(state_g, [mask])
+                logits, node_emb = self.predict(state_g, [mask], training=False)
                 
                 #mask probabilities with valid actions 
                 probabilities = tf.squeeze(logits)
@@ -313,8 +315,8 @@ if __name__ == '__main__':
     parser.add_argument("--lr_baseline", help="Learnining rate of the NN", type=float, default=1e-4)
 
     #training arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=10000, type=int)
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=1000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=2500, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=100, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=500, type=int)
     parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
 
@@ -337,6 +339,8 @@ if __name__ == '__main__':
     
     # #initialize agent
     agent = GnnReinforceAgent(env, args)
-    agent.train()
+    # agent.train()
+    # agent.save_model("./gnn_reinforce_actor_trained_final")
+    # agent.evaluate()
+    agent.load_model("./gnn_reinforce_actor_trained_final")
     agent.evaluate()
-    agent.save_model('./gnn_reinforce_actor_trained_final.h5')
