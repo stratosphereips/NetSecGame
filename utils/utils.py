@@ -79,7 +79,8 @@ class ConfigParser():
                 # Check the host is a good ip
                 _ = netaddr.IPAddress(ip)
                 known_services_host = IP(ip)
-
+                if data.lower() == "random":
+                    known_services[known_services_host] = "random"
                 name = data[0]
                 type = data[1]
                 version = data[2]
