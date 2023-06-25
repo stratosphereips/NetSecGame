@@ -127,7 +127,7 @@ class NetworkSecurityEnvironment(object):
 
     def validate_win_conditions(self, input_win_conditions: dict) -> bool:
         """
-        What is this doing Ondra???
+        Function to check if the win condition definition is valid (correct usage of objects, formatting etc)
         """
         try:
             # validate networks
@@ -223,6 +223,7 @@ class NetworkSecurityEnvironment(object):
 
         for key, value in self._win_conditions["known_data"].items():
             # Was the position defined as random?
+            logger.info(f"{key}, {value}")
             if isinstance(value, str) and value.lower() == "random":
                 logger.info(f"\tData was requested to be put in a random location.")
                 # Load all the available data from all hosts
