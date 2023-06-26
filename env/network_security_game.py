@@ -27,51 +27,91 @@ class NetworkSecurityEnvironment(object):
     It uses some Cyst libraries for the network topology
     It presents a env environment to play
     """
-    def __init__(self, task_config_file, seed=42) -> None:
-        """
-        Class to manage the whole network security game
-        It uses some Cyst libraries for the network topology
-        It presents a env environment to play
-        """
+    def __init__(self, task_config_file) -> None:
+        logger.info(f"Initializing NetSetGame environment")
+        # Prepare data structures for all environment components (to be filled in process_cyst_config())
         
-        # Dictionary of all the nodes in environment
-        # All the nodes in the game. Node are hosts, attackers, etc (but not router, connections or exploits)
-        self._node_objects = {}
-        # Connections are how can connect to whom.
-        self._connections = {}
-        # A dict of all ips in the env, ordered by IP as str() and the object is the id in the _node_objects dictionary
+        # Mapping of IP():host_name (str) of all nodes in the environment
         self._ip_to_hostname = {}
-        # A dict of the networks present in the game. These are NOT the known networks by the agents
-        # self._networks has as key the str of the network and as values a list of the object ids contained in this network.
+        # A dict of the networks present in the environment. These are NOT the known networks by the agents
+        # Key=Network(), values= set of IP() objects
         self._networks = {}
+        # All the nodes in the environment.
+        # Node are hosts, attackers, etc (but not connections or exploits)
+        # Key = node name, value= CYST config object
+        self._node_objects = {}
+        # Dict of all services in the environment. These are NOT the known services by the agents
+        # Key=IP(), values= set of Service() objects
+        self._services = {}
+        # Dict of data in the environment. These are NOT the known data by the agents
+        # Key=IP(), values= set of Data() objects
+        self._data = {}
+
+        # dictionary of physical connections betnween nodes in the environment.
+        self._connections = {}
+        # list of firewall rules that modify the connectivity se tby self._connections
+        self._fw_rules = []
+        # All exploits in the environment
+        self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
         self.hosts_to_start = []
-        # All the exploits in the game
-        self._exploits = {}
-        # Place of the defender
-        self._defender_placements = None
-        # Current state of the game
+        # Read the conf file passed by the agent for the rest of values
+        self.task_config = ConfigParser(task_config_file)
+        
+        # Load CYST configuration
+        logger.info(f"Reading from CYST configuration:")
+        cyst_config = self.task_config.get_scenario()
+        self.process_cyst_config(cyst_config)
+        logger.info(f"CYST configuration processed successfully")
+        
+        # Set the seed if passed by the agent
+        seed = self.task_config.get_seed('env')
+        np.random.seed(seed)
+        random.seed(seed)
+        self._seed = seed
+        logger.info(f'Setting env seed to {seed}')
+        
+        # Set maximum number of steps in one episode
+        self._max_steps = self.task_config.get_max_steps()
+        logger.info(f"\tSetting max steps to {self._max_steps}")
+
+        # Set the default parameters of all actions
+        # if the values of the actions were updated in the configuration file
+        components.ActionType.ScanNetwork.default_success_p, components.ActionType.ScanNetwork.default_detection_p = self.task_config.read_env_action_data('scan_network')
+        components.ActionType.FindServices.default_success_p, components.ActionType.FindServices.default_detection_p = self.task_config.read_env_action_data('find_services')
+        components.ActionType.ExploitService.default_success_p, components.ActionType.ExploitService.default_detection_p = self.task_config.read_env_action_data('exploit_services')
+        components.ActionType.FindData.default_success_p, components.ActionType.FindData.default_detection_p = self.task_config.read_env_action_data('find_data')
+        components.ActionType.ExfiltrateData.default_success_p, components.ActionType.ExfiltrateData.default_detection_p = self.task_config.read_env_action_data('exfiltrate_data')
+
+        # Place the defender
+        self._place_defences()
+        
+        # Get attacker start
+        self._attacker_start_position = self.task_config.get_attacker_start_position()
+
+        # Make a copy of data placements so it is possible to reset to it when episode ends
+        self._data_original = copy.deepcopy(self._data)
+
+        # should be randomized once or every episode?
+        self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
+        # store goal definition
+        self._goal_conditions = self.task_config.get_attacker_win_conditions()
+        # process episodic randomization
+        if not self._randomize_goal_every_episode:
+            # episodic randomization is not required, randomize once now
+            logger.info(f"Episodic randomization disabled, generating static goal_conditions")
+            self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
+        else:
+            logger.info(f"Episodic randomization enabled")
+
+        # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
         self._current_goal = None
         # If the game finished
         self._done = None
-        # Verbosity.
         # If the episode/action was detected by the defender
         self._detected = None
-        # Random seed
-        self._seed = None
-
-
-        # To hold all the services we know
-        self._services = {}
-        self._data = {}
-        self._fw_rules = []
-
-        # Read the conf file passed by the agent for the rest of values
-        self.task_config = ConfigParser(task_config_file)
-
-        # Initialize the environment
-        self.initialize()
+        logger.info(f"Environment initialization finished")
 
     @property
     def seed(self)->int:
@@ -183,64 +223,65 @@ class NetworkSecurityEnvironment(object):
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
         """
-        logger.info(f"Initializing NetSetGame environment")
+        #logger.info(f"Initializing NetSetGame environment")
 
         # Check and change if the values of the actions were updated in the configuration file
-        components.ActionType.ScanNetwork.default_success_p, components.ActionType.ScanNetwork.default_detection_p = self.task_config.read_env_action_data('scan_network')
-        components.ActionType.FindServices.default_success_p, components.ActionType.FindServices.default_detection_p = self.task_config.read_env_action_data('find_services')
-        components.ActionType.ExploitService.default_success_p, components.ActionType.ExploitService.default_detection_p = self.task_config.read_env_action_data('exploit_services')
-        components.ActionType.FindData.default_success_p, components.ActionType.FindData.default_detection_p = self.task_config.read_env_action_data('find_data')
-        components.ActionType.ExfiltrateData.default_success_p, components.ActionType.ExfiltrateData.default_detection_p = self.task_config.read_env_action_data('exfiltrate_data')
+        # components.ActionType.ScanNetwork.default_success_p, components.ActionType.ScanNetwork.default_detection_p = self.task_config.read_env_action_data('scan_network')
+        # components.ActionType.FindServices.default_success_p, components.ActionType.FindServices.default_detection_p = self.task_config.read_env_action_data('find_services')
+        # components.ActionType.ExploitService.default_success_p, components.ActionType.ExploitService.default_detection_p = self.task_config.read_env_action_data('exploit_services')
+        # components.ActionType.FindData.default_success_p, components.ActionType.FindData.default_detection_p = self.task_config.read_env_action_data('find_data')
+        # components.ActionType.ExfiltrateData.default_success_p, components.ActionType.ExfiltrateData.default_detection_p = self.task_config.read_env_action_data('exfiltrate_data')
 
         # Load CYST configuration
-        self.cyst_config = self.task_config.get_scenario()
+        # self.cyst_config = self.task_config.get_scenario()
 
-        # Process parameters
-        self._max_steps = self.task_config.get_max_steps()
-        logger.info(f"\tSetting max steps to {self._max_steps}")
+        # # Process parameters
+        # self._max_steps = self.task_config.get_max_steps()
+        # logger.info(f"\tSetting max steps to {self._max_steps}")
 
-        # Place the defender
-        self._place_defences()
+        # # Place the defender
+        # self._place_defences()
 
-        # Set the seed if passed by the agent
-        seed = self.task_config.get_seed('env')
-        np.random.seed(seed)
-        random.seed(seed)
-        self._seed = seed
-        logger.info(f'Setting env seed to {seed}')
+        # # Set the seed if passed by the agent
+        # seed = self.task_config.get_seed('env')
+        # np.random.seed(seed)
+        # random.seed(seed)
+        # self._seed = seed
+        # logger.info(f'Setting env seed to {seed}')
 
-        # Cyst config
-        logger.info(f"Reading from CYST configuration:")
-        cyst_config = self.task_config.get_scenario()
-        self.process_cyst_config(cyst_config)
-        logger.info(f"CYST configuration processed successfully")
+        # # Cyst config
+        # logger.info(f"Reading from CYST configuration:")
+        # cyst_config = self.task_config.get_scenario()
+        # self.process_cyst_config(cyst_config)
+        # logger.info(f"CYST configuration processed successfully")
 
         #save self_data original state so we can go back to it in reset
-        self._data_original = copy.deepcopy(self._data)
+        # self._data_original = copy.deepcopy(self._data)
 
-        # Get attacker start
-        self._attacker_start_position = self.task_config.get_attacker_start_position()
+        # # Get attacker start
+        # self._attacker_start_position = self.task_config.get_attacker_start_position()
         
         # Make a copy of the win_condition
         # Get the win condition as a dict
-        temp_win_conditions = self.task_config.get_attacker_win_conditions()
+        # temp_win_conditions = self.task_config.get_attacker_win_conditions()
         
-        #should be randomized once or every episode?
-        self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
+        # #should be randomized once or every episode?
+        # self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
         
-        if self.validate_win_conditions(temp_win_conditions):
-            self._goal_conditions = copy.deepcopy(temp_win_conditions)
-            # episodic randomization is not required, randomize once now
-            if not self._randomize_goal_every_episode:
-                logger.info(f"Episodic randomization disabled, generating static goal_conditions")
-                self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
-            else:
-                logger.info(f"Episodic randomization enabled")
-        else:
-            raise ValueError("Incorrect format of the 'win_conditions'!")
+        # if self.validate_win_conditions(temp_win_conditions):
+        #     self._goal_conditions = copy.deepcopy(temp_win_conditions)
+        #     # episodic randomization is not required, randomize once now
+        #     if not self._randomize_goal_every_episode:
+        #         logger.info(f"Episodic randomization disabled, generating static goal_conditions")
+        #         self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
+        #     else:
+        #         logger.info(f"Episodic randomization enabled")
+        # else:
+        #     raise ValueError("Incorrect format of the 'win_conditions'!")
 
-        # Return an observation
-        return True
+        # # Return an observation
+        # return True
+        raise DeprecationWarning
 
     def _create_starting_state(self) -> components.GameState:
         """
