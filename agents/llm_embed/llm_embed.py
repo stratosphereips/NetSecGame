@@ -13,7 +13,6 @@ sys.path.append( path.dirname(path.dirname(path.dirname(path.abspath(__file__)))
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, ActionType
 
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,6 +20,9 @@ import torch.nn.functional as func
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from sentence_transformers import SentenceTransformer, util
+
+from sklearn.decomposition import PCA
+from sklearn.metrics.pairwise import euclidean_distances, cosine_distances
 
 label_mapper = {
     "FindData":ActionType.FindData,
@@ -42,13 +44,13 @@ class Policy(nn.Module):
     This is the policy that takes as input the observation embedding
     and outputs an action embedding
     """
-    def __init__(self, embedding_size=384):
+    def __init__(self, embedding_size=384, output_size=384):
         super().__init__()
-        self.linear1 = nn.Linear(embedding_size, 256)
+        self.linear1 = nn.Linear(embedding_size, 128)
         # self.dropout = nn.Dropout(p=0.2)
-        # self.linear2 = nn.Linear(256, 128)
+        self.linear2 = nn.Linear(128, 64)
         # self.dropout2 = nn.Dropout(p=0.2)
-        self.output = nn.Linear(256, 384)
+        self.output = nn.Linear(64, output_size)
 
         self.saved_log_probs = []
         self.rewards = []
@@ -56,8 +58,8 @@ class Policy(nn.Module):
     def forward(self, input1):
         x = self.linear1(input1)
         # x = self.dropout(x)
-        # x = func.relu(x)
-        # x = self.linear2(x)
+        x = func.relu(x)
+        x = self.linear2(x)
         # x = self.dropout2(x)
         x = func.relu(x)
         return self.output(x)
@@ -66,14 +68,14 @@ class Baseline(nn.Module):
     """
     Baseline network that takes a state an calculate the value
     """
-    def __init__(self, embedding_size=256):
+    def __init__(self, embedding_size=384):
         super().__init__()
 
-        self.linear1 = nn.Linear(embedding_size, 256)
+        self.linear1 = nn.Linear(embedding_size, 64)
         # self.dropout = nn.Dropout(p=0.2)
         # self.linear2 = nn.Linear(256, 128)
         # self.dropout2 = nn.Dropout(p=0.2)
-        self.output_layer = nn.Linear(256, 1)
+        self.output_layer = nn.Linear(64, 1)
 
     def forward(self, x):
         x = self.linear1(x)
@@ -99,13 +101,21 @@ class LLMEmbedAgent:
             embedding_size = 2*384
         else:
             embedding_size = 384
-        self.policy = Policy(embedding_size=embedding_size).to(device)
+        self.num_pca = args.num_pca
+        self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2").eval()
+        self.all_actions = env.get_all_actions()
+        all_actions_str = [str(action) for action in self.all_actions]
+        all_embeddings = self.transformer_model.encode(all_actions_str)
+
+        self.pca = PCA(n_components=args.num_pca)
+        self.pca.fit(all_embeddings)
+
+        self.policy = Policy(embedding_size=embedding_size, output_size=self.num_pca).to(device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
 
         self.baseline = Baseline(embedding_size=embedding_size).to(device)
         self.baseline_optimizer = optim.Adam(self.baseline.parameters(), lr=args.lr)
 
-        self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2").eval()
         self.max_t = args.max_t
         self.num_episodes = args.num_episodes
         self.gamma = args.gamma
@@ -173,6 +183,25 @@ class LLMEmbedAgent:
         else:
             prompt += "No memories yet."
         return prompt
+    
+    def _convert_embedding_to_action_pca(self, new_action_embedding, valid_actions, train=True):
+        """
+        Take an embedded action in the projected space and find the closest
+        from the valid actions/ 
+        """
+        all_actions_str = [str(action) for action in valid_actions]
+        valid_embeddings = self.transformer_model.encode(all_actions_str)
+        valid_pca = self.pca.transform(valid_embeddings)
+        dist = cosine_distances(valid_pca, new_action_embedding).flatten()
+
+        if train:
+            action_id = random.choices(population=[x for x in range(len(valid_pca))], weights=1.0/dist, k=1)[0]
+            print(action_id)
+        else:
+            action_id = np.argmin(dist, axis=0)
+            print(action_id)
+
+        return valid_actions[action_id], valid_pca[action_id]
 
     def _convert_embedding_to_action(self, new_action_embedding, valid_actions, train=True):
         """
@@ -369,7 +398,7 @@ class LLMEmbedAgent:
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
 
-                action, real_emb = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions)
+                action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, True)
                 real_embeddings.append(real_emb)
                 memories.append((str(action.type), str(action.parameters)))
 
@@ -388,12 +417,13 @@ class LLMEmbedAgent:
 
             #calculate deltas and train policy network
             deltas = [gt - val for gt, val in zip(returns, state_vals)]
+            # deltas = returns - state_vals
             deltas = torch.tensor(deltas).to(device)
             self._training_step(deltas, out_embeddings, real_embeddings, episode)
 
             if episode > 0 and episode % self.max_t == 0:
-                returns = self.evaluate(args.eval_episodes)
-                self.summary_writer.add_scalar('test/eval_win', np.mean(returns), episode)
+                rewards = self.evaluate(args.eval_episodes)
+                self.summary_writer.add_scalar('test/eval_win', np.mean(rewards), episode)
 
     def evaluate(self, num_eval_episodes):
         """
@@ -429,7 +459,7 @@ class LLMEmbedAgent:
 
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
-                action, _ = self._convert_embedding_to_action(action_emb.tolist()[0], valid_actions, False)
+                action, _ = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, False)
                 memories.append((str(action.type), str(action.parameters)))
 
                 # Take the new action and get the observation from the policy
@@ -470,6 +500,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_t", type=int, default=128, help="Max episode length")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=128, type=int)
     parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int)
+    parser.add_argument("--num_pca", type=int, default=24, help="Number of PCA components")
 
     args = parser.parse_args()
 
