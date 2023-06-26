@@ -218,6 +218,7 @@ class NetworkSecurityEnvironment(object):
             self._goal_conditions = copy.deepcopy(temp_win_conditions)
             # episodic randomization is not required, randomize once now
             if not self._randomize_goal_every_episode:
+                logger.info(f"Episodic randomization disabled, generating static goal_conditions")
                 self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
         else:
             raise ValueError("Incorrect format of the 'win_conditions'!")
@@ -291,7 +292,7 @@ class NetworkSecurityEnvironment(object):
         """
         Method which analyses win_conditions and randomizes parts if required
         """
-        logger.info(f"Preparing goal conditions for a new episode")
+        logger.info(f"Preparing goal conditions")
         updated_win_conditions = {}
         
         # networks
