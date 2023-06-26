@@ -220,6 +220,8 @@ class NetworkSecurityEnvironment(object):
             if not self._randomize_goal_every_episode:
                 logger.info(f"Episodic randomization disabled, generating static goal_conditions")
                 self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
+            else:
+                logger.info(f"Episodic randomization enabled")
         else:
             raise ValueError("Incorrect format of the 'win_conditions'!")
 
