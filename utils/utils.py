@@ -56,10 +56,13 @@ class ConfigParser():
                 known_data_host = IP(ip)
                 known_data[known_data_host] = set()
                 for datum in data:
-                    known_data_content_str_user =  datum[0]
-                    known_data_content_str_data =  datum[1]
-                    known_data_content = Data(known_data_content_str_user, known_data_content_str_data)
-                    known_data[known_data_host].add(known_data_content)
+                    if not isinstance(datum, list) and datum.lower() == "random":
+                        known_data[known_data_host] = "random"
+                    else:
+                        known_data_content_str_user =  datum[0]
+                        known_data_content_str_data =  datum[1]
+                        known_data_content = Data(known_data_content_str_user, known_data_content_str_data)
+                        known_data[known_data_host].add(known_data_content)
 
             except (ValueError, netaddr.AddrFormatError):
                 known_data = {}
@@ -76,7 +79,8 @@ class ConfigParser():
                 # Check the host is a good ip
                 _ = netaddr.IPAddress(ip)
                 known_services_host = IP(ip)
-
+                if data.lower() == "random":
+                    known_services[known_services_host] = "random"
                 name = data[0]
                 type = data[1]
                 version = data[2]
@@ -154,6 +158,7 @@ class ConfigParser():
 
         # Goal data
         known_data = self.read_agents_known_data('attacker', 'goal')
+        print(known_data)
 
         attacker_goal = {}
         attacker_goal['known_networks'] = known_networks
@@ -198,7 +203,6 @@ class ConfigParser():
         """
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
-
     def get_defender_placement(self):
         """
         Get the position of the defender
@@ -228,3 +232,14 @@ class ConfigParser():
         """
         seed = self.config[whom]['random_seed']
         return seed
+    
+    def get_randomize_goal_every_episode(self) -> bool:
+        """
+        Get if the randomization should be done only once or at the beginning of every episode
+        """
+        try:
+            randomize_goal_every_episode = self.config["agents"]["attacker"]["goal"]["randomize_goal_every_episode"]
+        except KeyError:
+            # Option is not in the configuration - default to FALSE
+            randomize_goal_every_episode = False
+        return randomize_goal_every_episode

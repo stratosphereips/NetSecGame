@@ -8,9 +8,6 @@ import random
 import copy
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 import numpy as np
-# import env.scenarios.scenario_configuration
-#unused: import env.scenarios.smaller_scenario_configuration
-#unused: import env.scenarios.tiny_scenario_configuration
 import logging
 import os
 from pathlib import Path
@@ -31,6 +28,7 @@ class NetworkSecurityEnvironment(object):
         It uses some Cyst libraries for the network topology
         It presents a env environment to play
         """
+        
         # Dictionary of all the nodes in environment
         # All the nodes in the game. Node are hosts, attackers, etc (but not router, connections or exploits)
         self._node_objects = {}
@@ -49,13 +47,12 @@ class NetworkSecurityEnvironment(object):
         self._defender_placements = None
         # Current state of the game
         self._current_state = None
+        self._current_goal = None
         # If the game finished
-        self._done = False
-        # ?
-        self._src_file = None
+        self._done = None
         # Verbosity.
         # If the episode/action was detected by the defender
-        self._detected = False
+        self._detected = None
         # Random seed
         self._seed = None
 
@@ -127,7 +124,7 @@ class NetworkSecurityEnvironment(object):
 
     def validate_win_conditions(self, input_win_conditions: dict) -> bool:
         """
-        What is this doing Ondra???
+        Function to check if the win condition definition is valid (correct usage of objects, formatting etc)
         """
         try:
             # validate networks
@@ -171,8 +168,6 @@ class NetworkSecurityEnvironment(object):
         """
         Initializes the environment with start and goal configuraions.
         Entities in the environment are either read from CYST objects directly or from the serialization file.
-        It ALSO resets the environment, so it returns a full state. This is different from other gym envs.
-
         """
         logger.info(f"Initializing NetSetGame environment")
 
@@ -183,9 +178,7 @@ class NetworkSecurityEnvironment(object):
         components.ActionType.FindData.default_success_p, components.ActionType.FindData.default_detection_p = self.task_config.read_env_action_data('find_data')
         components.ActionType.ExfiltrateData.default_success_p, components.ActionType.ExfiltrateData.default_detection_p = self.task_config.read_env_action_data('exfiltrate_data')
 
-        # Get random start
-        self._attacker_start_position = self.task_config.get_attacker_start_position()
-        # self._attacker_start_position = attacker_start_position
+        # Load CYST configuration
         self.cyst_config = self.task_config.get_scenario()
 
         # Process parameters
@@ -194,15 +187,6 @@ class NetworkSecurityEnvironment(object):
 
         # Place the defender
         self._place_defences()
-
-        # Get the win condition as a dict
-        temp_win_conditions = self.task_config.get_attacker_win_conditions()
-
-        # Make a copy of the win_conditions and
-        if self.validate_win_conditions(temp_win_conditions):
-            self._win_conditions = copy.deepcopy(temp_win_conditions)
-        else:
-            raise ValueError("Incorrect format of the 'win_conditions'!")
 
         # Set the seed if passed by the agent
         seed = self.task_config.get_seed('env')
@@ -215,40 +199,31 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"Reading from CYST configuration:")
         cyst_config = self.task_config.get_scenario()
         self.process_cyst_config(cyst_config)
-
-        # Check if position of data is randomized
-        # This code should be moved into create_starting_state()
-        logger.info(f"Checking if we need to set the data to win in a random location.")
-        # For each known data point in the conditions to win
-
-        for key, value in self._win_conditions["known_data"].items():
-            # Was the position defined as random?
-            if isinstance(value, str) and value.lower() == "random":
-                logger.info(f"\tData was requested to be put in a random location.")
-                # Load all the available data from all hosts
-                available_data = []
-                for node in self._node_objects.values():
-                    # For each node, independent of what type of node they are...
-                    try:
-                        # Search for passive services, since this is where the 'DataConfig' is
-                        for service in node.passive_services:
-                            # Search for private data
-                            for dataconfig in service.private_data:
-                                # Store all places where we can put the data
-                                available_data.append(components.Data(dataconfig.owner, dataconfig.description))
-                    except AttributeError:
-                        pass
-                # From all available data, randomly pick the one that is going to be used to win the game
-                # It seems there can be only one data to win for now
-                self._win_conditions["known_data"][key] = {random.choice(available_data)}
-            else:
-                logger.info(f"\tData was not requested to be put in a random location.")
-
-        logger.info(f"\tWinning condition of `known_data` set to {self._win_conditions['known_data']}")
         logger.info(f"CYST configuration processed successfully")
 
         #save self_data original state so we can go back to it in reset
         self._data_original = copy.deepcopy(self._data)
+
+        # Get attacker start
+        self._attacker_start_position = self.task_config.get_attacker_start_position()
+        
+        # Make a copy of the win_condition
+        # Get the win condition as a dict
+        temp_win_conditions = self.task_config.get_attacker_win_conditions()
+        
+        #should be randomized once or every episode?
+        self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
+        
+        if self.validate_win_conditions(temp_win_conditions):
+            self._goal_conditions = copy.deepcopy(temp_win_conditions)
+            # episodic randomization is not required, randomize once now
+            if not self._randomize_goal_every_episode:
+                logger.info(f"Episodic randomization disabled, generating static goal_conditions")
+                self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
+            else:
+                logger.info(f"Episodic randomization enabled")
+        else:
+            raise ValueError("Incorrect format of the 'win_conditions'!")
 
         # Return an observation
         return True
@@ -261,7 +236,6 @@ class NetworkSecurityEnvironment(object):
         controlled_hosts = set()
 
         logger.info('Creating the starting state')
-
         # Only for logging
         random_start_position = False
         for controlled_host in self._attacker_start_position['controlled_hosts']:
@@ -309,11 +283,77 @@ class NetworkSecurityEnvironment(object):
                         known_networks.add(ip)
                     #return value back to the original
                     net_obj.value += 256
+        
         # Be sure the controlled hosts are also known hosts
         known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
+        
         game_state = components.GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
 
+    def _generate_win_conditions(self, win_conditions)->dict:
+        """
+        Method which analyses win_conditions and randomizes parts if required
+        """
+        logger.info(f"Preparing goal conditions")
+        updated_win_conditions = {}
+        
+        # networks
+        if win_conditions["known_networks"] == "random":
+            updated_win_conditions["known_networks"] = {random.choice(list(self._networks.keys()))}
+            logger.info("\tRandomizing networks")
+        else:
+            updated_win_conditions["known_networks"] = copy.deepcopy(win_conditions["known_networks"])
+        logger.info(f"\tGoal known_networks: {updated_win_conditions['known_networks']}")
+        # known_hosts
+        if win_conditions["known_hosts"] == "random":
+            logger.info("\tRandomizing known_host")
+            updated_win_conditions["known_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
+        else:
+            updated_win_conditions["known_hosts"] = copy.deepcopy(win_conditions["known_hosts"])
+        logger.info(f"\tGoal known_hosts: {updated_win_conditions['known_hosts']}")
+        
+        # controlled_hosts
+        if win_conditions["controlled_hosts"] == "random":
+            logger.info("\tRandomizing controlled_hots")
+            updated_win_conditions["controlled_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
+        else:
+            updated_win_conditions["controlled_hosts"] = copy.deepcopy(win_conditions["controlled_hosts"])
+        logger.info(f"\tGoal controlled_hosts: {updated_win_conditions['controlled_hosts']}")
+        
+        # services
+        updated_win_conditions["known_services"] = {}
+        for host, service_list in win_conditions["known_services"].items():
+            # Was the position defined as random?
+            if isinstance(service_list, str) and service_list.lower() == "random":
+                available_services = []
+                for service in self._services[self._ip_to_hostname[host]]:
+                    available_services.append(components.Service(service.name, service.type, service.version, service.is_local))
+                logger.info(f"\tRandomizing known_services in {host}")
+                updated_win_conditions["known_services"][host] = random.choice(available_services)
+            else:
+                updated_win_conditions["known_services"][host] = copy.deepcopy(win_conditions["known_services"][host])
+        logger.info(f"\tGoal known_services: {updated_win_conditions['known_services']}")
+        
+        # data
+    
+        # prepare all available data if randomization is needed
+        available_data = set()
+        for data in self._data.values():
+            for datapoint in data:
+                available_data.add(components.Data(datapoint.owner, datapoint.id))
+        
+        updated_win_conditions["known_data"] = {}
+        for host, data_set in win_conditions["known_data"].items():
+            # Was random data required in this host?
+            if isinstance(data_set, str) and data_set.lower() == "random":
+                # From all available data, randomly pick the one that is going to be requested in this host
+                updated_win_conditions["known_data"][host] = {random.choice(list(available_data))}
+                logger.info(f"\tRandomizing known_data in {host}")
+            else:
+                updated_win_conditions["known_data"][host] = copy.deepcopy(win_conditions["known_data"][host])
+        logger.info(f"\tGoal known_data: {updated_win_conditions['known_data']}")
+        return updated_win_conditions
+       
     def _place_defences(self)->None:
         """
         Place the defender
@@ -463,7 +503,6 @@ class NetworkSecurityEnvironment(object):
             logger.info(f"\tServices not found because target IP does not exists.")
         return found_services
 
-
     def _get_networks_from_host(self, host_ip)->set:
         """
         Returns set of IPs the host has access to
@@ -608,7 +647,6 @@ class NetworkSecurityEnvironment(object):
 
         return components.GameState(next_controlled_hosts, next_known_hosts, next_known_services, next_known_data, next_known_networks)
 
-
     def is_goal(self, state:components.GameState)->bool:
         """
         Check if the goal was reached for the game
@@ -694,11 +732,20 @@ class NetworkSecurityEnvironment(object):
         self._done = False
         self._step_counter = 0
         self._detected = False
+        
         #reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
+        
+        #create starting state (randomized if needed)
         self._current_state = self._create_starting_state()
 
-        logger.info(f'Current state: {self._current_state} ')
+        #create win conditions for this episode (randomize if needed)
+        if self._randomize_goal_every_episode:
+            self._win_conditions = self._generate_win_conditions(self._goal_conditions)
+        else:
+            self._win_conditions = copy.deepcopy(self._goal_conditions)
+
+        logger.info(f'Current state: {self._current_state}')
         initial_reward = 0
         info = {}
         # An observation has inside ["state", "reward", "done", "info"]
