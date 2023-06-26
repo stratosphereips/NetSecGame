@@ -203,7 +203,6 @@ class ConfigParser():
         """
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
-
     def get_defender_placement(self):
         """
         Get the position of the defender
@@ -233,3 +232,14 @@ class ConfigParser():
         """
         seed = self.config[whom]['random_seed']
         return seed
+    
+    def get_randomize_goal_every_episode(self) -> bool:
+        """
+        Get if the randomization should be done only once or at the beginning of every episode
+        """
+        try:
+            randomize_goal_every_episode = self.config["agents"]["attacker"]["goal"]["randomize_goal_every_episode"]
+        except KeyError:
+            # Option is not in the configuration - default to FALSE
+            randomize_goal_every_episode = False
+        return randomize_goal_every_episode
