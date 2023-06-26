@@ -22,6 +22,11 @@ logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(n
 logger = logging.getLogger('Netsecenv')
 
 class NetworkSecurityEnvironment(object):
+    """
+    Class to manage the whole network security game
+    It uses some Cyst libraries for the network topology
+    It presents a env environment to play
+    """
     def __init__(self, task_config_file, seed=42) -> None:
         """
         Class to manage the whole network security game
@@ -84,10 +89,19 @@ class NetworkSecurityEnvironment(object):
 
     @property
     def done(self):
+        """
+        Property used to for indication that
+        no more interaction can be done in te currect episode
+        """
         return self._done
 
     @property
     def detected(self):
+        """
+        Property used to for indication that
+        the attacker has been detected.
+        Only returns value when episode is over
+        """
         if self.done: #Only tell if detected when the interaction ends
             return self._detected
         else: return None
