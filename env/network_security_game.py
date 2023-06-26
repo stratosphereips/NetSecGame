@@ -210,8 +210,18 @@ class NetworkSecurityEnvironment(object):
         # Make a copy of the win_condition
         # Get the win condition as a dict
         temp_win_conditions = self.task_config.get_attacker_win_conditions()
+        
+        #should be randomized once or every episode?
+        self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
+        
         if self.validate_win_conditions(temp_win_conditions):
             self._goal_conditions = copy.deepcopy(temp_win_conditions)
+            # episodic randomization is not required, randomize once now
+            if not self._randomize_goal_every_episode:
+                logger.info(f"Episodic randomization disabled, generating static goal_conditions")
+                self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
+            else:
+                logger.info(f"Episodic randomization enabled")
         else:
             raise ValueError("Incorrect format of the 'win_conditions'!")
 
@@ -284,7 +294,7 @@ class NetworkSecurityEnvironment(object):
         """
         Method which analyses win_conditions and randomizes parts if required
         """
-        logger.info(f"Preparing goal conditions for a new episode")
+        logger.info(f"Preparing goal conditions")
         updated_win_conditions = {}
         
         # networks
@@ -730,7 +740,10 @@ class NetworkSecurityEnvironment(object):
         self._current_state = self._create_starting_state()
 
         #create win conditions for this episode (randomize if needed)
-        self._win_conditions = self._generate_win_conditions(self._goal_conditions)
+        if self._randomize_goal_every_episode:
+            self._win_conditions = self._generate_win_conditions(self._goal_conditions)
+        else:
+            self._win_conditions = copy.deepcopy(self._goal_conditions)
 
         logger.info(f'Current state: {self._current_state}')
         initial_reward = 0
