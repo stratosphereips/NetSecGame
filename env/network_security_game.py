@@ -175,48 +175,6 @@ class NetworkSecurityEnvironment(object):
                     if host_id == host:
                         actions.add(components.Action(components.ActionType.ExploitService, {"target_host":ip, "target_service":service}))
         return {k:v for k,v in enumerate(actions)}
-
-    def validate_win_conditions(self, input_win_conditions: dict) -> bool:
-        """
-        Function to check if the win condition definition is valid (correct usage of objects, formatting etc)
-        """
-        try:
-            # validate networks
-            assert isinstance(input_win_conditions["known_networks"], set)
-            for net in input_win_conditions["known_networks"]:
-                assert isinstance(net, components.Network)
-            # validate known_host
-            assert isinstance(input_win_conditions["known_hosts"], set)
-            for host in input_win_conditions["known_hosts"]:
-                assert isinstance(host, components.IP)
-            
-            # validate controlled hosts (can be 'random')
-            assert isinstance(input_win_conditions["controlled_hosts"], set) or input_win_conditions["controlled_hosts"] == "random"
-            if input_win_conditions["controlled_hosts"] != "random":
-                for host in input_win_conditions["controlled_hosts"]:
-                        assert isinstance(host, components.IP)
-            
-            #validate known services
-            assert isinstance(input_win_conditions["known_services"], dict)
-            for host, service_set in input_win_conditions["known_services"].items():
-                assert isinstance(host, components.IP)
-                assert isinstance(service_set, set)
-                for service in service_set:
-                    assert isinstance(service, components.Service)
-            
-            #validate known data 
-            assert isinstance(input_win_conditions["known_data"], dict)
-            for host, data_set in input_win_conditions["known_data"].items():
-                assert isinstance(host, components.IP)
-                assert isinstance(data_set, set) or data_set == "random"
-                for data in data_set:
-                    if data_set != "random":
-                        assert isinstance(data, components.Data)
-                
-            return True
-        except AssertionError as error:
-            logger.error(f"Incorrect format of the 'win_conditions!' {error}")
-            return False
     
     def _create_starting_state(self) -> components.GameState:
         """
