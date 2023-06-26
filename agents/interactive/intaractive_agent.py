@@ -4,6 +4,7 @@ import sys
 import argparse
 import logging
 import random
+from termcolor import colored
 from os import path
 # This is used so the agent can see the environment and game components
 sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
@@ -113,52 +114,107 @@ def get_selection_from_user(actiontypes: ActionType, prompt) -> ActionType:
                 print(f"Please insert a number in range {min(option_dict.keys())}-{max(option_dict.keys())}!")
     return selected_option
 
-def print_current_state(state: GameState, reward: int = None):
+def print_current_state(state: GameState, reward: int = None, previous_state=None):
     """
     Prints GameState to stdout in formatted way
     """
-    def print_known_services(known_services):
+    def print_known_services(known_services, previous_state):
         if len(known_services) == 0:
             print("| SERVICES: N/A")
         else:
             first = True
-            for host, services in known_services.items():
+            services = {}
+            if previous_state:
+                for k in sorted(known_services.keys()):
+                    if k in previous_state.known_services:
+                        services[k] = [str(s) for s in sorted(known_services[k])]
+                    else:
+                        services[colored(k, 'yellow')] = [colored(str(s),'yellow') for s in sorted(known_services[k])]
+            else:
+                for k in sorted(known_services.keys()):
+                    services[colored(k, 'yellow')] = [colored(str(s),'yellow') for s in sorted(known_services[k])]
+
+            for host, service_list in services.items():
                 if first:
                     print(f"| SERVICES: {host}:")
-                    for service in services:
+                    for service in service_list:
                         print(f"|\t\t{service}")
                     first = False
                 else:
                     print(f"|           {host}:")
-                    for service in services:
+                    for service in service_list:
                         print(f"|\t\t{service}")
 
-    def print_known_data(known_data):
+    def print_known_data(known_data, previous_state):
         if len(known_data) == 0:
             print("| DATA: N/A")
         else:
             first = True
-            for host, data_list in known_data.items():
+            data = {}
+            if previous_state:
+                for k in sorted(known_data.keys()):
+                    if k in previous_state.known_data:
+                        data[k] = [str(d) for d in sorted(known_data[k])]
+                    else:
+                        data[colored(k, 'yellow')] = [colored(str(d),'yellow') for d in sorted(known_data[k])]
+            else:
+                for k in sorted(known_data.keys()):
+                    data[colored(k, 'yellow')] = [colored(str(d),'yellow') for d in sorted(known_data[k])]
+            
+            for host, data_list in data.items():
                 if first:
                     print(f"| DATA: {host}:")
-                    for data in data_list:
-                        print(f"|\t\t{data}")
+                    for datapoint in data_list:
+                        print(f"|\t\t{datapoint}")
                     first = False
                 else:
                     print(f"|       {host}:")
-                    for data in data_list:
-                        print(f"|\t\t{data}")
+                    for datapoint in data_list:
+                        print(f"|\t\t{datapoint}")
 
     print(f"\n+========================================== CURRENT STATE (reward={reward}) ===========================================")
-    print(f"| NETWORKS: {', '.join([str(net) for net in state.known_networks])}")
+    if previous_state:
+        previous_nets =[]
+        new_nets = []
+        for net in state.known_networks:
+            if net in previous_state.known_networks:
+                previous_nets.append(net)
+            else:
+                new_nets.append(net)
+        nets = [str(n) for n in sorted(previous_nets)] + [colored(str(n), 'yellow') for n in sorted(new_nets)]
+    else:
+        nets = [colored(str(net), 'yellow') for net in sorted(state.known_networks)]
+    print(f"| NETWORKS: {', '.join(nets)}")
     print("+----------------------------------------------------------------------------------------------------------------------")
-    print(f"| KNOWN_H: {', '.join([str(host) for host in state.known_hosts])}")
+    if previous_state:
+        previous_hosts =[]
+        new_hosts = []
+        for host in state.known_hosts:
+            if host in previous_state.known_hosts:
+                previous_hosts.append(host)
+            else:
+                new_hosts.append(host)
+        hosts = [str(h) for h in sorted(previous_hosts)] + [colored(str(h), 'yellow') for h in sorted(new_hosts)]
+    else:
+        hosts = [colored(str(host), 'yellow') for host in sorted(state.known_hosts)]
+    print(f"| KNOWN_H: {', '.join(hosts)}")
     print("+----------------------------------------------------------------------------------------------------------------------")
-    print(f"| OWNED_H: {', '.join([str(host) for host in state.controlled_hosts])}")
+    if previous_state:
+        previous_hosts =[]
+        new_hosts = []
+        for host in state.controlled_hosts:
+            if host in previous_state.controlled_hosts:
+                previous_hosts.append(host)
+            else:
+                new_hosts.append(host)
+        owned_hosts = [str(h) for h in sorted(previous_hosts)] + [colored(str(h), 'yellow') for h in sorted(new_hosts)]
+    else:
+        owned_hosts = [colored(str(host), 'yellow') for host in sorted(state.controlled_hosts)]    
+    print(f"| OWNED_H: {', '.join(owned_hosts)}")
     print("+----------------------------------------------------------------------------------------------------------------------")
-    print_known_services(state.known_services)
+    print_known_services(state.known_services, previous_state)
     print("+----------------------------------------------------------------------------------------------------------------------")
-    print_known_data(state.known_data)
+    print_known_data(state.known_data, previous_state)
     print("+======================================================================================================================\n")
 
 def main() -> None:
@@ -187,13 +243,14 @@ def main() -> None:
 
     logger.info('Creating the agent')
     agent = InteractiveAgent(env)
-
+    previous_state = None
     print("Welcome to the Network Security Game!\n")
     while not observation.done:
         # Be sure the agent can do the move before giving to the env.
-        print_current_state(observation.state, observation.reward)
+        print_current_state(observation.state, observation.reward, previous_state)
         action = agent.move(observation)
         if action:
+            previous_state = observation.state
             observation = env.step(action)
     print(f"Episode over! Reason {observation.info}")
 if __name__ == '__main__':
