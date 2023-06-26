@@ -40,7 +40,7 @@ class InteractiveAgent:
                 action = Action(action_type, params)
                 print(f"Playing {action}")
                 return action
-        print("Incorrect input, terminating the game!")
+        print(colored("Incorrect input, terminating the game!", "red"))
         # If something failed, avoid doing the move
         return False
 
@@ -111,7 +111,7 @@ def get_selection_from_user(actiontypes: ActionType, prompt) -> ActionType:
                 selected_option = option_dict[selected_idx]
                 input_alive = False
             except (ValueError, KeyError):
-                print(f"Please insert a number in range {min(option_dict.keys())}-{max(option_dict.keys())}!")
+                print(colored(f"Please insert a number in range {min(option_dict.keys())}-{max(option_dict.keys())}!", 'red'))
     return selected_option
 
 def print_current_state(state: GameState, reward: int = None, previous_state=None):
@@ -120,7 +120,7 @@ def print_current_state(state: GameState, reward: int = None, previous_state=Non
     """
     def print_known_services(known_services, previous_state):
         if len(known_services) == 0:
-            print("| SERVICES: N/A")
+            print(f"| {colored('SERVICES',None,attrs=['bold'])}: N/A")
         else:
             first = True
             services = {}
@@ -136,7 +136,7 @@ def print_current_state(state: GameState, reward: int = None, previous_state=Non
 
             for host, service_list in services.items():
                 if first:
-                    print(f"| SERVICES: {host}:")
+                    print(f"| {colored('SERVICES',None,attrs=['bold'])}: {host}:")
                     for service in service_list:
                         print(f"|\t\t{service}")
                     first = False
@@ -147,7 +147,7 @@ def print_current_state(state: GameState, reward: int = None, previous_state=Non
 
     def print_known_data(known_data, previous_state):
         if len(known_data) == 0:
-            print("| DATA: N/A")
+            print(f"| {colored('DATA',None,attrs=['bold'])}: N/A")
         else:
             first = True
             data = {}
@@ -163,7 +163,7 @@ def print_current_state(state: GameState, reward: int = None, previous_state=Non
             
             for host, data_list in data.items():
                 if first:
-                    print(f"| DATA: {host}:")
+                    print(f"| {colored('DATA',None,attrs=['bold'])}: {host}:")
                     for datapoint in data_list:
                         print(f"|\t\t{datapoint}")
                     first = False
@@ -172,7 +172,7 @@ def print_current_state(state: GameState, reward: int = None, previous_state=Non
                     for datapoint in data_list:
                         print(f"|\t\t{datapoint}")
 
-    print(f"\n+========================================== CURRENT STATE (reward={reward}) ===========================================")
+    print(f"\n+========================================== {colored('CURRENT STATE','light_blue',attrs=['bold'])} (reward={reward}) ===========================================")
     if previous_state:
         previous_nets =[]
         new_nets = []
@@ -184,7 +184,7 @@ def print_current_state(state: GameState, reward: int = None, previous_state=Non
         nets = [str(n) for n in sorted(previous_nets)] + [colored(str(n), 'yellow') for n in sorted(new_nets)]
     else:
         nets = [colored(str(net), 'yellow') for net in sorted(state.known_networks)]
-    print(f"| NETWORKS: {', '.join(nets)}")
+    print(f"| {colored('NETWORKS',None,attrs=['bold'])}: {', '.join(nets)}")
     print("+----------------------------------------------------------------------------------------------------------------------")
     if previous_state:
         previous_hosts =[]
@@ -197,7 +197,7 @@ def print_current_state(state: GameState, reward: int = None, previous_state=Non
         hosts = [str(h) for h in sorted(previous_hosts)] + [colored(str(h), 'yellow') for h in sorted(new_hosts)]
     else:
         hosts = [colored(str(host), 'yellow') for host in sorted(state.known_hosts)]
-    print(f"| KNOWN_H: {', '.join(hosts)}")
+    print(f"| {colored('KNOWN_H',None,attrs=['bold'])}: {', '.join(hosts)}")
     print("+----------------------------------------------------------------------------------------------------------------------")
     if previous_state:
         previous_hosts =[]
@@ -210,7 +210,7 @@ def print_current_state(state: GameState, reward: int = None, previous_state=Non
         owned_hosts = [str(h) for h in sorted(previous_hosts)] + [colored(str(h), 'yellow') for h in sorted(new_hosts)]
     else:
         owned_hosts = [colored(str(host), 'yellow') for host in sorted(state.controlled_hosts)]    
-    print(f"| OWNED_H: {', '.join(owned_hosts)}")
+    print(f"| {colored('OWNED_H',None,attrs=['bold'])}: {', '.join(owned_hosts)}")
     print("+----------------------------------------------------------------------------------------------------------------------")
     print_known_services(state.known_services, previous_state)
     print("+----------------------------------------------------------------------------------------------------------------------")
