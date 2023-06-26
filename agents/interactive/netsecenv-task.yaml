@@ -7,6 +7,7 @@ agents:
   attacker:
 
     goal:
+      randomize_goal_every_episode: False
       known_networks: []
       #known_networks: [192.168.1.0/24, 192.168.3.0/24]
 
@@ -22,7 +23,7 @@ agents:
 
       # In data, put the target host that must have the data and which data in format user,data
       # Example to fix the data in one host
-      known_data: {213.47.23.195: [[User1,DataFromServer1]]}
+      known_data: {213.47.23.195: ["random"]}
       # Example to fix two data in one host
       #known_data: {213.47.23.195: [[User1,DataFromServer1], [User5,DataFromServer5]]}
       # Example to fix the data in two host
@@ -48,8 +49,8 @@ agents:
 
   defender:
     # types are StochasticDefender and NoDefender
-    type: 'StochasticDefender'
-    #type: 'NoDefender'
+    #type: 'StochasticDefender'
+    type: 'NoDefender'
 
 env:
   random_seed: 42
