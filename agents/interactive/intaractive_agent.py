@@ -222,36 +222,30 @@ def main() -> None:
     Function to run the run the interactive agent
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=False, action='store_true')
-    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
-    parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
-    parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
-    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=False, action='store_true')
+    parser.add_argument("--episodes", help="Number of episodes to be played", default=2, type=int)
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
     logging.basicConfig(filename='interactive_agent.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S', level=logging.CRITICAL)
     logger = logging.getLogger('Interactive-agent')
-    random.seed(args.seed)
 
 
     # Create the env
     env = NetworkSecurityEnvironment(args.task_config_file)
-
-    observation = env.reset()
-
+    random.seed(env.seed)
     logger.info('Creating the agent')
     agent = InteractiveAgent(env)
-    previous_state = None
-    print("Welcome to the Network Security Game!\n")
-    while not observation.done:
-        # Be sure the agent can do the move before giving to the env.
-        print_current_state(observation.state, observation.reward, previous_state)
-        action = agent.move(observation)
-        if action:
-            previous_state = observation.state
-            observation = env.step(action)
-    print(f"Episode over! Reason {observation.info}")
+    for _ in range(args.episodes):
+        observation = env.reset()
+        previous_state = None
+        print("Welcome to the Network Security Game!\n")
+        while not observation.done:
+            # Be sure the agent can do the move before giving to the env.
+            print_current_state(observation.state, observation.reward, previous_state)
+            action = agent.move(observation)
+            if action:
+                previous_state = observation.state
+                observation = env.step(action)
+        print(f"Episode over! Reason {observation.info}")
 if __name__ == '__main__':
     main()
