@@ -7,6 +7,7 @@ agents:
   attacker:
 
     goal:
+      randomize_goal_every_episode: True
       known_networks: []
       #known_networks: [192.168.1.0/24, 192.168.3.0/24]
 
@@ -30,7 +31,7 @@ agents:
       # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the goal data is
       #known_data: {213.47.23.195: [random]}
       #known_data: {}
-      known_data: {192.168.1.2: [[User1,DataFromServer1]], 213.47.23.195: [[User1,DataFromServer1]] }
+      known_data: {213.47.23.195: [random] }
     start_position:
       known_networks: []
       known_hosts: []
