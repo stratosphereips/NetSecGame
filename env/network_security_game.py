@@ -29,7 +29,7 @@ class NetworkSecurityEnvironment(object):
     """
     def __init__(self, task_config_file) -> None:
         logger.info("Initializing NetSetGame environment")
-        # Prepare data structures for all environment components (to be filled in process_cyst_config())
+        # Prepare data structures for all environment components (to be filled in _process_cyst_config())
         
         # Mapping of IP():host_name (str) of all nodes in the environment
         self._ip_to_hostname = {}
@@ -61,7 +61,7 @@ class NetworkSecurityEnvironment(object):
         # Load CYST configuration
         logger.info("Reading from CYST configuration:")
         cyst_config = self.task_config.get_scenario()
-        self.process_cyst_config(cyst_config)
+        self._process_cyst_config(cyst_config)
         logger.info("CYST configuration processed successfully")
         
         # Set the seed if passed by the agent
@@ -319,7 +319,7 @@ class NetworkSecurityEnvironment(object):
         else:
             self._defender_placements = False
 
-    def process_cyst_config(self, configuration_objects:list)-> None:
+    def _process_cyst_config(self, configuration_objects:list)-> None:
         """
         Process the cyst configuration file
         """
