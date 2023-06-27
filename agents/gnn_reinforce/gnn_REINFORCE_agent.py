@@ -17,7 +17,7 @@ sys.path.append( path.dirname(path.dirname(path.dirname(path.abspath(__file__)))
 #with the path fixed, we can import now
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, ActionType, GameState, IP, Network, Data
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.get_logger().setLevel('ERROR')
 
@@ -160,11 +160,11 @@ class GnnReinforceAgent:
         mask = np.array(mask, dtype=bool)
         return mask
 
-    @tf.function
+    @tf.function(experimental_relax_shapes=True)
     def predict(self, state_graph, valid_action_mask, training=True):
         return self._model([state_graph, valid_action_mask], training=training)
 
-    @tf.function
+    #@tf.function(experimental_relax_shapes=True)
     def _make_training_step_actor(self, inputs, labels, weights, masks)->None:
         #perform training step
         with tf.GradientTape() as tape:
@@ -179,7 +179,7 @@ class GnnReinforceAgent:
             tf.summary.scalar('train/avg_weights_actor', tf.reduce_mean(weights), step=self._model.optimizer.iterations)
             tf.summary.scalar('train/mean_std_node_em', tf.reduce_mean(tf.math.reduce_std(node_emb, axis=0)), step=self._model.optimizer.iterations)
 
-    @tf.function
+    #@tf.function()
     def _make_training_step_baseline(self, inputs, rewards)->None:
         #perform training step
         with tf.GradientTape() as tape:
@@ -254,8 +254,8 @@ class GnnReinforceAgent:
             baseline = tf.squeeze(self._baseline(scalar_graph_tensor))
             updated_batch_returns = batch_returns-baseline
             #perform training step
-            self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
             self._make_training_step_actor(scalar_graph_tensor, batch_actions, updated_batch_returns, batch_masks)
+            self._make_training_step_baseline(scalar_graph_tensor, batch_returns)
             
             with self._tf_writer.as_default():
                 tf.summary.scalar('train/accuracy',self._actor_train_acc_metric.result(), step=episode)
@@ -265,7 +265,7 @@ class GnnReinforceAgent:
                 print(f"Evaluation after {episode} episodes (mean of {len(returns)} runs): {np.mean(returns)}+-{np.std(returns)}")
                 with self._tf_writer.as_default():
                     tf.summary.scalar('test/eval_win', np.mean(returns), step=episode)
-                self.save_model('./gnn_reinforce_actor_trained_tmp')
+                #self.save_model('./gnn_reinforce_actor_trained_tmp')
     
     def evaluate(self):
         print(f"Starting final evaluation ({self.args.final_eval_for} episodes)")
@@ -315,8 +315,8 @@ if __name__ == '__main__':
     parser.add_argument("--lr_baseline", help="Learnining rate of the NN", type=float, default=1e-4)
 
     #training arguments
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=2500, type=int)
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=100, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=1000, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=250, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=500, type=int)
     parser.add_argument("--final_eval_for", help="Sets evaluation length", default=1000, type=int )
 
@@ -324,7 +324,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.filename = "GNN_Reinforce_Agent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
 
-    logging.basicConfig(filename='GNN_Reinforce_Agent.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+    logging.basicConfig(filename='GNN_Reinforce_Agent_TMP.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     logger = logging.getLogger('GNN_Reinforce_Agent')
   
 
@@ -340,7 +340,5 @@ if __name__ == '__main__':
     # #initialize agent
     agent = GnnReinforceAgent(env, args)
     agent.train()
-    agent.save_model("./gnn_reinforce_actor_trained_final")
     agent.evaluate()
-    agent.load_model("./gnn_reinforce_actor_trained_final")
     agent.evaluate()
