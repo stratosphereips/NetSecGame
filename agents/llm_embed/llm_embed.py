@@ -104,6 +104,7 @@ class LLMEmbedAgent:
         self.num_pca = args.num_pca
         self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2").eval()
         self.all_actions = env.get_all_actions()
+        self.num_all_actions = len(self.all_actions)
         all_actions_str = [str(action) for action in self.all_actions]
         all_embeddings = self.transformer_model.encode(all_actions_str)
 
@@ -124,6 +125,8 @@ class LLMEmbedAgent:
         self.summary_writer = SummaryWriter()
         self.eval_episodes = args.eval_episodes
         self.memory_len = args.memory_len
+        # Parameter that defines the value of the intrinsic reward
+        self.beta = 1.0
 
     def _create_status_from_state(self, state):
         """
@@ -346,20 +349,19 @@ class LLMEmbedAgent:
         Main training loop that runs for a number of episodes.
         """
         scores = []
-        # if self.memory_len > 0:
-        #     embedding_size = 2*384
-        # else:
-        #     embedding_size = 384
-        # self.summary_writer.add_graph(self.policy, torch.zeros((1, embedding_size), device=device))
-        # self.summary_writer.add_graph(self.baseline, torch.zeros((1, embedding_size), device=device))
+        self.policy.train()
+        self.baseline.train()
 
         for episode in range(1, self.num_episodes+1):
             out_embeddings = []
             real_embeddings = []
             rewards = []
+            intr_rewards = []
             memories = []
             state_vals = []
             observation = self.env.reset()
+            valid_actions = self._generate_valid_actions(observation.state)
+            num_valid = len(valid_actions)
 
             # Visualize the weights in tensorboard
             self._weight_histograms(episode)
@@ -397,6 +399,11 @@ class LLMEmbedAgent:
 
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
+                if len(valid_actions) > num_valid:
+                    num_valid = len(valid_actions)
+                    intr_rewards.append(num_valid/self.num_all_actions)
+                else:
+                    intr_rewards.append(0.0)
 
                 action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, True)
                 real_embeddings.append(real_emb)
@@ -411,12 +418,13 @@ class LLMEmbedAgent:
             scores.append(sum(rewards))
             self.summary_writer.add_scalar("actions/valid_actions", len(valid_actions), episode)
             self.summary_writer.add_scalar("reward/mean", np.mean(scores), episode)
-            self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-self.max_t:]), episode)
+            self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-128:]), episode)
             returns = self._get_discounted_rewards(rewards).to(device)
-            self._training_step_baseline(state_vals, returns, episode)
+            intr_returns = self._get_discounted_rewards(rewards).to(device)
+            self._training_step_baseline(state_vals, returns+self.beta*intr_returns, episode)
 
             #calculate deltas and train policy network
-            deltas = [gt - val for gt, val in zip(returns, state_vals)]
+            deltas = [gt - val for gt, val in zip(returns+self.beta*intr_returns, state_vals)]
             # deltas = returns - state_vals
             deltas = torch.tensor(deltas).to(device)
             self._training_step(deltas, out_embeddings, real_embeddings, episode)
