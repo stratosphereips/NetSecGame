@@ -208,7 +208,7 @@ class LLMEmbedAgent:
             action_id = random.choices(population=range(5), weights=1.0/top_k_dists, k=1)[0]
             print(action_id)
         else:
-            action_id = np.argmin(top_k_dists, axis=0)
+            action_id = np.argmin(top_k_dists)
             print(action_id)
 
         return valid_top_k[action_id], pca_top_k[action_id]
@@ -356,6 +356,7 @@ class LLMEmbedAgent:
         Main training loop that runs for a number of episodes.
         """
         scores = []
+        scores_int = []
         self.policy.train()
         self.baseline.train()
         
@@ -411,7 +412,7 @@ class LLMEmbedAgent:
                 valid_actions = self._generate_valid_actions(observation.state)
                 if len(valid_actions) > num_valid:
                     num_valid = len(valid_actions)
-                    intr_rewards.append(1.0)
+                    intr_rewards.append(2.0)
                 else:
                     intr_rewards.append(0.0)
 
@@ -429,10 +430,14 @@ class LLMEmbedAgent:
                     break
 
             scores.append(sum(rewards))
+            scores_int.append(sum(intr_rewards))
             self.summary_writer.add_scalar("actions/valid_actions", len(valid_actions), episode)
-            self.summary_writer.add_scalar("reward/mean", np.mean(scores), episode)
-            self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-128:]), episode)
-            self.summary_writer.add_scalar("wins", wins, episode)
+            self.summary_writer.add_scalar("reward/mean_ext", np.mean(scores), episode)
+            self.summary_writer.add_scalar("reward/mean_int", np.mean(scores_int), episode)
+            self.summary_writer.add_scalar("reward/moving_average_ext", np.mean(scores[-128:]), episode)
+            self.summary_writer.add_scalar("wins/num_wins", wins, episode)
+            self.summary_writer.add_scalar("wins/win_rate", 100*wins/episode, episode)
+            
             returns = self._get_discounted_rewards(rewards).to(device)
             intr_returns = self._get_discounted_rewards(intr_rewards).to(device)
             self._training_step_baseline(state_vals, returns+self.beta*intr_returns, episode)
