@@ -358,6 +358,9 @@ class LLMEmbedAgent:
         scores = []
         self.policy.train()
         self.baseline.train()
+        
+        # Keep trackof the wins during training
+        wins = 0
 
         for episode in range(1, self.num_episodes+1):
             out_embeddings = []
@@ -408,7 +411,7 @@ class LLMEmbedAgent:
                 valid_actions = self._generate_valid_actions(observation.state)
                 if len(valid_actions) > num_valid:
                     num_valid = len(valid_actions)
-                    intr_rewards.append(2.0)
+                    intr_rewards.append(1.0)
                 else:
                     intr_rewards.append(0.0)
 
@@ -419,15 +422,19 @@ class LLMEmbedAgent:
                 # Take the new action and get the observation from the policy
                 observation = self.env.step(action)
                 rewards.append(observation.reward)
+
                 if observation.done:
+                    if len(rewards) < self.max_t:
+                        wins += 1
                     break
 
             scores.append(sum(rewards))
             self.summary_writer.add_scalar("actions/valid_actions", len(valid_actions), episode)
             self.summary_writer.add_scalar("reward/mean", np.mean(scores), episode)
             self.summary_writer.add_scalar("reward/moving_average", np.mean(scores[-128:]), episode)
+            self.summary_writer.add_scalar("wins", wins, episode)
             returns = self._get_discounted_rewards(rewards).to(device)
-            intr_returns = self._get_discounted_rewards(rewards).to(device)
+            intr_returns = self._get_discounted_rewards(intr_rewards).to(device)
             self._training_step_baseline(state_vals, returns+self.beta*intr_returns, episode)
 
             #calculate deltas and train policy network
@@ -438,7 +445,7 @@ class LLMEmbedAgent:
 
             if episode > 0 and episode % self.max_t == 0:
                 rewards = self.evaluate(args.eval_episodes)
-                self.summary_writer.add_scalar('test/eval_win', np.mean(rewards), episode)
+                self.summary_writer.add_scalar('test/eval_rewards', np.mean(rewards), episode)
 
     def evaluate(self, num_eval_episodes):
         """
