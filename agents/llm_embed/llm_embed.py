@@ -197,14 +197,21 @@ class LLMEmbedAgent:
         valid_pca = self.pca.transform(valid_embeddings)
         dist = cosine_distances(valid_pca, new_action_embedding).flatten()
 
+        # Select among the 5 smaller distances
+        action_ids = np.argpartition(dist, 5)[:5]
+        top_k_dists = dist[action_ids]
+        pca_top_k = valid_pca[action_ids]
+        valid_top_k = [val for i, val in enumerate(valid_actions) if i in action_ids]
+
         if train:
-            action_id = random.choices(population=[x for x in range(len(valid_pca))], weights=1.0/dist, k=1)[0]
+            # action_id = random.choices(population=range(len(valid_pca)), weights=1.0/dist, k=1)[0]
+            action_id = random.choices(population=range(5), weights=1.0/top_k_dists, k=1)[0]
             print(action_id)
         else:
-            action_id = np.argmin(dist, axis=0)
+            action_id = np.argmin(top_k_dists, axis=0)
             print(action_id)
 
-        return valid_actions[action_id], valid_pca[action_id]
+        return valid_top_k[action_id], pca_top_k[action_id]
 
     def _convert_embedding_to_action(self, new_action_embedding, valid_actions, train=True):
         """
@@ -401,7 +408,7 @@ class LLMEmbedAgent:
                 valid_actions = self._generate_valid_actions(observation.state)
                 if len(valid_actions) > num_valid:
                     num_valid = len(valid_actions)
-                    intr_rewards.append(num_valid/self.num_all_actions)
+                    intr_rewards.append(2.0)
                 else:
                     intr_rewards.append(0.0)
 
