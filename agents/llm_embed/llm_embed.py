@@ -127,6 +127,7 @@ class LLMEmbedAgent:
         self.memory_len = args.memory_len
         # Parameter that defines the value of the intrinsic reward
         self.beta = 1.0
+        self.top_k = args.top_k
 
     def _create_status_from_state(self, state):
         """
@@ -187,7 +188,7 @@ class LLMEmbedAgent:
             prompt += "No memories yet."
         return prompt
     
-    def _convert_embedding_to_action_pca(self, new_action_embedding, valid_actions, train=True):
+    def _convert_embedding_to_action_pca(self, new_action_embedding, valid_actions, train=True, k=5):
         """
         Take an embedded action in the projected space and find the closest
         from the valid actions/ 
@@ -198,14 +199,14 @@ class LLMEmbedAgent:
         dist = cosine_distances(valid_pca, new_action_embedding).flatten()
 
         # Select among the 5 smaller distances
-        action_ids = np.argpartition(dist, 5)[:5]
+        action_ids = np.argpartition(dist, k)[:k]
         top_k_dists = dist[action_ids]
         pca_top_k = valid_pca[action_ids]
         valid_top_k = [val for i, val in enumerate(valid_actions) if i in action_ids]
 
         if train:
             # action_id = random.choices(population=range(len(valid_pca)), weights=1.0/dist, k=1)[0]
-            action_id = random.choices(population=range(5), weights=1.0/top_k_dists, k=1)[0]
+            action_id = random.choices(population=range(k), weights=1.0/top_k_dists, k=1)[0]
             print(action_id)
         else:
             action_id = np.argmin(top_k_dists, axis=0)
@@ -416,7 +417,7 @@ class LLMEmbedAgent:
                     intr_rewards.append(0.0)
 
                 # Convert the action embedding to a valid action and its embedding
-                action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, True)
+                action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, True, self.top_k)
                 real_embeddings.append(real_emb)
                 memories.append((str(action.type), str(action.parameters)))
 
@@ -492,7 +493,7 @@ class LLMEmbedAgent:
 
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
-                action, _ = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, False)
+                action, _ = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, False, self.top_k)
                 memories.append((str(action.type), str(action.parameters)))
 
                 # Take the new action and get the observation from the policy
@@ -535,6 +536,7 @@ if __name__ == '__main__':
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=128, type=int)
     parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--num_pca", type=int, default=24, help="Number of PCA components")
+    parser.add_argument("--top_k", type=int, default=5, help="The number of valid actions to consider for similarity")
 
     args = parser.parse_args()
 
