@@ -208,7 +208,7 @@ class LLMEmbedAgent:
             action_id = random.choices(population=range(5), weights=1.0/top_k_dists, k=1)[0]
             print(action_id)
         else:
-            action_id = np.argmin(top_k_dists)
+            action_id = np.argmin(top_k_dists, axis=0)
             print(action_id)
 
         return valid_top_k[action_id], pca_top_k[action_id]
@@ -360,9 +360,8 @@ class LLMEmbedAgent:
         self.policy.train()
         self.baseline.train()
         
-        # Keep trackof the wins during training
+        # Keep track of the wins during training
         wins = 0
-
         for episode in range(1, self.num_episodes+1):
             out_embeddings = []
             real_embeddings = []
@@ -382,16 +381,16 @@ class LLMEmbedAgent:
                 status_str = self._create_status_from_state(observation.state)
                 # Get the embedding of the string from the transformer
                 state_embed = self.transformer_model.encode(status_str)
-                state_embed_t = torch.tensor(state_embed, device=device).unsqueeze(0)
+                state_embed = torch.tensor(state_embed, device=device).unsqueeze(0)
 
                 if self.memory_len > 0:
                     memory_str = self._create_memory_prompt(memories[-self.memory_len:])
 
                     # Get the embedding of the memory string from the transformer
                     memory_embed = self.transformer_model.encode(memory_str)
-                    memory_embed_t = torch.tensor(memory_embed, device=device).unsqueeze(0)
+                    memory_embed = torch.tensor(memory_embed, device=device).unsqueeze(0)
 
-                    input_emb = torch.concat([state_embed_t, memory_embed_t], dim=1)
+                    input_emb = torch.concat([state_embed, memory_embed], dim=1)
 
                     # Pass the state embedding to the model and get the action
                     action_emb = self.policy.forward(input_emb)
@@ -400,15 +399,15 @@ class LLMEmbedAgent:
                     state_val = self.baseline.forward(input_emb)
                 else:
                     # Pass the state embedding to the model and get the action
-                    action_emb = self.policy.forward(state_embed_t)
+                    action_emb = self.policy.forward(state_embed)
 
                     # Pass the state embedding to the baseline and get the value
-                    state_val = self.baseline.forward(state_embed_t)
+                    state_val = self.baseline.forward(state_embed)
 
                 out_embeddings.append(action_emb)
                 state_vals.append(state_val)
 
-                # Convert the action embedding to a valid action and its embedding
+                # Add an intrinsic reward based on the number of valid actions
                 valid_actions = self._generate_valid_actions(observation.state)
                 if len(valid_actions) > num_valid:
                     num_valid = len(valid_actions)
@@ -416,51 +415,58 @@ class LLMEmbedAgent:
                 else:
                     intr_rewards.append(0.0)
 
+                # Convert the action embedding to a valid action and its embedding
                 action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, True)
                 real_embeddings.append(real_emb)
                 memories.append((str(action.type), str(action.parameters)))
 
-                # Take the new action and get the observation from the policy
+                # Take the new action and get the observation from the environment
                 observation = self.env.step(action)
                 rewards.append(observation.reward)
 
                 if observation.done:
-                    if len(rewards) < self.max_t:
+                    # If done and the latest reward from the env is positive, we have reached the goal
+                    if observation.reward > 0:
                         wins += 1
                     break
 
             scores.append(sum(rewards))
             scores_int.append(sum(intr_rewards))
+
             self.summary_writer.add_scalar("actions/valid_actions", len(valid_actions), episode)
             self.summary_writer.add_scalar("reward/mean_ext", np.mean(scores), episode)
             self.summary_writer.add_scalar("reward/mean_int", np.mean(scores_int), episode)
             self.summary_writer.add_scalar("reward/moving_average_ext", np.mean(scores[-128:]), episode)
             self.summary_writer.add_scalar("wins/num_wins", wins, episode)
-            self.summary_writer.add_scalar("wins/win_rate", 100*wins/episode, episode)
+            self.summary_writer.add_scalar("wins/win_rate", 100*(wins/episode), episode)
             
             returns = self._get_discounted_rewards(rewards).to(device)
             intr_returns = self._get_discounted_rewards(intr_rewards).to(device)
+
+            # Train the baseline first
             self._training_step_baseline(state_vals, returns+self.beta*intr_returns, episode)
 
-            #calculate deltas and train policy network
+            # Calculate deltas and train the policy network
             deltas = [gt - val for gt, val in zip(returns+self.beta*intr_returns, state_vals)]
             # deltas = returns - state_vals
             deltas = torch.tensor(deltas).to(device)
             self._training_step(deltas, out_embeddings, real_embeddings, episode)
 
             if episode > 0 and episode % self.max_t == 0:
-                rewards = self.evaluate(args.eval_episodes)
-                self.summary_writer.add_scalar('test/eval_rewards', np.mean(rewards), episode)
+                eval_rewards, eval_wins = self.evaluate(args.eval_episodes)
+                self.summary_writer.add_scalar('test/eval_rewards', np.mean(eval_rewards), episode)
+                self.summary_writer.add_scalar('test/wins', eval_wins, episode)
 
     def evaluate(self, num_eval_episodes):
         """
         Evaluation function.
         """
-
         self.policy.eval()
         eval_returns = []
+        wins = 0
         for _ in range(num_eval_episodes):
-            observation, done = env.reset(), False
+            observation = env.reset()
+            done = False
             ret = 0
             memories = []
             while not done:
@@ -494,15 +500,17 @@ class LLMEmbedAgent:
                 ret += observation.reward
                 done = observation.done
 
+            if ret > 0:
+                wins += 1
+
             eval_returns.append(ret)
+
         self.policy.train()
-        return eval_returns
+        return eval_returns, wins
 
-    # def save_model(self, file_name):
-    #     raise NotImplementedError
+    def save_model(self, file_name):
+        torch.save(self.policy.state_dict(), file_name)
 
-    # def load_model(self, file_name):
-    #     raise NotImplementedError
 
 
 if __name__ == '__main__':
@@ -517,10 +525,9 @@ if __name__ == '__main__':
 
     # Model arguments
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
-    # TODO: handle batches ?
-    parser.add_argument("--batch_size", help="Batch size for NN training", type=int, default=64)
     parser.add_argument("--lr", help="Learning rate of the NN", type=float, default=1e-3)
     parser.add_argument("--memory_len", type=int, default=0, help="Number of memories to keep. Zero means no memory")
+    parser.add_argument("--model_path", type=str, default="saved_models/policy.pt", help="Path for saving the policy model.")
 
     # Training arguments
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
@@ -541,5 +548,7 @@ if __name__ == '__main__':
     agent.train()
 
     # Evaluate the agent
-    final_returns = agent.evaluate(args.eval_episodes)
+    final_returns, wins = agent.evaluate(args.eval_episodes)
     print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
+    print(f"Total number of wins during evaluation: {wins}")
+    agent.save_model(args.model_path)
