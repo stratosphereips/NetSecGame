@@ -19,10 +19,10 @@ import torch.nn as nn
 import torch.nn.functional as func
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
 
 from sklearn.decomposition import PCA
-from sklearn.metrics.pairwise import euclidean_distances, cosine_distances
+from sklearn.metrics.pairwise import cosine_distances
 
 label_mapper = {
     "FindData":ActionType.FindData,
@@ -108,8 +108,9 @@ class LLMEmbedAgent:
         all_actions_str = [str(action) for action in self.all_actions]
         all_embeddings = self.transformer_model.encode(all_actions_str)
 
-        self.pca = PCA(n_components=args.num_pca)
-        self.pca.fit(all_embeddings)
+        if args.num_pca < 384:
+            self.pca = PCA(n_components=args.num_pca)
+            self.pca.fit(all_embeddings)
 
         self.policy = Policy(embedding_size=embedding_size, output_size=self.num_pca).to(device)
         self.optimizer = optim.Adam(self.policy.parameters(), lr=args.lr)
@@ -187,7 +188,7 @@ class LLMEmbedAgent:
         else:
             prompt += "No memories yet."
         return prompt
-    
+
     def _convert_embedding_to_action_pca(self, new_action_embedding, valid_actions, train=True, k=5):
         """
         Take an embedded action in the projected space and find the closest
@@ -219,25 +220,33 @@ class LLMEmbedAgent:
 
         return valid_top_k[action_id], pca_top_k[action_id]
 
-    def _convert_embedding_to_action(self, new_action_embedding, valid_actions, train=True):
+    def _convert_embedding_to_action(self, new_action_embedding, valid_actions, train=True, k=5):
         """
         Take an embedding, and the valid actions for the state
         and find the closest embedding using cosine similarity
         Return an Action object and the closest neighbor
         """
+        if len(valid_actions) <= k:
+            new_k = len(valid_actions)-1
+        else:
+            new_k = k
+
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
+        dist = cosine_distances(valid_embeddings, new_action_embedding).flatten()
+
+        # Select among the k smaller distances
+        action_ids = np.argpartition(dist, new_k)[:new_k]
+        top_k_dists = dist[action_ids]
+        top_k_embs = valid_embeddings[action_ids]
+        valid_top_k = [val for i, val in enumerate(valid_actions) if i in action_ids]
 
         if train:
-            # TODO: Select the top-k?
-            # action_ids = np.argpartition(similarities, -7)[-7:]
-            similarities = util.cos_sim(valid_embeddings, new_action_embedding).reshape(1, -1)
-            norm_sims = [s+1. for s in similarities]
-            action_id = random.choices(range(len(valid_actions)), norm_sims[0])[0]
+            action_id = random.choices(population=range(new_k), weights=1.0/top_k_dists, k=1)[0]
         else:
-            action_id = np.argmax(util.cos_sim(valid_embeddings, new_action_embedding), axis=0)
+            action_id = np.argmin(top_k_dists, axis=0)
 
-        return valid_actions[action_id], valid_embeddings[action_id]
+        return valid_top_k[action_id], top_k_embs[action_id]
 
     def _generate_valid_actions(self, state):
         """
@@ -365,7 +374,7 @@ class LLMEmbedAgent:
         scores_int = []
         self.policy.train()
         self.baseline.train()
-        
+
         # Keep track of the wins during training
         wins = 0
         for episode in range(1, self.num_episodes+1):
@@ -422,7 +431,10 @@ class LLMEmbedAgent:
                     intr_rewards.append(0.0)
 
                 # Convert the action embedding to a valid action and its embedding
-                action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, True, self.top_k)
+                if self.num_pca < 384:
+                    action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, True, self.top_k)
+                else:
+                    action, real_emb = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), valid_actions, True, self.top_k)
                 real_embeddings.append(real_emb)
                 memories.append((str(action.type), str(action.parameters)))
 
@@ -445,7 +457,7 @@ class LLMEmbedAgent:
             self.summary_writer.add_scalar("reward/moving_average_ext", np.mean(scores[-128:]), episode)
             self.summary_writer.add_scalar("wins/num_wins", wins, episode)
             self.summary_writer.add_scalar("wins/win_rate", 100*(wins/episode), episode)
-            
+
             returns = self._get_discounted_rewards(rewards).to(device)
             intr_returns = self._get_discounted_rewards(intr_rewards).to(device)
 
@@ -482,7 +494,7 @@ class LLMEmbedAgent:
                 state_embed = self.transformer_model.encode(status_str)
                 state_embed_t = torch.tensor(state_embed, device=device).unsqueeze(0)
 
-                if self.memory_len > 0:                
+                if self.memory_len > 0:
                     memory_str = self._create_memory_prompt(memories[-self.memory_len:])
 
                     # Get the embedding of the memory string from the transformer
@@ -498,7 +510,11 @@ class LLMEmbedAgent:
 
                 # Convert the action embedding to a valid action and its embedding
                 valid_actions = self._generate_valid_actions(observation.state)
-                action, _ = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, False, self.top_k)
+
+                if self.num_pca < 384:
+                    action, _ = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, False, self.top_k)
+                else:
+                    action, _ = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), valid_actions, False, self.top_k)
                 memories.append((str(action.type), str(action.parameters)))
 
                 # Take the new action and get the observation from the policy
@@ -515,8 +531,10 @@ class LLMEmbedAgent:
         return eval_returns, wins
 
     def save_model(self, file_name):
+        """
+        Save the pytorch policy model.
+        """
         torch.save(self.policy.state_dict(), file_name)
-
 
 
 if __name__ == '__main__':
@@ -540,7 +558,7 @@ if __name__ == '__main__':
     parser.add_argument("--max_t", type=int, default=128, help="Max episode length")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=128, type=int)
     parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int)
-    parser.add_argument("--num_pca", type=int, default=24, help="Number of PCA components")
+    parser.add_argument("--num_pca", type=int, default=24, help="Number of PCA components. Use 384 to disable PCA")
     parser.add_argument("--top_k", type=int, default=5, help="The number of valid actions to consider for similarity")
 
     args = parser.parse_args()
