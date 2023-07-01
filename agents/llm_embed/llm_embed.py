@@ -193,24 +193,29 @@ class LLMEmbedAgent:
         Take an embedded action in the projected space and find the closest
         from the valid actions/ 
         """
+        if len(valid_actions) <= k:
+            new_k = len(valid_actions)-1
+        else:
+            new_k = k
+
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
         valid_pca = self.pca.transform(valid_embeddings)
         dist = cosine_distances(valid_pca, new_action_embedding).flatten()
 
         # Select among the 5 smaller distances
-        action_ids = np.argpartition(dist, k)[:k]
+        action_ids = np.argpartition(dist, new_k)[:new_k]
         top_k_dists = dist[action_ids]
         pca_top_k = valid_pca[action_ids]
         valid_top_k = [val for i, val in enumerate(valid_actions) if i in action_ids]
 
         if train:
             # action_id = random.choices(population=range(len(valid_pca)), weights=1.0/dist, k=1)[0]
-            action_id = random.choices(population=range(k), weights=1.0/top_k_dists, k=1)[0]
-            print(action_id)
+            action_id = random.choices(population=range(new_k), weights=1.0/top_k_dists, k=1)[0]
+            # print(action_id)
         else:
             action_id = np.argmin(top_k_dists, axis=0)
-            print(action_id)
+            # print(action_id)
 
         return valid_top_k[action_id], pca_top_k[action_id]
 
@@ -501,7 +506,7 @@ class LLMEmbedAgent:
                 ret += observation.reward
                 done = observation.done
 
-            if ret > 0:
+            if observation.reward > 0:
                 wins += 1
 
             eval_returns.append(ret)
