@@ -1,6 +1,7 @@
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 # Library of helpful functions and objects to play the net sec game
 from dataclasses import dataclass, field
+import dataclasses
 from collections import namedtuple
 import json
 import enum
@@ -85,6 +86,22 @@ class ActionType(enum.Enum):
         self.default_success_p = default_success_p
         self.default_detection_p = default_detection_p
 
+    @classmethod
+    def from_string(cls, string:str):
+        match string:
+            case "ActionType.ExploitService":
+                return ActionType.ExploitService
+            case "ActionType.ScanNetwork":
+                return  ActionType.ScanNetwork
+            case "ActionType.FindServices":
+                return ActionType.FindServices
+            case "ActionType.FindData":
+                return ActionType.FindData
+            case "ActionType.ExfiltrateData":
+                return ActionType.ExfiltrateData
+            case _:
+                raise ValueError("Uknown Action Type")
+
     #ActionTypes
     ScanNetwork = 0.9, 0.2
     FindServices = 0.9, 0.3
@@ -129,6 +146,41 @@ class Action():
     def __hash__(self) -> int:
         return hash(self._type) + hash("".join(sorted(self._parameters)))
 
+    def as_json(self)->str:
+        ret_dict = {"action_type":str(self.type)}
+        ret_dict["parameters"] = {k:dataclasses.asdict(v) for k,v in self.parameters.items()}
+        return json.dumps(ret_dict) 
+    
+    @classmethod
+    def from_json(cls, json_string:str):
+        """
+        Classmethod to ccreate Action object from json string representation
+        """
+        json_data = json.loads(json_string)
+        action_type = action_type=ActionType.from_string(json_data["action_type"])
+        parameters = {}
+        json_data = json_data["parameters"]
+        match action_type:
+            case ActionType.ScanNetwork:
+                parameters = {"target_network": Network(json_data["target_network"]["ip"], json_data["target_network"]["mask"])}
+            case ActionType.FindServices:
+                parameters = {"target_host": IP(json_data["target_host"]["ip"])}
+            case ActionType.FindData:
+                parameters = {"target_host": IP(json_data["target_host"]["ip"])}
+            case ActionType.ExploitService:
+                parameters = {"target_host": IP(json_data["target_host"]["ip"]),
+                              "target_service": Service(json_data["target_service"]["name"],
+                                    json_data["target_service"]["type"],
+                                    json_data["target_service"]["version"],
+                                    json_data["target_service"]["is_local"])}
+            case ActionType.ExfiltrateData:
+                parameters = {"target_host": IP(json_data["target_host"]["ip"]),
+                                "source_host": IP(json_data["source_host"]["ip"]),
+                              "data": Data(json_data["data"]["owner"],json_data["data"]["id"])}
+            case _:
+                raise ValueError(f"Unknown Action type:{action_type}")
+        action = Action(action_type=action_type, params=parameters)
+        return action
 
 @dataclass(frozen=True)
 class GameState():
@@ -210,8 +262,28 @@ class GameState():
         """
         Returns json representation of the GameState in string
         """
-        ret_dict = {"nets":list(self.known_networks), "known_hosts":list(self.known_hosts), "controlled_hosts":list(self.controlled_hosts), "known_services":list(self.known_services.items()), "known_data":list(self.known_data.items())}
+        ret_dict = {"known_networks":[dataclasses.asdict(x) for x in self.known_networks],
+            "known_hosts":[dataclasses.asdict(x) for x in self.known_hosts],
+            "controlled_hosts":[dataclasses.asdict(x) for x in self.controlled_hosts],
+            "known_services": {str(host):[dataclasses.asdict(s) for s in services] for host,services in self.known_services.items()},
+            "known_data":{str(host):[dataclasses.asdict(d) for d in data] for host,data in self.known_data.items()}}
         return json.dumps(ret_dict) 
+
+
+    @classmethod
+    def from_json(cls, json_string):
+        """
+        Creates GameState object from json representation in string
+        """
+        json_data = json.loads(json_string)
+        state = GameState(known_networks={Network(x["ip"], x["mask"]) for x in json_data["known_networks"]},
+                    known_hosts={IP(x["ip"]) for x in json_data["known_hosts"]},
+                    controlled_hosts={IP(x["ip"]) for x in json_data["controlled_hosts"]},
+                    known_services={IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
+                        for s in services} for k,services in json_data["known_services"].items()},  
+                    known_data={IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in json_data["known_data"].items()}) 
+        return state
+
 
 # Observation - given to agent after taking an action
 """
@@ -225,37 +297,28 @@ Observations are given when making a step in the environment.
 Observation = namedtuple("Observation", ["state", "reward", "done", "info"])
 
 
-# # Main is only used for testing
-# if __name__ == '__main__':
-#     # Used for tests
-#     service_1 = Service("rdp", "passive", "1.067", True)
-#     service_2 = Service("rdp", "passive", "1.067", True)
-#     service_3 = Service("sql", "passive", "5.0", True)
-#     assert (service_1 == service_1 and service_1 is service_1)
-#     assert (service_1 == service_2)
-#     assert (service_1 is not service_2)
-#     assert(service_1 != service_3)
+# Main is only used for testing
+if __name__ == '__main__':
+    state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
+                known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
+                known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
+                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
+                            IP("192.168.1.2"):{Data("McGiver", "data2")}})
+    # print(state)
+    # print("-------------AS JSON ------------")
+    # as_json = state.as_json()
+    # print(as_json)
+    # print("-------------FROM JSON ------------")
+    # new_state = GameState.from_json(as_json)
+    # print(new_state)
+    # print(new_state == state)
+    parameters = {"target_host":IP('192.168.1.3'), "target_service":Service('postgresql', 'passive', '14.3.0', False)}
+    action = Action(ActionType.from_string("ActionType.ExploitService"), parameters)
 
-#     print(service_1, service_2, service_3)
-#     IP1 = IP("192.168.1.2")
-#     IP2 = IP("192.168.1.2")
-#     IP3 = IP("192.168.0.2")
-#     assert(IP1 == IP1)
-#     assert(IP1 == IP2)
-#     assert(IP2 is not IP1)
-#     assert(IP1 != IP3)
-    
-#     net1 = Network("192.168.1.0", 32)
-#     net2 = Network("192.168.3.0", 32)
-#     net3 = Network("192.168.2.0", 32)
-   
-    
-#     d = {net1:[IP1 ,IP2], net3:[]}
-#     print(d)
-#     print(len(ActionType))
-#     for at in ActionType:
-#         print(at, at.default_success_p, at.default_detection_p)
-
-
-#     nets = {net1, net2, net3}
-#     print(sorted(nets))
+    parameters = {"target_host":IP('213.47.23.195'), "data":Data("User1", "DatabaseData"), "source_host":IP("192.168.1.3")}
+    action = Action(ActionType.ExfiltrateData, parameters)
+    as_json = action.as_json()
+    print(as_json)
+    new_action = Action.from_json(as_json)
+    print(new_action)
+    print(action==new_action)

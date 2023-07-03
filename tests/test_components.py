@@ -3,6 +3,7 @@ Tests related to the game components in the Network Security Game Environment
 Author: Maria Rigaki - maria.rigaki@fel.cvut.cz
 """
 import sys
+import json
 from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
 from env.game_components import ActionType, Action, IP, Data, Network, Service, GameState
@@ -254,7 +255,106 @@ class TestAction:
         assert Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"), "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")}) in action_set
         #reverse params orders
         assert Action(action_type=ActionType.ExfiltrateData, params={"source_host": IP("172.16.1.2"), "target_host":IP("172.16.1.3"), "data":Data("User2", "PublicKey")}) in action_set
+
+    def test_action_as_json(self):
+        # Scan Network
+        action = Action(action_type=ActionType.ScanNetwork,
+                        params={"target_network":Network("172.16.1.12", 24)})
+        action_json = action.as_json()
+        try:
+            data = json.loads(action_json)
+        except ValueError:
+            data = None
+        assert data is not None
+        assert "ActionType.ScanNetwork" in data["action_type"]
+        assert ("parameters", {"target_network": {"ip": "172.16.1.12", "mask":24}}) in data.items()
         
+        # Find services
+        action = Action(action_type=ActionType.FindServices,
+                        params={"target_host":IP("172.16.1.22")})
+        action_json = action.as_json()
+        try:
+            data = json.loads(action_json)
+        except ValueError:
+            data = None
+        assert data is not None
+        assert "ActionType.FindServices" in data["action_type"]
+        assert ("parameters", {"target_host": {"ip": "172.16.1.22"}}) in data.items()
+
+        # Find Data
+        action = Action(action_type=ActionType.FindData,
+                        params={"target_host":IP("172.16.1.22")})
+        action_json = action.as_json()
+        try:
+            data = json.loads(action_json)
+        except ValueError:
+            data = None
+        assert data is not None
+        assert "ActionType.FindData" in data["action_type"]
+        assert ("parameters", {"target_host": {"ip": "172.16.1.22"}}) in data.items()       
+
+        # Exploit Service
+        action = Action(action_type=ActionType.ExploitService,
+                        params={"target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)})
+        action_json = action.as_json()
+        try:
+            data = json.loads(action_json)
+        except ValueError:
+            data = None
+        assert data is not None
+        assert "ActionType.ExploitService" in data["action_type"]
+        assert ("parameters", {"target_host": {"ip": "172.16.1.24"},
+                    "target_service":{"name":"ssh", "type":"passive", "version":"0.23", "is_local":False}}) in data.items()
+
+        # Exfiltrate Data
+        action = Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"),
+                         "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")})
+        action_json = action.as_json()
+        try:
+            data = json.loads(action_json)
+        except ValueError:
+            data = None
+        assert data is not None
+        assert "ActionType.ExfiltrateData" in data["action_type"]
+        assert ("parameters", {"target_host": {"ip": "172.16.1.3"},
+                    "source_host" : {"ip": "172.16.1.2"},
+                    "data":{"owner":"User2", "id":"PublicKey"}}) in data.items()
+    
+    def test_action_scan_network_serialization(self):
+        action = Action(action_type=ActionType.ScanNetwork,
+                        params={"target_network":Network("172.16.1.12", 24)})
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+    
+    def test_action_find_services_serialization(self):
+        action = Action(action_type=ActionType.FindServices,
+                        params={"target_host":IP("172.16.1.22")})
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+
+    def test_action_find_data_serialization(self):
+        action = Action(action_type=ActionType.FindData,
+                        params={"target_host":IP("172.16.1.22")})
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+
+    def test_action_exploit_service_serialization(self):
+        action = Action(action_type=ActionType.ExploitService,
+                        params={"target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)})
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+    
+    def test_action_exfiltrate_serialization(self):
+        action = Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"),
+                         "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")})
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+
 class TestGameState:
     """
     Test cases related to the GameState class
@@ -345,11 +445,33 @@ class TestGameState:
                   known_data={Data("User", "PublicKey")})
         assert game_state != game_state2
 
-    # def test_game_state_as_json(self):
-    #     game_state = GameState(controlled_hosts={IP("192.168.1.1")},
-    #               known_hosts={IP("192.168.1.1"), IP("8.8.8.8")},
-    #               known_services=set(),
-    #               known_data={Data("User2", "PublicKey")},
-    #               known_networks={Network('192.168.1.0', 24)})
-    #     game_json = game_state.as_json()
-    #     assert Network('192.168.1.0', 24) in game_json["known_hosts"]
+
+    def test_game_state_as_json(self):
+        game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
+                known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
+                known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
+                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
+                            IP("192.168.1.2"):{Data("McGiver", "data2")}})
+        game_json = game_state.as_json()
+        try:
+            data = json.loads(game_json)
+        except ValueError:
+            data = None
+        assert data is not None
+        assert {"ip": "1.1.1.1", "mask": 24} in data["known_networks"]
+        assert {"ip": "192.168.1.3"} in data["known_hosts"]
+        assert {"ip": "192.168.1.2"} in data["controlled_hosts"]
+        assert ("192.168.1.3", [{"name": "service1", "type": "public", "version": "1.01", "is_local": True}]) in data["known_services"].items()
+        assert {"owner": "ChuckNorris", "id": "data1"} in  data["known_data"]["192.168.1.3"]
+        assert {"owner": "ChuckNorris", "id": "data2"} in  data["known_data"]["192.168.1.3"]
+    
+    def test_game_state_json_deserialized(self):
+        game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
+                known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
+                known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
+                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
+                            IP("192.168.1.2"):{Data("McGiver", "data2")}})
+        state_json = game_state.as_json()
+        deserialized_state = GameState.from_json(state_json)
+        assert game_state is not deserialized_state
+        assert game_state == deserialized_state
