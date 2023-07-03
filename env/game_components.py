@@ -217,16 +217,16 @@ class GameState():
 
     @classmethod
     def from_json(cls, json_string):
+        """
+        Creates GameState object from json representation in string
+        """
         json_data = json.loads(json_string)
-        # known_data={IP(k):[Service(v["name"], v["type"], v["version"], v["is_local"]) for v in values] for k,values in json_data["known_services"].items()}
-        # print(known_data)
         state = GameState(known_networks={Network(x["ip"], x["mask"]) for x in json_data["known_networks"]},
                     known_hosts={IP(x["ip"]) for x in json_data["known_hosts"]},
                     controlled_hosts={IP(x["ip"]) for x in json_data["controlled_hosts"]},
                     known_services={IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
                         for s in services} for k,services in json_data["known_services"].items()},  
-                    known_data={IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in json_data["known_data"].items()})
-        
+                    known_data={IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in json_data["known_data"].items()}) 
         return state
 
 
