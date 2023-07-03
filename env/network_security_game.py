@@ -11,7 +11,7 @@ import numpy as np
 import logging
 import os
 from pathlib import Path
-from utils.utils import ConfigParser
+from utils.utils import ConfigParser, store_replay_buffer_in_csv
 
 
 # Set the logging
@@ -96,6 +96,7 @@ class NetworkSecurityEnvironment(object):
         self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
         # store goal definition
         self._goal_conditions = self.task_config.get_attacker_win_conditions()
+        
         # process episodic randomization
         if not self._randomize_goal_every_episode:
             # episodic randomization is not required, randomize once now
@@ -104,6 +105,12 @@ class NetworkSecurityEnvironment(object):
         else:
             logger.info("Episodic randomization enabled")
 
+        # read if replay buffer should be store on disc
+        if self.task_config.get_store_replay_buffer():
+            logger.info("Storing of replay buffer enabled")
+            self._episode_replay_buffer = []
+        else:
+            self._episode_replay_buffer = None
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
         self._current_goal = None
@@ -668,6 +675,10 @@ class NetworkSecurityEnvironment(object):
         self._step_counter = 0
         self._detected = False
         
+        # write all steps in the episode replay buffer in the file
+        if self._episode_replay_buffer is not None:
+            store_replay_buffer_in_csv(self._episode_replay_buffer, 'env/logs/replay_buffer.csv')
+            self._episode_replay_buffer = [] 
         #reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         
@@ -744,6 +755,7 @@ class NetworkSecurityEnvironment(object):
                 logger.info(f'Episode ended. Reason: {reason}')
 
             # Make the state we just got into, our current state
+            current_state = self._current_state
             self._current_state = next_state
             logger.info(f'Current state: {self._current_state} ')
 
@@ -753,6 +765,9 @@ class NetworkSecurityEnvironment(object):
                 reason = {'end_reason':'max_steps'}
                 logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
 
+            # Save the transition to the episode replay buffer if there is any
+            if self._episode_replay_buffer is not None:
+                self._episode_replay_buffer.append((current_state, action, reward, next_state, self._done))
             # Return an observation
             return components.Observation(self._current_state, reward, self._done, reason)
         else:
