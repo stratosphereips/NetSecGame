@@ -52,6 +52,7 @@ class ReplayMemory(object):
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
+        # TODO: the weights need to be positive 
         disc_rewards = [mem.disc_reward+32 for mem in self.memory]
         return random.choices(self.memory, disc_rewards, k=batch_size)
         # return random.sample(self.memory, batch_size)
@@ -143,8 +144,7 @@ class LLMEmbedAgent:
         # self.max_t = args.max_t
         self.num_episodes = args.num_episodes
         self.gamma = args.gamma
-        # self.loss_fn = nn.MSELoss(reduction='mean')
-        self.loss_fn = nn.SmoothL1Loss()
+        self.loss_fn = nn.MSELoss(reduction='mean')
         self.summary_writer = SummaryWriter()
         self.eval_episodes = args.eval_episodes
         self.memory_len = args.memory_len
@@ -356,14 +356,12 @@ class LLMEmbedAgent:
         policy_loss = torch.cat(policy_loss).sum()
         policy_loss.backward(retain_graph=True)
 
-        # torch.nn.utils.clip_grad_value_(self.policy.parameters(), 5)
-        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
         self.optimizer.step()
 
-        # self.summary_writer.add_scalar("losses/policy_loss", policy_loss, episode)
+        self.summary_writer.add_scalar("losses/policy_loss", policy_loss, episode)
 
-        # for tag, param in self.policy.named_parameters():
-        #     self.summary_writer.add_histogram(f"grad_{tag}", param.grad.data.cpu().numpy(), episode)
+        for tag, param in self.policy.named_parameters():
+            self.summary_writer.add_histogram(f"grad_{tag}", param.grad.data.cpu().numpy(), episode)
 
 
     def _training_step_baseline(self, state_vals, returns, episode):
@@ -382,10 +380,10 @@ class LLMEmbedAgent:
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
         self.baseline_optimizer.step()
 
-        # self.summary_writer.add_scalar("losses/value_loss", value_loss, episode)
+        self.summary_writer.add_scalar("losses/value_loss", value_loss, episode)
 
-        # for tag, param in self.baseline.named_parameters():
-        #     self.summary_writer.add_histogram(f"baseline_grad_{tag}", param.grad.data.cpu().numpy(), episode)
+        for tag, param in self.baseline.named_parameters():
+            self.summary_writer.add_histogram(f"baseline_grad_{tag}", param.grad.data.cpu().numpy(), episode)
 
 
     def train(self):
@@ -496,7 +494,7 @@ class LLMEmbedAgent:
 
             # TODO: How often to train. This influences the min size of the memory
             if episode > 0 and episode % 4 == 0:
-                for _ in range(self.args.num_epochs):
+                for i in range(self.args.num_epochs):
                     transitions = self.replay_memory.sample(self.args.batch_size)
 
                     # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
@@ -510,7 +508,7 @@ class LLMEmbedAgent:
                     action_batch = torch.cat(batch.action_emb)
                     real_batch = torch.cat(batch.real_emb)
 
-                    self._training_step_baseline(state_batch, reward_batch, episode)
+                    self._training_step_baseline(state_batch, reward_batch, i)
 
                     # Calculate deltas and train the policy network
                     deltas = [gt - val for gt, val in zip(reward_batch, state_batch)]
