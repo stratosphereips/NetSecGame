@@ -216,13 +216,17 @@ class GameState():
 
 
     @classmethod
-    def from_json(cls, json_file):
-        data = json.load(json_file)
-        state = GameState(known_networks=set(data["known_networks"]),
-                    known_hosts=set(data["known_host"]),
-                    controlled_hosts=set(data["controlled_hosts"]),
-                    known_services=dict(data["known_services"]),
-                    known_data=dict(data["known_data"]))
+    def from_json(cls, json_string):
+        json_data = json.loads(json_string)
+        # known_data={IP(k):[Service(v["name"], v["type"], v["version"], v["is_local"]) for v in values] for k,values in json_data["known_services"].items()}
+        # print(known_data)
+        state = GameState(known_networks={Network(x["ip"], x["mask"]) for x in json_data["known_networks"]},
+                    known_hosts={IP(x["ip"]) for x in json_data["known_hosts"]},
+                    controlled_hosts={IP(x["ip"]) for x in json_data["controlled_hosts"]},
+                    known_services={IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
+                        for s in services} for k,services in json_data["known_services"].items()},  
+                    known_data={IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in json_data["known_data"].items()})
+        
         return state
 
 
@@ -243,5 +247,12 @@ if __name__ == '__main__':
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
                 known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
                 known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
-                known_data={IP("192.168.1.3"):{Data("data1", "ChuckNorris")}})
-    print(state.as_json())
+                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1")}})
+    print(state)
+    print("-------------AS JSON ------------")
+    as_json = state.as_json()
+    print(as_json)
+    print("-------------FROM JSON ------------")
+    new_state = GameState.from_json(as_json)
+    print(new_state)
+    print(new_state == state)
