@@ -229,6 +229,14 @@ class ConfigParser():
         """
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
+
+    def get_store_replay_buffer(self):
+        """
+        Get the max steps 
+        """
+        store_RB = self.config['env']['store_replay_buffer']
+        return bool(store_RB)
+    
     def get_defender_placement(self):
         """
         Get the position of the defender
