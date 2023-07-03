@@ -33,7 +33,8 @@ class IP():
     def __repr__(self):
         return self.ip
 
-@dataclass(frozen=True, eq=True)
+
+@dataclass(frozen=True, eq=True, order=True)
 class Network():
     """
     Network represents the network object in the NetSecGame
