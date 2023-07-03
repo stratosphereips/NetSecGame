@@ -83,6 +83,22 @@ class ActionType(enum.Enum):
         self.default_success_p = default_success_p
         self.default_detection_p = default_detection_p
 
+    @classmethod
+    def from_string(cls, string:str):
+        match string:
+            case "ActionType.ExploitService":
+                return ActionType.ExploitService
+            case "ActionType.ScanNetwork":
+                return  ActionType.ScanNetwork
+            case "ActionType.FindServices":
+                return ActionType.FindServices
+            case "ActionType.FindData":
+                return ActionType.FindData
+            case "ActionType.ExfiltrateData":
+                return ActionType.ExfiltrateData
+            case _:
+                raise ValueError("Uknown Action Type")
+
     #ActionTypes
     ScanNetwork = 0.9, 0.2
     FindServices = 0.9, 0.3
@@ -90,18 +106,6 @@ class ActionType(enum.Enum):
     ExploitService = 0.7, 0.4
     ExfiltrateData = 0.8, 0.1
 
-class EnumEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if type(obj) is ActionType:
-            return {"__enum__": str(obj)}
-        return json.JSONEncoder.default(self, obj)
-
-def as_enum(d):
-    if "__enum__" in d:
-        name, member = d["__enum__"].split(".")
-        return getattr(ActionType[name], member)
-    else:
-        return d
 #Actions
 class Action():
     """
@@ -139,15 +143,14 @@ class Action():
         return hash(self._type) + hash("".join(sorted(self._parameters)))
 
     def as_json(self)->str:
-        ret_dict = {"action_type":self.type}
-        tmp = {k:dataclasses.asdict(v) for k,v in self.parameters.items()}
-        print(tmp)
-        return json.dumps(ret_dict,cls=EnumEncoder) 
+        ret_dict = {"action_type":str(self.type)}
+        ret_dict["parameters"] = {k:dataclasses.asdict(v) for k,v in self.parameters.items()}
+        return json.dumps(ret_dict) 
     
     @classmethod
     def from_json(cls, json_string:str):
         json_data = json.loads(json_string)
-    
+
 @dataclass(frozen=True)
 class GameState():
     """
@@ -279,5 +282,5 @@ if __name__ == '__main__':
     # print(new_state)
     # print(new_state == state)
     parameters = {"target_host":IP('192.168.1.3'), "target_service":Service('postgresql', 'passive', '14.3.0', False)}
-    action = Action(ActionType.ExploitService, parameters)
+    action = Action(ActionType.from_string("ActionType.XXXXX"), parameters)
     print(action.as_json())
