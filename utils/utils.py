@@ -9,9 +9,25 @@ sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
-from env.game_components import IP, Data, Network, Service
+from env.game_components import IP, Data, Network, Service, GameState, Action, ActionType
 import netaddr
 import logging
+import csv
+
+def read_replay_buffer_from_csv(csvfile:str)->list:
+    """
+    Function to read steps from a CSV file
+     and restore the objects in the replay buffer.
+
+     expected colums in the csv:
+     state_t0, action_t0, reward_t1, state_t1, done_t1
+    """
+    buffer = []
+    with open(csvfile, 'r') as f_object:
+        csv_reader = csv.reader(f_object, delimiter=';')
+        for [s_t, a_t, r, s_t1 , done] in csv_reader:
+            buffer.append((GameState.from_json(s_t), Action.from_json(a_t), r, GameState.from_json(s_t1), done))
+    return buffer
 
 class ConfigParser():
     """
