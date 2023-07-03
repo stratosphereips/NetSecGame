@@ -319,6 +319,41 @@ class TestAction:
         assert ("parameters", {"target_host": {"ip": "172.16.1.3"},
                     "source_host" : {"ip": "172.16.1.2"},
                     "data":{"owner":"User2", "id":"PublicKey"}}) in data.items()
+    
+    def test_action_scan_network_serialization(self):
+        action = Action(action_type=ActionType.ScanNetwork,
+                        params={"target_network":Network("172.16.1.12", 24)})
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+    
+    def test_action_find_services_serialization(self):
+        action = Action(action_type=ActionType.FindServices,
+                        params={"target_host":IP("172.16.1.22")})
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+
+    def test_action_find_data_serialization(self):
+        action = Action(action_type=ActionType.FindData,
+                        params={"target_host":IP("172.16.1.22")})
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+
+    def test_action_exploit_service_serialization(self):
+        action = Action(action_type=ActionType.ExploitService,
+                        params={"target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)})
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+    
+    def test_action_exfiltrate_serialization(self):
+        action = Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"),
+                         "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")})
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
 
 class TestGameState:
     """
