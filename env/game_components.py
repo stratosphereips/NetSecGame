@@ -149,7 +149,34 @@ class Action():
     
     @classmethod
     def from_json(cls, json_string:str):
+        """
+        Classmethod to ccreate Action object from json string representation
+        """
         json_data = json.loads(json_string)
+        action_type = action_type=ActionType.from_string(json_data["action_type"])
+        parameters = {}
+        json_data = json_data["parameters"]
+        match action_type:
+            case ActionType.ScanNetwork:
+                parameters = {"target_network": Network(json_data["target_network"]["ip"], json_data["target_network"]["mask"])}
+            case ActionType.FindServices:
+                parameters = {"target_host": IP(json_data["target_host"]["ip"])}
+            case ActionType.FindData:
+                parameters = {"target_host": IP(json_data["target_host"]["ip"])}
+            case ActionType.ExploitService:
+                parameters = {"target_host": IP(json_data["target_host"]["ip"]),
+                              "target_service": Service(json_data["target_service"]["name"],
+                                    json_data["target_service"]["type"],
+                                    json_data["target_service"]["version"],
+                                    json_data["target_service"]["is_local"])}
+            case ActionType.ExfiltrateData:
+                parameters = {"target_host": IP(json_data["target_host"]["ip"]),
+                                "source_host": IP(json_data["source_host"]["ip"]),
+                              "data": Data(json_data["data"]["owner"],json_data["data"]["id"])}
+            case _:
+                raise ValueError(f"Unknown Action type:{action_type}")
+        action = Action(action_type=action_type, params=parameters)
+        return action
 
 @dataclass(frozen=True)
 class GameState():
@@ -282,5 +309,12 @@ if __name__ == '__main__':
     # print(new_state)
     # print(new_state == state)
     parameters = {"target_host":IP('192.168.1.3'), "target_service":Service('postgresql', 'passive', '14.3.0', False)}
-    action = Action(ActionType.from_string("ActionType.XXXXX"), parameters)
-    print(action.as_json())
+    action = Action(ActionType.from_string("ActionType.ExploitService"), parameters)
+
+    parameters = {"target_host":IP('213.47.23.195'), "data":Data("User1", "DatabaseData"), "source_host":IP("192.168.1.3")}
+    action = Action(ActionType.ExfiltrateData, parameters)
+    as_json = action.as_json()
+    print(as_json)
+    new_action = Action.from_json(as_json)
+    print(new_action)
+    print(action==new_action)
