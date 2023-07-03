@@ -1,6 +1,7 @@
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 # Library of helpful functions and objects to play the net sec game
 from dataclasses import dataclass, field
+import dataclasses
 from collections import namedtuple
 import json
 import enum
@@ -206,8 +207,24 @@ class GameState():
         """
         Returns json representation of the GameState in string
         """
-        ret_dict = {"nets":list(self.known_networks), "known_hosts":list(self.known_hosts), "controlled_hosts":list(self.controlled_hosts), "known_services":list(self.known_services.items()), "known_data":list(self.known_data.items())}
+        ret_dict = {"known_networks":[dataclasses.asdict(x) for x in self.known_networks],
+            "known_hosts":[dataclasses.asdict(x) for x in self.known_hosts],
+            "controlled_hosts":[dataclasses.asdict(x) for x in self.controlled_hosts],
+            "known_services": {str(host):[dataclasses.asdict(s) for s in services] for host,services in self.known_services.items()},
+            "known_data":{str(host):[dataclasses.asdict(d) for d in data] for host,data in self.known_data.items()}}
         return json.dumps(ret_dict) 
+
+
+    @classmethod
+    def from_json(cls, json_file):
+        data = json.load(json_file)
+        state = GameState(known_networks=set(data["known_networks"]),
+                    known_hosts=set(data["known_host"]),
+                    controlled_hosts=set(data["controlled_hosts"]),
+                    known_services=dict(data["known_services"]),
+                    known_data=dict(data["known_data"]))
+        return state
+
 
 # Observation - given to agent after taking an action
 """
@@ -221,37 +238,10 @@ Observations are given when making a step in the environment.
 Observation = namedtuple("Observation", ["state", "reward", "done", "info"])
 
 
-# # Main is only used for testing
-# if __name__ == '__main__':
-#     # Used for tests
-#     service_1 = Service("rdp", "passive", "1.067", True)
-#     service_2 = Service("rdp", "passive", "1.067", True)
-#     service_3 = Service("sql", "passive", "5.0", True)
-#     assert (service_1 == service_1 and service_1 is service_1)
-#     assert (service_1 == service_2)
-#     assert (service_1 is not service_2)
-#     assert(service_1 != service_3)
-
-#     print(service_1, service_2, service_3)
-#     IP1 = IP("192.168.1.2")
-#     IP2 = IP("192.168.1.2")
-#     IP3 = IP("192.168.0.2")
-#     assert(IP1 == IP1)
-#     assert(IP1 == IP2)
-#     assert(IP2 is not IP1)
-#     assert(IP1 != IP3)
-    
-#     net1 = Network("192.168.1.0", 32)
-#     net2 = Network("192.168.3.0", 32)
-#     net3 = Network("192.168.2.0", 32)
-   
-    
-#     d = {net1:[IP1 ,IP2], net3:[]}
-#     print(d)
-#     print(len(ActionType))
-#     for at in ActionType:
-#         print(at, at.default_success_p, at.default_detection_p)
-
-
-#     nets = {net1, net2, net3}
-#     print(sorted(nets))
+# Main is only used for testing
+if __name__ == '__main__':
+    state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
+                known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
+                known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
+                known_data={IP("192.168.1.3"):{Data("data1", "ChuckNorris")}})
+    print(state.as_json())
