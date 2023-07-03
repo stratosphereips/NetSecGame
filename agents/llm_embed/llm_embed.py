@@ -189,15 +189,15 @@ class LLMEmbedAgent:
             prompt += "No memories yet."
         return prompt
 
-    def _convert_embedding_to_action_pca(self, new_action_embedding, valid_actions, train=True, k=5):
+    def _convert_embedding_to_action_pca(self, new_action_embedding, valid_actions, train=True):
         """
         Take an embedded action in the projected space and find the closest
         from the valid actions/ 
         """
-        if len(valid_actions) <= k:
-            new_k = len(valid_actions)-1
-        else:
-            new_k = k
+        # if len(valid_actions) <= k:
+        #     new_k = len(valid_actions)-1
+        # else:
+        #     new_k = k
 
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
@@ -205,48 +205,48 @@ class LLMEmbedAgent:
         dist = cosine_distances(valid_pca, new_action_embedding).flatten()
 
         # Select among the 5 smaller distances
-        action_ids = np.argpartition(dist, new_k)[:new_k]
-        top_k_dists = dist[action_ids]
-        pca_top_k = valid_pca[action_ids]
-        valid_top_k = [val for i, val in enumerate(valid_actions) if i in action_ids]
-
+        # action_ids = np.argpartition(dist, new_k)[:new_k]
+        # top_k_dists = dist[action_ids]
+        # pca_top_k = valid_pca[action_ids]
+        # valid_top_k = [val for i, val in enumerate(valid_actions) if i in action_ids]
+        eps = np.finfo(np.float32).eps.item()
         if train:
             # action_id = random.choices(population=range(len(valid_pca)), weights=1.0/dist, k=1)[0]
-            action_id = random.choices(population=range(new_k), weights=1.0/top_k_dists, k=1)[0]
+            action_id = random.choices(population=range(len(valid_pca)), weights=1.0/(eps+dist), k=1)[0]
             # print(action_id)
         else:
-            action_id = np.argmin(top_k_dists, axis=0)
+            action_id = np.argmin(dist, axis=0)
             # print(action_id)
 
-        return valid_top_k[action_id], pca_top_k[action_id]
+        return valid_actions[action_id], valid_pca[action_id]
 
-    def _convert_embedding_to_action(self, new_action_embedding, valid_actions, train=True, k=5):
+    def _convert_embedding_to_action(self, new_action_embedding, valid_actions, train=True):
         """
         Take an embedding, and the valid actions for the state
         and find the closest embedding using cosine similarity
         Return an Action object and the closest neighbor
         """
-        if len(valid_actions) <= k:
-            new_k = len(valid_actions)-1
-        else:
-            new_k = k
+        # if len(valid_actions) <= k:
+        #     new_k = len(valid_actions)-1
+        # else:
+        #     new_k = k
 
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
-        dist = cosine_distances(valid_embeddings, new_action_embedding).flatten()
+        dists = cosine_distances(valid_embeddings, new_action_embedding).flatten()
 
         # Select among the k smaller distances
-        action_ids = np.argpartition(dist, new_k)[:new_k]
-        top_k_dists = dist[action_ids]
-        top_k_embs = valid_embeddings[action_ids]
-        valid_top_k = [val for i, val in enumerate(valid_actions) if i in action_ids]
-
+        # action_ids = np.argpartition(dist, new_k)[:new_k]
+        # top_k_dists = dist[action_ids]
+        # top_k_embs = valid_embeddings[action_ids]
+        # valid_top_k = [val for i, val in enumerate(valid_actions) if i in action_ids]
+        eps = np.finfo(np.float32).eps.item()
         if train:
-            action_id = random.choices(population=range(new_k), weights=1.0/top_k_dists, k=1)[0]
+            action_id = random.choices(population=range(len(valid_actions)), weights=1.0/(eps+dists), k=1)[0]
         else:
-            action_id = np.argmin(top_k_dists, axis=0)
+            action_id = np.argmin(dists, axis=0)
 
-        return valid_top_k[action_id], top_k_embs[action_id]
+        return valid_actions[action_id], valid_embeddings[action_id]
 
     def _generate_valid_actions(self, state):
         """
@@ -432,9 +432,9 @@ class LLMEmbedAgent:
 
                 # Convert the action embedding to a valid action and its embedding
                 if self.num_pca < 384:
-                    action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, True, self.top_k)
+                    action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, True)
                 else:
-                    action, real_emb = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), valid_actions, True, self.top_k)
+                    action, real_emb = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), valid_actions, True)
                 real_embeddings.append(real_emb)
                 memories.append((str(action.type), str(action.parameters)))
 
