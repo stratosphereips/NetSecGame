@@ -232,10 +232,14 @@ class ConfigParser():
 
     def get_store_replay_buffer(self):
         """
-        Get the max steps 
+        Read if the replay buffer should be stored in file
         """
-        store_RB = self.config['env']['store_replay_buffer']
-        return bool(store_RB)
+        try:
+            store_RB = self.config['env']['store_replay_buffer']
+        except KeyError:
+            # Option is not in the configuration - default to FALSE
+            store_RB = False
+        return store_RB
     
     def get_defender_placement(self):
         """
