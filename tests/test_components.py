@@ -263,7 +263,7 @@ class TestAction:
         action_json = action.as_json()
         try:
             data = json.loads(action_json)
-        except ValueError as e:
+        except ValueError:
             data = None
         assert data is not None
         assert "ActionType.ScanNetwork" in data["action_type"]
@@ -275,7 +275,7 @@ class TestAction:
         action_json = action.as_json()
         try:
             data = json.loads(action_json)
-        except ValueError as e:
+        except ValueError:
             data = None
         assert data is not None
         assert "ActionType.FindServices" in data["action_type"]
@@ -287,7 +287,7 @@ class TestAction:
         action_json = action.as_json()
         try:
             data = json.loads(action_json)
-        except ValueError as e:
+        except ValueError:
             data = None
         assert data is not None
         assert "ActionType.FindData" in data["action_type"]
@@ -299,7 +299,7 @@ class TestAction:
         action_json = action.as_json()
         try:
             data = json.loads(action_json)
-        except ValueError as e:
+        except ValueError:
             data = None
         assert data is not None
         assert "ActionType.ExploitService" in data["action_type"]
@@ -312,7 +312,7 @@ class TestAction:
         action_json = action.as_json()
         try:
             data = json.loads(action_json)
-        except ValueError as e:
+        except ValueError:
             data = None
         assert data is not None
         assert "ActionType.ExfiltrateData" in data["action_type"]
@@ -455,7 +455,7 @@ class TestGameState:
         game_json = game_state.as_json()
         try:
             data = json.loads(game_json)
-        except ValueError as e:
+        except ValueError:
             data = None
         assert data is not None
         assert {"ip": "1.1.1.1", "mask": 24} in data["known_networks"]

@@ -235,11 +235,11 @@ class ConfigParser():
         Read if the replay buffer should be stored in file
         """
         try:
-            store_RB = self.config['env']['store_replay_buffer']
+            store_rb = self.config['env']['store_replay_buffer']
         except KeyError:
             # Option is not in the configuration - default to FALSE
-            store_RB = False
-        return store_RB
+            store_rb = False
+        return store_rb
     
     def get_defender_placement(self):
         """
