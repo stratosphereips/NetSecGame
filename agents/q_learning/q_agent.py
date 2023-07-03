@@ -28,7 +28,6 @@ class QAgent:
     """
     Class implementing the Q-Learning algorithm
     """
-
     def __init__(self, env, alpha=0.1, gamma=0.6, epsilon=0.1):
         self.env = env
         self.alpha = alpha
@@ -39,39 +38,14 @@ class QAgent:
 
     def store_q_table(self,filename):
         with open(filename, "wb") as f:
-            pickle.dump(self.q_values, f)
+            data = {"q_table":self.q_values, "state_mapping": self._str_to_id}
+            pickle.dump(data, f)
 
     def load_q_table(self,filename):
         with open(filename, "rb") as f:
-            self.q_values = pickle.load(f)
-
-    # def get_valid_actions(self, state) -> list:
-    #     """
-    #     Given a state, choose the valid actions
-    #     """
-    #     valid_actions = set()
-    #     #Network Scans
-    #     for network in state.known_networks:
-    #         # TODO ADD neighbouring networks
-    #         valid_actions.add(Action(ActionType.ScanNetwork, params={"target_network": network}))
-    #     # Service Scans
-    #     for host in state.known_hosts:
-    #         valid_actions.add(Action(ActionType.FindServices, params={"target_host": host}))
-    #     # Service Exploits
-    #     for host, service_list in state.known_services.items():
-    #         for service in service_list:
-    #             valid_actions.add(Action(ActionType.ExploitService, params={"target_host": host , "target_service": service}))
-    #     # Data Scans
-    #     for host in state.controlled_hosts:
-    #         valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
-
-    #     # Data Exfiltration
-    #     for src_host, data_list in state.known_data.items():
-    #         for data in data_list:
-    #             for trg_host in state.controlled_hosts:
-    #                 if trg_host != src_host:
-    #                     valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
-    #     return list(valid_actions)
+            data = pickle.load(f)
+            self.q_values = data["q_table"]
+            self._str_to_id = data["state_mapping"]
     
     def get_valid_actions(self, state: GameState) -> set:
         valid_actions = set()
@@ -230,7 +204,7 @@ if __name__ == '__main__':
     parser.add_argument("--filename", help="Load previous model file", type=str, default=False)
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
-    args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
+    args.filename = f"QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key in ["episodes", "gamma", "epsilon", "alpha"])) + ".pickle"
 
     # Remove all handlers associated with the root logger object.
     for handler in logging.root.handlers[:]:
@@ -332,8 +306,9 @@ if __name__ == '__main__':
                 writer.add_scalar("charts/eval_std_detected_steps", eval_std_detected_steps , i)
 
         # Store the q table on disk
-        # agent.store_q_table(args.filename)
-
+        agent.store_q_table(args.filename)
+    agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
+    agent.load_q_table(args.filename)
     # Test
     wins = 0
     detected = 0
