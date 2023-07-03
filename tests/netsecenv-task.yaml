@@ -7,7 +7,7 @@ agents:
   attacker:
 
     goal:
-      randomize_goal_every_episode: True
+      randomize_goal_every_episode: False
       known_networks: []
       #known_networks: [192.168.1.0/24, 192.168.3.0/24]
 
@@ -15,7 +15,7 @@ agents:
       #known_hosts: [192.168.1.1, 192.168.1.2]
 
       #controlled_hosts: []
-      controlled_hosts: [192.168.1.2]
+      controlled_hosts: []
 
       # Services are defined as a target host where the service must be, and then a description in the form 'name,type,version,is_local'
       known_services: {}
@@ -58,11 +58,7 @@ env:
   # random_seed: 'random'
   # Or you can fix the seed
   random_seed: 42
-<<<<<<< HEAD:tests/netsecenv-task.yaml
-  scenario: 'scenario1'
-=======
   scenario: 'scenario1_small'
->>>>>>> Remove extensive prints:agents/gnn_reinforce/netsecenv-task.yaml
   max_steps: 15
   actions:
     scan_network:
