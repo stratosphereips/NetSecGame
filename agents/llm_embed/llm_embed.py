@@ -42,23 +42,23 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 Transition = namedtuple('Transition', ('state_emb', 'action_emb', 'real_emb', 'disc_reward', 'state_vals'))
 
 
-class ReplayMemory(object):
+class ReplayBuffer(object):
 
     def __init__(self, capacity):
-        self.memory = deque([], maxlen=capacity)
+        self.buffer = deque([], maxlen=capacity)
 
     def push(self, *args):
         """Save a transition"""
-        self.memory.append(Transition(*args))
+        self.buffer.append(Transition(*args))
 
     def sample(self, batch_size):
         # TODO: the weights need to be positive 
-        disc_rewards = [mem.disc_reward+32 for mem in self.memory]
-        return random.choices(self.memory, disc_rewards, k=batch_size)
-        # return random.sample(self.memory, batch_size)
+        disc_rewards = [mem.disc_reward+1. for mem in self.buffer]
+        return random.choices(self.buffer, disc_rewards, k=batch_size)
+        # return random.sample(self.buffer, batch_size)
 
     def __len__(self):
-        return len(self.memory)
+        return len(self.buffer)
 
 
 class Policy(nn.Module):
@@ -150,7 +150,7 @@ class LLMEmbedAgent:
         self.memory_len = args.memory_len
         # Parameter that defines the value of the intrinsic reward
         self.beta = 1.0
-        self.replay_memory = ReplayMemory(128)
+        self.replay_buffer = ReplayBuffer(args.buffer_size)
 
     def _create_status_from_state(self, state):
         """
@@ -346,23 +346,22 @@ class LLMEmbedAgent:
         Backpropagation step for the policy network.
         """
         # Calculate the discounted rewards
-        policy_loss = []
+        policy_losses = []
 
         for out_emb, real_emb, disc_ret in zip(out_embeddings, real_embeddings, returns):
             rmse_loss = torch.sqrt(self.loss_fn(out_emb, real_emb))
-            policy_loss.append((-rmse_loss * disc_ret).reshape(1))
+            policy_losses.append((-rmse_loss * disc_ret).reshape(1))
 
         self.optimizer.zero_grad()
-        policy_loss = torch.cat(policy_loss).sum()
+        policy_loss = torch.cat(policy_losses).sum()
         policy_loss.backward(retain_graph=True)
 
         self.optimizer.step()
 
-        self.summary_writer.add_scalar("losses/policy_loss", policy_loss, episode)
-
         for tag, param in self.policy.named_parameters():
             self.summary_writer.add_histogram(f"grad_{tag}", param.grad.data.cpu().numpy(), episode)
 
+        return policy_loss
 
     def _training_step_baseline(self, state_vals, returns, episode):
         """
@@ -380,12 +379,43 @@ class LLMEmbedAgent:
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
         self.baseline_optimizer.step()
 
-        self.summary_writer.add_scalar("losses/value_loss", value_loss, episode)
-
         for tag, param in self.baseline.named_parameters():
             self.summary_writer.add_histogram(f"baseline_grad_{tag}", param.grad.data.cpu().numpy(), episode)
 
+        return value_loss
 
+    def _optimize_models(self, episode):
+        """
+        Run the training steps for a number of epochs using the replay buffer.
+        """
+        value_loss = 0
+        policy_loss = 0
+        if len(self.replay_buffer) < self.args.batch_size:
+            return
+        for _ in range(self.args.num_epochs):
+            transitions = self.replay_buffer.sample(self.args.batch_size)
+
+            # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
+            # detailed explanation). This converts batch-array of Transitions
+            # to Transition of batch-arrays.
+            batch = Transition(*zip(*transitions))
+
+            # Train the baseline first
+            state_batch = torch.cat(batch.state_vals)
+            reward_batch = torch.cat(batch.disc_reward)
+            action_batch = torch.cat(batch.action_emb)
+            real_batch = torch.cat(batch.real_emb)
+
+            value_loss += self._training_step_baseline(state_batch, reward_batch, episode)
+
+            # Calculate deltas and train the policy network
+            deltas = [gt - val for gt, val in zip(reward_batch, state_batch)]
+            deltas = torch.tensor(deltas).to(device)
+            policy_loss += self._training_step(deltas, action_batch, real_batch, episode)
+
+        self.summary_writer.add_scalar("losses/value_loss", value_loss/self.args.num_epochs, episode)
+        self.summary_writer.add_scalar("losses/policy_loss", policy_loss//self.args.num_epochs, episode)
+        
     def train(self):
         """
         Main training loop that runs for a number of episodes.
@@ -477,44 +507,24 @@ class LLMEmbedAgent:
             self.summary_writer.add_scalar("actions/valid_actions", len(valid_actions), episode)
             self.summary_writer.add_scalar("reward/mean_ext", np.mean(scores), episode)
             self.summary_writer.add_scalar("reward/mean_int", np.mean(scores_int), episode)
-            self.summary_writer.add_scalar("reward/moving_average_ext", np.mean(scores[-128:]), episode)
+            self.summary_writer.add_scalar("reward/moving_average_ext", np.mean(scores[-self.args.eval_each:]), episode)
             self.summary_writer.add_scalar("wins/num_wins", wins, episode)
             self.summary_writer.add_scalar("wins/win_rate", 100*(wins/episode), episode)
 
+            # Calulated discounted rewards for the current episode
             returns = self._get_discounted_rewards(rewards).to(device)
             intr_returns = self._get_discounted_rewards(intr_rewards).to(device)
-
             total_returns = returns+self.beta*intr_returns
 
+            # Populate the replay buffer
             for i in range(self.args.max_t):
                 try:
-                    self.replay_memory.push(input_embeddings[i], out_embeddings[i], real_embeddings[i], total_returns[i].reshape(1), state_vals[i])
+                    self.replay_buffer.push(input_embeddings[i], out_embeddings[i], real_embeddings[i], total_returns[i].reshape(1), state_vals[i])
                 except:
                     break
 
-            # TODO: How often to train. This influences the min size of the memory
-            if episode > 0 and episode % 4 == 0:
-                for i in range(self.args.num_epochs):
-                    transitions = self.replay_memory.sample(self.args.batch_size)
-
-                    # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
-                    # detailed explanation). This converts batch-array of Transitions
-                    # to Transition of batch-arrays.
-                    batch = Transition(*zip(*transitions))
-
-                    # Train the baseline first
-                    state_batch = torch.cat(batch.state_vals)
-                    reward_batch = torch.cat(batch.disc_reward)
-                    action_batch = torch.cat(batch.action_emb)
-                    real_batch = torch.cat(batch.real_emb)
-
-                    self._training_step_baseline(state_batch, reward_batch, i)
-
-                    # Calculate deltas and train the policy network
-                    deltas = [gt - val for gt, val in zip(reward_batch, state_batch)]
-                    # deltas = returns - state_vals
-                    deltas = torch.tensor(deltas).to(device)
-                    self._training_step(deltas, action_batch, real_batch, episode)
+            if episode > 0 and episode % self.args.train_each == 0:
+                self._optimize_models(episode)
 
             if episode > 0 and episode % self.args.eval_each == 0:
                 eval_rewards, eval_wins = self.evaluate(args.eval_episodes)
@@ -604,9 +614,11 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size to sample from memory")
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--max_t", type=int, default=128, help="Max episode length")
+    parser.add_argument("--train_each", type=int, default=4, help="Train every this ammount of episodes.")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=128, type=int)
     parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--num_pca", type=int, default=24, help="Number of PCA components. Use 384 to disable PCA")
+    parser.add_argument("--buffer_size", type=int, default=128, help="Replay buffer size")
     # parser.add_argument("--top_k", type=int, default=5, help="The number of valid actions to consider for similarity")
 
     args = parser.parse_args()
