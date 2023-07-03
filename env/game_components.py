@@ -90,6 +90,18 @@ class ActionType(enum.Enum):
     ExploitService = 0.7, 0.4
     ExfiltrateData = 0.8, 0.1
 
+class EnumEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if type(obj) is ActionType:
+            return {"__enum__": str(obj)}
+        return json.JSONEncoder.default(self, obj)
+
+def as_enum(d):
+    if "__enum__" in d:
+        name, member = d["__enum__"].split(".")
+        return getattr(ActionType[name], member)
+    else:
+        return d
 #Actions
 class Action():
     """
@@ -126,7 +138,16 @@ class Action():
     def __hash__(self) -> int:
         return hash(self._type) + hash("".join(sorted(self._parameters)))
 
-
+    def as_json(self)->str:
+        ret_dict = {"action_type":self.type}
+        tmp = {k:dataclasses.asdict(v) for k,v in self.parameters.items()}
+        print(tmp)
+        return json.dumps(ret_dict,cls=EnumEncoder) 
+    
+    @classmethod
+    def from_json(cls, json_string:str):
+        json_data = json.loads(json_string)
+    
 @dataclass(frozen=True)
 class GameState():
     """
@@ -247,12 +268,16 @@ if __name__ == '__main__':
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
                 known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
                 known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
-                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1")}})
-    print(state)
-    print("-------------AS JSON ------------")
-    as_json = state.as_json()
-    print(as_json)
-    print("-------------FROM JSON ------------")
-    new_state = GameState.from_json(as_json)
-    print(new_state)
-    print(new_state == state)
+                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
+                            IP("192.168.1.2"):{Data("McGiver", "data2")}})
+    # print(state)
+    # print("-------------AS JSON ------------")
+    # as_json = state.as_json()
+    # print(as_json)
+    # print("-------------FROM JSON ------------")
+    # new_state = GameState.from_json(as_json)
+    # print(new_state)
+    # print(new_state == state)
+    parameters = {"target_host":IP('192.168.1.3'), "target_service":Service('postgresql', 'passive', '14.3.0', False)}
+    action = Action(ActionType.ExploitService, parameters)
+    print(action.as_json())
