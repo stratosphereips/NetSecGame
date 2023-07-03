@@ -5,7 +5,6 @@ import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
 import numpy as np
-#from random import choice, seed
 import random
 import pickle
 import sys
@@ -191,16 +190,10 @@ if __name__ == '__main__':
     parser.add_argument("--epsilon", help="Sets epsilon for exploration", default=0.2, type=float)
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
     parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.3, type=float)
-    #parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    #parser.add_argument("--defender", help="Is defender present", default=True, action=argparse.BooleanOptionalAction)
-    #parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--test", help="Do not train, only run test", default=False, action="store_true")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=100, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
-    #parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=True, action=argparse.BooleanOptionalAction)
-    #parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
-    #parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
     parser.add_argument("--filename", help="Load previous model file", type=str, default=False)
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
@@ -227,7 +220,6 @@ if __name__ == '__main__':
 
     random.seed(env.seed)
     np.random.seed(env.seed)
-
 
     observation = env.reset()
 
