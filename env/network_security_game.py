@@ -676,7 +676,7 @@ class NetworkSecurityEnvironment(object):
         self._detected = False
         
         # write all steps in the episode replay buffer in the file
-        if self._episode_replay_buffer:
+        if self._episode_replay_buffer is not None:
             store_replay_buffer_in_csv(self._episode_replay_buffer, 'env/logs/replay_buffer.csv')
             self._episode_replay_buffer = [] 
         #reset self._data to orignal state
@@ -766,7 +766,7 @@ class NetworkSecurityEnvironment(object):
                 logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
 
             # Save the transition to the episode replay buffer if there is any
-            if self._episode_replay_buffer:
+            if self._episode_replay_buffer is not None:
                 self._episode_replay_buffer.append((current_state, action, reward, next_state, self._done))
             # Return an observation
             return components.Observation(self._current_state, reward, self._done, reason)
