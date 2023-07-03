@@ -13,6 +13,8 @@ from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Network, IP
 from env.game_components import ActionType, Action, GameState, Observation
 
+from utils.utils import read_replay_buffer_from_csv
+
 class InteractiveAgent:
     """
     Author: Ondrej Lukas, ondrej.lukas@aic.cvut.cz
@@ -235,17 +237,28 @@ def main() -> None:
     random.seed(env.seed)
     logger.info('Creating the agent')
     agent = InteractiveAgent(env)
+    stop = False
     for _ in range(args.episodes):
         observation = env.reset()
         previous_state = None
         print("Welcome to the Network Security Game!\n")
-        while not observation.done:
+        while not observation.done and not stop:
             # Be sure the agent can do the move before giving to the env.
             print_current_state(observation.state, observation.reward, previous_state)
             action = agent.move(observation)
             if action:
                 previous_state = observation.state
                 observation = env.step(action)
+            else:
+                stop = True
         print(f"Episode over! Reason {observation.info}")
 if __name__ == '__main__':
     main()
+    data = read_replay_buffer_from_csv("./env/logs/replay_buffer.csv")
+    for s0,a,r,s1,done in data:
+        print(f"State:{s0}")
+        print(f"Action:{a}")
+        print(f"Reward:{r}")
+        print(f"Next state:{s1}")
+        print(f"Done:{done}")
+        print("------------------------------------")
