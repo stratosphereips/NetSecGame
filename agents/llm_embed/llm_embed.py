@@ -52,7 +52,9 @@ class ReplayMemory(object):
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
+        disc_rewards = [mem.disc_reward+32 for mem in self.memory]
+        return random.choices(self.memory, disc_rewards, k=batch_size)
+        # return random.sample(self.memory, batch_size)
 
     def __len__(self):
         return len(self.memory)
@@ -115,6 +117,7 @@ class LLMEmbedAgent:
         Create and initialize the agent and the transformer model.
         """
         self.env = game_env
+        self.args = args
 
         if args.memory_len > 0:
             embedding_size = 2*384
@@ -137,7 +140,7 @@ class LLMEmbedAgent:
         self.baseline = Baseline(embedding_size=embedding_size).to(device)
         self.baseline_optimizer = optim.Adam(self.baseline.parameters(), lr=args.lr)
 
-        self.max_t = args.max_t
+        # self.max_t = args.max_t
         self.num_episodes = args.num_episodes
         self.gamma = args.gamma
         # self.loss_fn = nn.MSELoss(reduction='mean')
@@ -410,7 +413,7 @@ class LLMEmbedAgent:
 
             # Visualize the weights in tensorboard
             self._weight_histograms(episode)
-            for _ in range(self.max_t):
+            for _ in range(self.args.max_t):
 
                 # Create the status string from the observed state
                 status_str = self._create_status_from_state(observation.state)
@@ -485,17 +488,20 @@ class LLMEmbedAgent:
 
             total_returns = returns+self.beta*intr_returns
 
-            for i in range(self.max_t):
+            for i in range(self.args.max_t):
                 try:
                     self.replay_memory.push(input_embeddings[i], out_embeddings[i], real_embeddings[i], total_returns[i].reshape(1), state_vals[i])
                 except:
                     break
 
+            # TODO: How often to train. This influences the min size of the memory
             if episode > 0 and episode % 4 == 0:
-                # TODO: number of epochs
-                for _ in range(4):
-                    # TODO: batch size
-                    transitions = self.replay_memory.sample(32)
+                for _ in range(self.args.num_epochs):
+                    transitions = self.replay_memory.sample(self.args.batch_size)
+
+                    # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
+                    # detailed explanation). This converts batch-array of Transitions
+                    # to Transition of batch-arrays.
                     batch = Transition(*zip(*transitions))
 
                     # Train the baseline first
@@ -512,7 +518,7 @@ class LLMEmbedAgent:
                     deltas = torch.tensor(deltas).to(device)
                     self._training_step(deltas, action_batch, real_batch, episode)
 
-            # if episode > 0 and episode % self.max_t == 0:
+            if episode > 0 and episode % self.args.eval_each == 0:
                 eval_rewards, eval_wins = self.evaluate(args.eval_episodes)
                 self.summary_writer.add_scalar('test/eval_rewards', np.mean(eval_rewards), episode)
                 self.summary_writer.add_scalar('test/wins', eval_wins, episode)
@@ -596,12 +602,14 @@ if __name__ == '__main__':
     parser.add_argument("--model_path", type=str, default="saved_models/policy.pt", help="Path for saving the policy model.")
 
     # Training arguments
+    parser.add_argument("--num_epochs", type=int, default=10, help="Number of epochs to train the networks")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size to sample from memory")
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--max_t", type=int, default=128, help="Max episode length")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=128, type=int)
     parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--num_pca", type=int, default=24, help="Number of PCA components. Use 384 to disable PCA")
-    parser.add_argument("--top_k", type=int, default=5, help="The number of valid actions to consider for similarity")
+    # parser.add_argument("--top_k", type=int, default=5, help="The number of valid actions to consider for similarity")
 
     args = parser.parse_args()
 
