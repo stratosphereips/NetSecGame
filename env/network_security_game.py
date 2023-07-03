@@ -867,7 +867,7 @@ class NetworkSecurityEnvironment(object):
 
         #create win conditions for this episode (randomize if needed)
         if self._randomize_goal_every_episode:
-            self._win_conditions = self._generate_win_conditions(self._goal_conditions)
+            self._win_conditions = copy.deepcopy(self._generate_win_conditions(self._goal_conditions))
         else:
             self._win_conditions = copy.deepcopy(self._goal_conditions)
 
