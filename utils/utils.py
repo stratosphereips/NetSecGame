@@ -9,10 +9,36 @@ sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
-from env.game_components import IP, Data, Network, Service
+from env.game_components import IP, Data, Network, Service, GameState, Action
 import netaddr
 import logging
+import csv
 
+def read_replay_buffer_from_csv(csvfile:str)->list:
+    """
+    Function to read steps from a CSV file
+     and restore the objects in the replay buffer.
+
+     expected colums in the csv:
+     state_t0, action_t0, reward_t1, state_t1, done_t1
+    """
+    buffer = []
+    with open(csvfile, 'r') as f_object:
+        csv_reader = csv.reader(f_object, delimiter=';')
+        for [s_t, a_t, r, s_t1 , done] in csv_reader:
+            buffer.append((GameState.from_json(s_t), Action.from_json(a_t), r, GameState.from_json(s_t1), done))
+    return buffer
+
+def store_replay_buffer_in_csv(replay_buffer:list, filename:str, delimiter:str=";")->None:
+    """
+    Function to store steps from a replay buffer in CSV file.
+     Expected format of replay buffer items:
+     (state_t0:GameState, action_t0:Action, reward_t1:float, state_t1:GameState, done_t1:bool)
+    """
+    with open(filename, 'a') as f_object:
+        writer_object = csv.writer(f_object, delimiter=delimiter)
+        for (s_t, a_t, r, s_t1, done) in replay_buffer:
+            writer_object.writerow([s_t.as_json(), a_t.as_json(), r, s_t1.as_json(), done])
 class ConfigParser():
     """
     Class to deal with the configuration file
@@ -203,6 +229,18 @@ class ConfigParser():
         """
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
+
+    def get_store_replay_buffer(self):
+        """
+        Read if the replay buffer should be stored in file
+        """
+        try:
+            store_rb = self.config['env']['store_replay_buffer']
+        except KeyError:
+            # Option is not in the configuration - default to FALSE
+            store_rb = False
+        return store_rb
+    
     def get_defender_placement(self):
         """
         Get the position of the defender
