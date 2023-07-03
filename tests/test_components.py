@@ -3,6 +3,7 @@ Tests related to the game components in the Network Security Game Environment
 Author: Maria Rigaki - maria.rigaki@fel.cvut.cz
 """
 import sys
+import json
 from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
 from env.game_components import ActionType, Action, IP, Data, Network, Service, GameState
@@ -345,11 +346,32 @@ class TestGameState:
                   known_data={Data("User", "PublicKey")})
         assert game_state != game_state2
 
-    # def test_game_state_as_json(self):
-    #     game_state = GameState(controlled_hosts={IP("192.168.1.1")},
-    #               known_hosts={IP("192.168.1.1"), IP("8.8.8.8")},
-    #               known_services=set(),
-    #               known_data={Data("User2", "PublicKey")},
-    #               known_networks={Network('192.168.1.0', 24)})
-    #     game_json = game_state.as_json()
-    #     assert Network('192.168.1.0', 24) in game_json["known_hosts"]
+
+    def test_game_state_as_json(self):
+        game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
+                known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
+                known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
+                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
+                            IP("192.168.1.2"):{Data("McGiver", "data2")}})
+        game_json = game_state.as_json()
+        try:
+            data = json.loads(game_json)
+        except ValueError as e:
+            data = None
+        assert data is not None
+        assert {"ip": "1.1.1.1", "mask": 24} in data["known_networks"]
+        assert {"ip": "192.168.1.3"} in data["known_hosts"]
+        assert {"ip": "192.168.1.2"} in data["controlled_hosts"]
+        assert ("192.168.1.3", [{"name": "service1", "type": "public", "version": "1.01", "is_local": True}]) in data["known_services"].items()
+        assert ("192.168.1.3", [{"owner": "ChuckNorris", "id": "data1"}, {"owner": "ChuckNorris", "id": "data2"}]) in data["known_data"].items()
+    
+    def test_game_state_json_deserialized(self):
+        game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
+                known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
+                known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
+                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
+                            IP("192.168.1.2"):{Data("McGiver", "data2")}})
+        state_json = game_state.as_json()
+        deserialized_state = GameState.from_json(state_json)
+        assert game_state is not deserialized_state
+        assert game_state == deserialized_state
