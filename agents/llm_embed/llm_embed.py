@@ -58,7 +58,7 @@ class ReplayBuffer:
         """
         Sample based on the discounted rewards of each state
         """
-        # TODO: the weights need to be positive
+        # Add 1 so that the weight sum is always positive
         disc_rewards = [mem.disc_reward+1. for mem in self.buffer]
         batch1 = random.choices(self.buffer, disc_rewards, k=batch_size)
         # batch2 = random.sample(self.buffer, batch_size//2)
@@ -170,16 +170,11 @@ class LLMEmbedAgent:
 
         prompt = "You are a pentester and your goal is to exfiltrate data to host 213.47.23.195.\n"
         prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
-        # logger.info("Controlled hosts are %s", ' and '.join(contr_hosts))
-
         prompt += f"Known networks are {' and '.join(known_nets)}\n"
-        # logger.info("Known networks are %s", ' and '.join(known_nets))
         prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
-        # logger.info("Known hosts are %s", ' and '.join(known_hosts))
 
         if len(state.known_services.keys()) == 0:
             prompt += "Known services are none\n"
-            # logger.info(f"Known services: None")
         for ip_service in state.known_services:
             services = []
             if len(list(state.known_services[ip_service])) > 0:
@@ -196,14 +191,12 @@ class LLMEmbedAgent:
 
         if len(state.known_data.keys()) == 0:
             prompt += "Known data are none\n"
-            # logger.info(f"Known data: None")
         for ip_data in state.known_data:
             if len(state.known_data[ip_data]) > 0:
                 host_data = ""
                 for known_data in list(state.known_data[ip_data]):
                     host_data += f"({known_data.owner}, {known_data.id}) and "
                 prompt += f"Known data for host {ip_data} are {host_data}\n"
-                # logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
         return prompt
 
@@ -224,30 +217,17 @@ class LLMEmbedAgent:
         Take an embedded action in the projected space and find the closest
         from the valid actions.
         """
-        # if len(valid_actions) <= k:
-        #     new_k = len(valid_actions)-1
-        # else:
-        #     new_k = k
-
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
         valid_pca = self.pca.transform(valid_embeddings)
         # dist = cosine_distances(valid_pca, new_action_embedding).flatten()
         dist = euclidean_distances(valid_pca, new_action_embedding).flatten()
-
-        # Select among the 5 smaller distances
-        # action_ids = np.argpartition(dist, new_k)[:new_k]
-        # top_k_dists = dist[action_ids]
-        # pca_top_k = valid_pca[action_ids]
-        # valid_top_k = [val for i, val in enumerate(valid_actions) if i in action_ids]
         eps = np.finfo(np.float32).eps.item()
         if train:
             # action_id = random.choices(population=range(len(valid_pca)), weights=1.0/dist, k=1)[0]
             action_id = random.choices(population=range(len(valid_pca)), weights=1.0/(eps+dist), k=1)[0]
-            # print(action_id)
         else:
             action_id = np.argmin(dist, axis=0)
-            # print(action_id)
 
         return valid_actions[action_id], valid_pca[action_id]
 
@@ -257,20 +237,9 @@ class LLMEmbedAgent:
         and find the closest embedding using cosine similarity
         Return an Action object and the closest neighbor
         """
-        # if len(valid_actions) <= k:
-        #     new_k = len(valid_actions)-1
-        # else:
-        #     new_k = k
-
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
         dists = cosine_distances(valid_embeddings, new_action_embedding).flatten()
-
-        # Select among the k smaller distances
-        # action_ids = np.argpartition(dist, new_k)[:new_k]
-        # top_k_dists = dist[action_ids]
-        # top_k_embs = valid_embeddings[action_ids]
-        # valid_top_k = [val for i, val in enumerate(valid_actions) if i in action_ids]
         eps = np.finfo(np.float32).eps.item()
         if train:
             action_id = random.choices(population=range(len(valid_actions)), weights=1.0/(eps+dists), k=1)[0]
@@ -309,7 +278,7 @@ class LLMEmbedAgent:
                                                                "source_host": src_host, 
                                                                "data": data}))
         return list(valid_actions)
-    
+
     def _filter_valid_actions(self, valid_actions, memory):
         """
         Remove taken actions from the list of valid actions.
@@ -391,8 +360,6 @@ class LLMEmbedAgent:
         """
         Backpropagation step for the baseline network.
         """
-        # state_vals = torch.stack(state_vals).squeeze()
-
         # Calculate MSE loss
         value_loss = func.mse_loss(state_vals.squeeze(), returns)
 
@@ -438,8 +405,8 @@ class LLMEmbedAgent:
             policy_loss += self._training_step(deltas, action_batch, real_batch, episode)
 
         self.summary_writer.add_scalar("losses/value_loss", value_loss/self.args.num_epochs, episode)
-        self.summary_writer.add_scalar("losses/policy_loss", policy_loss//self.args.num_epochs, episode)
-        
+        self.summary_writer.add_scalar("losses/policy_loss", policy_loss/self.args.num_epochs, episode)
+
     def train(self, num_episodes):
         """
         Main training loop that runs for a number of episodes.
@@ -619,10 +586,6 @@ class LLMEmbedAgent:
                     num_valid = len(valid_actions)
                     # If the action is not successful do not retake it
                     filtered_actions.append(action)
-                # else:
-                #     # Even if the action is not successful if it is already in memory filter it.
-                #     if action in memories:
-                #         filtered_actions.append(action)
 
                 # Finally, add the action to the memory list
                 memories.append(action)
