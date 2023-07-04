@@ -22,7 +22,7 @@ from torch.utils.tensorboard import SummaryWriter
 from sentence_transformers import SentenceTransformer
 
 from sklearn.decomposition import PCA
-from sklearn.metrics.pairwise import cosine_distances
+from sklearn.metrics.pairwise import cosine_distances, euclidean_distances
 
 label_mapper = {
     "FindData":ActionType.FindData,
@@ -42,9 +42,12 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 Transition = namedtuple('Transition', ('state_emb', 'action_emb', 'real_emb', 'disc_reward', 'state_vals'))
 
 
-class ReplayBuffer(object):
-
+class ReplayBuffer:
+    """
+    Store and retrieve the episodic data
+    """
     def __init__(self, capacity):
+        """Initialize the buffer"""
         self.buffer = deque([], maxlen=capacity)
 
     def push(self, *args):
@@ -52,12 +55,17 @@ class ReplayBuffer(object):
         self.buffer.append(Transition(*args))
 
     def sample(self, batch_size):
-        # TODO: the weights need to be positive 
+        """
+        Sample based on the discounted rewards of each state
+        """
+        # TODO: the weights need to be positive
         disc_rewards = [mem.disc_reward+1. for mem in self.buffer]
-        return random.choices(self.buffer, disc_rewards, k=batch_size)
-        # return random.sample(self.buffer, batch_size)
+        batch1 = random.choices(self.buffer, disc_rewards, k=batch_size)
+        # batch2 = random.sample(self.buffer, batch_size//2)
+        return batch1
 
     def __len__(self):
+        """Return the size of the buffer"""
         return len(self.buffer)
 
 
@@ -78,6 +86,7 @@ class Policy(nn.Module):
         self.rewards = []
 
     def forward(self, input1):
+        """Forward pass"""
         x = self.linear1(input1)
         # x = self.dropout(x)
         x = func.relu(x)
@@ -100,6 +109,7 @@ class Baseline(nn.Module):
         self.output_layer = nn.Linear(64, 1)
 
     def forward(self, x):
+        """Forward pass"""
         x = self.linear1(x)
         x = func.relu(x)
 
@@ -141,8 +151,6 @@ class LLMEmbedAgent:
         self.baseline = Baseline(embedding_size=embedding_size).to(device)
         self.baseline_optimizer = optim.Adam(self.baseline.parameters(), lr=args.lr)
 
-        # self.max_t = args.max_t
-        self.num_episodes = args.num_episodes
         self.gamma = args.gamma
         self.loss_fn = nn.MSELoss(reduction='mean')
         self.summary_writer = SummaryWriter()
@@ -206,7 +214,7 @@ class LLMEmbedAgent:
         prompt = "Memories:\n"
         if len(memory_list) > 0:
             for memory in memory_list:
-                prompt += f'You have taken action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} in the past.\n'
+                prompt += f'You have taken action {{"action":"{str(memory.type)}", "parameters":"{str(memory.parameters)}"}} in the past.\n'
         else:
             prompt += "No memories yet."
         return prompt
@@ -224,7 +232,8 @@ class LLMEmbedAgent:
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
         valid_pca = self.pca.transform(valid_embeddings)
-        dist = cosine_distances(valid_pca, new_action_embedding).flatten()
+        # dist = cosine_distances(valid_pca, new_action_embedding).flatten()
+        dist = euclidean_distances(valid_pca, new_action_embedding).flatten()
 
         # Select among the 5 smaller distances
         # action_ids = np.argpartition(dist, new_k)[:new_k]
@@ -300,6 +309,21 @@ class LLMEmbedAgent:
                                                                "source_host": src_host, 
                                                                "data": data}))
         return list(valid_actions)
+    
+    def _filter_valid_actions(self, valid_actions, memory):
+        """
+        Remove taken actions from the list of valid actions.
+        """
+        if len(memory) == 0:
+            return valid_actions
+        filtered_actions = []
+        common_actions = list(set(valid_actions).intersection(memory))
+        for action in valid_actions:
+            if action not in common_actions:
+                filtered_actions.append(action)
+        return filtered_actions
+
+
 
     def _weight_histograms_linear(self, step, weights, layer_name):
         """
@@ -416,7 +440,7 @@ class LLMEmbedAgent:
         self.summary_writer.add_scalar("losses/value_loss", value_loss/self.args.num_epochs, episode)
         self.summary_writer.add_scalar("losses/policy_loss", policy_loss//self.args.num_epochs, episode)
         
-    def train(self):
+    def train(self, num_episodes):
         """
         Main training loop that runs for a number of episodes.
         """
@@ -427,13 +451,15 @@ class LLMEmbedAgent:
 
         # Keep track of the wins during training
         wins = 0
-        for episode in range(1, self.num_episodes+1):
+        for episode in range(1, num_episodes+1):
             input_embeddings = []
             out_embeddings = []
             real_embeddings = []
             rewards = []
             intr_rewards = []
             memories = []
+            filtered_actions = []
+
             state_vals = []
             observation = self.env.reset()
             valid_actions = self._generate_valid_actions(observation.state)
@@ -442,7 +468,6 @@ class LLMEmbedAgent:
             # Visualize the weights in tensorboard
             self._weight_histograms(episode)
             for _ in range(self.args.max_t):
-
                 # Create the status string from the observed state
                 status_str = self._create_status_from_state(observation.state)
                 # Get the embedding of the string from the transformer
@@ -475,25 +500,31 @@ class LLMEmbedAgent:
                 out_embeddings.append(action_emb)
                 state_vals.append(state_val)
 
+                # Convert the action embedding to a valid action and its embedding
+                remaining_actions = self._filter_valid_actions(valid_actions, filtered_actions)
+                # print(remaining_actions, memories)
+                if self.num_pca < 384:
+                    action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), remaining_actions, True)
+                else:
+                    action, real_emb = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), remaining_actions, True)
+                real_embeddings.append(torch.tensor(real_emb, device=device).unsqueeze(0))
+
+                # Take the new action and get the observation from the environment
+                observation = self.env.step(action)
+                rewards.append(observation.reward)
+
                 # Add an intrinsic reward based on the number of valid actions
                 valid_actions = self._generate_valid_actions(observation.state)
                 if len(valid_actions) > num_valid:
                     num_valid = len(valid_actions)
                     intr_rewards.append(2.0)
+                    filtered_actions.append(action)
                 else:
                     intr_rewards.append(0.0)
+                    # if action in memories:
+                    #     filtered_actions.append(action)
 
-                # Convert the action embedding to a valid action and its embedding
-                if self.num_pca < 384:
-                    action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, True)
-                else:
-                    action, real_emb = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), valid_actions, True)
-                real_embeddings.append(torch.tensor(real_emb, device=device).unsqueeze(0))
-                memories.append((str(action.type), str(action.parameters)))
-
-                # Take the new action and get the observation from the environment
-                observation = self.env.step(action)
-                rewards.append(observation.reward)
+                memories.append(action)
 
                 if observation.done:
                     # If done and the latest reward from the env is positive, we have reached the goal
@@ -507,7 +538,7 @@ class LLMEmbedAgent:
             self.summary_writer.add_scalar("actions/valid_actions", len(valid_actions), episode)
             self.summary_writer.add_scalar("reward/mean_ext", np.mean(scores), episode)
             self.summary_writer.add_scalar("reward/mean_int", np.mean(scores_int), episode)
-            self.summary_writer.add_scalar("reward/moving_average_ext", np.mean(scores[-self.args.eval_each:]), episode)
+            self.summary_writer.add_scalar("reward/moving_average_ext", np.mean(scores[-self.args.eval_every:]), episode)
             self.summary_writer.add_scalar("wins/num_wins", wins, episode)
             self.summary_writer.add_scalar("wins/win_rate", 100*(wins/episode), episode)
 
@@ -523,10 +554,10 @@ class LLMEmbedAgent:
                 except:
                     break
 
-            if episode > 0 and episode % self.args.train_each == 0:
+            if episode > 0 and episode % self.args.train_every == 0:
                 self._optimize_models(episode)
 
-            if episode > 0 and episode % self.args.eval_each == 0:
+            if episode > 0 and episode % self.args.eval_every == 0:
                 eval_rewards, eval_wins = self.evaluate(args.eval_episodes)
                 self.summary_writer.add_scalar('test/eval_rewards', np.mean(eval_rewards), episode)
                 self.summary_writer.add_scalar('test/wins', eval_wins, episode)
@@ -543,6 +574,10 @@ class LLMEmbedAgent:
             done = False
             ret = 0
             memories = []
+            filtered_actions = []
+
+            valid_actions = self._generate_valid_actions(observation.state)
+            num_valid = len(valid_actions)
             while not done:
                 # Create the status string from the observed state
                 status_str = self._create_status_from_state(observation.state)
@@ -564,19 +599,33 @@ class LLMEmbedAgent:
                 else:
                     action_emb = self.policy.forward(state_embed_t)
 
-                # Convert the action embedding to a valid action and its embedding
-                valid_actions = self._generate_valid_actions(observation.state)
+                # Filter the actions already taken successfully
+                remaining_actions = self._filter_valid_actions(valid_actions, filtered_actions)
 
+                # Convert the action embedding to a valid action and its embedding
                 if self.num_pca < 384:
-                    action, _ = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), valid_actions, False)
+                    action, _ = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), remaining_actions, False)
                 else:
-                    action, _ = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), valid_actions, False)
-                memories.append((str(action.type), str(action.parameters)))
+                    action, _ = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), remaining_actions, False)
 
                 # Take the new action and get the observation from the policy
                 observation = self.env.step(action)
                 ret += observation.reward
                 done = observation.done
+
+                # Generate the list of all the valid actions in the observed state
+                valid_actions = self._generate_valid_actions(observation.state)
+                if len(valid_actions) > num_valid:
+                    num_valid = len(valid_actions)
+                    # If the action is not successful do not retake it
+                    filtered_actions.append(action)
+                # else:
+                #     # Even if the action is not successful if it is already in memory filter it.
+                #     if action in memories:
+                #         filtered_actions.append(action)
+
+                # Finally, add the action to the memory list
+                memories.append(action)
 
             if observation.reward > 0:
                 wins += 1
@@ -614,8 +663,8 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size to sample from memory")
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--max_t", type=int, default=128, help="Max episode length")
-    parser.add_argument("--train_each", type=int, default=4, help="Train every this ammount of episodes.")
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes.", default=128, type=int)
+    parser.add_argument("--train_every", type=int, default=4, help="Train every this ammount of episodes.")
+    parser.add_argument("--eval_every", help="During training, evaluate every this amount of episodes.", default=128, type=int)
     parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--num_pca", type=int, default=24, help="Number of PCA components. Use 384 to disable PCA")
     parser.add_argument("--buffer_size", type=int, default=128, help="Replay buffer size")
@@ -630,7 +679,7 @@ if __name__ == '__main__':
     agent = LLMEmbedAgent(env, args)
 
     # Train the agent using reinforce
-    agent.train()
+    agent.train(args.num_episodes)
 
     # Evaluate the agent
     final_returns, wins = agent.evaluate(args.eval_episodes)
