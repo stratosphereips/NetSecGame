@@ -109,10 +109,13 @@ class QAgent:
         else: #greedy play
             #select the acion with highest q_value
             tmp = dict(((state_id,action), self.q_values.get((state_id,action), 0)) for action in actions)
-            max_q_key = max(tmp, key=tmp.get)
-            if max_q_key not in self.q_values:
-                self.q_values[max_q_key] = 0
-            return max_q_key[1]
+            state_id, action = max(tmp, key=tmp.get)
+            #if max_q_key not in self.q_values:
+            try:
+                self.q_values[state_id, action]
+            except KeyError:
+                self.q_values[state_id, action] = 0
+            return action
 
     def max_action_q(self, observation:Observation) -> Action:
         state = observation.state
