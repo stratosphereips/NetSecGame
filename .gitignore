@@ -144,3 +144,5 @@ ai-dojo-venv-sebas/
 .vscode/launch.json
 logs/*
 runs/*
+agents/*/runs/*
+agents/*/saved_models/*
