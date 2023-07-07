@@ -19,6 +19,7 @@ import torch.nn as nn
 import torch.nn.functional as func
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
+torch.autograd.set_detect_anomaly(True)
 from sentence_transformers import SentenceTransformer
 
 from sklearn.decomposition import PCA
@@ -38,6 +39,7 @@ local_services = ['can_attack_start_here']
 
 # if GPU is to be used
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cpu")
 
 Transition = namedtuple('Transition', ('state_emb', 'action_emb', 'real_emb', 'disc_reward', 'state_vals'))
 
@@ -50,7 +52,7 @@ class ReplayBuffer:
         """Initialize the buffer"""
         self.buffer = deque([], maxlen=capacity)
 
-    def push(self, *args):
+    def append(self, *args):
         """Save a transition"""
         self.buffer.append(Transition(*args))
 
@@ -89,10 +91,10 @@ class Policy(nn.Module):
         """Forward pass"""
         x = self.linear1(input1)
         # x = self.dropout(x)
-        x = func.relu(x)
+        x = func.tanh(x)
         x = self.linear2(x)
         # x = self.dropout2(x)
-        x = func.relu(x)
+        x = func.tanh(x)
         return self.output(x)
 
 class Baseline(nn.Module):
@@ -197,6 +199,51 @@ class LLMEmbedAgent:
                 for known_data in list(state.known_data[ip_data]):
                     host_data += f"({known_data.owner}, {known_data.id}) and "
                 prompt += f"Known data for host {ip_data} are {host_data}\n"
+
+        return prompt
+    
+    def _create_status_from_state2(self, state):
+        """
+        Create a status prompt using the current state.
+        """
+        contr_hosts = [host.ip for host in state.controlled_hosts]
+        known_hosts = [host.ip for host in state.known_hosts]
+        known_nets = [str(net) for net in list(state.known_networks)]
+
+        prompt = "You are a pentester and your goal is to exfiltrate data to host 213.47.23.195.\n"
+        for host in contr_hosts:
+            prompt += f"Controlled host: {host}\n"
+        
+        for net in known_nets:
+            prompt += f"Known network: {net}\n"
+
+        for host in known_hosts:
+            prompt += f"Known host {host}\n"
+
+        if len(state.known_services.keys()) == 0:
+            prompt += "Known services are none\n"
+        for ip_service in state.known_services:
+            services = []
+            if len(list(state.known_services[ip_service])) > 0:
+                for serv in state.known_services[ip_service]:
+                    if serv.name not in local_services:
+                        services.append(serv.name)
+                if len(services) > 0:
+                    serv_str = ""
+                    for serv in services:
+                        # serv_str += serv + " and "
+                        prompt += f"Known service for host {ip_service}: {serv}\n"
+                else:
+                    prompt += "Known services are none\n"
+
+        if len(state.known_data.keys()) == 0:
+            prompt += "Known data are none\n"
+        for ip_data in state.known_data:
+            if len(state.known_data[ip_data]) > 0:
+                host_data = ""
+                for known_data in list(state.known_data[ip_data]):
+                    host_data = f"({known_data.owner}, {known_data.id})"
+                    prompt += f"Known data for host {ip_data} are {host_data}\n"
 
         return prompt
 
@@ -348,13 +395,14 @@ class LLMEmbedAgent:
         self.optimizer.zero_grad()
         policy_loss = torch.cat(policy_losses).sum()
         policy_loss.backward(retain_graph=True)
+        torch.nn.utils.clip_grad_value_(self.policy.parameters(), 10)
 
         self.optimizer.step()
 
         for tag, param in self.policy.named_parameters():
             self.summary_writer.add_histogram(f"grad_{tag}", param.grad.data.cpu().numpy(), episode)
 
-        return policy_loss
+        return policy_loss.item()
 
     def _training_step_baseline(self, state_vals, returns, episode):
         """
@@ -368,12 +416,13 @@ class LLMEmbedAgent:
 
         # torch.nn.utils.clip_grad_value_(self.policy.parameters(), 5)
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
+        torch.nn.utils.clip_grad_value_(self.baseline.parameters(), 10)
         self.baseline_optimizer.step()
 
         for tag, param in self.baseline.named_parameters():
             self.summary_writer.add_histogram(f"baseline_grad_{tag}", param.grad.data.cpu().numpy(), episode)
 
-        return value_loss
+        return value_loss.item()
 
     def _optimize_models(self, episode):
         """
@@ -392,17 +441,17 @@ class LLMEmbedAgent:
             batch = Transition(*zip(*transitions))
 
             # Train the baseline first
-            state_batch = torch.cat(batch.state_vals)
+            values_batch = torch.cat(batch.state_vals)
             reward_batch = torch.cat(batch.disc_reward)
             action_batch = torch.cat(batch.action_emb)
             real_batch = torch.cat(batch.real_emb)
 
-            value_loss += self._training_step_baseline(state_batch, reward_batch, episode)
+            value_loss = value_loss + self._training_step_baseline(values_batch, reward_batch, episode)
 
             # Calculate deltas and train the policy network
-            deltas = [gt - val for gt, val in zip(reward_batch, state_batch)]
+            deltas = [gt - val for gt, val in zip(reward_batch, values_batch)]
             deltas = torch.tensor(deltas).to(device)
-            policy_loss += self._training_step(deltas, action_batch, real_batch, episode)
+            policy_loss = policy_loss + self._training_step(deltas, action_batch, real_batch, episode)
 
         self.summary_writer.add_scalar("losses/value_loss", value_loss/self.args.num_epochs, episode)
         self.summary_writer.add_scalar("losses/policy_loss", policy_loss/self.args.num_epochs, episode)
@@ -436,7 +485,7 @@ class LLMEmbedAgent:
             self._weight_histograms(episode)
             for _ in range(self.args.max_t):
                 # Create the status string from the observed state
-                status_str = self._create_status_from_state(observation.state)
+                status_str = self._create_status_from_state2(observation.state)
                 # Get the embedding of the string from the transformer
                 state_embed = self.transformer_model.encode(status_str)
                 state_embed = torch.tensor(state_embed, device=device).unsqueeze(0)
@@ -451,11 +500,11 @@ class LLMEmbedAgent:
                     input_emb = torch.concat([state_embed, memory_embed], dim=1)
                     input_embeddings.append(input_emb)
 
-                    # Pass the state embedding to the model and get the action
-                    action_emb = self.policy.forward(input_emb)
-
                     # Pass the state embedding to the baseline and get the value
                     state_val = self.baseline.forward(input_emb)
+
+                    # Pass the state embedding to the model and get the action
+                    action_emb = self.policy.forward(input_emb)
                 else:
                     input_embeddings.append(state_embed)
                     # Pass the state embedding to the model and get the action
@@ -468,7 +517,8 @@ class LLMEmbedAgent:
                 state_vals.append(state_val)
 
                 # Convert the action embedding to a valid action and its embedding
-                remaining_actions = self._filter_valid_actions(valid_actions, filtered_actions)
+                # remaining_actions = self._filter_valid_actions(valid_actions, filtered_actions)
+                remaining_actions = valid_actions
                 # print(remaining_actions, memories)
                 if self.num_pca < 384:
                     action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), remaining_actions, True)
@@ -484,12 +534,12 @@ class LLMEmbedAgent:
                 valid_actions = self._generate_valid_actions(observation.state)
                 if len(valid_actions) > num_valid:
                     num_valid = len(valid_actions)
-                    intr_rewards.append(2.0)
+                    intr_rewards.append(4.0)
                     filtered_actions.append(action)
                 else:
                     intr_rewards.append(0.0)
-                    # if action in memories:
-                    #     filtered_actions.append(action)
+                    if action in memories:
+                        filtered_actions.append(action)
 
                 memories.append(action)
 
@@ -517,7 +567,7 @@ class LLMEmbedAgent:
             # Populate the replay buffer
             for i in range(self.args.max_t):
                 try:
-                    self.replay_buffer.push(input_embeddings[i], out_embeddings[i], real_embeddings[i], total_returns[i].reshape(1), state_vals[i])
+                    self.replay_buffer.append(input_embeddings[i], out_embeddings[i], real_embeddings[i], total_returns[i].reshape(1), state_vals[i])
                 except:
                     break
 
@@ -547,7 +597,7 @@ class LLMEmbedAgent:
             num_valid = len(valid_actions)
             while not done:
                 # Create the status string from the observed state
-                status_str = self._create_status_from_state(observation.state)
+                status_str = self._create_status_from_state2(observation.state)
                 # Get the embedding of the string from the transformer
                 state_embed = self.transformer_model.encode(status_str)
                 state_embed_t = torch.tensor(state_embed, device=device).unsqueeze(0)
@@ -567,7 +617,8 @@ class LLMEmbedAgent:
                     action_emb = self.policy.forward(state_embed_t)
 
                 # Filter the actions already taken successfully
-                remaining_actions = self._filter_valid_actions(valid_actions, filtered_actions)
+                # remaining_actions = self._filter_valid_actions(valid_actions, filtered_actions)
+                remaining_actions = valid_actions
 
                 # Convert the action embedding to a valid action and its embedding
                 if self.num_pca < 384:
@@ -586,6 +637,9 @@ class LLMEmbedAgent:
                     num_valid = len(valid_actions)
                     # If the action is not successful do not retake it
                     filtered_actions.append(action)
+                else:
+                    if action in memories:
+                        filtered_actions.append(action)
 
                 # Finally, add the action to the memory list
                 memories.append(action)
@@ -603,6 +657,14 @@ class LLMEmbedAgent:
         Save the pytorch policy model.
         """
         torch.save(self.policy.state_dict(), file_name)
+
+    def load_model(self, file_name):
+        """
+        Load the model
+        """
+        self.policy = Policy(embedding_size=2*384, output_size=10).to(device)
+        self.policy.load_state_dict(torch.load(file_name))
+        self.policy.eval()
 
 
 if __name__ == '__main__':
@@ -649,3 +711,9 @@ if __name__ == '__main__':
     print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
     print(f"Total number of wins during evaluation: {wins}")
     agent.save_model(args.model_path)
+
+    # agent.load_model('saved_models/winning.pt')
+    # final_returns, wins = agent.evaluate(args.eval_episodes)
+    # print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
+    # print(f"Total number of wins during evaluation: {wins}")
+    
