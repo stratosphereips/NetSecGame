@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
     # Setup tensorboard
     run_name = f"netsecgame__doubleqlearning__{args.seed}__{int(time.time())}"
-    writer = SummaryWriter(f"agents/tensorboard-logs/{run_name}")
+    writer = SummaryWriter(f"agents/double_q_learning/logs/{run_name}")
     writer.add_text(
         "hypherparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
