@@ -229,7 +229,6 @@ class LLMEmbedAgent:
                     if serv.name not in local_services:
                         services.append(serv.name)
                 if len(services) > 0:
-                    serv_str = ""
                     for serv in services:
                         # serv_str += serv + " and "
                         prompt += f"Known service for host {ip_service}: {serv}\n"
