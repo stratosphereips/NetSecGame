@@ -23,10 +23,14 @@ def read_replay_buffer_from_csv(csvfile:str)->list:
      state_t0, action_t0, reward_t1, state_t1, done_t1
     """
     buffer = []
-    with open(csvfile, 'r') as f_object:
-        csv_reader = csv.reader(f_object, delimiter=';')
-        for [s_t, a_t, r, s_t1 , done] in csv_reader:
-            buffer.append((GameState.from_json(s_t), Action.from_json(a_t), r, GameState.from_json(s_t1), done))
+    try:
+        with open(csvfile, 'r') as f_object:
+            csv_reader = csv.reader(f_object, delimiter=';')
+            for [s_t, a_t, r, s_t1 , done] in csv_reader:
+                buffer.append((GameState.from_json(s_t), Action.from_json(a_t), r, GameState.from_json(s_t1), done))
+    except FileNotFoundError:
+        # There was no buffer
+        pass
     return buffer
 
 def store_replay_buffer_in_csv(replay_buffer:list, filename:str, delimiter:str=";")->None:
