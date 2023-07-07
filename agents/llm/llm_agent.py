@@ -197,12 +197,12 @@ def create_action_from_response(llm_response, state):
     return valid, action
 
 @retry(stop=stop_after_attempt(3))
-def openai_query(msg_list, max_tokens=60):
+def openai_query(msg_list, model, max_tokens=60):
     """
     Send messages to OpenAI API and return the response.
     """
     llm_response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model=model,
         messages=msg_list,
         max_tokens=max_tokens,
         temperature=0.0
@@ -216,6 +216,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
+    parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
     args = parser.parse_args()
 
     env = NetworkSecurityEnvironment(args.task_config_file)
@@ -249,7 +250,7 @@ if __name__ == "__main__":
                 {"role": "user", "content": "Action: "}
             ]
         print(status_prompt)
-        response = openai_query(messages)
+        response = openai_query(messages, args.llm)
         logger.info(f"Action from LLM: {response}")
 
         try:
