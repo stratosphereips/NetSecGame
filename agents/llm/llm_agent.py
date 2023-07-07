@@ -25,7 +25,7 @@ local_services = ['can_attack_start_here']
 
 action_mapper = {
     "ScanNetwork": ActionType.ScanNetwork,
-    "FindServices": ActionType.FindServices,
+    "ScanServices": ActionType.FindServices,
     "FindData": ActionType.FindData,
     "ExfiltrateData": ActionType.ExfiltrateData,
     "ExploitService": ActionType.ExploitService
@@ -34,14 +34,14 @@ action_mapper = {
 EXAMPLE_PROMPT = """
 Example:
 Known networks are 1.1.1.0/24
-Known hosts are 2.2.2.2 and 1.1.1.2 and 2.2.2.3
+Known hosts are 2.2.2.3
 Controlled hosts are 2.2.2.2 and 1.1.1.2
 Known data for source host 1.1.1.2: are (User1, WebData)
 Known services for host 1.1.1.1 are openssh
 
 Here are some examples of actions:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
-Action: {"action":"FindServices", "parameters":{"target_host":"2.2.2.3"}}
+Action: {"action":"ScanServices", "parameters":{"target_host":"2.2.2.3"}}
 Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
 Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
 Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "data": ("User1", "WebData"), "source_host": "1.1.1.2"}}}
@@ -49,18 +49,15 @@ End of example.
 """
 
 INSTRUCTIONS_TEMPLATE = """
-You are a pentester and you want to exfiltrate data to target host {{target_host}}.
-The actions you can take are FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
+You are a pentester and you want to exfiltrate data to target host {{target_host}} which is a command and control server on the internet.
+The actions you can take are ScanServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
 
 The rules of the game are:
-1. You can scan networks that you know.
-2. You can find services in hosts that you know.
-3. You can exploit services that you know.
+1. You can scan known networks.
+2. You can scan services in known hosts.
+3. You can exploit known services.
 4. You can find data in hosts you control.
-5. You can exfiltrate data that you know to and from hosts you control.
-
-Do not repeat actions you have take in the past.
-Select a valid action with the correct format and parameters.
+5. You can exfiltrate known data to and from controlled hosts.
 """
 
 def validate_action_in_state(llm_response, state):
@@ -79,7 +76,7 @@ def validate_action_in_state(llm_response, state):
             case 'ScanNetwork':
                 if action_params["target_network"] in known_nets:
                     valid = True       
-            case 'FindServices':
+            case 'ScanServices':
                 if action_params["target_host"] in known_hosts:
                     valid = True
             case 'ExploitService':
@@ -106,13 +103,13 @@ def validate_action_in_state(llm_response, state):
 def create_status_from_state(state, memory_list):
     """Create a status prompt using the current state and the sae memories."""
     contr_hosts = [host.ip for host in state.controlled_hosts]
-    known_hosts = [host.ip for host in state.known_hosts]
+    known_hosts = [host.ip for host in state.known_hosts if host.ip not in contr_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
-    prompt = "Memories:\n"
+    prompt = "Past actions:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
-            prompt += f'You have taken action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} in the past and {memory[2]}\n'
+            prompt += f'You took action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} and {memory[2]}\n'
     else:
         prompt += ""
 
@@ -122,8 +119,10 @@ def create_status_from_state(state, memory_list):
 
     prompt += f"Known networks are {' and '.join(known_nets)}\n"
     logger.info("Known networks are %s", ' and '.join(known_nets))
-    prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
-    logger.info("Known hosts are %s", ' and '.join(known_hosts))
+
+    if len(known_hosts) > 0:
+        prompt += f"Known hosts are {' and '.join(known_hosts)}\n"
+        logger.info("Known hosts are %s", ' and '.join(known_hosts))
 
     if len(state.known_services.keys()) == 0:
         prompt += "Known services are none\n"
@@ -152,9 +151,9 @@ def create_status_from_state(state, memory_list):
 
             host_data = ""
             for known_data in list(state.known_data[ip_data]):
-                host_data += f"({known_data.owner}, {known_data.id}) and "
-            prompt += f"Known data for host {ip_data} are {host_data}\n"
-            logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
+                host_data = f"({known_data.owner}, {known_data.id})"
+                prompt += f"Known data for host {ip_data} are {host_data}\n"
+                logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
     return prompt
 
@@ -173,7 +172,7 @@ def create_action_from_response(llm_response, state):
                 case 'ScanNetwork':
                     target_net, mask = action_params["target_network"].split('/')
                     action  = Action(ActionType.ScanNetwork, {"target_network":Network(target_net, int(mask))})
-                case 'FindServices':
+                case 'ScanServices':
                     action  = Action(ActionType.FindServices, {"target_host":IP(action_params["target_host"])})
                 case 'ExploitService':
                     target_ip = action_params["target_host"]
@@ -203,7 +202,7 @@ def openai_query(msg_list, max_tokens=60):
     Send messages to OpenAI API and return the response.
     """
     llm_response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4",
         messages=msg_list,
         max_tokens=max_tokens,
         temperature=0.0
@@ -241,11 +240,12 @@ if __name__ == "__main__":
     for i in range(num_iterations):
         good_action = False
 
-        status_prompt = create_status_from_state(observation.state, memories)
+        status_prompt = create_status_from_state(observation.state, memories[-10:])
         messages = [
-                {"role": "user", "content": instructions},
+                {"role": "system", "content": instructions},
                 {"role": "user", "content": EXAMPLE_PROMPT},
                 {"role": "user", "content": status_prompt},
+                {"role": "user", "content": "Do not scan and exploit services in hosts you control.\nExfiltrate all the data you find.\nDo not repeat actions under any circumstances because you will be detected!\nSelect a valid action with the correct format and parameters."},
                 {"role": "user", "content": "Action: "}
             ]
         print(status_prompt)
@@ -277,9 +277,9 @@ if __name__ == "__main__":
                 # But we could a manual evaluation based on the prior knowledge and weight the different components.
                 # For example: finding new data is better than discovering hosts (?)
                 if good_action:
-                    memories.append((response["action"], response["parameters"], "it was helpful."))
+                    memories.append((response["action"], response["parameters"], "it was successful."))
                 else:
-                    memories.append((response["action"], response["parameters"], "it was not helpful."))
+                    memories.append((response["action"], response["parameters"], "it was unsuccessful."))
         except TypeError:
             # if the LLM sends a response that is not properly formatted.
             memories.append(f"Response '{response}' was badly formatted.")
