@@ -143,3 +143,4 @@ ai-dojo-venv-sebas/
 *.swp
 .vscode/launch.json
 logs/*
+runs/*
