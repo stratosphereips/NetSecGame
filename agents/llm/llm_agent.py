@@ -15,6 +15,8 @@ import argparse
 import jinja2
 import logging
 import copy
+import pandas as pd
+import time
 
 from dotenv import dotenv_values
 config = dotenv_values(".env")
@@ -59,6 +61,11 @@ The rules of the game are:
 4. You can find data in hosts you control.
 5. You can exfiltrate known data to and from controlled hosts.
 """
+
+INSTRUCTIONS2 = """Do not scan and exploit services in hosts you control.
+Exfiltrate all the data you find.
+Do not repeat actions under any circumstances because you will be detected!
+Select a valid action with the correct format and parameters."""
 
 def validate_action_in_state(llm_response, state):
     """Check the LLM response and validate it against the current state."""
@@ -217,6 +224,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
+    parser.add_argument("--llm_log_dir", type=str, default="./logs", help="Where to store the log file with the LLM answers.")
     args = parser.parse_args()
 
     env = NetworkSecurityEnvironment(args.task_config_file)
@@ -237,6 +245,8 @@ if __name__ == "__main__":
     data = goal["known_data"][target_host].pop()
     instructions = template.render(user=data.owner, data=data.id, target_host=target_host)
 
+    llm_log = dict()
+    df = pd.DataFrame(columns=["system", "user", "response", "valid", "model"])
 
     for i in range(num_iterations):
         good_action = False
@@ -246,10 +256,10 @@ if __name__ == "__main__":
                 {"role": "system", "content": instructions},
                 {"role": "user", "content": EXAMPLE_PROMPT},
                 {"role": "user", "content": status_prompt},
-                {"role": "user", "content": "Do not scan and exploit services in hosts you control.\nExfiltrate all the data you find.\nDo not repeat actions under any circumstances because you will be detected!\nSelect a valid action with the correct format and parameters."},
+                {"role": "user", "content": INSTRUCTIONS2},
                 {"role": "user", "content": "Action: "}
             ]
-        print(status_prompt)
+        # print(status_prompt)
         response = openai_query(messages, args.llm)
         logger.info(f"Action from LLM: {response}")
 
@@ -265,6 +275,15 @@ if __name__ == "__main__":
             if observation.state != current_state:
                 good_action = True
                 current_state = observation.state
+
+        log_line = {
+            "system": instructions,
+            "user": EXAMPLE_PROMPT + status_prompt + INSTRUCTIONS2 + "Action: ",
+            "response": response,
+            "valid": is_valid,
+            "model": args.llm
+        }
+        df = pd.concat([df, pd.DataFrame([log_line])], ignore_index=True)
 
         logger.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
         if observation.done:
@@ -285,5 +304,7 @@ if __name__ == "__main__":
             # if the LLM sends a response that is not properly formatted.
             memories.append(f"Response '{response}' was badly formatted.")
 
+time_str = time.strftime("%Y-%m-%d_%H-%M-%S")
+df.to_csv(f"{args.llm_log_dir}/{time_str}_{args.llm}.csv", index=False, sep="|")
 logger.info("Total reward: %s", str(total_reward))
 print(f"Total reward: {total_reward}")
