@@ -225,10 +225,11 @@ def create_action_from_response(llm_response, state, actions_took_in_episode):
         valid = False
 
     # Ignore action if it was taken before
-    for past_action in actions_took_in_episode:
-        if action == past_action:
-            return False, False, actions_took_in_episode
-    
+    if args.force_ignore:
+        for past_action in actions_took_in_episode:
+            if action == past_action:
+                return False, False, actions_took_in_episode
+        
     actions_took_in_episode.append(action)
     return valid, action, actions_took_in_episode
 
@@ -256,6 +257,7 @@ if __name__ == "__main__":
     parser.add_argument("--test_episodes", help="Number of test episodes to run", default=10, action='store', required=False, type=int)
     parser.add_argument("--memory_buffer", help="Number of actions to remember and pass to the LLM", default=10, action='store', required=False, type=int)
     parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
+    parser.add_argument("--force_ignore", help="Force ignore repeated actions in code", default=False, action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
     # Create the environment
