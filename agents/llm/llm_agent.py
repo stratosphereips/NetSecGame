@@ -225,6 +225,7 @@ def create_action_from_response(llm_response, state, actions_took_in_episode):
         valid = False
 
     # Ignore action if it was taken before
+
     if args.force_ignore:
         for past_action in actions_took_in_episode:
             if action == past_action:
