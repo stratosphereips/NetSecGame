@@ -82,7 +82,7 @@ def validate_action_in_state(llm_response, state):
         match action_str:
             case 'ScanNetwork':
                 if action_params["target_network"] in known_nets:
-                    valid = True       
+                    valid = True
             case 'ScanServices':
                 if action_params["target_host"] in known_hosts:
                     valid = True
@@ -305,6 +305,7 @@ if __name__ == "__main__":
             memories.append(f"Response '{response}' was badly formatted.")
 
 time_str = time.strftime("%Y-%m-%d_%H-%M-%S")
-df.to_csv(f"{args.llm_log_dir}/{time_str}_{args.llm}.csv", index=False, sep="|")
+log_file_name = path.join(path.dirname(__file__), args.llm_log_dir, f"{time_str}_{args.llm}.csv")
+df.to_csv(log_file_name, index=False, sep="|")
 logger.info("Total reward: %s", str(total_reward))
 print(f"Total reward: {total_reward}")
