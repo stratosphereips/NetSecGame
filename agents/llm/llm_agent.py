@@ -30,7 +30,6 @@ experiment_description = "LLM agent."
 #experiment_description = "LLM agent. Scenario Small. 30 steps. No defender"
 
 
-
 # This maps is so the LLM has a better understanding of what real action should be done acording to the string given
 action_mapper = {
     "ScanNetwork": ActionType.ScanNetwork,
@@ -42,14 +41,14 @@ action_mapper = {
 
 # This is how we tell the LLM a template to give us back the actions (order 2 in sending)
 EXAMPLE_PROMPT = """
-Example of a state after an action:
+Example:
 Known networks are 1.1.1.0/24
 Known hosts are 2.2.2.3
 Controlled hosts are 2.2.2.2 and 1.1.1.2
 Known data for source host 1.1.1.2: are (User1, WebData)
 Known services for host 1.1.1.1 are openssh
 
-Actions have a name and one or more parameters. Here are some examples of actions:
+Here are some examples of actions:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
 Action: {"action":"ScanServices", "parameters":{"target_host":"2.2.2.3"}}
 Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
@@ -60,31 +59,15 @@ End of example.
 
 # First instructions for the LLM (order 1 in sending)
 INSTRUCTIONS_TEMPLATE = """
-You are an advanced security attacker and your goal is to find certain data in the local network and exfiltrate it to the target host {{target_host}}.
-The actions you can do are 
-- ScanNetwork (find hosts in the network)
-- ScanServices (find services in a host)
-- FindData (find data in a host)
-- ExploitService (gain control of a host)
-- ExfiltrateData (send certain data from a host to another host)
+You are a pentester and you want to exfiltrate data to target host {{target_host}} which is a command and control server on the internet.
+The actions you can take are ScanServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
 
-At each step you will be updated on the current status: 
-- how many networks you know
-- how many hosts you know
-- how many hosts you control
-- how many services you know
-- how many data you know
-
-The rules are:
-1. You can only scan the networks you know. This will give you new known hosts.
-2. You can only scan services in hosts you know. This will give you new known services.
-3. You can only exploit services when you know the service. This will make you control the host.
-4. You can find data in hosts you control. This will give you new known data.
-5. You can exfiltrate known data to and from controlled hosts. This may make you complete your goal.
-
-Do not repeat actions that you took in the past.
-Do not scan and exploit services in hosts you control.
-Do not scan the same network twice.
+The rules of the game are:
+1. You can scan known networks.
+2. You can scan services in known hosts.
+3. You can exploit known services.
+4. You can find data in hosts you control.
+5. You can exfiltrate known data to and from controlled hosts.
 """
 
 def validate_action_in_state(llm_response, state):
@@ -133,13 +116,10 @@ def create_status_from_state(state, memory_list):
     known_hosts = [host.ip for host in state.known_hosts if host.ip not in contr_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
-    prompt = "These are the actions you already took in the past:\n"
+    prompt = "Past actions:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
-            if memory[2]:
-                prompt += f'You took action {memory[0]} of {memory[1]} and {memory[2]}\n'
-            else:
-                prompt += f'You took action {memory[0]} of {memory[1]}\n'
+            prompt += f'You took action {{"action":"{memory[0]}", "parameters":"{memory[1]}"}} and {memory[2]}\n'
     else:
         prompt += ""
 
@@ -187,7 +167,7 @@ def create_status_from_state(state, memory_list):
 
     return prompt
 
-def create_action_from_response(llm_response, state, actions_took_in_episode):
+def create_action_from_response(llm_response, state):
     """Build the action object from the llm response"""
     try:
         # Validate action based on current states
@@ -218,19 +198,13 @@ def create_action_from_response(llm_response, state, actions_took_in_episode):
                     data_owner, data_id = action_params["data"]
                     action = Action(ActionType.ExfiltrateData, {"target_host":IP(action_params["target_host"]), "data":Data(data_owner, data_id), "source_host":IP(action_params["source_host"])})
                 case _:
-                    return False, action, actions_took_in_episode
+                    return False, action
 
     except SyntaxError:
         logger.error(f"Cannol parse the response from the LLM: {llm_response}")
         valid = False
 
-    # Ignore action if it was taken before
-    for past_action in actions_took_in_episode:
-        if action == past_action:
-            return False, False, actions_took_in_episode
-    
-    actions_took_in_episode.append(action)
-    return valid, action, actions_took_in_episode
+    return valid, action
 
 @retry(stop=stop_after_attempt(3))
 def openai_query(msg_list, model, max_tokens=60):
@@ -253,7 +227,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-tests_01.yaml'), action='store', required=False)
-    parser.add_argument("--test_episodes", help="Number of test episodes to run", default=10, action='store', required=False, type=int)
+    parser.add_argument("--test_episodes", help="Number of test episodes to run", default=2, action='store', required=False, type=int)
     parser.add_argument("--memory_buffer", help="Number of actions to remember and pass to the LLM", default=10, action='store', required=False, type=int)
     parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
     args = parser.parse_args()
@@ -273,11 +247,7 @@ if __name__ == "__main__":
     num_win_steps = []
     num_detected_steps = []
 
-
     for episode in range(1, args.test_episodes + 1):
-
-        actions_took_in_episode = []
-
         logger.info(f'Running episode {episode}')
         print(f'Running episode {episode}')
 
@@ -287,7 +257,7 @@ if __name__ == "__main__":
         # num_iterations is the max number of times we can ask the LLM to make 1 step. 
         # It is not the number of steps because many actions from the LLM are discarded.
         # All these iterations are for 1 episodes
-        num_iterations = 400
+        num_iterations = 100
         taken_action = None
         memories = []
         total_reward = 0
@@ -305,8 +275,6 @@ if __name__ == "__main__":
         # Fill the instructions template with some info fromt the goal
         instructions = template.render(target_host=target_host)
 
-        save_first_prompt = False
-
         for i in range(num_iterations):
             # A good action is when the state changed after taking it. 
             # This is an estimation about if the action was succesfully executed. 
@@ -318,42 +286,32 @@ if __name__ == "__main__":
                     {"role": "system", "content": instructions},
                     {"role": "user", "content": EXAMPLE_PROMPT},
                     {"role": "user", "content": status_prompt},
-                    {"role": "user", "content": "\nSelect a valid action with the correct format and parameters.\nIf an action is in your list of past actions do not chose that action!\nDO NOT REPEAT PAST ACTIONS!"},
+                    {"role": "user", "content": "Do not scan and exploit services in hosts you control.\nExfiltrate all the data you find.\nDo not repeat actions under any circumstances because you will be detected!\nSelect a valid action with the correct format and parameters."},
                     {"role": "user", "content": "Action: "}
                 ]
-            
-            logger.info(f'Text sent to the LLM: {messages}')
-
-            # Store the first prompt in tensorboard
-            if not save_first_prompt:
-                writer.add_text('prompt', f'{messages}')
-                save_first_prompt = True
-
             print(status_prompt)
             logger.info(status_prompt)
             # Query the LLM
             response = openai_query(messages, args.llm)
-            logger.info(f"Action chosen (not still taken) by LLM: {response}")
-            print(f"Action chosen (not still taken) by LLM: {response}")
+            logger.info(f"Action chosen by LLM: {response}")
+            print(f"Action chosen by LLM: {response}")
 
             try:
                 # Since the response should be JSON, we can eval it and crate a dict
                 response = eval(response)
-                is_valid, action, actions_took_in_episode = create_action_from_response(response, observation.state, actions_took_in_episode)
+                is_valid, action = create_action_from_response(response, observation.state)
             except:
                 is_valid = False
 
             if is_valid:
                 # Take action
-                logger.info(f"Action taken: {response}")
-                print(f"Action taken: {response}")
                 observation = env.step(action)
                 total_reward += observation.reward
                 if observation.state != current_state:
                     good_action = True
                     current_state = observation.state
 
-            logger.info(f"Iteration: {i}. Is action valid to be taken: {is_valid}, did action change status: {good_action}")
+            logger.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
             if observation.done:
                 reason = observation.info
                 # Did we win?
@@ -363,10 +321,10 @@ if __name__ == "__main__":
                 detected = env.detected
                 steps = env.timestamp
                 epi_return = observation.reward
-                if 'goal_reached' in reason['end_reason']:
+                if 'goal_reached' in reason:
                     wins += 1
                     num_win_steps += [steps]
-                elif 'detected' in reason['end_reason']:
+                elif 'detected' in reason:
                     detected += 1
                     num_detected_steps += [steps]
                 else:
@@ -382,15 +340,15 @@ if __name__ == "__main__":
             # Create the memory for the next step of the LLM
             try:
                 if not is_valid:
-                    memories.append((response["action"], response["parameters"], "This action was not valid. Do not repeat it."))
+                    memories.append((response["action"], response["parameters"], "it was not valid based on your status."))
                 else:
                     # This is based on the assumption that more valid actions in the state are better/more helpful.
                     # But we could a manual evaluation based on the prior knowledge and weight the different components.
                     # For example: finding new data is better than discovering hosts (?)
                     if good_action:
-                        memories.append((response["action"], response["parameters"], "was a good action to take."))
+                        memories.append((response["action"], response["parameters"], "it was successful."))
                     else:
-                        memories.append((response["action"], response["parameters"], "was a bad action to take. Do not repeat it."))
+                        memories.append((response["action"], response["parameters"], "it was unsuccessful."))
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
                 memories.append(f"Response '{response}' was badly formatted.")
