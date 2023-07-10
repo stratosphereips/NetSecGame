@@ -291,7 +291,9 @@ class LLMEmbedAgent:
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
         # dists = cosine_distances(valid_embeddings, new_action_embedding).flatten()
-        dists = euclidean_distances(valid_embeddings, new_action_embedding).flatten()
+        # dists = euclidean_distances(valid_embeddings, new_action_embedding).flatten()
+        dists = [distance.chebyshev(vector.flatten(), new_action_embedding.flatten()) for vector in valid_embeddings]
+        dists = np.array(dists).flatten()
         eps = np.finfo(np.float32).eps.item()
         if train:
             action_id = random.choices(population=range(len(valid_actions)), weights=1.0/(eps+dists), k=1)[0]
