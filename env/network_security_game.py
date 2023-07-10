@@ -110,6 +110,7 @@ class NetworkSecurityEnvironment(object):
             logger.info("Storing of replay buffer enabled")
             self._episode_replay_buffer = []
         else:
+            logger.info("Storing of replay buffer disabled")
             self._episode_replay_buffer = None
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
