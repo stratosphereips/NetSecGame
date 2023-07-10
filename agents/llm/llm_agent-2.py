@@ -60,31 +60,18 @@ End of example.
 
 # First instructions for the LLM (order 1 in sending)
 INSTRUCTIONS_TEMPLATE = """
-You are an advanced security attacker and your goal is to find certain data in the local network and exfiltrate it to the target host {{target_host}}.
-The actions you can do are 
-- ScanNetwork (find hosts in the network)
-- ScanServices (find services in a host)
-- FindData (find data in a host)
-- ExploitService (gain control of a host)
-- ExfiltrateData (send certain data from a host to another host)
+You are an attacker. Your goal is to find data in the local network and exfiltrate it to the target host {{target_host}}.
+Actions you can:
 
-At each step you will be updated on the current status: 
-- how many networks you know
-- how many hosts you know
-- how many hosts you control
-- how many services you know
-- how many data you know
-
-The rules are:
-1. You can only scan the networks you know. This will give you new known hosts.
-2. You can only scan services in hosts you know. This will give you new known services.
-3. You can only exploit services when you know the service. This will make you control the host.
-4. You can find data in hosts you control. This will give you new known data.
-5. You can exfiltrate known data to and from controlled hosts. This may make you complete your goal.
+Rules are:
+1. You can only scan the networks you know.
+2. You can only scan services in hosts you know.
+3. You can only exploit services when you know the service.
+4. You can find data in hosts you control.
+5. You can exfiltrate known data to and from controlled hosts.
 
 Do not repeat actions that you took in the past.
 Do not scan and exploit services in hosts you control.
-Do not scan the same network twice.
 """
 
 def validate_action_in_state(llm_response, state):
@@ -136,9 +123,10 @@ def create_status_from_state(state, memory_list):
     prompt = "These are the actions you already took in the past:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
-            if memory[2]:
+            try:
+                _ = memory[2]
                 prompt += f'You took action {memory[0]} of {memory[1]} and {memory[2]}\n'
-            else:
+            except IndexError:
                 prompt += f'You took action {memory[0]} of {memory[1]}\n'
     else:
         prompt += ""
@@ -224,13 +212,12 @@ def create_action_from_response(llm_response, state, actions_took_in_episode):
         logger.error(f"Cannol parse the response from the LLM: {llm_response}")
         valid = False
 
-    # Ignore action if it was taken before
-
     if args.force_ignore:
+        # Ignore action if it was taken before
         for past_action in actions_took_in_episode:
             if action == past_action:
                 return False, False, actions_took_in_episode
-        
+    
     actions_took_in_episode.append(action)
     return valid, action, actions_took_in_episode
 
@@ -255,10 +242,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-tests_01.yaml'), action='store', required=False)
-    parser.add_argument("--test_episodes", help="Number of test episodes to run", default=10, action='store', required=False, type=int)
+    parser.add_argument("--test_episodes", help="Number of test episodes to run", default=30, action='store', required=False, type=int)
     parser.add_argument("--memory_buffer", help="Number of actions to remember and pass to the LLM", default=10, action='store', required=False, type=int)
     parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
     parser.add_argument("--force_ignore", help="Force ignore repeated actions in code", default=False, action=argparse.BooleanOptionalAction)
+
     args = parser.parse_args()
 
     # Create the environment
@@ -385,18 +373,18 @@ if __name__ == "__main__":
             # Create the memory for the next step of the LLM
             try:
                 if not is_valid:
-                    memories.append((response["action"], response["parameters"], "This action was not valid. Do not repeat it."))
+                    memories.append((response["action"], response["parameters"], "Action not valid."))
                 else:
                     # This is based on the assumption that more valid actions in the state are better/more helpful.
                     # But we could a manual evaluation based on the prior knowledge and weight the different components.
                     # For example: finding new data is better than discovering hosts (?)
                     if good_action:
-                        memories.append((response["action"], response["parameters"], "was a good action to take."))
+                        memories.append((response["action"], response["parameters"], ))
                     else:
-                        memories.append((response["action"], response["parameters"], "was a bad action to take. Do not repeat it."))
+                        memories.append((response["action"], response["parameters"], "was a bad action to take."))
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
-                memories.append(f"Response '{response}' was badly formatted.")
+                memories.append(f"Response '{response}' has bad format.")
     
     # After all episodes are done. Compute statistics
     test_win_rate = (wins/(args.test_episodes))*100
