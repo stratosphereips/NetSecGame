@@ -5,7 +5,7 @@ import yaml
 import sys
 from os import path
 # This is used so the agent can see the environment and game components
-sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
+sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
@@ -23,10 +23,14 @@ def read_replay_buffer_from_csv(csvfile:str)->list:
      state_t0, action_t0, reward_t1, state_t1, done_t1
     """
     buffer = []
-    with open(csvfile, 'r') as f_object:
-        csv_reader = csv.reader(f_object, delimiter=';')
-        for [s_t, a_t, r, s_t1 , done] in csv_reader:
-            buffer.append((GameState.from_json(s_t), Action.from_json(a_t), r, GameState.from_json(s_t1), done))
+    try:
+        with open(csvfile, 'r') as f_object:
+            csv_reader = csv.reader(f_object, delimiter=';')
+            for [s_t, a_t, r, s_t1 , done] in csv_reader:
+                buffer.append((GameState.from_json(s_t), Action.from_json(a_t), r, GameState.from_json(s_t1), done))
+    except FileNotFoundError:
+        # There was no buffer
+        pass
     return buffer
 
 def store_replay_buffer_in_csv(replay_buffer:list, filename:str, delimiter:str=";")->None:
@@ -39,6 +43,21 @@ def store_replay_buffer_in_csv(replay_buffer:list, filename:str, delimiter:str="
         writer_object = csv.writer(f_object, delimiter=delimiter)
         for (s_t, a_t, r, s_t1, done) in replay_buffer:
             writer_object.writerow([s_t.as_json(), a_t.as_json(), r, s_t1.as_json(), done])
+
+def state_as_ordered_string(state:GameState)->str:
+    ret = ""
+    ret += f"nets:[{','.join([str(x) for x in sorted(state.known_networks)])}],"
+    ret += f"hosts:[{','.join([str(x) for x in sorted(state.known_hosts)])}],"
+    ret += f"controlled:[{','.join([str(x) for x in sorted(state.controlled_hosts)])}],"
+    ret += "services:{"
+    for host in sorted(state.known_services.keys()):
+        ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_services[host])])}]"
+    ret += "},data:{"
+    for host in sorted(state.known_data.keys()):
+        ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_data[host])])}]"
+    ret += "}"
+    return ret
+
 class ConfigParser():
     """
     Class to deal with the configuration file
@@ -281,3 +300,12 @@ class ConfigParser():
             # Option is not in the configuration - default to FALSE
             randomize_goal_every_episode = False
         return randomize_goal_every_episode
+    
+if __name__ == "__main__":
+    state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
+            known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
+            known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
+            known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
+                        IP("192.168.1.2"):{Data("McGiver", "data2")}})
+    
+    print(state_as_ordered_string(state))

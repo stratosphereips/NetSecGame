@@ -5,7 +5,6 @@ import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
 import numpy as np
-#from random import choice, seed
 import random
 import pickle
 import sys
@@ -21,44 +20,54 @@ sys.path.append( path.dirname(path.dirname(path.dirname( path.abspath(__file__) 
 
 #with the path fixed, we can import now
 from env.network_security_game import NetworkSecurityEnvironment
-from env.game_components import Action, ActionType, Observation
+from env.game_components import Action, ActionType, Observation, GameState
+from utils.utils import state_as_ordered_string
 
 class QAgent:
     """
     Class implementing the Q-Learning algorithm
     """
-
     def __init__(self, env, alpha=0.1, gamma=0.6, epsilon=0.1):
         self.env = env
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
         self.q_values = {}
+        self._str_to_id = {}
 
     def store_q_table(self,filename):
         with open(filename, "wb") as f:
-            pickle.dump(self.q_values, f)
+            data = {"q_table":self.q_values, "state_mapping": self._str_to_id}
+            pickle.dump(data, f)
 
     def load_q_table(self,filename):
         with open(filename, "rb") as f:
-            self.q_values = pickle.load(f)
-
-    def get_valid_actions(self, state) -> list:
-        """
-        Given a state, choose the valid actions
-        """
+            data = pickle.load(f)
+            self.q_values = data["q_table"]
+            self._str_to_id = data["state_mapping"]
+    
+    def get_valid_actions(self, state: GameState) -> set:
         valid_actions = set()
-        #Network Scans
+        # Network Scans
         for network in state.known_networks:
             # TODO ADD neighbouring networks
-            valid_actions.add(Action(ActionType.ScanNetwork, params={"target_network": network}))
+            valid_actions.add(
+                Action(ActionType.ScanNetwork, params={"target_network": network})
+            )
         # Service Scans
         for host in state.known_hosts:
-            valid_actions.add(Action(ActionType.FindServices, params={"target_host": host}))
+            valid_actions.add(
+                Action(ActionType.FindServices, params={"target_host": host})
+            )
         # Service Exploits
         for host, service_list in state.known_services.items():
             for service in service_list:
-                valid_actions.add(Action(ActionType.ExploitService, params={"target_host": host , "target_service": service}))
+                valid_actions.add(
+                    Action(
+                        ActionType.ExploitService,
+                        params={"target_host": host, "target_service": service},
+                    )
+                )
         # Data Scans
         for host in state.controlled_hosts:
             valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
@@ -68,32 +77,51 @@ class QAgent:
             for data in data_list:
                 for trg_host in state.controlled_hosts:
                     if trg_host != src_host:
-                        valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
-        return list(valid_actions)
+                        valid_actions.add(
+                            Action(
+                                ActionType.ExfiltrateData,
+                                params={
+                                    "target_host": trg_host,
+                                    "source_host": src_host,
+                                    "data": data,
+                                },
+                            )
+                        )
+        return valid_actions
 
+    def get_state_id(self, state:GameState) -> int:
+        state_str = state_as_ordered_string(state)
+        if state_str not in self._str_to_id:
+            self._str_to_id[state_str] = len(self._str_to_id)
+        return self._str_to_id[state_str]
+    
     def move(self, observation:Observation, testing=False) -> Action:
         state = observation.state
         actions = self.get_valid_actions(state)
-        state = '1'
+        state_id = self.get_state_id(state)
+        
         logger.info(f'The valid actions in this state are: {[str(action) for action in actions]}')
         if random.uniform(0, 1) <= self.epsilon and not testing:
-            action = random.choice(actions)
-            if (state, action) not in self.q_values:
-                self.q_values[state, action] = 0
+            action = random.choice(list(actions))
+            if (state_id, action) not in self.q_values:
+                self.q_values[state_id, action] = 0
             return action
         else: #greedy play
             #select the acion with highest q_value
-            tmp = dict(((state,action), self.q_values.get((state,action), 0)) for action in actions)
-            max_q_key = max(tmp, key=tmp.get)
-            if max_q_key not in self.q_values:
-                self.q_values[max_q_key] = 0
-            return max_q_key[1]
+            tmp = dict(((state_id,action), self.q_values.get((state_id,action), 0)) for action in actions)
+            state_id, action = max(tmp, key=tmp.get)
+            #if max_q_key not in self.q_values:
+            try:
+                self.q_values[state_id, action]
+            except KeyError:
+                self.q_values[state_id, action] = 0
+            return action
 
     def max_action_q(self, observation:Observation) -> Action:
         state = observation.state
         actions = self.get_valid_actions(state)
-        state = '1'
-        tmp = dict(((state,a), self.q_values.get((state,a), 0)) for a in actions)
+        state_id = self.get_state_id(state)
+        tmp = dict(((state_id, a), self.q_values.get((state_id, a), 0)) for a in actions)
         return tmp[max(tmp,key=tmp.get)] #return maximum Q_value for a given state (out of available actions)
 
     def play(self, observation:Observation, testing=False) -> tuple:
@@ -122,16 +150,11 @@ class QAgent:
 
             # Update q values
             state = observation.state
+            state_id = self.get_state_id(state)
 
-            raise Exception(" This is broken dont use!")
-
-            state = '1'
-            new_q = self.q_values[state, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[state, action])
-            self.q_values[state, action] = new_q
-            # This is broken dont use!
-            state = observation.state
-
-
+            new_q = self.q_values[state_id, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[state_id, action])
+            self.q_values[state_id, action] = new_q
+            
             rewards += next_observation.reward
 
             # Move to next observation
@@ -166,46 +189,41 @@ class QAgent:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=1000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=8000, type=int)
     parser.add_argument("--epsilon", help="Sets epsilon for exploration", default=0.2, type=float)
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
     parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.3, type=float)
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=True, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1", type=str)
     parser.add_argument("--test", help="Do not train, only run test", default=False, action="store_true")
-    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=50, type=int)
+    parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=100, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
-    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=True, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
-    parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
     parser.add_argument("--filename", help="Load previous model file", type=str, default=False)
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
-    args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key not in ["evaluate", "eval_each", "eval_for"])) + ".pickle"
+    args.filename = f"QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key in ["episodes", "gamma", "epsilon", "alpha"])) + ".pickle"
 
     # Remove all handlers associated with the root logger object.
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
 
-    logging.basicConfig(filename='q_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+    logging.basicConfig(filename='q_agent.log', filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     logger = logging.getLogger('Q-agent')
 
+    # Training
+    logger.info(f'Initializing the environment')
+    env = NetworkSecurityEnvironment(args.task_config_file)
+
     # Setup tensorboard
-    run_name = f"netsecgame__qlearning__{args.seed}__{int(time.time())}"
+    run_name = f"netsecgame__qlearning__{env.seed}__{int(time.time())}"
     writer = SummaryWriter(f"agents/tensorboard-logs/logs/{run_name}")
     writer.add_text(
         "hypherparameters",
         "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
     )
 
-    random.seed(args.seed)
-    np.random.seed(args.seed)
+    random.seed(env.seed)
+    np.random.seed(env.seed)
 
-    # Training
-    logger.info(f'Initializing the environment')
-    env = NetworkSecurityEnvironment(args.task_config_file)
     observation = env.reset()
 
     logger.info('Creating the agent')
@@ -284,7 +302,8 @@ if __name__ == '__main__':
 
         # Store the q table on disk
         agent.store_q_table(args.filename)
-
+    agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
+    agent.load_q_table(args.filename)
     # Test
     wins = 0
     detected = 0
@@ -304,8 +323,8 @@ if __name__ == '__main__':
         returns += [ret]
         num_steps += [steps]
 
-        test_win_rate = (wins/(args.test_for+1))*100
-        test_detection_rate = (detected/(args.test_for+1))*100
+        test_win_rate = (wins/(i+1))*100
+        test_detection_rate = (detected/(i+1))*100
         test_average_returns = np.mean(returns)
         test_std_returns = np.std(returns)
         test_average_episode_steps = np.mean(num_steps)
