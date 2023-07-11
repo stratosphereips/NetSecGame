@@ -5,6 +5,7 @@
 import netaddr
 import env.game_components as components
 import random
+import itertools
 import copy
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 import numpy as np
@@ -112,9 +113,11 @@ class NetworkSecurityEnvironment(object):
         else:
             logger.info("Storing of replay buffer disabled")
             self._episode_replay_buffer = None
+        
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
         self._current_goal = None
+        self._actions_played = []
         # If the game finished
         self._done = None
         # If the episode/action was detected by the defender
@@ -657,6 +660,26 @@ class NetworkSecurityEnvironment(object):
         goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
         return goal_reached
 
+    def _rule_based_detection(self, state:components.GameState, action:components.Action)->bool:
+        """ Method used for rule-based defender detections"""
+        match action.type:
+            case components.ActionType.ScanNetwork:
+                if len(self._actions_played) > 1:
+                    last_five_action = [action for step in self._actions_played[-5:]]
+                    last_five_action_types = [action.type for action in last_five_action]
+                    num_scans_in_previous_five = last_five_action_types.count(components.ActionType.ScanNetwork)
+                    
+                    max_consecutive_net_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
+                                                    for _,grouped in itertools.groupby(last_five_action_types))
+                    scanned_ips = [action.parameters["target_network"] for action in self._actions_played if
+                                    action.type == components.ActionType.ScanNetwork]
+                    scans_per_ip = {x:scanned_ips.count(x) for x in set(scanned_ips)}
+                    return num_scans_in_previous_five < 3 or max(scans_per_ip.values()) < 2 or max_consecutive_net_scans <3
+                else:
+                    return False
+            case _:
+                return False
+    
     def _is_detected(self, state, action:components.Action)->bool:
         """
         Checks if current action was detected based on the defendr type:
@@ -668,7 +691,10 @@ class NetworkSecurityEnvironment(object):
                     logger.info(f"\tAction detected?: {value}")
                     return value
                 case "RuleBased":
-                    return False
+                    logger.info(f"Checking detection based on rules: {action}")
+                    detection = self._rule_based_detection(state, action)
+                    logger.info(f"\tAction detected?: {detection}")
+                    return detection
         else: # No defender in the environment
             logger.info("\tNo defender present")
             return False
@@ -682,6 +708,7 @@ class NetworkSecurityEnvironment(object):
         self._done = False
         self._step_counter = 0
         self._detected = False
+        self._actions_played = []
         
         # write all steps in the episode replay buffer in the file
         if self._episode_replay_buffer is not None:
@@ -719,6 +746,7 @@ class NetworkSecurityEnvironment(object):
 
             # 1. Check if the action was successful or not
             if random.random() <= action.type.default_success_p:
+                self._actions_played.append(action)
                 # The action was successful
                 logger.info('\tAction sucessful')
 
