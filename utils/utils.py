@@ -264,7 +264,11 @@ class ConfigParser():
         """
         Get the type of the defender
         """
-        defender_placements = self.config['agents']['defender']['type']
+        try:
+            defender_placements = self.config['agents']['defender']['type']
+        except KeyError:
+            # Option is not in the configuration - default to no defender present
+            defender_placements = "NoDefender"
         return defender_placements
 
     def get_scenario(self):
