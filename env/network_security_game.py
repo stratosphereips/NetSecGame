@@ -316,7 +316,7 @@ class NetworkSecurityEnvironment(object):
         For now only if it is present
         """
         logger.info("\tStoring defender placement")
-        placements = self.task_config.get_defender_placement()
+        placements = self.task_config.get_defender_type()
         if placements == 'StochasticDefender':
             logger.info(f"\t\tDefender placed as type {placements}")
             # For now there is only one type of defender

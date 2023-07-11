@@ -260,9 +260,9 @@ class ConfigParser():
             store_rb = False
         return store_rb
     
-    def get_defender_placement(self):
+    def get_defender_type(self):
         """
-        Get the position of the defender
+        Get the type of the defender
         """
         defender_placements = self.config['agents']['defender']['type']
         return defender_placements
