@@ -321,15 +321,15 @@ class NetworkSecurityEnvironment(object):
             case 'StochasticDefender':
                 logger.info(f"\t\tDefender placed as type {defender_type}")
                 # For now there is only one type of defender
-                self._defender_placements = "Stochastic"
+                self._defender_type = "Stochastic"
             case "NoDefender":
                 logger.info("\t\tNo defender present in the environment")
-                self._defender_placements = None
+                self._defender_type = None
             case "RuleBased":
                 logger.info(f"\t\tDefender placed as type {defender_type}")
-                self._defender_placements = "RuleBased"
+                self._defender_type = "RuleBased"
             case _: # Default option - no defender
-                self._defender_placements = None
+                self._defender_type = None
 
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
@@ -661,8 +661,8 @@ class NetworkSecurityEnvironment(object):
         """
         Checks if current action was detected based on the defendr type:
         """
-        if self._defender_placements is not None: # There is a defender present
-            match self._defender_placements:
+        if self._defender_type is not None: # There is a defender present
+            match self._defender_type:
                 case "Stochastic":
                     value = random.random() < action.type.default_detection_p
                     logger.info(f"\tAction detected?: {value}")
