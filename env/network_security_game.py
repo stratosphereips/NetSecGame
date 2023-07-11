@@ -659,14 +659,17 @@ class NetworkSecurityEnvironment(object):
 
     def _is_detected(self, state, action:components.Action)->bool:
         """
-        Check if this action was detected by the global defender
-        based on the probabilitiy distribution in the action configuration
+        Checks if current action was detected based on the defendr type:
         """
-        if self._defender_placements:
-            value = random.random() < action.type.default_detection_p
-            logger.info(f"\tAction detected?: {value}")
-            return value
-        else: #no defender
+        if self._defender_placements is not None: # There is a defender present
+            match self._defender_placements:
+                case "Stochastic":
+                    value = random.random() < action.type.default_detection_p
+                    logger.info(f"\tAction detected?: {value}")
+                    return value
+                case "RuleBased":
+                    return False
+        else: # No defender in the environment
             logger.info("\tNo defender present")
             return False
 
