@@ -321,13 +321,16 @@ class NetworkSecurityEnvironment(object):
             case 'StochasticDefender':
                 logger.info(f"\t\tDefender placed as type {defender_type}")
                 # For now there is only one type of defender
-                self._defender_placements = True
+                self._defender_placements = "Stochastic"
             case "NoDefender":
                 logger.info("\t\tNo defender present in the environment")
                 self._defender_placements = None
+            case "RuleBased":
+                logger.info(f"\t\tDefender placed as type {defender_type}")
+                self._defender_placements = "RuleBased"
             case _: # Default option - no defender
                 self._defender_placements = None
-        
+
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
         Process the cyst configuration file
