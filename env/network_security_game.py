@@ -316,17 +316,18 @@ class NetworkSecurityEnvironment(object):
         For now only if it is present
         """
         logger.info("\tStoring defender placement")
-        placements = self.task_config.get_defender_type()
-        if placements == 'StochasticDefender':
-            logger.info(f"\t\tDefender placed as type {placements}")
-            # For now there is only one type of defender
-            self._defender_placements = True
-        elif placements == 'NoDefender':
-            logger.info("\t\tNo defender present in the environment")
-            self._defender_placements = False
-        else:
-            self._defender_placements = False
-
+        defender_type = self.task_config.get_defender_type()
+        match defender_type:
+            case 'StochasticDefender':
+                logger.info(f"\t\tDefender placed as type {defender_type}")
+                # For now there is only one type of defender
+                self._defender_placements = True
+            case "NoDefender":
+                logger.info("\t\tNo defender present in the environment")
+                self._defender_placements = None
+            case _: # Default option - no defender
+                self._defender_placements = None
+        
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
         Process the cyst configuration file
