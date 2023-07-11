@@ -677,6 +677,15 @@ class NetworkSecurityEnvironment(object):
                     return num_scans_in_previous_five < 3 or max(scans_per_ip.values()) < 2 or max_consecutive_net_scans <3
                 else:
                     return False
+            case components.ActionType.ExploitService:
+                # detect if target host does not have corresponding service
+                if self._ip_to_hostname[action.parameters["target_host"]] in self._services:
+                    if action.parameters["target_service"] not in self._services[self._ip_to_hostname[action.parameters["target_host"]]]:
+                        return True
+                    else:
+                        return False
+                else: # detect if target host does not have any service
+                    return True
             case _:
                 return False
     
