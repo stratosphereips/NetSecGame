@@ -1,4 +1,4 @@
-# Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
+# Author:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import numpy as np
 import argparse
 import logging
@@ -153,6 +153,9 @@ class GnnReinforceAgent:
         return graph_tensor
 
     def _build_batch_graph(self, state_graphs):
+        """
+        Method taking a list of graphs and and producing a TFGNN batched graph
+        """
         def _gen_from_list():
             for g in state_graphs:
                 yield g
@@ -165,6 +168,7 @@ class GnnReinforceAgent:
         return scalar_graph_tensor
 
     def _get_discounted_rewards(self, rewards: list) -> list:
+        """ Method for discounting rewards with gamma for the REINFORCE algorithm"""
         returns = np.array(
             [self.args.gamma**i * rewards[i] for i in range(len(rewards))]
         )
@@ -172,6 +176,8 @@ class GnnReinforceAgent:
         return returns.tolist()
 
     def _generate_valid_actions(self, state: GameState) -> set:
+        """ Method producing a set of action that can be taken in a given state"""
+        
         valid_actions = set()
         # Network Scans
         for network in state.known_networks:
@@ -215,6 +221,9 @@ class GnnReinforceAgent:
         return valid_actions
 
     def get_valid_action_mask(self, state: GameState):
+        """ Method producing mask for valid actions
+          in self._transition_mapping based on a given state"""
+
         mask = np.zeros(len(self._transition_mapping))
         valid_actions = self._generate_valid_actions(state)
         for k, action in self._transition_mapping.items():
