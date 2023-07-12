@@ -40,6 +40,22 @@ action_mapper = {
     "ExploitService": ActionType.ExploitService
 }
 
+# First instructions for the LLM (order 1 in sending)
+INSTRUCTIONS_TEMPLATE = """
+You are an attacker. Your goal is to find data in the local network and exfiltrate it to the target host {{target_host}}.
+Actions you can:
+
+Rules are:
+1. You can only scan the networks you know.
+2. You can only scan services in hosts you know.
+3. You can only exploit services when you know the service.
+4. You can find data in hosts you control.
+5. You can exfiltrate known data to and from controlled hosts.
+
+Do not repeat actions that you took in the past.
+Do not scan and exploit services in hosts you control.
+"""
+
 # This is how we tell the LLM a template to give us back the actions (order 2 in sending)
 EXAMPLE_PROMPT = """
 Example of a state after an action:
@@ -58,21 +74,6 @@ Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "da
 End of example.
 """
 
-# First instructions for the LLM (order 1 in sending)
-INSTRUCTIONS_TEMPLATE = """
-You are an attacker. Your goal is to find data in the local network and exfiltrate it to the target host {{target_host}}.
-Actions you can:
-
-Rules are:
-1. You can only scan the networks you know.
-2. You can only scan services in hosts you know.
-3. You can only exploit services when you know the service.
-4. You can find data in hosts you control.
-5. You can exfiltrate known data to and from controlled hosts.
-
-Do not repeat actions that you took in the past.
-Do not scan and exploit services in hosts you control.
-"""
 
 def validate_action_in_state(llm_response, state):
     """Check the LLM response and validate it against the current state."""
@@ -123,11 +124,7 @@ def create_status_from_state(state, memory_list):
     prompt = "These are the actions you already took in the past:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
-            try:
-                _ = memory[2]
-                prompt += f'You took action {memory[0]} of {memory[1]} and {memory[2]}\n'
-            except IndexError:
-                prompt += f'You took action {memory[0]} of {memory[1]}\n'
+            prompt += f'You took action {memory[0]} of {memory[1]}.\n'
     else:
         prompt += ""
 
@@ -217,7 +214,8 @@ def create_action_from_response(llm_response, state, actions_took_in_episode):
         for past_action in actions_took_in_episode:
             if action == past_action:
                 return False, False, actions_took_in_episode
-    
+
+    # Store action in memory of all actions so far 
     actions_took_in_episode.append(action)
     return valid, action, actions_took_in_episode
 
@@ -309,8 +307,8 @@ if __name__ == "__main__":
                     {"role": "system", "content": instructions},
                     {"role": "user", "content": EXAMPLE_PROMPT},
                     {"role": "user", "content": status_prompt},
-                    {"role": "user", "content": "\nSelect a valid action with the correct format and parameters.\nIf an action is in your list of past actions do not chose that action!\nDO NOT REPEAT PAST ACTIONS!"},
-                    {"role": "user", "content": "Action: "}
+                    {"role": "user", "content": "\n\nSelect a valid action with the correct format and parameters.\nIf an action is in your list of past actions do not chose that action!\nDO NOT REPEAT PAST ACTIONS!"},
+                    {"role": "user", "content": "\n\nAction: "}
                 ]
             
             logger.info(f'Text sent to the LLM: {messages}')
@@ -372,16 +370,24 @@ if __name__ == "__main__":
 
             # Create the memory for the next step of the LLM
             try:
+                memory_text = ''
                 if not is_valid:
-                    memories.append((response["action"], response["parameters"], "Action not valid."))
+                    memory_text = "Action not valid in this state."
                 else:
                     # This is based on the assumption that more valid actions in the state are better/more helpful.
                     # But we could a manual evaluation based on the prior knowledge and weight the different components.
                     # For example: finding new data is better than discovering hosts (?)
                     if good_action:
-                        memories.append((response["action"], response["parameters"], ))
+                        memory_text = 'Good action.'
                     else:
-                        memories.append((response["action"], response["parameters"], "was a bad action to take."))
+                        memory_text = "Bad action."
+
+                    for past_action in actions_took_in_episode:
+                        if action == past_action:
+                            memory_text = "That action you choose is in your memory. I told you not to repeat actions from the memory!"
+                memories.append((response["action"], response["parameters"], memory_text))
+
+
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
                 memories.append(f"Response '{response}' has bad format.")
