@@ -262,6 +262,7 @@ if __name__ == "__main__":
     num_win_steps = []
     num_detected_steps = []
 
+    # Control to save the 1st prompt in tensorboard
 
     for episode in range(1, args.test_episodes + 1):
 
