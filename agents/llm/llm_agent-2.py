@@ -80,11 +80,11 @@ def get_long_term_interepisode_memory(actions_took_in_episode: list, type_of_end
     # TODO: Ask the LLM to summarize the episode.
 
     if type_of_end == 'win':
-        reward_memory += f'\n\nYou won the game with these actions! Congratulations. Remember them.'
+        reward_memory += f'\n\nYou won the last game with this action: {actions_took_in_episode[-1]}! Congratulations. Remember it.'
     elif type_of_end == 'detection':
-        reward_memory += f'\n\nYou lost the game because you were detected by the defender. Remember.'
+        reward_memory += f'\n\nYou lost the last game because you were detected by the defender. Remember this.'
     elif type_of_end == 'max_steps':
-        reward_memory += f'\n\nYou lost the game because you did too many actions without reaching the goal. Remember.'
+        reward_memory += f'\n\nYou lost the last game because you did too many actions without reaching the goal. Remember this.'
     return reward_memory
 
 def validate_action_in_state(llm_response, state):
