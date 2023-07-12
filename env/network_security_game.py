@@ -668,42 +668,50 @@ class NetworkSecurityEnvironment(object):
             last_n_actions = self._actions_played[-self._defender_thresholds["tw_size"]:]
             last_n_action_types = [action.type for action in last_n_actions]
             repeated_action_episode = self._actions_played.count(action)
+            logger.info(f'\tThreshold check:{last_n_actions}, repeated:{repeated_action_episode}')
+            
+            # update threh
             match action.type: # thresholds are based on action type
                 case components.ActionType.ScanNetwork:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ScanNetwork)/len(last_n_actions)
+                    tw_ratio = last_n_action_types.count(components.ActionType.ScanNetwork)/self._defender_thresholds["tw_size"]
                     num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
                                                 for _,grouped in itertools.groupby(last_n_action_types))
                     if tw_ratio < self._defender_thresholds[components.ActionType.ScanNetwork]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ScanNetwork]["consecutive_actions"]:
                         return False
                     else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}, #consecutive actions:{num_consecutive_scans}")
                         return self._stochastic_detection(action)
                 case components.ActionType.FindServices:
-                    tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/len(last_n_actions)
+                    tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/self._defender_thresholds["tw_size"]
                     num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.FindServices)
                                                 for _,grouped in itertools.groupby(last_n_action_types))
                     if tw_ratio < self._defender_thresholds[components.ActionType.FindServices]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.FindServices]["consecutive_actions"]:
                         return False
                     else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}, #consecutive actions:{num_consecutive_scans}")
                         return self._stochastic_detection(action)
                 case components.ActionType.FindData:
-                    tw_ratio = last_n_action_types.count(components.ActionType.FindData)/len(last_n_actions)
+                    tw_ratio = last_n_action_types.count(components.ActionType.FindData)/self._defender_thresholds["tw_size"]
                     if tw_ratio < self._defender_thresholds[components.ActionType.FindData]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.FindData]["repeated_actions_episode"]:
                         return False
                     else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}, #repeated actions:{repeated_action_episode}")
                         return self._stochastic_detection(action)
                 case components.ActionType.ExploitService:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ExploitService)/len(last_n_actions)
+                    tw_ratio = last_n_action_types.count(components.ActionType.ExploitService)/self._defender_thresholds["tw_size"]
                     if tw_ratio < self._defender_thresholds[components.ActionType.ExploitService]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.ExploitService]["repeated_actions_episode"]:
                         return False
                     else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}, #repeated actions:{repeated_action_episode}")
                         return self._stochastic_detection(action)
                 case components.ActionType.ExfiltrateData:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ExfiltrateData)/len(last_n_actions)
+                    tw_ratio = last_n_action_types.count(components.ActionType.ExfiltrateData)/self._defender_thresholds["tw_size"]
                     num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ExfiltrateData)
                                                 for _,grouped in itertools.groupby(last_n_action_types))
                     if tw_ratio < self._defender_thresholds[components.ActionType.ExfiltrateData]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ExfiltrateData]["consecutive_actions"]:
                         return False
                     else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}, #consecutive actions:{num_consecutive_scans}")
                         return self._stochastic_detection(action)
                 case _: # default case - No detection
                     return False
