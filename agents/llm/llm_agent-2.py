@@ -263,6 +263,7 @@ if __name__ == "__main__":
     num_detected_steps = []
 
     # Control to save the 1st prompt in tensorboard
+    save_first_prompt = False
 
     for episode in range(1, args.test_episodes + 1):
 
@@ -294,8 +295,6 @@ if __name__ == "__main__":
         data = goal["known_data"][target_host].pop()
         # Fill the instructions template with some info fromt the goal
         instructions = template.render(target_host=target_host)
-
-        save_first_prompt = False
 
         for i in range(num_iterations):
             # A good action is when the state changed after taking it. 
