@@ -69,6 +69,23 @@ Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "da
 End of example.
 """
 
+def get_long_term_interepisode_memory(actions_took_in_episode: list, type_of_end: str) -> str:
+    """
+    Build a prompt for the next episode
+    Use the past list of actions and how the last game ended and
+    ask the LLM to summarize it.
+    """
+    reward_memory = ''
+
+    # TODO: Ask the LLM to summarize the episode.
+
+    if type_of_end == 'win':
+        reward_memory += f'\n\nYou won the game with these actions! Congratulations. Remember them.'
+    elif type_of_end == 'detection':
+        reward_memory += f'\n\nYou lost the game because you were detected by the defender. Remember.'
+    elif type_of_end == 'max_steps':
+        reward_memory += f'\n\nYou lost the game because you did too many actions without reaching the goal. Remember.'
+    return reward_memory
 
 def validate_action_in_state(llm_response, state):
     """Check the LLM response and validate it against the current state."""
@@ -239,6 +256,7 @@ if __name__ == "__main__":
     parser.add_argument("--memory_buffer", help="Number of actions to remember and pass to the LLM", default=10, action='store', required=False, type=int)
     parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-0613", "gpt-3.5-turbo-0301"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
     parser.add_argument("--force_ignore", help="Force ignore repeated actions in code", default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--long_memory", help="Remember between consecutive episodes.", default=False, action=argparse.BooleanOptionalAction)
 
     args = parser.parse_args()
 
@@ -256,6 +274,7 @@ if __name__ == "__main__":
     num_steps = []
     num_win_steps = []
     num_detected_steps = []
+    reward_memory = ''
 
     # Control to save the 1st prompt in tensorboard
     save_first_prompt = False
@@ -302,6 +321,7 @@ if __name__ == "__main__":
             messages = [
                     {"role": "system", "content": instructions},
                     {"role": "user", "content": EXAMPLE_PROMPT},
+                    {"role": "user", "content": reward_memory},
                     {"role": "user", "content": status_prompt},
                     {"role": "user", "content": "\n\nSelect a valid action with the correct format and parameters.\nIf an action is in your list of past actions do not chose that action!\nDO NOT REPEAT PAST ACTIONS!"},
                     {"role": "user", "content": "\n\nAction: "}
@@ -340,7 +360,8 @@ if __name__ == "__main__":
                     good_action = True
                     current_state = observation.state
 
-            logger.info(f"Iteration: {i}. Is action valid to be taken: {is_valid}, did action change status: {good_action}")
+            logger.info(f"Did action change status: {good_action}")
+
             if observation.done:
                 reason = observation.info
                 # Did we win?
@@ -353,17 +374,24 @@ if __name__ == "__main__":
                 if 'goal_reached' in reason['end_reason']:
                     wins += 1
                     num_win_steps += [steps]
+                    type_of_end = 'win'
                 elif 'detected' in reason['end_reason']:
                     detected += 1
                     num_detected_steps += [steps]
+                    type_of_end = 'detection'
                 else:
                     num_win_steps += [0]
                     num_detected_steps += [0]
+                    type_of_end = 'max_steps'
+                
+                # Build the interepisode memory
+                if args.long_memory:
+                    reward_memory = get_long_term_interepisode_memory(actions_took_in_episode, type_of_end)
                     
                 returns += [epi_return]
                 num_steps += [steps]
-                logger.info(f"\tGame ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
-                print(f"\tGame ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
+                logger.info(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
+                print(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
                 break
 
             # Create the memory for the next step of the LLM
@@ -376,18 +404,18 @@ if __name__ == "__main__":
                     # But we could a manual evaluation based on the prior knowledge and weight the different components.
                     # For example: finding new data is better than discovering hosts (?)
                     if good_action:
-                        memory_text = 'Good action.'
+                        memory_text = 'Good action to be chosen in this context.'
                     else:
-                        memory_text = "Bad action."
+                        memory_text = "Bad action to be chosen in this context."
 
                     for past_action in actions_took_in_episode:
                         if action == past_action:
                             memory_text = "That action you choose is in your memory. I told you not to repeat actions from the memory!"
-                    memories.append((response["action"], response["parameters"], memory_text))
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
-                memories.append(f"Response '{response}' has bad format.")
-    
+                memory_text = " Action has bad format. Go back to create good formated actions."
+            memories.append((response["action"], response["parameters"], memory_text))
+
     # After all episodes are done. Compute statistics
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100
