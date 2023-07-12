@@ -119,7 +119,7 @@ def create_status_from_state(state, memory_list):
     prompt = "These are the actions you already took in the past:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
-            prompt += f'You took action {memory[0]} of {memory[1]}.\n'
+            prompt += f'You took action {memory[0]} of {memory[1]}. {memory[2]}.\n'
     else:
         prompt += ""
 
