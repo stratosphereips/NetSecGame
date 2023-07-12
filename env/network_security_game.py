@@ -706,6 +706,10 @@ class NetworkSecurityEnvironment(object):
                 case _: # default case - No detection
                     return False
         return False
+    
+    def _stochastic_detection(self, action: components.Action)->bool:
+        return random.random() < action.type.default_detection_p
+    
     def _is_detected(self, state, action:components.Action)->bool:
         """
         Checks if current action was detected based on the defendr type:
@@ -713,9 +717,9 @@ class NetworkSecurityEnvironment(object):
         if self._defender_type is not None: # There is a defender present
             match self._defender_type:
                 case "Stochastic":
-                    value = random.random() < action.type.default_detection_p
-                    logger.info(f"\tAction detected?: {value}")
-                    return value
+                    detection = self._stochastic_detection
+                    logger.info(f"\tAction detected?: {detection}")
+                    return detection
                 case "RuleBased":
                     logger.info(f"Checking detection based on rules: {action}")
                     detection = self._rule_based_detection(state, action)
