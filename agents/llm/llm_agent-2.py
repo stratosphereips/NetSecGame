@@ -302,6 +302,7 @@ if __name__ == "__main__":
             # It is not precise because the action can be successful and still not change the state.
             good_action = False
 
+            # Here memories are also added to the future prompt.
             status_prompt = create_status_from_state(observation.state, memories[-args.memory_buffer:])
             messages = [
                     {"role": "system", "content": instructions},
@@ -385,9 +386,7 @@ if __name__ == "__main__":
                     for past_action in actions_took_in_episode:
                         if action == past_action:
                             memory_text = "That action you choose is in your memory. I told you not to repeat actions from the memory!"
-                memories.append((response["action"], response["parameters"], memory_text))
-
-
+                    memories.append((response["action"], response["parameters"], memory_text))
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
                 memories.append(f"Response '{response}' has bad format.")
