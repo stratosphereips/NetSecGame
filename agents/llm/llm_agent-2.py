@@ -25,11 +25,6 @@ openai.api_key = config["OPENAI_API_KEY"]
 
 local_services_to_ignore = ['can_attack_start_here']
 
-# Text that is going to be added to the tensorboard. Put any description you want
-experiment_description = "LLM agent."
-#experiment_description = "LLM agent. Scenario Small. 30 steps. No defender"
-
-
 
 # This maps is so the LLM has a better understanding of what real action should be done acording to the string given
 action_mapper = {
@@ -414,6 +409,11 @@ if __name__ == "__main__":
         average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f},
         average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
         average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}'''
+
+
+    # Text that is going to be added to the tensorboard. Put any description you want
+
+    experiment_description = "LLM agent. " + f"Model: {args.llm}" + f"Conf: {args.task_config_file}" + f"Max steps: {env._max_steps}" + f"Seed: {env._seed}"
 
     writer.add_text("Description", experiment_description)
     writer.add_hparams(vars(args), tensorboard_dict)
