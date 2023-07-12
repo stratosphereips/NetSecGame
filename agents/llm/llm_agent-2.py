@@ -219,7 +219,7 @@ def create_action_from_response(llm_response, state, actions_took_in_episode):
     actions_took_in_episode.append(action)
     return valid, action, actions_took_in_episode
 
-@retry(stop=stop_after_attempt(3))
+@retry(stop=stop_after_attempt(30))
 def openai_query(msg_list, model, max_tokens=60):
     """
     Send messages to OpenAI API and return the response.
