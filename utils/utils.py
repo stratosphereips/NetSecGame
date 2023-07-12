@@ -272,27 +272,28 @@ class ConfigParser():
         return defender_placements
     
     def get_defender_tw_size(self):
-        tw_size = self.config["defender"]["tw_size"]
+        tw_size = self.config["agents"]["defender"]["tw_size"]
         return tw_size
     
     def get_defender_thresholds(self):
         """Function to read thresholds for stochastic defender with thresholds"""
         thresholds = {}
+        config_thresholds = self.config["agents"]["defender"]["thresholds"]
         # ScanNetwork
-        thresholds[ActionType.ScanNetwork] = {"consecutive_actions": self.config["defender"]["thresholds"]["scan_network"]["consecutive_actions"]}
-        thresholds[ActionType.ScanNetwork]["tw_ratio"] = self.config["defender"]["thresholds"]["scan_network"]["tw_ratio"]
+        thresholds[ActionType.ScanNetwork] = {"consecutive_actions": config_thresholds["scan_network"]["consecutive_actions"]}
+        thresholds[ActionType.ScanNetwork]["tw_ratio"] = config_thresholds["scan_network"]["tw_ratio"]
         # FindServices
-        thresholds[ActionType.FindServices] = {"consecutive_actions": self.config["defender"]["thresholds"]["find_services"]["consecutive_actions"]}
-        thresholds[ActionType.FindServices]["tw_ratio"] = self.config["defender"]["thresholds"]["find_services"]["tw_ratio"]
+        thresholds[ActionType.FindServices] = {"consecutive_actions": config_thresholds["find_services"]["consecutive_actions"]}
+        thresholds[ActionType.FindServices]["tw_ratio"] = config_thresholds["find_services"]["tw_ratio"]
         # FindData
-        thresholds[ActionType.FindData] = {"repeated_actions_episode": self.config["defender"]["thresholds"]["find_data"]["repeated_actions_episode"]}
-        thresholds[ActionType.FindServices]["tw_ratio"] = self.config["defender"]["thresholds"]["find_data"]["tw_ratio"]
+        thresholds[ActionType.FindData] = {"repeated_actions_episode": config_thresholds["find_data"]["repeated_actions_episode"]}
+        thresholds[ActionType.FindServices]["tw_ratio"] = config_thresholds["find_data"]["tw_ratio"]
         # ExploitService
-        thresholds[ActionType.ExploitService] = {"repeated_actions_episode": self.config["defender"]["thresholds"]["exploit_service"]["repeated_actions_episode"]}
-        thresholds[ActionType.ExploitService]["tw_ratio"] = self.config["defender"]["thresholds"]["exploit_service"]["tw_ratio"]
+        thresholds[ActionType.ExploitService] = {"repeated_actions_episode": config_thresholds["exploit_service"]["repeated_actions_episode"]}
+        thresholds[ActionType.ExploitService]["tw_ratio"] = config_thresholds["exploit_service"]["tw_ratio"]
         # ExfiltrateData
-        thresholds[ActionType.ExfiltrateData] = {"consecutive_actions": self.config["defender"]["thresholds"]["exfiltrate_data"]["consecutive_actions"]}
-        thresholds[ActionType.ExfiltrateData]["tw_ratio"] = self.config["defender"]["thresholds"]["exfiltrate_data"]["tw_ratio"]
+        thresholds[ActionType.ExfiltrateData] = {"consecutive_actions": config_thresholds["exfiltrate_data"]["consecutive_actions"]}
+        thresholds[ActionType.ExfiltrateData]["tw_ratio"] = config_thresholds["exfiltrate_data"]["tw_ratio"]
         return thresholds
 
     def get_scenario(self):
