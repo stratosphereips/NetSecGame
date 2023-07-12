@@ -328,6 +328,8 @@ if __name__ == "__main__":
             except:
                 is_valid = False
 
+            logger.info(f"Iteration: {i}. Is action valid to be taken: {is_valid}, did action change status: {good_action}")
+
             if is_valid:
                 # Take action
                 logger.info(f"Action taken: {response}")
