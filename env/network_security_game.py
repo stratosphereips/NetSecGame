@@ -710,6 +710,7 @@ class NetworkSecurityEnvironment(object):
         return False
     
     def _stochastic_detection(self, action: components.Action)->bool:
+        """ Method stochastic detection based on action default probability"""
         return random.random() < action.type.default_detection_p
     
     def _is_detected(self, state, action:components.Action)->bool:
