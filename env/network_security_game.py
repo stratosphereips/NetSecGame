@@ -660,35 +660,52 @@ class NetworkSecurityEnvironment(object):
         goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
         return goal_reached
 
-    def _rule_based_detection(self, state:components.GameState, action:components.Action)->bool:
-        """ Method used for rule-based defender detections"""
-        match action.type:
-            case components.ActionType.ScanNetwork:
-                if len(self._actions_played) > 1:
-                    last_five_action = [action for step in self._actions_played[-5:]]
-                    last_five_action_types = [action.type for action in last_five_action]
-                    num_scans_in_previous_five = last_five_action_types.count(components.ActionType.ScanNetwork)
-                    
-                    max_consecutive_net_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
-                                                    for _,grouped in itertools.groupby(last_five_action_types))
-                    scanned_ips = [action.parameters["target_network"] for action in self._actions_played if
-                                    action.type == components.ActionType.ScanNetwork]
-                    scans_per_ip = {x:scanned_ips.count(x) for x in set(scanned_ips)}
-                    return num_scans_in_previous_five < 3 or max(scans_per_ip.values()) < 2 or max_consecutive_net_scans <3
-                else:
-                    return False
-            case components.ActionType.ExploitService:
-                # detect if target host does not have corresponding service
-                if self._ip_to_hostname[action.parameters["target_host"]] in self._services:
-                    if action.parameters["target_service"] not in self._services[self._ip_to_hostname[action.parameters["target_host"]]]:
-                        return True
-                    else:
+    def _stochastic_detection_with_thresholds(self, action:components.Action)->bool:        
+        """ Method used for detection with stochastic defender with minimal thresholds"""
+        if len(self._actions_played) > 1: # single action is never detected:
+            last_n_actions = self._actions_played[self._defender_thresholds["tw_size"]:]
+            last_n_action_types = [action.type for action in last_n_actions]
+            repeated_action_episode = self._actions_played.count(action)
+            match action.type: # thresholds are based on action type
+                case components.ActionType.ScanNetwork:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ScanNetwork)/len(last_n_actions)
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ScanNetwork]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ScanNetwork]["consecutive_actions"]:
                         return False
-                else: # detect if target host does not have any service
-                    return True
-            case _:
-                return False
-    
+                    else:
+                        return self._stochastic_detection(action)
+                case components.ActionType.FindServices:
+                    tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/len(last_n_actions)
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.FindServices)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.FindServices]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.FindServices]["consecutive_actions"]:
+                        return False
+                    else:
+                        return self._stochastic_detection(action)
+                case components.ActionType.FindData:
+                    tw_ratio = last_n_action_types.count(components.ActionType.FindData)/len(last_n_actions)
+                    if tw_ratio < self._defender_thresholds[components.ActionType.FindData]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.FindData]["repeated_actions_episode"]:
+                        return False
+                    else:
+                        return self._stochastic_detection(action)
+                case components.ActionType.ExploitService:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ExploitService)/len(last_n_actions)
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ExploitService]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.ExploitService]["repeated_actions_episode"]:
+                        return False
+                    else:
+                        return self._stochastic_detection(action)
+                case components.ActionType.ExfiltrateData:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ExfiltrateData)/len(last_n_actions)
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ExfiltrateData)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ExfiltrateData]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ExfiltrateData]["consecutive_actions"]:
+                        return False
+                    else:
+                        return self._stochastic_detection(action)
+                case _: # default case - No detection
+                    return False
+        return False
     def _is_detected(self, state, action:components.Action)->bool:
         """
         Checks if current action was detected based on the defendr type:
@@ -711,7 +728,7 @@ class NetworkSecurityEnvironment(object):
     def reset(self)->components.Observation:
         """
         Function to reset the state of the game
-        and play a new episode
+        and prepare for a new episode
         """
         logger.info('--- Reseting env to its initial state ---')
         self._done = False
