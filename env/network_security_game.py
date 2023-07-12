@@ -329,7 +329,7 @@ class NetworkSecurityEnvironment(object):
                 logger.info("\t\tNo defender present in the environment")
                 self._defender_type = None
             case "StochasticWithThreshold":
-                logger.info(f"\t\tDefender placed as type {defender_type}")
+                logger.info(f"\t\tDefender placed as type '{defender_type}'")
                 self._defender_type = "StochasticWithThreshold"
                 self._defender_thresholds = self.task_config.get_defender_thresholds()
                 self._defender_thresholds["tw_size"] = self.task_config.get_defender_tw_size()
@@ -665,7 +665,7 @@ class NetworkSecurityEnvironment(object):
     def _stochastic_detection_with_thresholds(self, action:components.Action)->bool:        
         """ Method used for detection with stochastic defender with minimal thresholds"""
         if len(self._actions_played) > 1: # single action is never detected:
-            last_n_actions = self._actions_played[self._defender_thresholds["tw_size"]:]
+            last_n_actions = self._actions_played[-self._defender_thresholds["tw_size"]:]
             last_n_action_types = [action.type for action in last_n_actions]
             repeated_action_episode = self._actions_played.count(action)
             match action.type: # thresholds are based on action type
@@ -723,7 +723,7 @@ class NetworkSecurityEnvironment(object):
                     detection = self._stochastic_detection(action)
                     logger.info(f"\tAction detected?: {detection}")
                     return detection
-                case "RuleBased":
+                case "StochasticWithThreshold":
                     logger.info(f"Checking detection based on rules: {action}")
                     detection = self._stochastic_detection_with_thresholds(action)
                     logger.info(f"\tAction detected?: {detection}")
