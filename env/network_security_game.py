@@ -328,9 +328,11 @@ class NetworkSecurityEnvironment(object):
             case "NoDefender":
                 logger.info("\t\tNo defender present in the environment")
                 self._defender_type = None
-            case "RuleBased":
+            case "StochasticWithThreshold":
                 logger.info(f"\t\tDefender placed as type {defender_type}")
-                self._defender_type = "RuleBased"
+                self._defender_type = "StochasticWithThreshold"
+                self._defender_thresholds = self.task_config.get_defender_thresholds()
+                self._defender_thresholds["tw_size"] = self.task_config.get_defender_tw_size()
             case _: # Default option - no defender
                 self._defender_type = None
 
@@ -717,12 +719,12 @@ class NetworkSecurityEnvironment(object):
         if self._defender_type is not None: # There is a defender present
             match self._defender_type:
                 case "Stochastic":
-                    detection = self._stochastic_detection
+                    detection = self._stochastic_detection(action)
                     logger.info(f"\tAction detected?: {detection}")
                     return detection
                 case "RuleBased":
                     logger.info(f"Checking detection based on rules: {action}")
-                    detection = self._rule_based_detection(state, action)
+                    detection = self._stochastic_detection_with_thresholds(action)
                     logger.info(f"\tAction detected?: {detection}")
                     return detection
         else: # No defender in the environment
