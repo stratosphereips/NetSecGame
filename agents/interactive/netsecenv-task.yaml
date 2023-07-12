@@ -51,23 +51,23 @@ agents:
     # types are StochasticDefender and NoDefender
     #type: 'StochasticDefender'
     type: 'StochasticWithThreshold'
-    tw_size: 10
+    tw_size: 5
     thresholds:
       scan_network:
         consecutive_actions: 2
         tw_ratio: 0.25
       find_services:
-        consecutive_action: 3
+        consecutive_actions: 3
         tw_ratio: 0.3
-      exploit_services:
+      exploit_service:
         repeated_actions_episode: 2
-        tw_ratio: 0.2
+        tw_ratio: 0.25
       find_data:
         tw_ratio: 0.5
         repeated_actions_episode: 2
       exfiltrate_data:
         consecutive_actions: 2
-        tw_ratio: 0.2
+        tw_ratio: 0.25
 
 env:
   random_seed: 42
@@ -77,16 +77,16 @@ env:
   actions:
     scan_network:
       prob_success: 0.9
-      prob_detection: 0.2
+      prob_detection: 1
     find_services:
       prob_success: 0.9
-      prob_detection: 0.3
+      prob_detection: 1
     exploit_services:
       prob_success: 0.7
-      prob_detection: 0.4
+      prob_detection: 1
     find_data:
       prob_success: 0.8
-      prob_detection: 0.1
+      prob_detection: 1
     exfiltrate_data:
       prob_success: 0.8
-      prob_detection: 0.1
+      prob_detection: 1

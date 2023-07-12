@@ -679,7 +679,7 @@ class NetworkSecurityEnvironment(object):
                     if tw_ratio < self._defender_thresholds[components.ActionType.ScanNetwork]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ScanNetwork]["consecutive_actions"]:
                         return False
                     else:
-                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}, #consecutive actions:{num_consecutive_scans}")
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ScanNetwork]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ScanNetwork]['consecutive_actions']})")
                         return self._stochastic_detection(action)
                 case components.ActionType.FindServices:
                     tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/self._defender_thresholds["tw_size"]
