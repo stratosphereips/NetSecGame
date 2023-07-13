@@ -76,3 +76,5 @@ The llm agent is an agent that ask OpenAI API to take an action given the state 
     
     Action:
 
+## Long term memory
+The agent 2 also has the optional capability of remembering if the last episode was lost or won or timeout, and inject a text to all the prompts of next episode saying that last time it won/lost/timeout, and which action did it if it won.
