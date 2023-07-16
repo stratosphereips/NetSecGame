@@ -18,12 +18,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as func
 import torch.optim as optim
+from torch.distributions import Categorical
 from torch.utils.tensorboard import SummaryWriter
 torch.autograd.set_detect_anomaly(True)
 from sentence_transformers import SentenceTransformer
 
 from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import cosine_distances, euclidean_distances
+from sklearn.utils import shuffle
 from scipy.spatial import distance
 
 label_mapper = {
@@ -34,6 +36,8 @@ label_mapper = {
     "ExfiltrateData":ActionType.ExfiltrateData
 }
 
+action_list = ["ScanNetwork", "FindServices", "ExploitService", "FindData", "ExfiltrateData"]
+
 # local_services = ['bash', 'powershell', 'remote desktop service',
 # 'windows login', 'can_attack_start_here']
 local_services = ['can_attack_start_here']
@@ -42,7 +46,7 @@ local_services = ['can_attack_start_here']
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
 
-Transition = namedtuple('Transition', ('state_emb', 'action_emb', 'real_emb', 'disc_reward', 'state_vals'))
+Transition = namedtuple('Transition', ('state_emb', 'action_emb', 'real_emb', 'log_probs', 'disc_reward', 'state_vals'))
 
 
 class ReplayBuffer:
@@ -63,9 +67,10 @@ class ReplayBuffer:
         """
         # Add 1 so that the weight sum is always positive
         disc_rewards = [mem.disc_reward+1. for mem in self.buffer]
-        batch1 = random.choices(self.buffer, disc_rewards, k=batch_size)
-        # batch2 = random.sample(self.buffer, batch_size//2)
-        return batch1
+        batch1 = random.choices(self.buffer, disc_rewards, k=batch_size//3)
+        batch2 = random.sample(self.buffer, 2*batch_size//3)
+        total_batch = shuffle(batch1+batch2)
+        return total_batch
 
     def __len__(self):
         """Return the size of the buffer"""
@@ -77,26 +82,31 @@ class Policy(nn.Module):
     This is the policy that takes as input the observation embedding
     and outputs an action embedding
     """
-    def __init__(self, embedding_size=384, output_size=384):
+    def __init__(self, embedding_size=384, output_size=384, num_actions=5):
         super().__init__()
-        self.linear1 = nn.Linear(embedding_size, 128)
-        # self.dropout = nn.Dropout(p=0.2)
-        self.linear2 = nn.Linear(128, 64)
-        # self.dropout2 = nn.Dropout(p=0.2)
+        self.linear1 = nn.Linear(embedding_size, 512)
+        self.linear2 = nn.Linear(512, 128)
+        self.linear3 = nn.Linear(128, 64)
+        self.linear4 = nn.Linear(64, 32)
         self.output = nn.Linear(64, output_size)
+        self.output2 = nn.Linear(32, num_actions)
 
-        self.saved_log_probs = []
-        self.rewards = []
+        # self.saved_log_probs = []
+        # self.rewards = []
 
     def forward(self, input1):
         """Forward pass"""
         x = self.linear1(input1)
-        # x = self.dropout(x)
         x = func.relu(x)
         x = self.linear2(x)
-        # x = self.dropout2(x)
         x = func.relu(x)
-        return self.output(x)
+        x = self.linear3(x)
+        x = func.relu(x)
+        x2 = self.linear4(x)
+        x2 = func.relu(x2)
+        # x = self.linear4(x)
+        # x = func.relu(x)
+        return self.output(x), func.softmax(self.output2(x2), dim=1)
 
 class Baseline(nn.Module):
     """
@@ -204,50 +214,6 @@ class LLMEmbedAgent:
 
         return prompt
     
-    def _create_status_from_state2(self, state):
-        """
-        Create a status prompt using the current state.
-        """
-        contr_hosts = [host.ip for host in state.controlled_hosts]
-        known_hosts = [host.ip for host in state.known_hosts]
-        known_nets = [str(net) for net in list(state.known_networks)]
-
-        prompt = "You are a pentester and your goal is to exfiltrate data to host 213.47.23.195.\n"
-        for host in contr_hosts:
-            prompt += f"Controlled host: {host}\n"
-        
-        for net in known_nets:
-            prompt += f"Known network: {net}\n"
-
-        for host in known_hosts:
-            prompt += f"Known host {host}\n"
-
-        if len(state.known_services.keys()) == 0:
-            prompt += "Known services are none\n"
-        for ip_service in state.known_services:
-            services = []
-            if len(list(state.known_services[ip_service])) > 0:
-                for serv in state.known_services[ip_service]:
-                    if serv.name not in local_services:
-                        services.append(serv.name)
-                if len(services) > 0:
-                    for serv in services:
-                        # serv_str += serv + " and "
-                        prompt += f"Known service for host {ip_service}: {serv}\n"
-                else:
-                    prompt += "Known services are none\n"
-
-        if len(state.known_data.keys()) == 0:
-            prompt += "Known data are none\n"
-        for ip_data in state.known_data:
-            if len(state.known_data[ip_data]) > 0:
-                host_data = ""
-                for known_data in list(state.known_data[ip_data]):
-                    host_data = f"({known_data.owner}, {known_data.id})"
-                    prompt += f"Known data for host {ip_data} are {host_data}\n"
-
-        return prompt
-
     def _create_memory_prompt(self, memory_list):
         """
         Create a string that contains the past actions and their parameters.
@@ -260,7 +226,7 @@ class LLMEmbedAgent:
             prompt += "No memories yet."
         return prompt
 
-    def _convert_embedding_to_action_pca(self, new_action_embedding, valid_actions, train=True):
+    def _convert_embedding_to_action_pca(self, new_action_embedding, valid_actions, episode, train=True):
         """
         Take an embedded action in the projected space and find the closest
         from the valid actions.
@@ -268,21 +234,25 @@ class LLMEmbedAgent:
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
         valid_pca = self.pca.transform(valid_embeddings)
-        # dist = cosine_distances(valid_pca, new_action_embedding).flatten()
-        # dist = euclidean_distances(valid_pca, new_action_embedding).flatten()
-        dist = [distance.chebyshev(vector.flatten(), new_action_embedding.flatten()) for vector in valid_pca]
-        dist = np.array(dist).flatten()
+        dists = cosine_distances(valid_pca, new_action_embedding).flatten()
+        # dists = euclidean_distances(valid_pca, new_action_embedding).flatten()
+        # dists = [distance.chebyshev(vector.flatten(), new_action_embedding.flatten()) for vector in valid_pca]
+        # dists = np.array(dists).flatten()
         eps = np.finfo(np.float32).eps.item()
         if train:
+            self.summary_writer.add_scalar('dists_train/max', np.max(dists, axis=0), episode)
+            self.summary_writer.add_scalar('dists_train/min', np.min(dists, axis=0), episode)
             # action_id = random.choices(population=range(len(valid_pca)), weights=1.0/dist, k=1)[0]
-            action_id = random.choices(population=range(len(valid_pca)), weights=1.0/(eps+dist), k=1)[0]
+            action_id = random.choices(population=range(len(valid_pca)), weights=1.0/(eps+dists), k=1)[0]
         else:
             # TODO: Select one of the top-3 actions
-            action_id = np.argmin(dist, axis=0)
+            action_id = random.choices(population=range(len(valid_pca)), weights=1.0/(eps+dists), k=1)[0]
+            # action_id = np.argmin(dists, axis=0)
+            # action_id = random.choices(population=range(len(valid_pca)), weights=1.0/(eps+dists), k=1)[0]
 
         return valid_actions[action_id], valid_pca[action_id]
 
-    def _convert_embedding_to_action(self, new_action_embedding, valid_actions, train=True):
+    def _convert_embedding_to_action(self, new_action_embedding, valid_actions, episode, train=True):
         """
         Take an embedding, and the valid actions for the state
         and find the closest embedding using cosine similarity
@@ -290,15 +260,18 @@ class LLMEmbedAgent:
         """
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
-        # dists = cosine_distances(valid_embeddings, new_action_embedding).flatten()
+        dists = cosine_distances(valid_embeddings, new_action_embedding).flatten()
         # dists = euclidean_distances(valid_embeddings, new_action_embedding).flatten()
-        dists = [distance.chebyshev(vector.flatten(), new_action_embedding.flatten()) for vector in valid_embeddings]
-        dists = np.array(dists).flatten()
+        # dists = [distance.chebyshev(vector.flatten(), new_action_embedding.flatten()) for vector in valid_embeddings]
+        # dists = np.array(dists).flatten()
         eps = np.finfo(np.float32).eps.item()
         if train:
+            self.summary_writer.add_scalar('dists_train/max', np.max(dists, axis=0), episode)
+            self.summary_writer.add_scalar('dists_train/min', np.min(dists, axis=0), episode)
             action_id = random.choices(population=range(len(valid_actions)), weights=1.0/(eps+dists), k=1)[0]
         else:
-            action_id = np.argmin(dists, axis=0)
+            action_id = random.choices(population=range(len(valid_actions)), weights=1.0/(eps+dists), k=1)[0]
+            # action_id = np.argmin(dists, axis=0)
 
         return valid_actions[action_id], valid_embeddings[action_id]
 
@@ -333,18 +306,55 @@ class LLMEmbedAgent:
                                                                "data": data}))
         return list(valid_actions)
 
-    def _filter_valid_actions(self, valid_actions, memory):
+    # def _generate_valid_actions2(self, state, action):
+    #     """
+    #     Generate a list of valid actions from the current state.
+    #     """
+    #     valid_actions = set()
+    #     match action:
+    #         case 0:
+    #             #Network Scans
+    #             for network in state.known_networks:
+    #                 valid_actions.add(Action(ActionType.ScanNetwork, params={"target_network": network}))
+    #         case 1:
+    #             # Service Scans
+    #             for host in state.known_hosts:
+    #                 valid_actions.add(Action(ActionType.FindServices, params={"target_host": host}))
+    #         case 2:
+    #             # Service Exploits
+    #             for host, service_list in state.known_services.items():
+    #                 for service in service_list:
+    #                     valid_actions.add(Action(ActionType.ExploitService,
+    #                                      params={"target_host": host , "target_service": service}))
+    #         case 3:
+    #             # Data Scans
+    #             for host in state.controlled_hosts:
+    #                 valid_actions.add(Action(ActionType.FindData, params={"target_host": host}))
+    #         case 4:
+    #             # Data Exfiltration
+    #             for src_host, data_list in state.known_data.items():
+    #                 for data in data_list:
+    #                     for trg_host in state.controlled_hosts:
+    #                         if trg_host != src_host:
+    #                             valid_actions.add(Action(
+    #                                 ActionType.ExfiltrateData, params={"target_host": trg_host,
+    #                                                            "source_host": src_host, 
+    #                                                            "data": data}))
+    #     return list(valid_actions)
+
+    def _filter_valid_actions(self, valid_actions, action):
         """
         Remove taken actions from the list of valid actions.
         """
-        if len(memory) == 0:
-            return valid_actions
         filtered_actions = []
-        common_actions = list(set(valid_actions).intersection(memory))
-        for action in valid_actions:
-            if action not in common_actions:
-                filtered_actions.append(action)
-        return filtered_actions
+        for valid_action in valid_actions:
+            if valid_action.type.name == action_list[action]:
+                filtered_actions.append(valid_action)
+
+        if len(filtered_actions) > 0:            
+            return filtered_actions
+        else:
+            return valid_actions
 
     def _weight_histograms_linear(self, step, weights, layer_name):
         """
@@ -386,22 +396,24 @@ class LLMEmbedAgent:
 
         return returns
 
-    def _training_step(self, returns, out_embeddings, real_embeddings, episode):
+    def _training_step(self, returns, out_embeddings, real_embeddings, log_probs, episode):
         """
         Backpropagation step for the policy network.
         """
         # Calculate the discounted rewards
-        policy_losses = []
+        mse_losses = []
+        lp_losses = []
 
-        for out_emb, real_emb, disc_ret in zip(out_embeddings, real_embeddings, returns):
-            # rmse_loss = torch.sqrt(self.loss_fn(out_emb, real_emb))
+        for out_emb, real_emb, lp, disc_ret in zip(out_embeddings, real_embeddings, log_probs, returns):
             mse_loss = self.loss_fn(out_emb, real_emb)
-            policy_losses.append((-mse_loss * disc_ret).reshape(1))
+            mse_losses.append((-mse_loss * disc_ret).reshape(1))
+            lp_losses.append(-(lp*disc_ret).reshape(1))
 
         self.optimizer.zero_grad()
-        policy_loss = torch.cat(policy_losses).sum()
+        policy_loss = torch.cat(mse_losses).sum() + torch.cat(lp_losses).sum()
+
         policy_loss.backward(retain_graph=True)
-        torch.nn.utils.clip_grad_value_(self.policy.parameters(), 100)
+        torch.nn.utils.clip_grad_value_(self.policy.parameters(), 10.0)
 
         self.optimizer.step()
 
@@ -422,7 +434,7 @@ class LLMEmbedAgent:
 
         # torch.nn.utils.clip_grad_value_(self.policy.parameters(), 5)
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
-        torch.nn.utils.clip_grad_value_(self.baseline.parameters(), 100)
+        torch.nn.utils.clip_grad_value_(self.baseline.parameters(), 10.0)
         self.baseline_optimizer.step()
 
         for tag, param in self.baseline.named_parameters():
@@ -451,13 +463,14 @@ class LLMEmbedAgent:
             reward_batch = torch.cat(batch.disc_reward)
             action_batch = torch.cat(batch.action_emb)
             real_batch = torch.cat(batch.real_emb)
+            log_probs = torch.cat(batch.log_probs)
 
             value_loss = value_loss + self._training_step_baseline(values_batch, reward_batch, episode)
 
             # Calculate deltas and train the policy network
             deltas = [gt - val for gt, val in zip(reward_batch, values_batch)]
             deltas = torch.tensor(deltas).to(device)
-            policy_loss = policy_loss + self._training_step(deltas, action_batch, real_batch, episode)
+            policy_loss = policy_loss + self._training_step(deltas, action_batch, real_batch, log_probs, episode)
 
         self.summary_writer.add_scalar("losses/value_loss", value_loss/self.args.num_epochs, episode)
         self.summary_writer.add_scalar("losses/policy_loss", policy_loss/self.args.num_epochs, episode)
@@ -477,6 +490,8 @@ class LLMEmbedAgent:
             input_embeddings = []
             out_embeddings = []
             real_embeddings = []
+            actions = []
+            action_probs = []
             rewards = []
             intr_rewards = []
             memories = []
@@ -484,6 +499,7 @@ class LLMEmbedAgent:
 
             state_vals = []
             observation = self.env.reset()
+            action = 0
             valid_actions = self._generate_valid_actions(observation.state)
             num_valid = len(valid_actions)
 
@@ -510,26 +526,39 @@ class LLMEmbedAgent:
                     state_val = self.baseline.forward(input_emb)
 
                     # Pass the state embedding to the model and get the action
-                    action_emb = self.policy.forward(input_emb)
+                    action_emb, action_ps = self.policy.forward(input_emb)
+                    input_emb.detach()
+                    m = Categorical(action_ps)
+                    action = m.sample()
                 else:
                     input_embeddings.append(state_embed)
                     # Pass the state embedding to the model and get the action
-                    action_emb = self.policy.forward(state_embed)
+                    action_emb, action_ps = self.policy.forward(state_embed)
 
                     # Pass the state embedding to the baseline and get the value
                     state_val = self.baseline.forward(state_embed)
+                    state_embed.detach()
+                    m = Categorical(action_ps)
+                    action = m.sample()
 
                 out_embeddings.append(action_emb)
                 state_vals.append(state_val)
+                actions.append(action.item())
+                action_probs.append(m.log_prob(action))
 
                 # Convert the action embedding to a valid action and its embedding
-                # remaining_actions = self._filter_valid_actions(valid_actions, filtered_actions)
-                remaining_actions = valid_actions
+                remaining_actions = self._filter_valid_actions(valid_actions, action)
                 # print(remaining_actions, memories)
                 if self.num_pca < 384:
-                    action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), remaining_actions, True)
+                    action, real_emb = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(),
+                                                                             remaining_actions,
+                                                                             episode,
+                                                                             True)
                 else:
-                    action, real_emb = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), remaining_actions, True)
+                    action, real_emb = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(),
+                                                                         remaining_actions,
+                                                                         episode,
+                                                                         True)
                 real_embeddings.append(torch.tensor(real_emb, device=device).unsqueeze(0))
 
                 # Take the new action and get the observation from the environment
@@ -540,7 +569,7 @@ class LLMEmbedAgent:
                 valid_actions = self._generate_valid_actions(observation.state)
                 if len(valid_actions) > num_valid:
                     num_valid = len(valid_actions)
-                    intr_rewards.append(4.0)
+                    intr_rewards.append(2.0)
                     filtered_actions.append(action)
                 else:
                     intr_rewards.append(0.0)
@@ -554,7 +583,6 @@ class LLMEmbedAgent:
                     if observation.reward > 0:
                         wins += 1
                     break
-
             scores.append(sum(rewards))
             scores_int.append(sum(intr_rewards))
 
@@ -573,7 +601,7 @@ class LLMEmbedAgent:
             # Populate the replay buffer
             for i in range(self.args.max_t):
                 try:
-                    self.replay_buffer.append(input_embeddings[i], out_embeddings[i], real_embeddings[i], total_returns[i].reshape(1), state_vals[i])
+                    self.replay_buffer.append(input_embeddings[i], out_embeddings[i], real_embeddings[i], action_probs[i], total_returns[i].reshape(1), state_vals[i])
                 except:
                     break
 
@@ -584,6 +612,7 @@ class LLMEmbedAgent:
                 eval_rewards, eval_wins = self.evaluate(args.eval_episodes)
                 self.summary_writer.add_scalar('test/eval_rewards', np.mean(eval_rewards), episode)
                 self.summary_writer.add_scalar('test/wins', eval_wins, episode)
+                self.summary_writer.add_scalar('test/win_rate', eval_wins/args.eval_episodes, episode)
 
     def evaluate(self, num_eval_episodes):
         """
@@ -592,7 +621,7 @@ class LLMEmbedAgent:
         self.policy.eval()
         eval_returns = []
         wins = 0
-        for _ in range(num_eval_episodes):
+        for episode in range(num_eval_episodes):
             observation = env.reset()
             done = False
             ret = 0
@@ -618,19 +647,23 @@ class LLMEmbedAgent:
                     input_emb = torch.concat([state_embed_t, memory_embed_t], dim=1)
 
                     # Pass the state embedding to the model and get the action
-                    action_emb = self.policy.forward(input_emb)
+                    action_emb, action_ps = self.policy.forward(input_emb)
                 else:
-                    action_emb = self.policy.forward(state_embed_t)
+                    action_emb, action_ps = self.policy.forward(state_embed_t)
+                
+                m = Categorical(action_ps)
+                action = m.sample()
 
                 # Filter the actions already taken successfully
                 # remaining_actions = self._filter_valid_actions(valid_actions, filtered_actions)
-                remaining_actions = valid_actions
+                remaining_actions = self._filter_valid_actions(valid_actions, action)
+                # remaining_actions = valid_actions
 
                 # Convert the action embedding to a valid action and its embedding
                 if self.num_pca < 384:
-                    action, _ = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), remaining_actions, False)
+                    action, _ = self._convert_embedding_to_action_pca(action_emb.cpu().detach().numpy(), remaining_actions, episode, False)
                 else:
-                    action, _ = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), remaining_actions, False)
+                    action, _ = self._convert_embedding_to_action(action_emb.cpu().detach().numpy(), remaining_actions, episode, False)
 
                 # Take the new action and get the observation from the policy
                 observation = self.env.step(action)
@@ -699,7 +732,6 @@ if __name__ == '__main__':
     parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--num_pca", type=int, default=10, help="Number of PCA components. Use 384 to disable PCA")
     parser.add_argument("--buffer_size", type=int, default=128, help="Replay buffer size")
-    # parser.add_argument("--top_k", type=int, default=5, help="The number of valid actions to consider for similarity")
 
     args = parser.parse_args()
 
@@ -708,18 +740,33 @@ if __name__ == '__main__':
 
     # Initializr the agent
     agent = LLMEmbedAgent(env, args)
+    hparams = {
+        "lr": args.lr,
+        "gamma": args.gamma,
+        "mem_len": args.memory_len,
+        "pca_size": args.num_pca,
+        "batch_size": args.batch_size,
+        "num_episodes": args.num_episodes,
+        "buffer_size": args.buffer_size,
+        "train_every": args.train_every
+    }
+    agent.summary_writer.add_hparams(hparams, {})
 
     # Train the agent using reinforce
-    agent.train(args.num_episodes)
+    # agent.train(args.num_episodes)
 
-    # Evaluate the agent
-    final_returns, wins = agent.evaluate(args.eval_episodes)
-    print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
-    print(f"Total number of wins during evaluation: {wins}")
-    agent.save_model(args.model_path)
-
-    # agent.load_model('saved_models/winning.pt')
+    # # Evaluate the agent
     # final_returns, wins = agent.evaluate(args.eval_episodes)
     # print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
     # print(f"Total number of wins during evaluation: {wins}")
+    # print(f"Win rate during evaluation: {100*wins/args.eval_episodes}")
+    # agent.summary_writer.add_hparams(hparams, {"hparams/wins": wins, "hparams/win_rate": wins/args.eval_episodes, "hparams/return": np.mean(final_returns)})
+    # agent.summary_writer.close()
+    # agent.save_model(args.model_path)
+
+    agent.load_model('saved_models/policy.pt')
+    final_returns, wins = agent.evaluate(args.eval_episodes)
+    print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
+    print(f"Total number of wins during evaluation: {wins}")
+    print(f"Win rate during evaluation: {100*wins/args.eval_episodes}%")
     
