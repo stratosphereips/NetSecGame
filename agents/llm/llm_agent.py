@@ -18,7 +18,7 @@ import copy
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import time
-
+from collections import Counter
 from dotenv import dotenv_values
 config = dotenv_values(".env")
 openai.api_key = config["OPENAI_API_KEY"]
@@ -132,7 +132,10 @@ def create_status_from_state(state, memory_list):
     contr_hosts = [host.ip for host in state.controlled_hosts]
     known_hosts = [host.ip for host in state.known_hosts if host.ip not in contr_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
-
+    memory_list = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in memory_list]
+    memory_list = list(set(memory_list))
+    # Convert back to original form, with the inner frozenset converted back to a dictionary
+    memory_list = [(memory[0], dict(memory[1]), memory[2]) for memory in memory_list]
     prompt = "These are the actions you already took in the past:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
@@ -398,11 +401,19 @@ if __name__ == "__main__":
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
                 memories.append(f"Response '{response}' was badly formatted.")
+                
+            # Convert the elements of memory_list to hashable types
+            hashable_memory_list = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in memories]
 
-            memories = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in memories]
-            memories = list(set(memories))
-            # Convert back to original form, with the inner frozenset converted back to a dictionary
-            memories = [(memory[0], dict(memory[1]), memory[2]) for memory in memories]
+            # Count the number of occurrences of each memory
+            memory_counts = Counter(hashable_memory_list)
+
+            # Find the number of repeated memories
+            num_repeated_actions = sum(count > 1 for count in memory_counts.values())
+
+            print(f"Number of repeated actions: {num_repeated_actions}")
+            logger.info(f"Number of repeated actions: {num_repeated_actions}")
+            temperature = num_repeated_actions * 0.0    
 
 
     
