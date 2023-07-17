@@ -167,6 +167,8 @@ def create_status_from_state(state, memory_list):
                     serv_str += serv + " and "
                 prompt += f"- Known services for host {ip_service}: {serv_str}\n"
                 logger.info(f"- Known services for host {ip_service}: {services}")
+                # Delete the last 'and '
+                serv_str - serv_str[:-4]
             else:
                 prompt += "- Known services: None\n"
                 logger.info(f"- Known services: None")
@@ -232,10 +234,11 @@ def create_action_from_response(llm_response, state, actions_took_in_episode):
     return valid, action
 
 @retry(stop=stop_after_attempt(30))
-def openai_query(msg_list, model, max_tokens=60):
+def openai_query(msg_list, model, delay: float, max_tokens=60):
     """
     Send messages to OpenAI API and return the response.
     """
+    time.sleep(delay)
     logger.info(f'Asking the openAI API')
     llm_response = openai.ChatCompletion.create(
         model=model,
@@ -257,6 +260,7 @@ if __name__ == "__main__":
     parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-0613", "gpt-3.5-turbo-0301"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
     parser.add_argument("--force_ignore", help="Force ignore repeated actions in code", default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument("--long_memory", help="Remember between consecutive episodes.", default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--delay", help="Delay the requests to LLM by this amount of seconds.", type=float, default=0)
 
     args = parser.parse_args()
 
@@ -351,7 +355,7 @@ if __name__ == "__main__":
             print(status_prompt)
             logger.info(status_prompt)
             # Query the LLM
-            response = openai_query(messages, args.llm)
+            response = openai_query(messages, args.llm, args.delay)
             logger.info(f"Action chosen (not still taken) by LLM: {response}")
             print(f"Action chosen (not still taken) by LLM: {response}")
 
@@ -472,7 +476,9 @@ if __name__ == "__main__":
         average_returns={test_average_returns:.3f} +- {test_std_returns:.3f},
         average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f},
         average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
-        average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}'''
+        average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
+        average_repeated actions={test_average_repeated_actions:.3f} +- {test_std_repeated_actions:.3f}
+        '''
 
     # Text that is going to be added to the tensorboard. Put any description you want
 
