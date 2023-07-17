@@ -268,6 +268,7 @@ if __name__ == "__main__":
     # Run multiple episodes to compute statistics
     wins = 0
     detected = 0
+    reach_max_steps = 0
     returns = []
     num_steps = []
     num_win_steps = []
@@ -394,6 +395,7 @@ if __name__ == "__main__":
                 else:
                     num_win_steps += [0]
                     num_detected_steps += [0]
+                    reach_max_steps += 1
                     type_of_end = 'max_steps'
                 
                 # Build the interepisode memory
@@ -441,6 +443,7 @@ if __name__ == "__main__":
     # After all episodes are done. Compute statistics
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100
+    test_max_steps_rate = (reach_max_steps/(args.test_episodes))*100
     test_average_returns = np.mean(returns)
     test_std_returns = np.std(returns)
     test_average_episode_steps = np.mean(num_steps)
@@ -450,18 +453,18 @@ if __name__ == "__main__":
     test_average_detected_steps = np.mean(num_detected_steps)
     test_std_detected_steps = np.std(num_detected_steps)
     # Store in tensorboard
-    tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate, "charts/test_avg_detection_rate": test_detection_rate, "charts/test_avg_returns": test_average_returns, "charts/test_std_returns": test_std_returns, "charts/test_avg_episode_steps": test_average_episode_steps, "charts/test_std_episode_steps": test_std_episode_steps, "charts/test_avg_win_steps": test_average_win_steps, "charts/test_std_win_steps": test_std_win_steps, "charts/test_avg_detected_steps": test_average_detected_steps, "charts/test_std_detected_steps": test_std_detected_steps}
+    tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate, "charts/test_avg_detection_rate": test_detection_rate, "charts/test_avg_max_steps_rate": test_max_steps_rate, "charts/test_avg_returns": test_average_returns, "charts/test_std_returns": test_std_returns, "charts/test_avg_episode_steps": test_average_episode_steps, "charts/test_std_episode_steps": test_std_episode_steps, "charts/test_avg_win_steps": test_average_win_steps, "charts/test_std_win_steps": test_std_win_steps, "charts/test_avg_detected_steps": test_average_detected_steps, "charts/test_std_detected_steps": test_std_detected_steps}
 
     text = f'''Final test after {args.test_episodes} episodes
         Wins={wins},
         Detections={detected},
         winrate={test_win_rate:.3f}%,
         detection_rate={test_detection_rate:.3f}%,
+        max_steps_rate={test_max_steps_rate:.3f}%,
         average_returns={test_average_returns:.3f} +- {test_std_returns:.3f},
         average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f},
         average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
         average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}'''
-
 
     # Text that is going to be added to the tensorboard. Put any description you want
 
