@@ -136,6 +136,8 @@ def create_status_from_state(state, memory_list):
     memory_list = list(set(memory_list))
     # Convert back to original form, with the inner frozenset converted back to a dictionary
     memory_list = [(memory[0], dict(memory[1]), memory[2]) for memory in memory_list]
+    memory_list = memory_list[-args.memory_buffer:]    
+    print(f'The number of valid actions taken in the past:{len(memory_list)}')
     prompt = "These are the actions you already took in the past:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
@@ -239,7 +241,7 @@ def create_action_from_response(llm_response, state, actions_took_in_episode):
     return valid, action, actions_took_in_episode
 
 @retry(stop=stop_after_attempt(3))
-def openai_query(msg_list, model, max_tokens=60):
+def openai_query(msg_list, model, max_tokens=60, temperature = 0.0):
     """
     Send messages to OpenAI API and return the response.
     """
@@ -248,7 +250,7 @@ def openai_query(msg_list, model, max_tokens=60):
         model=model,
         messages=msg_list,
         max_tokens=max_tokens,
-        temperature=0.7
+        temperature=temperature
     )
     # We expect the response from the LLM to be JSON
     return llm_response["choices"][0]["message"]["content"]
@@ -320,7 +322,7 @@ if __name__ == "__main__":
             # It is not precise because the action can be successful and still not change the state.
             good_action = False
 
-            status_prompt = create_status_from_state(observation.state, memories[-args.memory_buffer:])
+            status_prompt = create_status_from_state(observation.state, memories)
             messages = [
                     {"role": "system", "content": instructions},
                     {"role": "user", "content": EXAMPLE_PROMPT},
@@ -339,7 +341,12 @@ if __name__ == "__main__":
             print(status_prompt)
             logger.info(status_prompt)
             # Query the LLM
-            response = openai_query(messages, args.llm)
+            print(f"win:{wins}")
+            print(f"episode:{episode}")
+            print(f"temperature: {temperature}")
+            
+            logger.info(f"Temperature: {temperature}")
+            response = openai_query(messages, args.llm,temperature = temperature)
             logger.info(f"Action chosen (not still taken) by LLM: {response}")
             print(f"Action chosen (not still taken) by LLM: {response}")
 
@@ -404,16 +411,29 @@ if __name__ == "__main__":
                 
             # Convert the elements of memory_list to hashable types
             hashable_memory_list = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in memories]
-
+            
             # Count the number of occurrences of each memory
             memory_counts = Counter(hashable_memory_list)
-
+            for memory, count in memory_counts.most_common():
+                # Convert the frozenset back to a dictionary for printing
+                parameters = dict(memory[1])
+                action, message = memory[0], memory[2]
+                print(action + ": " + count * "*")
             # Find the number of repeated memories
             num_repeated_actions = sum(count > 1 for count in memory_counts.values())
 
             print(f"Number of repeated actions: {num_repeated_actions}")
             logger.info(f"Number of repeated actions: {num_repeated_actions}")
-            temperature = num_repeated_actions * 0.0    
+            print(f"Number actions: {len(memories)}")
+            logger.info(f"Number actions: {len(memories)}")
+
+            last_actions = memories[-args.memory_buffer:]
+            hashable_last_actions = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in last_actions]
+            # Get the count of the most common action in the last ten actions
+            most_common_action_count = Counter(hashable_last_actions).most_common(1)[0][1]
+            temperature = (most_common_action_count / (args.memory_buffer  * 1) ) * 0.8 
+
+           
 
 
     
