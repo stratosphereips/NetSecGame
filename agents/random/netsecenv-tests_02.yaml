@@ -49,7 +49,7 @@ agents:
   defender:
     # types are StochasticDefender and NoDefender
     type: 'StochasticDefender'
-    # type: 'NoDefender'
+    #type: 'NoDefender'
 
 env:
   random_seed: 42
