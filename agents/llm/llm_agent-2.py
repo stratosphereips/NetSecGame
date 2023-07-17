@@ -78,11 +78,11 @@ def get_long_term_interepisode_memory(actions_took_in_episode: list, type_of_end
     # TODO: Ask the LLM to summarize the episode.
 
     if type_of_end == 'win':
-        reward_memory += f'\n\nYou won the last game with this action: {actions_took_in_episode[-1]}! Congratulations. Remember it.\n'
+        reward_memory += f'\nYou won the last game with this action: {actions_took_in_episode[-1]}! Congratulations. Remember it.\n'
     elif type_of_end == 'detection':
-        reward_memory += f'\n\nYou lost the last game because you were detected by the defender. Remember this.\n'
+        reward_memory += f'\nYou lost the last game because you were detected by the defender. Remember this.\n'
     elif type_of_end == 'max_steps':
-        reward_memory += f'\n\nYou lost the last game because you did too many actions without reaching the goal. Remember this.\n'
+        reward_memory += f'\nYou lost the last game because you did too many actions without reaching the goal. Remember this.\n'
     return reward_memory
 
 def validate_action_in_state(llm_response, state):
@@ -136,7 +136,8 @@ def create_status_from_state(state, memory_list):
     if len(memory_list) > 0:
         prompt = "List of past actions:\n"
         for memory in memory_list:
-            prompt += f'You took action {memory[0]} of {memory[1]}. {memory[2]}.\n'
+            #prompt += f'- Action {memory[0]} of {memory[1]}. {memory[2]}.\n'
+            prompt += f'- Action {memory[0]}. {memory[1]}.\n'
         prompt += "End of list of past actions.\n\n"
 
     prompt += "Current status:\n"
@@ -426,7 +427,7 @@ if __name__ == "__main__":
                     if good_action:
                         memory_text = 'This action found new information. '
                     else:
-                        memory_text = "This action did not find new informaiton. "
+                        memory_text = "This action did not find new information. "
 
                     # If the action was repeated, criticize in prompt
                     for past_action in actions_took_in_episode:
@@ -441,7 +442,8 @@ if __name__ == "__main__":
                 # if the LLM sends a response that is not properly formatted.
                 memory_text = " Action has bad format. Go back to create good formated actions."
 
-            memories.append((response["action"], response["parameters"], memory_text))
+            #memories.append((response["action"], response["parameters"], memory_text))
+            memories.append((response, memory_text))
 
     # After all episodes are done. Compute statistics
     test_win_rate = (wins/(args.test_episodes))*100
