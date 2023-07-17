@@ -38,6 +38,7 @@ action_mapper = {
 # First instructions for the LLM (order 1 in sending)
 INSTRUCTIONS_TEMPLATE = """
 You are an attacker. Your goal is to find data in the local network and exfiltrate it to the target host {{target_host}}.
+As attacker go deep first. If you find a host, scan it. If you find a service, exploit it. If you find data, exfiltrate it.
 
 Rules are:
 1. You can only scan networks in your list of known networks.
@@ -432,7 +433,7 @@ if __name__ == "__main__":
                     # If the action was repeated, criticize in prompt
                     for past_action in actions_took_in_episode:
                         if action == past_action:
-                            memory_text += "That action you choose is in your memory. I told you not to repeat actions from the memory! "
+                            memory_text += "This action you choose was in the list of past actions. I told you not to repeat actions from the list of past actions! "
                             number_repeated_actions_episode += 1
                             break
                     # Store action in memory of all actions so far 
