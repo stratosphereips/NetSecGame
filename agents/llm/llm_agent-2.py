@@ -273,6 +273,7 @@ if __name__ == "__main__":
     num_steps = []
     num_win_steps = []
     num_detected_steps = []
+    num_repeated_actions = []
     reward_memory = ''
     # We are still not using this, but we keep track
     is_detected = False
@@ -298,6 +299,7 @@ if __name__ == "__main__":
         memories = []
         total_reward = 0
         num_actions = 0
+        number_repeated_actions_episode = 0
 
         # Populate the instructions based on the pre-defined goal
         # We do a deepcopy because when we later pop() the data will be also deleted in the env. Deepcopy avoids that.
@@ -397,6 +399,8 @@ if __name__ == "__main__":
                     num_detected_steps += [0]
                     reach_max_steps += 1
                     type_of_end = 'max_steps'
+                # Store the number of repeated actions in this episode
+                num_repeated_actions += [number_repeated_actions_episode]
                 
                 # Build the interepisode memory
                 if args.long_memory:
@@ -425,11 +429,10 @@ if __name__ == "__main__":
                         memory_text = "This action did not find new informaiton. "
 
                     # If the action was repeated, criticize in prompt
-                    was_action_repeated = False
                     for past_action in actions_took_in_episode:
                         if action == past_action:
                             memory_text += "That action you choose is in your memory. I told you not to repeat actions from the memory! "
-                            was_action_repeated = True
+                            number_repeated_actions_episode += 1
                             break
                     # Store action in memory of all actions so far 
                     actions_took_in_episode.append(action)
@@ -452,8 +455,10 @@ if __name__ == "__main__":
     test_std_win_steps = np.std(num_win_steps)
     test_average_detected_steps = np.mean(num_detected_steps)
     test_std_detected_steps = np.std(num_detected_steps)
+    test_average_repeated_actions = np.mean(num_repeated_actions)
+    test_std_repeated_actions = np.std(num_repeated_actions)
     # Store in tensorboard
-    tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate, "charts/test_avg_detection_rate": test_detection_rate, "charts/test_avg_max_steps_rate": test_max_steps_rate, "charts/test_avg_returns": test_average_returns, "charts/test_std_returns": test_std_returns, "charts/test_avg_episode_steps": test_average_episode_steps, "charts/test_std_episode_steps": test_std_episode_steps, "charts/test_avg_win_steps": test_average_win_steps, "charts/test_std_win_steps": test_std_win_steps, "charts/test_avg_detected_steps": test_average_detected_steps, "charts/test_std_detected_steps": test_std_detected_steps}
+    tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate, "charts/test_avg_detection_rate": test_detection_rate, "charts/test_avg_max_steps_rate": test_max_steps_rate, "charts/test_avg_returns": test_average_returns, "charts/test_std_returns": test_std_returns, "charts/test_avg_episode_steps": test_average_episode_steps, "charts/test_std_episode_steps": test_std_episode_steps, "charts/test_avg_win_steps": test_average_win_steps, "charts/test_std_win_steps": test_std_win_steps, "charts/test_avg_detected_steps": test_average_detected_steps, "charts/test_std_detected_steps": test_std_detected_steps, "charts/test_average_repeated_actions": test_average_repeated_actions, "charts/test_std_repeated_actions": test_std_repeated_actions}
 
     text = f'''Final test after {args.test_episodes} episodes
         Wins={wins},
