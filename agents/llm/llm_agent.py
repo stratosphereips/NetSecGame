@@ -136,12 +136,13 @@ def create_status_from_state(state, memory_list):
     prompt = "These are the actions you already took in the past:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
-            if memory[2]:
-                prompt += f'You took action {memory[0]} of {memory[1]} and {memory[2]}\n'
+            action, parameters, message = memory
+            if message:
+                prompt += f'You took action {action} with parameters {parameters} and got message: {message}\n'
             else:
-                prompt += f'You took action {memory[0]} of {memory[1]}\n'
+                prompt += f'You took action {action} with parameters {parameters}\n'
     else:
-        prompt += ""
+        prompt += "You have not taken any actions yet.\n"
 
     prompt += "Current status:\n"
     prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
@@ -244,7 +245,7 @@ def openai_query(msg_list, model, max_tokens=60):
         model=model,
         messages=msg_list,
         max_tokens=max_tokens,
-        temperature=0.0
+        temperature=0.7
     )
     # We expect the response from the LLM to be JSON
     return llm_response["choices"][0]["message"]["content"]
@@ -275,7 +276,7 @@ if __name__ == "__main__":
     num_steps = []
     num_win_steps = []
     num_detected_steps = []
-
+    temperature = 0.0
 
     for episode in range(1, args.test_episodes + 1):
 
@@ -397,6 +398,13 @@ if __name__ == "__main__":
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
                 memories.append(f"Response '{response}' was badly formatted.")
+
+            memories = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in memories]
+            memories = list(set(memories))
+            # Convert back to original form, with the inner frozenset converted back to a dictionary
+            memories = [(memory[0], dict(memory[1]), memory[2]) for memory in memories]
+
+
     
     # After all episodes are done. Compute statistics
     test_win_rate = (wins/(args.test_episodes))*100
