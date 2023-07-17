@@ -78,11 +78,11 @@ def get_long_term_interepisode_memory(actions_took_in_episode: list, type_of_end
     # TODO: Ask the LLM to summarize the episode.
 
     if type_of_end == 'win':
-        reward_memory += f'\n\nYou won the last game with this action: {actions_took_in_episode[-1]}! Congratulations. Remember it.'
+        reward_memory += f'\n\nYou won the last game with this action: {actions_took_in_episode[-1]}! Congratulations. Remember it.\n'
     elif type_of_end == 'detection':
-        reward_memory += f'\n\nYou lost the last game because you were detected by the defender. Remember this.'
+        reward_memory += f'\n\nYou lost the last game because you were detected by the defender. Remember this.\n'
     elif type_of_end == 'max_steps':
-        reward_memory += f'\n\nYou lost the last game because you did too many actions without reaching the goal. Remember this.'
+        reward_memory += f'\n\nYou lost the last game because you did too many actions without reaching the goal. Remember this.\n'
     return reward_memory
 
 def validate_action_in_state(llm_response, state):
@@ -420,15 +420,15 @@ if __name__ == "__main__":
                     # But we could a manual evaluation based on the prior knowledge and weight the different components.
                     # For example: finding new data is better than discovering hosts (?)
                     if good_action:
-                        memory_text = 'Good action to be chosen in this context'
+                        memory_text = 'This action found new information. '
                     else:
-                        memory_text = "Bad action to be chosen in this context"
+                        memory_text = "This action did not find new informaiton. "
 
                     # If the action was repeated, criticize in prompt
                     was_action_repeated = False
                     for past_action in actions_took_in_episode:
                         if action == past_action:
-                            memory_text += "That action you choose is in your memory. I told you not to repeat actions from the memory!"
+                            memory_text += "That action you choose is in your memory. I told you not to repeat actions from the memory! "
                             was_action_repeated = True
                             break
                     # Store action in memory of all actions so far 
