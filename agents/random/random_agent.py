@@ -3,7 +3,7 @@
 import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
-from random import choice, seed
+from random import choice
 import random
 import argparse
 import numpy as np
@@ -16,7 +16,6 @@ from torch.utils.tensorboard import SummaryWriter
 #with the path fixed, we can import now
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, ActionType, GameState, Observation
-
 
 class RandomAgent:
     def __init__(self, env):
@@ -53,7 +52,10 @@ class RandomAgent:
         actions = self._generate_valid_actions(state)
         return choice(actions)
 
-    def play(self, observation:Observation) -> tuple:
+    def evaluate(self, observation:Observation) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
+        """
+        Run the random agent for many steps until the game is ended
+        """
         return_value = 0
         while not observation.done:
             # Select action
@@ -64,53 +66,29 @@ class RandomAgent:
             return_value += next_observation.reward
             # Move to next state
             observation = next_observation
-        return return_value, self.env.is_goal(observation.state), self.env.detected, self.env.timestamp
-
-    def evaluate(self, observation:Observation) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
-        return_value = 0
-        while not observation.done:
-            action = self.move(observation)
-            next_observation = self.env.step(action)
-            return_value += next_observation.reward
-            observation = next_observation
         game_ended_detected = self.env.detected
         return return_value, self.env.is_goal(observation.state), game_ended_detected, self.env.timestamp
 
 
 if __name__ == '__main__':
-    # set seed
-    seed(42)
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=1000, type=int)
-    parser.add_argument("--max_steps", help="Sets maximum steps before timeout", default=25, type=int)
-    parser.add_argument("--defender", help="Is defender present", default=False, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--scenario", help="Which scenario to run in", default="scenario1_tiny", type=str)
-    parser.add_argument("--verbosity", help="Sets verbosity of the environment", default=0, type=int)
-    parser.add_argument("--seed", help="Sets the random seed", type=int, default=42)
-    parser.add_argument("--random_start", help="Sets if starting position and goal data is randomized", default=True, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--episodes", help="Sets number of testing episodes", default=1000, type=int)
     parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
     parser.add_argument("--test_each", help="Sets periodic evaluation during testing", default=100, type=int)
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
 
-    logging.basicConfig(filename='agents/random/random_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.CRITICAL)
+    # Create the environment
+    env = NetworkSecurityEnvironment(args.task_config_file)
+    # If you need a separate log, uncomment this
+    logging.basicConfig(filename='agents/random/logs/random_agent.log', filemode='a', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
     logger = logging.getLogger('Random-agent')
+    logger.info(f'Initializing the environment')
 
     # Setup tensorboard
-    run_name = f"netsecgame__qlearning__{args.seed}__{int(time.time())}"
-    writer = SummaryWriter(f"agents/tensorboard-logs/{run_name}")
-    writer.add_text(
-        "hypherparameters",
-        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()]))
-    )
-
-    random.seed(args.seed)
-
-    # Training
-    logger.info(f'Initializing the environment')
-    env = NetworkSecurityEnvironment(args.task_config_file)
-    observation = env.reset()
-
+    run_name = f"netsecgame__llm__{env.seed}__{int(time.time())}"
+    writer = SummaryWriter(f"agents/random/logs/{run_name}")
 
     # Create agent
     agent = RandomAgent(env)
@@ -122,8 +100,10 @@ if __name__ == '__main__':
     num_steps = []
     num_win_steps = []
     num_detected_steps = []
-    logger.info(f'Starting the training')
+    logger.info(f'Starting the testing')
+    print('Starting the testing')
     for i in range(1, args.episodes + 1):
+
         observation = env.reset()
         ret, win, detection, steps = agent.evaluate(observation)
         if win:
@@ -135,8 +115,8 @@ if __name__ == '__main__':
         returns += [ret]
         num_steps += [steps]
 
-        test_win_rate = (wins/(args.test_for+1))*100
-        test_detection_rate = (detected/(args.test_for+1))*100
+        test_win_rate = (wins/(args.episodes)) * 100
+        test_detection_rate = (detected/(args.episodes)) * 100
         test_average_returns = np.mean(returns)
         test_std_returns = np.std(returns)
         test_average_episode_steps = np.mean(num_steps)
@@ -148,6 +128,8 @@ if __name__ == '__main__':
 
 
         if i % args.test_each == 0 and i != 0:
+            print(f'Episode {i}')
+            logger.info(f'Episode {i}')
             text = f'''Tested after {i} episodes.
                 Wins={wins},
                 Detections={detected},
@@ -159,6 +141,7 @@ if __name__ == '__main__':
                 average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
                 '''
             logger.info(text)
+            print(text)
             # Store in tensorboard
             writer.add_scalar("charts/test_avg_win_rate", test_win_rate, i)
             writer.add_scalar("charts/test_avg_detection_rate", test_detection_rate, i)
@@ -172,7 +155,7 @@ if __name__ == '__main__':
             writer.add_scalar("charts/test_std_detected_steps", test_std_detected_steps , i)
 
 
-    text = f'''Final test after {i} episodes, for {args.test_for} steps.
+    text = f'''Final test after {i} episodes, for {args.episodes} steps.
         Wins={wins},
         Detections={detected},
         winrate={test_win_rate:.3f}%,
@@ -183,3 +166,4 @@ if __name__ == '__main__':
         average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
         '''
     logger.info(text)
+    print(text)
