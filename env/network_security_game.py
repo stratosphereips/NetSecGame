@@ -18,7 +18,7 @@ from utils.utils import ConfigParser, store_replay_buffer_in_csv
 log_filename=Path('env/logs/netsecenv.log')
 if not log_filename.parent.exists():
     os.makedirs(log_filename.parent)
-logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.INFO)
 logger = logging.getLogger('Netsecenv')
 
 class NetworkSecurityEnvironment(object):
