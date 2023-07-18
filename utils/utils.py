@@ -249,6 +249,13 @@ class ConfigParser():
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
 
+    def get_dynamic_addresses(self)->bool:
+        """
+        Reads if the IP and Network addresses should be dynamically changed.
+        """
+        use_dynamic_addresses = self.config['env']['use_dynamic_addresses ']
+        return bool(use_dynamic_addresses)
+
     def get_store_replay_buffer(self):
         """
         Read if the replay buffer should be stored in file

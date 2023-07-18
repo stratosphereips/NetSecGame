@@ -95,12 +95,14 @@ class NetworkSecurityEnvironment(object):
 
         # should be randomized once or every episode?
         self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
+        
         # store goal definition
         self._goal_conditions = self.task_config.get_attacker_win_conditions()
         
-
-        self._create_new_network_mapping()
-
+        # check if dynamic network and ip adddresses are required
+        if self.task_config.get_dynamic_addresses():
+            self._create_new_network_mapping()
+            
         # process episodic randomization
         if not self._randomize_goal_every_episode:
             # episodic randomization is not required, randomize once now
