@@ -253,7 +253,10 @@ class ConfigParser():
         """
         Reads if the IP and Network addresses should be dynamically changed.
         """
-        use_dynamic_addresses = self.config['env']['use_dynamic_addresses']
+        try:
+            use_dynamic_addresses = self.config['env']['use_dynamic_addresses']
+        except KeyError:
+            use_dynamic_addresses = False
         return bool(use_dynamic_addresses)
 
     def get_store_replay_buffer(self):
