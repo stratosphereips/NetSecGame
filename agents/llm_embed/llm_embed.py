@@ -85,14 +85,11 @@ class Policy(nn.Module):
     def __init__(self, embedding_size=384, output_size=384, num_actions=5):
         super().__init__()
         self.linear1 = nn.Linear(embedding_size, 512)
-        self.linear2 = nn.Linear(512, 128)
-        self.linear3 = nn.Linear(128, 64)
-        self.linear4 = nn.Linear(64, 32)
-        self.output = nn.Linear(64, output_size)
+        self.linear2 = nn.Linear(512, 256)
+        self.linear3 = nn.Linear(256, 128)
+        self.linear4 = nn.Linear(128, 32)
+        self.output = nn.Linear(128, output_size)
         self.output2 = nn.Linear(32, num_actions)
-
-        # self.saved_log_probs = []
-        # self.rewards = []
 
     def forward(self, input1):
         """Forward pass"""
@@ -116,18 +113,12 @@ class Baseline(nn.Module):
         super().__init__()
 
         self.linear1 = nn.Linear(embedding_size, 64)
-        # self.dropout = nn.Dropout(p=0.2)
-        # self.linear2 = nn.Linear(256, 128)
-        # self.dropout2 = nn.Dropout(p=0.2)
         self.output_layer = nn.Linear(64, 1)
 
     def forward(self, x):
         """Forward pass"""
         x = self.linear1(x)
         x = func.relu(x)
-
-        # x = self.linear2(x)
-        # x = func.relu(x)
 
         return self.output_layer(x)
 
@@ -507,7 +498,8 @@ class LLMEmbedAgent:
             self._weight_histograms(episode)
             for _ in range(self.args.max_t):
                 # Create the status string from the observed state
-                status_str = self._create_status_from_state(observation.state)
+                # status_str = self._create_status_from_state(observation.state)
+                status_str = str(observation.state)
                 # Get the embedding of the string from the transformer
                 state_embed = self.transformer_model.encode(status_str)
                 state_embed = torch.tensor(state_embed, device=device).unsqueeze(0)
@@ -632,7 +624,8 @@ class LLMEmbedAgent:
             num_valid = len(valid_actions)
             while not done:
                 # Create the status string from the observed state
-                status_str = self._create_status_from_state(observation.state)
+                # status_str = self._create_status_from_state(observation.state)
+                status_str = str(observation.state)
                 # Get the embedding of the string from the transformer
                 state_embed = self.transformer_model.encode(status_str)
                 state_embed_t = torch.tensor(state_embed, device=device).unsqueeze(0)
@@ -753,20 +746,20 @@ if __name__ == '__main__':
     agent.summary_writer.add_hparams(hparams, {})
 
     # Train the agent using reinforce
-    # agent.train(args.num_episodes)
+    agent.train(args.num_episodes)
 
-    # # Evaluate the agent
-    # final_returns, wins = agent.evaluate(args.eval_episodes)
-    # print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
-    # print(f"Total number of wins during evaluation: {wins}")
-    # print(f"Win rate during evaluation: {100*wins/args.eval_episodes}")
-    # agent.summary_writer.add_hparams(hparams, {"hparams/wins": wins, "hparams/win_rate": wins/args.eval_episodes, "hparams/return": np.mean(final_returns)})
-    # agent.summary_writer.close()
-    # agent.save_model(args.model_path)
-
-    agent.load_model('saved_models/policy.pt')
+    # Evaluate the agent
     final_returns, wins = agent.evaluate(args.eval_episodes)
     print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
     print(f"Total number of wins during evaluation: {wins}")
-    print(f"Win rate during evaluation: {100*wins/args.eval_episodes}%")
+    print(f"Win rate during evaluation: {100*wins/args.eval_episodes}")
+    agent.summary_writer.add_hparams(hparams, {"hparams/wins": wins, "hparams/win_rate": wins/args.eval_episodes, "hparams/return": np.mean(final_returns)})
+    agent.summary_writer.close()
+    agent.save_model(args.model_path)
+
+    # agent.load_model('saved_models/policy.pt')
+    # final_returns, wins = agent.evaluate(args.eval_episodes)
+    # print(f"Evaluation finished - (mean of {len(final_returns)} runs): {np.mean(final_returns)}+-{np.std(final_returns)}")
+    # print(f"Total number of wins during evaluation: {wins}")
+    # print(f"Win rate during evaluation: {100*wins/args.eval_episodes}%")
     
