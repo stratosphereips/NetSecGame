@@ -169,9 +169,9 @@ class LLMEmbedAgent:
         action_vals = []
         for act in valid_actions:
             try:
-                action_emb = self.action_db[act]
-                action_vals.append(self.q_model(tf.concat([action_emb.reshape(1, -1),
-                                                                   state_embed.reshape(1, -1),
+                action_embed = self.action_db[act]
+                action_vals.append(self.q_model(tf.concat([state_embed.reshape(1, -1),
+                                                                   action_embed.reshape(1, -1),
                                                                    memory_embed.reshape(1, -1)],
                                                             axis=1), training=False))
             except KeyError:
