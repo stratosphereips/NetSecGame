@@ -7,6 +7,7 @@ import sys
 from collections import deque, namedtuple
 import random
 import time
+import math
 
 # This is used so the agent can see the environment and game components
 from os import path
@@ -32,7 +33,7 @@ action_list = ["ScanNetwork", "FindServices", "ExploitService", "FindData", "Exf
 # 'windows login', 'can_attack_start_here']
 local_services = ['can_attack_start_here']
 
-Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'next_action', 'reward', 'done'))
+Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'next_action', 'reward', 'memory', 'done'))
 
 
 class ReplayBuffer:
@@ -83,7 +84,7 @@ class LLMEmbedAgent:
             self.action_db[action] = self.transformer_model.encode(str(action))
         self.q_model = self._create_model(embedding_size=self.embedding_size)
         self.q_target = self._create_model(embedding_size=self.embedding_size)
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, clipnorm=1.0)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, clipvalue=100)
 
         self.gamma = args.gamma
         # self.loss_fn = tf.keras.losses.MeanSquaredError()
@@ -96,13 +97,13 @@ class LLMEmbedAgent:
         run_name = f"netsecgame__LLM_embed_DQN__{env.seed}__{int(time.time())}"
         self.summary_writer = tf.summary.create_file_writer("./logs/"+ run_name)
         self.eval_episodes = args.eval_episodes
-        self.memory_len = args.memory_len
+        # self.memory_len = args.memory_len
         # Parameter that defines the value of the intrinsic reward
         # self.beta = 1.0
         self.replay_buffer = ReplayBuffer(args.buffer_size)
 
     def _create_model(self, embedding_size=384):
-        inputs = tf.keras.layers.Input(shape=(embedding_size*2,))
+        inputs = tf.keras.layers.Input(shape=(embedding_size*3,))
 
         layer1 = tf.keras.layers.Dense(512, activation="relu")(inputs)
         layer2 = tf.keras.layers.Dense(256, activation="relu")(layer1)
@@ -112,18 +113,17 @@ class LLMEmbedAgent:
         return tf.keras.Model(inputs=inputs, outputs=q_value)
 
 
-    # def _create_memory_prompt(self, memory_list):
-    #     """
-    #     Create a string that contains the past actions and their parameters.
-    #     """
-    #     prompt = "Memories:\n"
-    #     if len(memory_list) > 0:
-    #         for memory in memory_list:
-    #             prompt += f'You have taken action {{"action":"{str(memory.type)}",
-    #               "parameters":"{str(memory.parameters)}"}} in the past.\n'
-    #     else:
-    #         prompt += "No memories yet."
-    #     return prompt
+    def _create_memory_prompt(self, memory_list):
+        """
+        Create a string that contains the past actions and their parameters.
+        """
+        prompt = "Memories:\n"
+        if len(memory_list) > 0:
+            for memory in memory_list:
+                prompt += str(memory) + "\n"
+        else:
+            prompt = "No memories yet."
+        return prompt
 
     def _create_embedding_from_str(self, str_):
         return self.transformer_model.encode(str_)
@@ -159,18 +159,20 @@ class LLMEmbedAgent:
                                                                "data": data}))
         return list(valid_actions)
 
-    def _select_best_action_for_state(self, state, valid_actions):
+    def _select_best_action_for_state(self, state, valid_actions, memories):
         """
         Go through all valid actions and select the best for this state
         """
         state_embed = self._create_embedding_from_str(str(state))
+        memory_embed = self._create_embedding_from_str(self._create_memory_prompt(memories))
 
         action_vals = []
         for act in valid_actions:
             try:
                 action_emb = self.action_db[act]
-                action_vals.append(self.q_target(tf.concat(values=[action_emb.reshape(1, -1),
-                                                                   state_embed.reshape(1, -1)],
+                action_vals.append(self.q_model(tf.concat([action_emb.reshape(1, -1),
+                                                                   state_embed.reshape(1, -1),
+                                                                   memory_embed.reshape(1, -1)],
                                                             axis=1), training=False))
             except KeyError:
                 pass
@@ -201,9 +203,10 @@ class LLMEmbedAgent:
             action_batch = np.array(batch.action).reshape(self.args.batch_size, self.embedding_size)
             next_state_batch = np.array(batch.next_state).reshape(self.args.batch_size, self.embedding_size)
             next_action_batch = np.array(batch.next_action).reshape(self.args.batch_size, self.embedding_size)
+            memory_batch = np.array(batch.memory).reshape(self.args.batch_size, self.embedding_size)
             # dones = np.array(batch.done).reshape(self.args.batch_size, 1)
 
-            future_rewards = self.q_target(tf.concat([next_state_batch, next_action_batch], axis=1))
+            future_rewards = self.q_target(tf.concat([next_state_batch, next_action_batch, memory_batch], axis=1))
             updated_q_values = reward_batch + self.gamma * future_rewards
 
             # If final step set the last value to -1
@@ -212,8 +215,9 @@ class LLMEmbedAgent:
 
             with tf.GradientTape() as tape:
                 # Train the model on the states and updated Q-values
-                q_values = self.q_model(values=tf.concat([states_batch.reshape(-1, self.embedding_size),
-                                                          action_batch.reshape(-1, self.embedding_size)],
+                q_values = self.q_model(tf.concat([states_batch.reshape(-1, self.embedding_size),
+                                                          action_batch.reshape(-1, self.embedding_size),
+                                                          memory_batch.reshape(-1, self.embedding_size)],
                                         axis=1), training=True)
 
                 # Apply the masks to the Q-values to get the Q-value for action taken
@@ -236,42 +240,41 @@ class LLMEmbedAgent:
 
         # Keep track of the wins during training
         wins = 0
-        epsilon = 0.5  # Epsilon greedy parameter
-        epsilon_min = 0.1  # Minimum epsilon greedy parameter
-        epsilon_max = 1.0  # Maximum epsilon greedy parameter
+        epsilon = 0.9  # Epsilon greedy parameter
+        epsilon_min = 0.05  # Minimum epsilon greedy parameter
+        epsilon_max = 0.9  # Maximum epsilon greedy parameter
         epsilon_interval = epsilon_max - epsilon_min
         step_count = 0
-        epsilon_random_steps = 5000
 
-        # TODO: calibrate the epsilon
-        epsilon_greedy_steps = 2000.0 * self.args.max_t
-        update_target_network = 10000
+        # TODO: calibrate the epsilon and the target update
+        epsilon_greedy_steps = 10000
+        update_target_network = 4 # steps
 
         running_reward = 0
         for episode in range(1, num_episodes+1):
             rewards = []
+            memories = []
             int_reward = 0
             observation = self.env.reset()
             valid_actions = self._generate_valid_actions(observation.state)
-            action_next = self._select_best_action_for_state(observation.state, valid_actions)
-            num_valid_actions =len(valid_actions)
+            action_next = self._select_best_action_for_state(observation.state, valid_actions, memories)
+            num_valid_actions=len(valid_actions)
 
             for _ in range(self.args.max_t):
                 step_count += 1
-                if step_count < epsilon_random_steps or epsilon > np.random.rand(1)[0]:
+                if epsilon > np.random.rand(1)[0]:
                     # Take random action
                     action = np.random.choice(valid_actions)
                 else:
                     action = action_next
 
                 # Decay probability of taking random action
-                epsilon -= epsilon_interval / epsilon_greedy_steps
-                epsilon = max(epsilon, epsilon_min)
+                epsilon = epsilon_min + epsilon_interval * math.exp(-1. * step_count / epsilon_greedy_steps)
 
                 # Take a step in the environment and get the next action and best state
                 observation_next = self.env.step(action)
                 valid_actions = self._generate_valid_actions(observation_next.state)
-                action_next = self._select_best_action_for_state(observation_next.state, valid_actions)
+                action_next = self._select_best_action_for_state(observation_next.state, valid_actions, memories)
 
                 if len(valid_actions) > num_valid_actions:
                     num_valid_actions = len(valid_actions)
@@ -286,8 +289,10 @@ class LLMEmbedAgent:
                                           self._create_embedding_from_str(str(observation_next.state)),
                                           self._create_embedding_from_str(str(action_next)),
                                           observation_next.reward,
+                                          self._create_embedding_from_str(self._create_memory_prompt(memories)),
                                           observation_next.done)
                 observation = observation_next
+                memories.append(str(action))
 
                 if observation_next.done:
                     # If done and the latest reward from the env is positive,
@@ -306,12 +311,18 @@ class LLMEmbedAgent:
                 tf.summary.scalar("train/win_rate", win_rate, episode)
                 tf.summary.scalar("train/epsilon", epsilon, episode)
 
-            if episode > 0 and episode % self.args.train_every == 0:
+            if episode > 1 and step_count % self.args.train_every == 0:
                 self._optimize_models()
 
             if step_count % update_target_network == 0:
                 # update the the target network with new weights
-                self.q_target.set_weights(self.q_model.get_weights())
+                # TODO: soft or hard update and how often?
+                tau = 0.005
+                target_weights = self.q_target.variables
+                model_weights = self.q_model.variables
+                for (a, b) in zip(target_weights, model_weights):
+                    a.assign(b * tau + a * (1 - tau))
+                # self.q_target.set_weights(self.q_model.get_weights())
 
             # Update running reward to check condition for solving
             running_reward = np.mean(scores)
@@ -333,15 +344,17 @@ class LLMEmbedAgent:
         Evaluation function.
         """
         eval_returns = []
-        wins = 0
+        num_wins = 0
         for _ in range(num_eval_episodes):
             observation = env.reset()
             done = False
             ret = 0
+            memories = []
 
             valid_actions = self._generate_valid_actions(observation.state)
             while not done:
-                action = self._select_best_action_for_state(observation.state, valid_actions)
+                action = self._select_best_action_for_state(observation.state, valid_actions, memories)
+                memories.append(str(action))
                 observation_next = self.env.step(action)
 
                 ret += observation_next.reward
@@ -351,12 +364,12 @@ class LLMEmbedAgent:
                 valid_actions = self._generate_valid_actions(observation.state)
                 observation = observation_next
 
-            if observation.reward > 0:
-                wins += 1
+            if observation_next.reward > 0:
+                num_wins += 1
 
             eval_returns.append(ret)
 
-        return eval_returns, wins
+        return eval_returns, num_wins
 
     def save_model(self, file_name):
         """
@@ -383,7 +396,7 @@ if __name__ == '__main__':
     # Model arguments
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--lr", help="Learning rate of the NN", type=float, default=1e-3)
-    parser.add_argument("--memory_len", type=int, default=0, help="Number of memories to keep. Zero means no memory")
+    # parser.add_argument("--memory_len", type=int, default=0, help="Number of memories to keep. Zero means no memory")
     parser.add_argument("--model_path", type=str, default="saved_models/q_model.h5", help="Path for saving the policy model.")
 
     # Training arguments
@@ -391,7 +404,7 @@ if __name__ == '__main__':
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size to sample from memory")
     parser.add_argument("--num_episodes", help="Sets number of training episodes", default=1000, type=int)
     parser.add_argument("--max_t", type=int, default=128, help="Max episode length")
-    parser.add_argument("--train_every", type=int, default=4, help="Train every this ammount of episodes.")
+    parser.add_argument("--train_every", type=int, default=4, help="Train every this ammount of steps.")
     parser.add_argument("--eval_every", help="During training, evaluate every this amount of episodes.", default=128, type=int)
     parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int)
     parser.add_argument("--buffer_size", type=int, default=128, help="Replay buffer size")
@@ -406,7 +419,7 @@ if __name__ == '__main__':
     hparams = {
         "lr": args.lr,
         "gamma": args.gamma,
-        "mem_len": args.memory_len,
+        # "mem_len": args.memory_len,
         "batch_size": args.batch_size,
         "num_episodes": args.num_episodes,
         "buffer_size": args.buffer_size,
