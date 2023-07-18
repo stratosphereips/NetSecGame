@@ -175,7 +175,7 @@ class LLMEmbedAgent:
                                                                    memory_embed.reshape(1, -1)],
                                                             axis=1), training=False))
             except KeyError:
-                pass
+                action_vals.append(tf.reshape(tf.constant([-100.]), shape=(1,1)))
 
         action_id = tf.argmax(action_vals).numpy().squeeze()
         action = valid_actions[action_id]
@@ -204,10 +204,10 @@ class LLMEmbedAgent:
             next_state_batch = np.array(batch.next_state).reshape(self.args.batch_size, self.embedding_size)
             next_action_batch = np.array(batch.next_action).reshape(self.args.batch_size, self.embedding_size)
             memory_batch = np.array(batch.memory).reshape(self.args.batch_size, self.embedding_size)
-            # dones = np.array(batch.done).reshape(self.args.batch_size, 1)
+            dones = np.array(batch.done).reshape(self.args.batch_size, 1)
 
             future_rewards = self.q_target(tf.concat([next_state_batch, next_action_batch, memory_batch], axis=1))
-            updated_q_values = reward_batch + self.gamma * future_rewards
+            updated_q_values = reward_batch + self.gamma * future_rewards * (1-dones)
 
             # If final step set the last value to -1
             # TODO: check if this is needed
@@ -248,17 +248,17 @@ class LLMEmbedAgent:
 
         # TODO: calibrate the epsilon and the target update
         epsilon_greedy_steps = 10000
-        update_target_network = 4 # steps
+        update_target_network = 1 # steps
 
         running_reward = 0
         for episode in range(1, num_episodes+1):
             rewards = []
             memories = []
-            int_reward = 0
+            # int_reward = 0
             observation = self.env.reset()
             valid_actions = self._generate_valid_actions(observation.state)
             action_next = self._select_best_action_for_state(observation.state, valid_actions, memories)
-            num_valid_actions=len(valid_actions)
+            # num_valid_actions=len(valid_actions)
 
             for _ in range(self.args.max_t):
                 step_count += 1
@@ -276,13 +276,13 @@ class LLMEmbedAgent:
                 valid_actions = self._generate_valid_actions(observation_next.state)
                 action_next = self._select_best_action_for_state(observation_next.state, valid_actions, memories)
 
-                if len(valid_actions) > num_valid_actions:
-                    num_valid_actions = len(valid_actions)
-                    int_reward = 2.0
-                else:
-                    int_reward = 0.0
+                # if len(valid_actions) > num_valid_actions:
+                #     num_valid_actions = len(valid_actions)
+                #     int_reward = 2.0
+                # else:
+                #     int_reward = 0.0
 
-                rewards.append(observation_next.reward+int_reward)
+                rewards.append(observation_next.reward)
 
                 self.replay_buffer.append(self._create_embedding_from_str(str(observation.state)),
                                           self._create_embedding_from_str(str(action)),
@@ -317,7 +317,7 @@ class LLMEmbedAgent:
             if step_count % update_target_network == 0:
                 # update the the target network with new weights
                 # TODO: soft or hard update and how often?
-                tau = 0.005
+                tau = 0.001
                 target_weights = self.q_target.variables
                 model_weights = self.q_model.variables
                 for (a, b) in zip(target_weights, model_weights):
@@ -328,9 +328,9 @@ class LLMEmbedAgent:
             running_reward = np.mean(scores)
 
             # TODO: Condition to consider the task solved
-            if win_rate > 90:
-                print(f"Solved at episode {episode}!")
-                break
+            # if win_rate > 90:
+            #     print(f"Solved at episode {episode}!")
+            #     break
 
             if episode > 0 and episode % self.args.eval_every == 0:
                 eval_rewards, eval_wins = self.evaluate(args.eval_episodes)
@@ -361,7 +361,7 @@ class LLMEmbedAgent:
                 done = observation_next.done
 
                 # Generate the list of all the valid actions in the observed state
-                valid_actions = self._generate_valid_actions(observation.state)
+                valid_actions = self._generate_valid_actions(observation_next.state)
                 observation = observation_next
 
             if observation_next.reward > 0:
