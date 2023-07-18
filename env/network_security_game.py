@@ -466,7 +466,7 @@ class NetworkSecurityEnvironment(object):
         private_nets = sorted(private_nets)
         
         new_base = netaddr.IPNetwork(fake.ipv4_private(), private_nets[0].mask)
-        mapping_nets[private_nets[0]] = components.Network(new_base.network, private_nets[0].mask)
+        mapping_nets[private_nets[0]] = components.Network(str(new_base.network), private_nets[0].mask)
         base = netaddr.IPNetwork(str(private_nets[0]))
         for i in range(1,len(private_nets)):
             current = netaddr.IPNetwork(str(private_nets[i]))
