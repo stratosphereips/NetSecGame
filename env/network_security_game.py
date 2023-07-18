@@ -101,6 +101,7 @@ class NetworkSecurityEnvironment(object):
         
         # check if dynamic network and ip adddresses are required
         if self.task_config.get_use_dynamic_addresses():
+            logger.info("Dynamic change of the IP and network addresses enabled")
             self._create_new_network_mapping()
 
         # process episodic randomization
