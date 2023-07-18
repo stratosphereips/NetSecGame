@@ -100,9 +100,9 @@ class NetworkSecurityEnvironment(object):
         self._goal_conditions = self.task_config.get_attacker_win_conditions()
         
         # check if dynamic network and ip adddresses are required
-        if self.task_config.get_dynamic_addresses():
+        if self.task_config.get_use_dynamic_addresses():
             self._create_new_network_mapping()
-            
+
         # process episodic randomization
         if not self._randomize_goal_every_episode:
             # episodic randomization is not required, randomize once now
