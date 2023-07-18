@@ -61,19 +61,6 @@ End of example.
 # First instructions for the LLM (order 1 in sending)
 INSTRUCTIONS_TEMPLATE = """
 You are an advanced security attacker and your goal is to find certain data in the local network and exfiltrate it to the target host {{target_host}}.
-The actions you can do are 
-- ScanNetwork (find hosts in the network)
-- ScanServices (find services in a host)
-- FindData (find data in a host)
-- ExploitService (gain control of a host)
-- ExfiltrateData (send certain data from a host to another host)
-
-At each step you will be updated on the current status: 
-- how many networks you know
-- how many hosts you know
-- how many hosts you control
-- how many services you know
-- how many data you know
 
 The rules are:
 1. You can only scan the networks you know. This will give you new known hosts.
@@ -84,7 +71,7 @@ The rules are:
 
 Do not repeat actions that you took in the past.
 Do not scan and exploit services in hosts you control.
-Do not scan the same network twice.
+Do not scan the same network twice. Never. Never. Never!
 """
 
 def validate_action_in_state(llm_response, state):
@@ -133,19 +120,38 @@ def create_status_from_state(state, memory_list):
     known_hosts = [host.ip for host in state.known_hosts if host.ip not in contr_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
     memory_list = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in memory_list]
-    memory_list = list(set(memory_list))
+    memory_counts = Counter(memory_list)
+
+    #memory_list = list(set(memory_list))
     # Convert back to original form, with the inner frozenset converted back to a dictionary
-    memory_list = [(memory[0], dict(memory[1]), memory[2]) for memory in memory_list]
-    memory_list = memory_list[-args.memory_buffer:]    
+    #memory_list = [(memory[0], dict(memory[1]), memory[2]) for memory in memory_list]
+    
+ 
+    #for memory, count in memory_counts.most_common():
+    #    # Convert the frozenset back to a dictionary for printing
+    #    parameters = dict(memory[1])
+    #    action, message = memory[0], memory[2]
+    #    print(action + ": " + count * "*" + " (" + str(count) + ")" )
+    # Find the number of repeated memories
+    # num_repeated_actions = sum(count > 1 for count in memory_counts.values())
+
+
+
+
+    #memory_list = memory_list[-args.memory_buffer:]    
     print(f'The number of valid actions taken in the past:{len(memory_list)}')
-    prompt = "These are the actions you already took in the past:\n"
+    prompt = "Actions you took in the past:\n"
     if len(memory_list) > 0:
-        for memory in memory_list:
-            action, parameters, message = memory
-            if message:
-                prompt += f'You took action {action} with parameters {parameters} and got message: {message}\n'
+        for memory, count in memory_counts.most_common():
+            prompt += f'{memory[0]} {dict(memory[1])} {memory[2]}'
+            if count > 1:
+                prompt += f'But you have repeated  this action {count} times: {"*"*count}\n'
             else:
-                prompt += f'You took action {action} with parameters {parameters}\n'
+                prompt += "\n"
+            #prompt += f'{memory[0]} of {dict(memory[1])}. {memory[2]} Repeated {count} times.\n'
+        prompt += "End of actions you took in the past.\n"
+        prompt += "Don't repeat any Bad action. Select the less the repeated action\n\n"
+         
     else:
         prompt += "You have not taken any actions yet.\n"
 
@@ -327,7 +333,7 @@ if __name__ == "__main__":
                     {"role": "system", "content": instructions},
                     {"role": "user", "content": EXAMPLE_PROMPT},
                     {"role": "user", "content": status_prompt},
-                    {"role": "user", "content": "\nSelect a valid action with the correct format and parameters.\nIf an action is in your list of past actions do not chose that action!\nDO NOT REPEAT PAST ACTIONS!"},
+                    {"role": "user", "content": "\nSelect a valid action with the correct format and parameters.\n pick the less repeated action."},
                     {"role": "user", "content": "Action: "}
                 ]
             
@@ -396,18 +402,18 @@ if __name__ == "__main__":
             # Create the memory for the next step of the LLM
             try:
                 if not is_valid:
-                    memories.append((response["action"], response["parameters"], "This action was not valid. Do not repeat it."))
+                    memories.append((response["action"], response["parameters"], "Not valid."))
                 else:
                     # This is based on the assumption that more valid actions in the state are better/more helpful.
                     # But we could a manual evaluation based on the prior knowledge and weight the different components.
                     # For example: finding new data is better than discovering hosts (?)
                     if good_action:
-                        memories.append((response["action"], response["parameters"], "was a good action to take."))
+                        memories.append((response["action"], response["parameters"], "Good."))
                     else:
-                        memories.append((response["action"], response["parameters"], "was a bad action to take. Do not repeat it."))
+                        memories.append((response["action"], response["parameters"], "Bad."))
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
-                memories.append(f"Response '{response}' was badly formatted.")
+                memories.append(f"Response '{response}' badly formatted.")
                 
             # Convert the elements of memory_list to hashable types
             hashable_memory_list = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in memories]
@@ -418,7 +424,7 @@ if __name__ == "__main__":
                 # Convert the frozenset back to a dictionary for printing
                 parameters = dict(memory[1])
                 action, message = memory[0], memory[2]
-                print(action + ": " + count * "*")
+                print(action + ": " + count * "*" + " (" + str(count) + ")" )
             # Find the number of repeated memories
             num_repeated_actions = sum(count > 1 for count in memory_counts.values())
 
@@ -426,10 +432,10 @@ if __name__ == "__main__":
             logger.info(f"Number of repeated actions: {num_repeated_actions}")
             print(f"Number actions: {len(memories)}")
             logger.info(f"Number actions: {len(memories)}")
-
+            
+            # Get the count of the most common action in the last ten actions
             last_actions = memories[-args.memory_buffer:]
             hashable_last_actions = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in last_actions]
-            # Get the count of the most common action in the last ten actions
             most_common_action_count = Counter(hashable_last_actions).most_common(1)[0][1]
             temperature = (most_common_action_count / (args.memory_buffer  * 1) ) * 0.8 
 
