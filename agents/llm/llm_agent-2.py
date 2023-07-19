@@ -165,10 +165,10 @@ def create_status_from_state(state, memory_list):
                 serv_str = ""
                 for serv in services:
                     serv_str += serv + " and "
-                prompt += f"- Known services for host {ip_service}: {serv_str}\n"
-                logger.info(f"- Known services for host {ip_service}: {services}")
                 # Delete the last 'and '
                 serv_str = serv_str[:-4]
+                prompt += f"- Known services for host {ip_service}: {serv_str}\n"
+                logger.info(f"- Known services for host {ip_service}: {services}")
             else:
                 prompt += "- Known services: None\n"
                 logger.info(f"- Known services: None")
