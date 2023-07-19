@@ -72,6 +72,14 @@ Keep in mind:
 4. You can find data in hosts you control. This will give you new known data.
 5. You can exfiltrate known data to and from controlled hosts. This may make you complete your goal.
 
+Penetration methodology:
+if you find a new network, try to gain access one host at the time.
+if you find a new host, try to scan for services.
+if you find a new service, try to explot the service.
+if you exploit a service, try to exfiltrate data.
+try to to no repeat the same actions or you can be discovered.
+
+
 Recomendations:
 Do not scan and exploit services in hosts you control.
 Do not scan the same network twice. 
