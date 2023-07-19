@@ -18,6 +18,7 @@ from sentence_transformers import SentenceTransformer
 
 import numpy as np
 import tensorflow as tf
+from sklearn.utils import shuffle
 
 label_mapper = {
     "FindData":ActionType.FindData,
@@ -33,7 +34,7 @@ action_list = ["ScanNetwork", "FindServices", "ExploitService", "FindData", "Exf
 # 'windows login', 'can_attack_start_here']
 local_services = ['can_attack_start_here']
 
-Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'next_action', 'reward', 'memory', 'done'))
+Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'next_action', 'reward', 'memory', 'next_memory', 'done'))
 
 
 class ReplayBuffer:
@@ -53,11 +54,11 @@ class ReplayBuffer:
         Sample based on the discounted rewards of each state
         """
         # Add 1 so that the weight sum is always positive
-        # disc_rewards = [mem.disc_reward+1. for mem in self.buffer]
-        # batch1 = random.choices(self.buffer, disc_rewards, k=batch_size)
-        batch2 = random.sample(self.buffer, batch_size)
+        rewards = [mem.reward+1.1 for mem in self.buffer]
+        batch1 = random.choices(self.buffer, rewards, k=batch_size)
+        # batch2 = random.sample(self.buffer, 2*batch_size//3)
         # total_batch = shuffle(batch1+batch2)
-        return batch2
+        return batch1
 
     def __len__(self):
         """Return the size of the buffer"""
@@ -84,30 +85,30 @@ class LLMEmbedAgent:
             self.action_db[action] = self.transformer_model.encode(str(action))
         self.q_model = self._create_model(embedding_size=self.embedding_size)
         self.q_target = self._create_model(embedding_size=self.embedding_size)
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, clipvalue=100)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, clipnorm=1.0)
 
         self.gamma = args.gamma
         # self.loss_fn = tf.keras.losses.MeanSquaredError()
         # self.loss_fn = nn.SmoothL1Loss()
         self.q_model.compile(self.optimizer, tf.keras.losses.MeanSquaredError())
         self.q_target.compile(self.optimizer)
-        self.q_target.set_weights(self.q_model.get_weights())
 
         self.q_model.summary()
         run_name = f"netsecgame__LLM_embed_DQN__{env.seed}__{int(time.time())}"
         self.summary_writer = tf.summary.create_file_writer("./logs/"+ run_name)
         self.eval_episodes = args.eval_episodes
-        # self.memory_len = args.memory_len
+        self.memory_len = args.memory_len
         # Parameter that defines the value of the intrinsic reward
         # self.beta = 1.0
         self.replay_buffer = ReplayBuffer(args.buffer_size)
 
     def _create_model(self, embedding_size=384):
+        initializer = tf.keras.initializers.HeUniform()
         inputs = tf.keras.layers.Input(shape=(embedding_size*3,))
 
-        layer1 = tf.keras.layers.Dense(512, activation="relu")(inputs)
-        layer2 = tf.keras.layers.Dense(256, activation="relu")(layer1)
-        layer3 = tf.keras.layers.Dense(32, activation="relu")(layer2)
+        layer1 = tf.keras.layers.Dense(256, activation="relu", kernel_initializer=initializer)(inputs)
+        # layer2 = tf.keras.layers.Dense(256, activation="relu", kernel_initializer=initializer)(layer1)
+        layer3 = tf.keras.layers.Dense(32, activation="relu", kernel_initializer=initializer)(layer1)
         q_value = tf.keras.layers.Dense(1)(layer3)
 
         return tf.keras.Model(inputs=inputs, outputs=q_value)
@@ -164,7 +165,7 @@ class LLMEmbedAgent:
         Go through all valid actions and select the best for this state
         """
         state_embed = self._create_embedding_from_str(str(state))
-        memory_embed = self._create_embedding_from_str(self._create_memory_prompt(memories))
+        memory_embed = self._create_embedding_from_str(self._create_memory_prompt(memories[-self.memory_len:]))
 
         action_vals = []
         for act in valid_actions:
@@ -173,7 +174,7 @@ class LLMEmbedAgent:
                 action_vals.append(self.q_model(tf.concat([state_embed.reshape(1, -1),
                                                                    action_embed.reshape(1, -1),
                                                                    memory_embed.reshape(1, -1)],
-                                                            axis=1), training=False))
+                                                            axis=1)))
             except KeyError:
                 action_vals.append(tf.reshape(tf.constant([-100.]), shape=(1,1)))
 
@@ -204,14 +205,11 @@ class LLMEmbedAgent:
             next_state_batch = np.array(batch.next_state).reshape(self.args.batch_size, self.embedding_size)
             next_action_batch = np.array(batch.next_action).reshape(self.args.batch_size, self.embedding_size)
             memory_batch = np.array(batch.memory).reshape(self.args.batch_size, self.embedding_size)
-            dones = np.array(batch.done).reshape(self.args.batch_size, 1)
+            next_memory_batch = np.array(batch.next_memory).reshape(self.args.batch_size, self.embedding_size)
+            dones = np.array([float(i) for i in batch.done])
 
-            future_rewards = self.q_target(tf.concat([next_state_batch, next_action_batch, memory_batch], axis=1))
-            updated_q_values = reward_batch + self.gamma * future_rewards * (1-dones)
-
-            # If final step set the last value to -1
-            # TODO: check if this is needed
-            # updated_q_values = updated_q_values * (1 - dones) - dones
+            future_rewards = self.q_target(tf.concat([next_state_batch, next_action_batch, next_memory_batch], axis=1))
+            updated_q_values = reward_batch + self.gamma * future_rewards * (1 - dones)
 
             with tf.GradientTape() as tape:
                 # Train the model on the states and updated Q-values
@@ -230,7 +228,7 @@ class LLMEmbedAgent:
             self.optimizer.apply_gradients(zip(grads, self.q_model.trainable_variables))
 
         with self.summary_writer.as_default():
-            tf.summary.scalar('train/loss',loss, step=self.q_model.optimizer.iterations)
+            tf.summary.scalar('train/loss', loss, step=self.q_model.optimizer.iterations)
 
     def train(self, num_episodes): # pylint: disable=too-many-locals,too-many-statements
         """
@@ -283,16 +281,18 @@ class LLMEmbedAgent:
                 #     int_reward = 0.0
 
                 rewards.append(observation_next.reward)
+                memories.append(str(action))
 
                 self.replay_buffer.append(self._create_embedding_from_str(str(observation.state)),
                                           self._create_embedding_from_str(str(action)),
                                           self._create_embedding_from_str(str(observation_next.state)),
                                           self._create_embedding_from_str(str(action_next)),
                                           observation_next.reward,
-                                          self._create_embedding_from_str(self._create_memory_prompt(memories)),
+                                          self._create_embedding_from_str(self._create_memory_prompt(memories[-self.memory_len-1:-1])),
+                                          self._create_embedding_from_str(self._create_memory_prompt(memories[-self.memory_len:])),
                                           observation_next.done)
                 observation = observation_next
-                memories.append(str(action))
+                
 
                 if observation_next.done:
                     # If done and the latest reward from the env is positive,
@@ -300,6 +300,20 @@ class LLMEmbedAgent:
                     if observation_next.reward > 0:
                         wins += 1
                     break
+
+                if episode > 1 and step_count % self.args.train_every == 0:
+                    self._optimize_models()
+
+                if step_count % update_target_network == 0:
+                    # update the the target network with new weights
+                    # TODO: soft or hard update and how often?
+                    tau = 0.001
+                    target_weights = self.q_target.variables
+                    model_weights = self.q_model.variables
+                    for (a, b) in zip(target_weights, model_weights):
+                        a.assign(b * tau + a * (1 - tau))
+                    # self.q_target.set_weights(self.q_model.get_weights())
+
             win_rate = 100*(wins/episode)
             scores.append(sum(rewards))
 
@@ -311,18 +325,9 @@ class LLMEmbedAgent:
                 tf.summary.scalar("train/win_rate", win_rate, episode)
                 tf.summary.scalar("train/epsilon", epsilon, episode)
 
-            if episode > 1 and step_count % self.args.train_every == 0:
-                self._optimize_models()
+            
 
-            if step_count % update_target_network == 0:
-                # update the the target network with new weights
-                # TODO: soft or hard update and how often?
-                tau = 0.001
-                target_weights = self.q_target.variables
-                model_weights = self.q_model.variables
-                for (a, b) in zip(target_weights, model_weights):
-                    a.assign(b * tau + a * (1 - tau))
-                # self.q_target.set_weights(self.q_model.get_weights())
+            
 
             # Update running reward to check condition for solving
             running_reward = np.mean(scores)
@@ -396,7 +401,7 @@ if __name__ == '__main__':
     # Model arguments
     parser.add_argument("--gamma", help="Sets gamma for discounting", default=0.9, type=float)
     parser.add_argument("--lr", help="Learning rate of the NN", type=float, default=1e-3)
-    # parser.add_argument("--memory_len", type=int, default=0, help="Number of memories to keep. Zero means no memory")
+    parser.add_argument("--memory_len", type=int, default=10, help="Number of memories to keep")
     parser.add_argument("--model_path", type=str, default="saved_models/q_model.h5", help="Path for saving the policy model.")
 
     # Training arguments
@@ -419,7 +424,7 @@ if __name__ == '__main__':
     hparams = {
         "lr": args.lr,
         "gamma": args.gamma,
-        # "mem_len": args.memory_len,
+        "mem_len": args.memory_len,
         "batch_size": args.batch_size,
         "num_episodes": args.num_episodes,
         "buffer_size": args.buffer_size,
