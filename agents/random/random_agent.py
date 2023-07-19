@@ -4,7 +4,6 @@ import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.dirname( path.abspath(__file__) ) ) ))
 from random import choice
-import random
 import argparse
 import numpy as np
 import time
