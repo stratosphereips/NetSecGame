@@ -18,7 +18,7 @@ from sentence_transformers import SentenceTransformer
 
 import numpy as np
 import tensorflow as tf
-from sklearn.utils import shuffle
+# from sklearn.utils import shuffle
 
 label_mapper = {
     "FindData":ActionType.FindData,
