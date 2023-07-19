@@ -258,11 +258,12 @@ def create_action_from_response(llm_response, state, actions_took_in_episode):
     actions_took_in_episode.append(action)
     return valid, action, actions_took_in_episode
 
-@retry(stop=stop_after_attempt(3))
-def openai_query(msg_list, model, max_tokens=60, temperature = 0.0):
+@retry(stop=stop_after_attempt(30))
+def openai_query(msg_list, model, delay: float, max_tokens=60, temperature = 0.0):
     """
     Send messages to OpenAI API and return the response.
     """
+    time.sleep(delay)
     logger.info(f'Asking the openAI API')
     llm_response = openai.ChatCompletion.create(
         model=model,
@@ -283,6 +284,7 @@ if __name__ == "__main__":
     parser.add_argument("--memory_buffer", help="Number of actions to remember and pass to the LLM", default=10, action='store', required=False, type=int)
     parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
     parser.add_argument("--force_ignore", help="Force ignore repeated actions in code", default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--delay", help="Delay the requests to LLM by this amount of seconds.", type=float, default=0)
     args = parser.parse_args()
 
     # Create the environment
@@ -364,7 +366,7 @@ if __name__ == "__main__":
             print(f"temperature: {temperature}")
             
             logger.info(f"Temperature: {temperature}")
-            response = openai_query(messages, args.llm,temperature = temperature)
+            response = openai_query(messages, args.llm, args.delay, temperature = temperature)
             logger.info(f"Action chosen (not still taken) by LLM: {response}")
             print(f"Action chosen (not still taken) by LLM: {response}")
 
