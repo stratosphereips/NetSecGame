@@ -360,6 +360,9 @@ if __name__ == "__main__":
             try:
                 if response.startswith("Action: "):
                     response = response[8:]
+                elif not response.startswith("{"):
+                    idx = response.find("{")
+                    response = response[idx:]
                 response = eval(response)
                 # Validate action based on current states
                 is_valid, action = create_action_from_response(response, observation.state)
