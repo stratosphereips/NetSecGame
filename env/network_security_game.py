@@ -819,7 +819,8 @@ class NetworkSecurityEnvironment(object):
             # This means defender wins if both defender and attacker are successful
             # simuntaneously in the same step
             detected = self._is_detected(self._current_state, action)
-            if detected:
+            # Report detection, but not if in this same step the agent won
+            if not is_goal and detected:
                 # Reward should be negative
                 reward -= 50
                 # Mark the environment as detected
@@ -834,7 +835,8 @@ class NetworkSecurityEnvironment(object):
             logger.info(f'Current state: {self._current_state} ')
 
             # 4. Check if the max number of steps of the game passed already
-            if self._step_counter >= self._max_steps:
+            # But if the agent already won in this last step, count the win
+            if not is_goal and self._step_counter >= self._max_steps:
                 self._done = True
                 reason = {'end_reason':'max_steps'}
                 logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
