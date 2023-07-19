@@ -262,7 +262,7 @@ def openai_query(msg_list, model, max_tokens=60, temperature = 0.0):
         model=model,
         messages=msg_list,
         max_tokens=max_tokens,
-        temperature=temperature
+        temperature=temperature,
     )
     # We expect the response from the LLM to be JSON
     return llm_response["choices"][0]["message"]["content"]
@@ -443,7 +443,7 @@ if __name__ == "__main__":
             last_actions = memories[-args.memory_buffer:]
             hashable_last_actions = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in last_actions]
             most_common_action_count = Counter(hashable_last_actions).most_common(1)[0][1]
-            temperature = (most_common_action_count / (args.memory_buffer  * 1) ) * 0.8 
+            temperature = ((most_common_action_count / (args.memory_buffer  * 1) ) * 0.8 ) + 0.3
 
            
 
