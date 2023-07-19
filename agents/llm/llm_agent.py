@@ -128,40 +128,9 @@ def create_status_from_state(state, memory_list):
     memory_list = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in memory_list]
     memory_counts = Counter(memory_list)
 
-    #memory_list = list(set(memory_list))
-    # Convert back to original form, with the inner frozenset converted back to a dictionary
-    #memory_list = [(memory[0], dict(memory[1]), memory[2]) for memory in memory_list]
-    
- 
-    #for memory, count in memory_counts.most_common():
-    #    # Convert the frozenset back to a dictionary for printing
-    #    parameters = dict(memory[1])
-    #    action, message = memory[0], memory[2]
-    #    print(action + ": " + count * "*" + " (" + str(count) + ")" )
-    # Find the number of repeated memories
-    # num_repeated_actions = sum(count > 1 for count in memory_counts.values())
+    prompt = "# CURRENT STATUS:\n"
+    prompt += "```\n"
 
-
-
-
-    #memory_list = memory_list[-args.memory_buffer:]    
-    print(f'The number of valid actions taken in the past:{len(memory_list)}')
-    prompt = "Actions you took in the past:\n"
-    if len(memory_list) > 0:
-        for memory, count in memory_counts.most_common():
-            prompt += f'{memory[0]} {dict(memory[1])} {memory[2]}'
-            if count > 1:
-                prompt += f'But you have repeated  this action {count} times: {"*"*count}\n'
-            else:
-                prompt += "\n"
-            #prompt += f'{memory[0]} of {dict(memory[1])}. {memory[2]} Repeated {count} times.\n'
-        prompt += "End of actions you took in the past.\n"
-        prompt += "Don't repeat any Bad action. Select the less the repeated action\n\n"
-         
-    else:
-        prompt += "You have not taken any actions yet.\n"
-
-    prompt += "Current status:\n"
     prompt += f"Controlled hosts are {' and '.join(contr_hosts)}\n"
     logger.info("Controlled hosts are %s", ' and '.join(contr_hosts))
 
@@ -203,6 +172,64 @@ def create_status_from_state(state, memory_list):
                 prompt += f"Known data for host {ip_data} are {host_data}\n"
                 logger.info(f"Known data: {ip_data, state.known_data[ip_data]}")
 
+    prompt += "```\n"
+
+    print(f'The number of valid actions taken in the past:{len(memory_list)}')
+    prompt += "# ACTIONS YOU TOOK IN THE PAST:\n"
+
+    if not memory_list:
+        prompt += "You have not taken any actions yet.\n"
+    else:
+        avoid_actions = []
+        prompt += "```\n"
+        
+        for memory, count in memory_counts.most_common():
+            if count > 1:
+                action = f'{memory[0]} {dict(memory[1])} '
+                action += f' You have repeated action {count} times. AVOID SELECTING THIS ACTION AT ALL COST.\n'
+                avoid_actions.append(action)
+            else:
+                prompt += f'{memory[0]} {dict(memory[1])} {memory[2]}\n'
+
+        prompt += "```\n"
+        prompt +="# PAST ACTIONS TO AVOID:\n"
+        
+        if avoid_actions:
+            for action_to_avoid in avoid_actions:
+                prompt += action_to_avoid
+            prompt += "\nGiven this information, think carefully and then select a NEW action that will be helpful in the current context.\n\n"
+        else:
+            prompt += "You have no actions to avoid yet.\n"
+
+
+
+#    avoid_actions = []
+#    if len(memory_list) > 0:
+#        prompt += "```\n"
+#        for memory, count in memory_counts.most_common():
+#            if count > 1:
+#                    action = f'{memory[0]} {dict(memory[1])} '
+#                    action += f' You have repeated action {count} times. AVOID SELECTING THIS ACTION AT ALL COST.\n'
+#                    avoid_actions.append(action)
+#                    # prompt +="\n"
+#                    
+#            else:
+#                prompt += f'{memory[0]} {dict(memory[1])} {memory[2]}'
+#                #prompt += f' You have repeated action {count} times.'
+#                prompt += "\n"
+#
+#            #prompt += f'{memory[0]} of {dict(memory[1])}. {memory[2]} Repeated {count} times.\n'
+#        prompt += "```\n"
+#        prompt +="# PAST ACTIONS TO AVOID:\n"
+#        if len(avoid_actions) > 0:
+#            for action_to_avoid in avoid_actions:
+#                prompt += action_to_avoid
+#            prompt += "\nGiven this information, think carefully and then select a NEW action that will be helpful in the current context.\n\n"
+#        else:
+#            prompt += "You have no actions to avoid yet.\n"
+#    else:
+#        prompt += "You have not taken any actions yet.\n"
+#
     return prompt
 
 def create_action_from_response(llm_response, state, actions_took_in_episode):
