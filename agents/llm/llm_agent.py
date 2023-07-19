@@ -49,12 +49,15 @@ Controlled hosts are 2.2.2.2 and 1.1.1.2
 Known data for source host 1.1.1.2: are (User1, WebData)
 Known services for host 1.1.1.1 are openssh
 
-Actions have a name and one or more parameters. Here are some examples of actions:
+Actions have a name and one or more parameters. Here is an example of a possible set of actions for exfiltrating to 2.2.2.2:
+
+```
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
-Action: {"action":"ScanServices", "parameters":{"target_host":"2.2.2.3"}}
+Action: {"action":"ScanServices", "parameters":{"target_host":"1.1.1.1"}}
 Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
 Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
-Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "data": ("User1", "WebData"), "source_host": "1.1.1.2"}}}
+Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "data": ("User1", "WebData"), "source_host": "1.1.1.1"}}}
+```
 End of example.
 """
 
@@ -62,16 +65,19 @@ End of example.
 INSTRUCTIONS_TEMPLATE = """
 You are an advanced security attacker and your goal is to find certain data in the local network and exfiltrate it to the target host {{target_host}}.
 
-The rules are:
+Keep in mind:
 1. You can only scan the networks you know. This will give you new known hosts.
 2. You can only scan services in hosts you know. This will give you new known services.
 3. You can only exploit services when you know the service. This will make you control the host.
 4. You can find data in hosts you control. This will give you new known data.
 5. You can exfiltrate known data to and from controlled hosts. This may make you complete your goal.
 
-Do not repeat actions that you took in the past.
+Recomendations:
 Do not scan and exploit services in hosts you control.
-Do not scan the same network twice. Never. Never. Never!
+Do not scan the same network twice. 
+Do not repeat the parameters for an action.
+
+Try to variate the actions you take. Never pick the same.
 """
 
 def validate_action_in_state(llm_response, state):
