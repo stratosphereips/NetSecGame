@@ -28,7 +28,7 @@ import logging
 
 ACTION_MAPPER = {
     "ScanNetwork": ActionType.ScanNetwork,
-    "FindServices": ActionType.FindServices,
+    "ScanServices": ActionType.FindServices,
     "FindData": ActionType.FindData,
     "ExfiltrateData": ActionType.ExfiltrateData,
     "ExploitService": ActionType.ExploitService
@@ -44,7 +44,7 @@ Known services for host 1.1.1.1 are "openssh"
 
 Here are some examples of actions:
 Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
-Action: {"action":"FindServices", "parameters":{"target_host":"192.168.2.0"}}
+Action: {"action":"ScanServices", "parameters":{"target_host":"2.2.2.3"}}
 Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
 Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
 Action: {"action":"ExfiltrateData", "parameters":"{'target_host': '2.2.2.2', 'data': ('User1', 'SomeData'), 'source_host': '1.1.1.2'}"}}
@@ -53,37 +53,36 @@ End of example.
 
 COT_PROMPT2 = """
 Here are some examples of actions:
-{"action":"ScanNetwork", "parameters": {"target_network": "<known_network>"}}
-{"action":"FindServices", "parameters":{"target_host":"<known_host>"}}
-{"action":"ExploitService", "parameters":{"target_host":"<known_host>", "target_service":"<known_service>"}}
-{"action":"FindData", "parameters":{"target_host":"<controlled_host>"}}
-{"action":"ExfiltrateData", "parameters":"{"target_host": "<controlled_host>", "data": ("<User>", "Data"), "source_host": "<controlled_host>"}}
+Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
+Action: {"action":"ScanServices", "parameters":{"target_host":"2.2.2.3"}}
+Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
+Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
+Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "data": ("User1", "WebData"), "source_host": "1.1.1.2"}}}
+End of examples.
 """
 
 INSTRUCTIONS_TEMPLATE = """
 You are a pentester and you want to exfiltrate data to target host {{target_host}}.
-The actions you can take are FindServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
+The actions you can take are ScanServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData. 
 
-The rules of the game are:
-1. You can scan networks that you know.
-2. You can find services in hosts that you know.
-3. You can exploit services that you know.
+The rules are:
+1. You can only scan networks in your list of known networks.
+2. You can only scan services in hosts you know.
+3. You can only exploit services when you know the service.
 4. You can find data in hosts you control.
-5. You can exfiltrate data that you know to and from hosts you control.
-
-Do not repeat actions you have take in the past because you will be detected.
+5. You can exfiltrate known data to and from controlled hosts.
 """
 
 Q1 = "List the objects in the current status and the actions they can be used. Be specific."
-Q2 = "List top 3 sub-tasks you should follow with specific parameters. Indicate their priority out of 5."
-Q3 = """Provide one exact action and its parameters in the correct format.
+Q2 = "List the top 3 sub-tasks you should follow with specific parameters. Indicate their priority out of 5."
+Q3 = """Provide the action with the highest priority and its parameters in the correct format. Do not repeat past actions.
 Action: 
 """
 
 def validate_action_in_state(llm_response, state):
     """Check the LLM response and validate it against the current state."""
     contr_hosts = [str(host) for host in state.controlled_hosts]
-    known_hosts = [str(host) for host in state.known_hosts]
+    known_hosts = [str(host) for host in state.known_hosts if host.ip not in contr_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
     valid = False
@@ -96,15 +95,16 @@ def validate_action_in_state(llm_response, state):
             case 'ScanNetwork':
                 if action_params["target_network"] in known_nets:
                     valid = True 
-            case 'FindServices':
+            case 'ScanServices':
                 if action_params["target_host"] in known_hosts:
                     valid = True
             case 'ExploitService':
                 ip_addr = action_params["target_host"]
                 if ip_addr in known_hosts:
-                    for service in state.known_services[IP(ip_addr)]:
-                        if service.name == action_params["target_service"]:
-                            valid = True
+                    valid = True
+                    # for service in state.known_services[IP(ip_addr)]:
+                    #     if service.name == action_params["target_service"]:
+                    #         valid = True
             case 'FindData':
                 if action_params["target_host"] in contr_hosts:
                     valid = True
@@ -123,7 +123,7 @@ def validate_action_in_state(llm_response, state):
 def create_status_from_state(state):
     """Create a status prompt using the current state and the sae memories."""
     contr_hosts = [host.ip for host in state.controlled_hosts]
-    known_hosts = [host.ip for host in state.known_hosts]
+    known_hosts = [str(host) for host in state.known_hosts if host.ip not in contr_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
     prompt = "Current status:\n"
@@ -183,11 +183,11 @@ def create_action_from_response(llm_response, state):
                 case 'ScanNetwork':
                     target_net, mask = action_params["target_network"].split('/')
                     action  = Action(ActionType.ScanNetwork, {"target_network":Network(target_net, int(mask))})
-                case 'FindServices':
+                case 'ScanServices':
                     action  = Action(ActionType.FindServices, {"target_host":IP(action_params["target_host"])})
                 case 'ExploitService':
                     target_ip = action_params["target_host"]
-                    target_service = action_params["target_service"]
+                    target_service = action_params["target_service"].lower()
                     if len(list(state.known_services[IP(target_ip)])) > 0:
                         for serv in state.known_services[IP(target_ip)]:
                             if serv.name == target_service:
@@ -196,7 +196,11 @@ def create_action_from_response(llm_response, state):
                 case 'FindData':
                     action = Action(ActionType.FindData, {"target_host":IP(action_params["target_host"])})
                 case 'ExfiltrateData':
-                    data_owner, data_id = action_params["data"]
+                    try:
+                        data_owner, data_id = action_params["data"]
+                    except:
+                        data_owner, data_id = eval(action_params["data"])
+
                     action = Action(ActionType.ExfiltrateData, {"target_host":IP(action_params["target_host"]), "data":Data(data_owner, data_id), "source_host":IP(action_params["source_host"])})
                 case _:
                     return False, action
@@ -230,10 +234,10 @@ def summary_prompt(memory_list):
 
 
 @retry(stop=stop_after_attempt(3))
-def openai_query(msg_list, max_tokens=60):
+def openai_query(msg_list, max_tokens=60, model="gpt-3.5-turbo"):
     """Send messages to OpenAI API and return the response."""
     llm_response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model=model,
         messages=msg_list,
         max_tokens=max_tokens,
         temperature=0.0
@@ -244,6 +248,7 @@ def openai_query(msg_list, max_tokens=60):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
+    parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
     args = parser.parse_args()
 
     logger = logging.getLogger('llm_qa')
@@ -277,7 +282,7 @@ if __name__ == "__main__":
             {"role": "user", "content": status_prompt},
             {"role": "user", "content": Q1}
         ]
-        response = openai_query(messages, max_tokens=250)
+        response = openai_query(messages, max_tokens=1024, model=args.llm)
         print("LLM (step 1): %s", response)
 
         # Step 2
@@ -285,31 +290,33 @@ if __name__ == "__main__":
         messages = [
             {"role": "user", "content": instructions},
             {"role": "user", "content": status_prompt},
+            {"role": "user", "content": COT_PROMPT2},
             {"role": "user", "content": response},
             {"role": "user", "content": memory_prompt},
             {"role": "user", "content": Q2}
         ]
 
-        response = openai_query(messages, max_tokens=250)
+        response = openai_query(messages, max_tokens=1024, model="gpt-4")
         print("LLM (step 2): %s", response)
 
         # Step 3
         messages = [
             {"role": "user", "content": instructions},
             {"role": "user", "content": status_prompt},
-            {"role": "user", "content": response},
             {"role": "user", "content": COT_PROMPT2},
+            {"role": "user", "content": response},
             {"role": "user", "content": Q3}
         ]
 
-        print(messages)
-
-        response = openai_query(messages, max_tokens=80)
+        # print(messages)
+        response = openai_query(messages, max_tokens=80, model=args.llm)
 
         print(f"LLM (step 3): {response}")
         logger.info("LLM (step 3): %s", response)
 
         try:
+            if response.startswith("Action: "):
+                response = response[8:]
             response = eval(response)
             # Validate action based on current states
             is_valid, action = create_action_from_response(response, observation.state)
