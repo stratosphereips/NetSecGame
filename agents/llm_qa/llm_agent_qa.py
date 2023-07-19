@@ -71,11 +71,16 @@ The rules are:
 3. You can only exploit services when you know the service.
 4. You can find data in hosts you control.
 5. You can exfiltrate known data to and from controlled hosts.
+
+Do not repeat actions that you took in the past.
+Do not scan and exploit services in hosts you control.
+Do not scan the same network twice.
+Once you have known data exfiltrate them to the target one by one.
 """
 
 Q1 = "List the objects in the current status and the actions they can be used. Be specific."
 Q2 = "List the top 3 sub-tasks you should follow with specific parameters. Indicate their priority out of 5."
-Q3 = """Provide the action with the highest priority and its parameters in the correct format. Do not repeat past actions.
+Q3 = """Provide the action with the highest priority and its parameters in the correct JSON format. Do not repeat past actions.
 Action: 
 """
 
@@ -287,17 +292,17 @@ if __name__ == "__main__":
 
         # Step 2
         memory_prompt = create_mem_prompt(memories)
-        messages = [
-            {"role": "user", "content": instructions},
-            {"role": "user", "content": status_prompt},
-            {"role": "user", "content": COT_PROMPT2},
-            {"role": "user", "content": response},
-            {"role": "user", "content": memory_prompt},
-            {"role": "user", "content": Q2}
-        ]
+        # messages = [
+        #     {"role": "user", "content": instructions},
+        #     {"role": "user", "content": status_prompt},
+        #     {"role": "user", "content": COT_PROMPT2},
+        #     {"role": "user", "content": response},
+        #     {"role": "user", "content": memory_prompt},
+        #     {"role": "user", "content": Q2}
+        # ]
 
-        response = openai_query(messages, max_tokens=1024, model="gpt-4")
-        print("LLM (step 2): %s", response)
+        # response = openai_query(messages, max_tokens=1024, model="gpt-4")
+        # print("LLM (step 2): %s", response)
 
         # Step 3
         messages = [
@@ -305,6 +310,7 @@ if __name__ == "__main__":
             {"role": "user", "content": status_prompt},
             {"role": "user", "content": COT_PROMPT2},
             {"role": "user", "content": response},
+            {"role": "user", "content": memory_prompt},
             {"role": "user", "content": Q3}
         ]
 
