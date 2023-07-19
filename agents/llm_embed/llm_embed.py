@@ -23,7 +23,7 @@ torch.autograd.set_detect_anomaly(True)
 from sentence_transformers import SentenceTransformer
 
 from sklearn.decomposition import PCA
-from sklearn.metrics.pairwise import cosine_distances, euclidean_distances
+from sklearn.metrics.pairwise import euclidean_distances
 from scipy.spatial import distance
 
 label_mapper = {

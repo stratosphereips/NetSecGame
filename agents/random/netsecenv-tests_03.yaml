@@ -7,7 +7,6 @@ agents:
   attacker:
 
     goal:
-      randomize_goal_every_episode: False
       known_networks: []
       #known_networks: [192.168.1.0/24, 192.168.3.0/24]
 
@@ -23,13 +22,13 @@ agents:
 
       # In data, put the target host that must have the data and which data in format user,data
       # Example to fix the data in one host
-      known_data: {213.47.23.195: ["random"]}
+      known_data: {213.47.23.195: [[User1,DataFromServer1]]}
       # Example to fix two data in one host
       #known_data: {213.47.23.195: [[User1,DataFromServer1], [User5,DataFromServer5]]}
       # Example to fix the data in two host
       #known_data: {213.47.23.195: [User1,DataFromServer1], 192.168.3.1: [User3,Data3FromServer3]}
       # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the goal data is
-      #known_data: {213.47.23.195: [random]}
+      # known_data: {213.47.23.195: [random]}
 
     start_position:
       known_networks: []
@@ -57,23 +56,22 @@ env:
   random_seed: 'random'
   # Or you can fix the seed
   # random_seed: 42
-  scenario: 'scenario1'
-  max_steps: 15
+  scenario: 'scenario1_small'
+  max_steps: 30
   store_replay_buffer: True
-  use_dynamic_addresses: False
   actions:
     scan_network:
-      prob_success: 0.9
-      prob_detection: 0.2
+      prob_success: 1.0
+      prob_detection: 0.05
     find_services:
-      prob_success: 0.9
-      prob_detection: 0.3
+      prob_success: 1.0
+      prob_detection: 0.075
     exploit_services:
-      prob_success: 0.7
-      prob_detection: 0.4
+      prob_success: 1.0
+      prob_detection: 0.1
     find_data:
-      prob_success: 0.8
-      prob_detection: 0.1
+      prob_success: 1.0
+      prob_detection: 0.025
     exfiltrate_data:
-      prob_success: 0.8
-      prob_detection: 0.1
+      prob_success: 1.0
+      prob_detection: 0.025

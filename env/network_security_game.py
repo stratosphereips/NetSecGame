@@ -65,7 +65,7 @@ class NetworkSecurityEnvironment(object):
         self._process_cyst_config(cyst_config)
         logger.info("CYST configuration processed successfully")
         
-        # Set the seed if passed by the agent
+        # Set the seed 
         seed = self.task_config.get_seed('env')
         np.random.seed(seed)
         random.seed(seed)
@@ -466,7 +466,7 @@ class NetworkSecurityEnvironment(object):
         private_nets = sorted(private_nets)
         
         new_base = netaddr.IPNetwork(fake.ipv4_private(), private_nets[0].mask)
-        mapping_nets[private_nets[0]] = components.Network(new_base.network, private_nets[0].mask)
+        mapping_nets[private_nets[0]] = components.Network(str(new_base.network), private_nets[0].mask)
         base = netaddr.IPNetwork(str(private_nets[0]))
         for i in range(1,len(private_nets)):
             current = netaddr.IPNetwork(str(private_nets[i]))
@@ -748,6 +748,14 @@ class NetworkSecurityEnvironment(object):
         self._done = False
         self._step_counter = 0
         self._detected = False
+
+        # Also reset the seed. If it was fixed, then it is not going to change. If it was set random, it will.
+        # Set the seed 
+        seed = self.task_config.get_seed('env')
+        np.random.seed(seed)
+        random.seed(seed)
+        self._seed = seed
+        logger.info(f'Setting env seed to {seed}')
         
         # write all steps in the episode replay buffer in the file
         if self._episode_replay_buffer is not None:
@@ -819,7 +827,8 @@ class NetworkSecurityEnvironment(object):
             # This means defender wins if both defender and attacker are successful
             # simuntaneously in the same step
             detected = self._is_detected(self._current_state, action)
-            if detected:
+            # Report detection, but not if in this same step the agent won
+            if not is_goal and detected:
                 # Reward should be negative
                 reward -= 50
                 # Mark the environment as detected
@@ -834,7 +843,8 @@ class NetworkSecurityEnvironment(object):
             logger.info(f'Current state: {self._current_state} ')
 
             # 4. Check if the max number of steps of the game passed already
-            if self._step_counter >= self._max_steps:
+            # But if the agent already won in this last step, count the win
+            if not is_goal and self._step_counter >= self._max_steps:
                 self._done = True
                 reason = {'end_reason':'max_steps'}
                 logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
