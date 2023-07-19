@@ -101,7 +101,7 @@ if __name__ == '__main__':
     num_detected_steps = []
     logger.info(f'Starting the testing')
     print('Starting the testing')
-    for i in range(1, args.episodes + 1):
+    for episode in range(1, args.episodes + 1):
 
         observation = env.reset()
         ret, win, detection, steps = agent.evaluate(observation)
@@ -114,8 +114,8 @@ if __name__ == '__main__':
         returns += [ret]
         num_steps += [steps]
 
-        test_win_rate = (wins/(args.episodes)) * 100
-        test_detection_rate = (detected/(args.episodes)) * 100
+        test_win_rate = (wins/episode) * 100
+        test_detection_rate = (detected/episode) * 100
         test_average_returns = np.mean(returns)
         test_std_returns = np.std(returns)
         test_average_episode_steps = np.mean(num_steps)
@@ -126,10 +126,10 @@ if __name__ == '__main__':
         test_std_detected_steps = np.std(num_detected_steps)
 
 
-        if i % args.test_each == 0 and i != 0:
-            print(f'Episode {i}')
-            logger.info(f'Episode {i}')
-            text = f'''Tested after {i} episodes.
+        if episode % args.test_each == 0 and episode != 0:
+            print(f'Episode {episode}')
+            logger.info(f'Episode {episode}')
+            text = f'''Tested after {episode} episodes.
                 Wins={wins},
                 Detections={detected},
                 winrate={test_win_rate:.3f}%,
@@ -142,19 +142,19 @@ if __name__ == '__main__':
             logger.info(text)
             print(text)
             # Store in tensorboard
-            writer.add_scalar("charts/test_avg_win_rate", test_win_rate, i)
-            writer.add_scalar("charts/test_avg_detection_rate", test_detection_rate, i)
-            writer.add_scalar("charts/test_avg_returns", test_average_returns , i)
-            writer.add_scalar("charts/test_std_returns", test_std_returns , i)
-            writer.add_scalar("charts/test_avg_episode_steps", test_average_episode_steps , i)
-            writer.add_scalar("charts/test_std_episode_steps", test_std_episode_steps , i)
-            writer.add_scalar("charts/test_avg_win_steps", test_average_win_steps , i)
-            writer.add_scalar("charts/test_std_win_steps", test_std_win_steps , i)
-            writer.add_scalar("charts/test_avg_detected_steps", test_average_detected_steps , i)
-            writer.add_scalar("charts/test_std_detected_steps", test_std_detected_steps , i)
+            writer.add_scalar("charts/test_avg_win_rate", test_win_rate, episode)
+            writer.add_scalar("charts/test_avg_detection_rate", test_detection_rate, episode)
+            writer.add_scalar("charts/test_avg_returns", test_average_returns , episode)
+            writer.add_scalar("charts/test_std_returns", test_std_returns , episode)
+            writer.add_scalar("charts/test_avg_episode_steps", test_average_episode_steps , episode)
+            writer.add_scalar("charts/test_std_episode_steps", test_std_episode_steps , episode)
+            writer.add_scalar("charts/test_avg_win_steps", test_average_win_steps , episode)
+            writer.add_scalar("charts/test_std_win_steps", test_std_win_steps , episode)
+            writer.add_scalar("charts/test_avg_detected_steps", test_average_detected_steps , episode)
+            writer.add_scalar("charts/test_std_detected_steps", test_std_detected_steps , episode)
 
 
-    text = f'''Final test after {i} episodes, for {args.episodes} steps.
+    text = f'''Final test after {episode} episodes, for {args.episodes} steps.
         Wins={wins},
         Detections={detected},
         winrate={test_win_rate:.3f}%,
