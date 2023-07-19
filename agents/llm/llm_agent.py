@@ -201,35 +201,6 @@ def create_status_from_state(state, memory_list):
         else:
             prompt += "You have no actions to avoid yet.\n"
 
-
-
-#    avoid_actions = []
-#    if len(memory_list) > 0:
-#        prompt += "```\n"
-#        for memory, count in memory_counts.most_common():
-#            if count > 1:
-#                    action = f'{memory[0]} {dict(memory[1])} '
-#                    action += f' You have repeated action {count} times. AVOID SELECTING THIS ACTION AT ALL COST.\n'
-#                    avoid_actions.append(action)
-#                    # prompt +="\n"
-#                    
-#            else:
-#                prompt += f'{memory[0]} {dict(memory[1])} {memory[2]}'
-#                #prompt += f' You have repeated action {count} times.'
-#                prompt += "\n"
-#
-#            #prompt += f'{memory[0]} of {dict(memory[1])}. {memory[2]} Repeated {count} times.\n'
-#        prompt += "```\n"
-#        prompt +="# PAST ACTIONS TO AVOID:\n"
-#        if len(avoid_actions) > 0:
-#            for action_to_avoid in avoid_actions:
-#                prompt += action_to_avoid
-#            prompt += "\nGiven this information, think carefully and then select a NEW action that will be helpful in the current context.\n\n"
-#        else:
-#            prompt += "You have no actions to avoid yet.\n"
-#    else:
-#        prompt += "You have not taken any actions yet.\n"
-#
     return prompt
 
 def create_action_from_response(llm_response, state, actions_took_in_episode):
