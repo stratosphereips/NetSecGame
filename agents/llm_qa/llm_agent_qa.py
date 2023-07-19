@@ -417,12 +417,12 @@ if __name__ == "__main__":
                         memories.append((response["action"], response["parameters"], "This action was helpful."))
                     else:
                         memories.append((response["action"], response["parameters"], "This action was not helpful."))
-                    
-                    # If the action was repeated count it                    
+
+                    # If the action was repeated count it        
                     if action in actions_took_in_episode:
                         repeated_actions += 1
 
-                    # Store action in memory of all actions so far 
+                    # Store action in memory of all actions so far
                     actions_took_in_episode.append(action)
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
@@ -441,7 +441,17 @@ if __name__ == "__main__":
     test_average_detected_steps = np.mean(num_detected_steps)
     test_std_detected_steps = np.std(num_detected_steps)
     # Store in tensorboard
-    tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate, "charts/test_avg_detection_rate": test_detection_rate, "charts/test_avg_max_steps_rate": test_max_steps_rate, "charts/test_avg_returns": test_average_returns, "charts/test_std_returns": test_std_returns, "charts/test_avg_episode_steps": test_average_episode_steps, "charts/test_std_episode_steps": test_std_episode_steps, "charts/test_avg_win_steps": test_average_win_steps, "charts/test_std_win_steps": test_std_win_steps, "charts/test_avg_detected_steps": test_average_detected_steps, "charts/test_std_detected_steps": test_std_detected_steps}
+    tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate,
+                        "charts/test_avg_detection_rate": test_detection_rate,
+                        "charts/test_avg_max_steps_rate": test_max_steps_rate,
+                        "charts/test_avg_returns": test_average_returns,
+                        "charts/test_std_returns": test_std_returns,
+                        "charts/test_avg_episode_steps": test_average_episode_steps,
+                        "charts/test_std_episode_steps": test_std_episode_steps,
+                        "charts/test_avg_win_steps": test_average_win_steps,
+                        "charts/test_std_win_steps": test_std_win_steps,
+                        "charts/test_avg_detected_steps": test_average_detected_steps,
+                        "charts/test_std_detected_steps": test_std_detected_steps}
 
     text = f'''Final test after {args.test_episodes} episodes
         Wins={wins},
