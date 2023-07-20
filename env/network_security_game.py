@@ -12,6 +12,7 @@ import numpy as np
 import logging
 import os
 from pathlib import Path
+from faker import Faker
 from utils.utils import ConfigParser, store_replay_buffer_in_csv
 
 
@@ -19,7 +20,7 @@ from utils.utils import ConfigParser, store_replay_buffer_in_csv
 log_filename=Path('env/logs/netsecenv.log')
 if not log_filename.parent.exists():
     os.makedirs(log_filename.parent)
-logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.INFO)
 logger = logging.getLogger('Netsecenv')
 
 class NetworkSecurityEnvironment(object):
@@ -65,7 +66,7 @@ class NetworkSecurityEnvironment(object):
         self._process_cyst_config(cyst_config)
         logger.info("CYST configuration processed successfully")
         
-        # Set the seed if passed by the agent
+        # Set the seed 
         seed = self.task_config.get_seed('env')
         np.random.seed(seed)
         random.seed(seed)
@@ -95,9 +96,15 @@ class NetworkSecurityEnvironment(object):
 
         # should be randomized once or every episode?
         self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
+        
         # store goal definition
         self._goal_conditions = self.task_config.get_attacker_win_conditions()
         
+        # check if dynamic network and ip adddresses are required
+        if self.task_config.get_use_dynamic_addresses():
+            logger.info("Dynamic change of the IP and network addresses enabled")
+            self._create_new_network_mapping()
+
         # process episodic randomization
         if not self._randomize_goal_every_episode:
             # episodic randomization is not required, randomize once now
@@ -430,6 +437,7 @@ class NetworkSecurityEnvironment(object):
                     for rule in chain.rules:
                         if rule.policy == FirewallPolicy.ALLOW:
                             self._fw_rules.append(rule)
+        
         #process Nodes
         for n in nodes:
             process_node_config(n)
@@ -449,6 +457,71 @@ class NetworkSecurityEnvironment(object):
         #exploits
         self._exploits = exploits
 
+    def _create_new_network_mapping(self):
+        """ Method that generates random IP and Network addreses
+          while following the topology loaded in the environment.
+         All internal data structures are updated with the newly generated addresses."""
+        fake = Faker()
+        mapping_nets = {}
+        mapping_ips = {}
+        
+        # generate mapping for networks
+        private_nets = []
+        for net in self._networks.keys():
+            if netaddr.IPNetwork(str(net)).is_private():
+                private_nets.append(net)
+            else:
+                mapping_nets[net] = components.Network(fake.ipv4_public(), net.mask)
+        private_nets = sorted(private_nets)
+        
+        new_base = netaddr.IPNetwork(fake.ipv4_private(), private_nets[0].mask)
+        mapping_nets[private_nets[0]] = components.Network(str(new_base.network), private_nets[0].mask)
+        base = netaddr.IPNetwork(str(private_nets[0]))
+        for i in range(1,len(private_nets)):
+            current = netaddr.IPNetwork(str(private_nets[i]))
+            diff_ip = current.ip - base.ip
+            new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets[0]])).ip + diff_ip
+            mapping_nets[private_nets[i]] = components.Network(str(new_net_addr), private_nets[i].mask)
+        
+        # genereate mapping for ips:
+        for net,ips in self._networks.items():
+            ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))
+            random.shuffle(ip_list)
+            for i,ip in enumerate(ips):
+                mapping_ips[ip] = components.IP(str(ip_list[i]))
+        
+        # update ALL data structure in the environment with the new mappings
+        # self._networks
+        new_self_networks = {}
+        for net, ips in self._networks.items():
+            new_self_networks[mapping_nets[net]] = set()
+            for ip in ips:
+                new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
+        self._networks = new_self_networks
+        
+        #self._ip_to_hostname
+        new_self_ip_to_hostname  = {}
+        for ip, hostname in self._ip_to_hostname.items():
+            new_self_ip_to_hostname[mapping_ips[ip]] = hostname
+        self._ip_to_hostname = new_self_ip_to_hostname
+        
+        # attacker starting position
+        new_attacker_start = {}
+        new_attacker_start["known_networks"] = {mapping_nets[net] for net in self._attacker_start_position["known_networks"]}
+        new_attacker_start["known_hosts"] = {mapping_ips[ip] for ip in self._attacker_start_position["known_hosts"]}
+        new_attacker_start["controlled_hosts"] = {mapping_ips[ip] for ip in self._attacker_start_position["controlled_hosts"]}
+        new_attacker_start["known_services"] = {mapping_ips[ip]:service for ip,service in self._attacker_start_position["known_services"].items()}
+        new_attacker_start["known_data"] = {mapping_ips[ip]:data for ip,data in self._attacker_start_position["known_data"].items()}
+        self._attacker_start_position = new_attacker_start
+        # goal definition
+        new_goal = {}
+        new_goal["known_networks"] = {mapping_nets[net] for net in self._goal_conditions["known_networks"]}
+        new_goal["known_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["known_hosts"]}
+        new_goal["controlled_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["controlled_hosts"]}
+        new_goal["known_services"] = {mapping_ips[ip]:service for ip,service in self._goal_conditions["known_services"].items()}
+        new_goal["known_data"] = {mapping_ips[ip]:data for ip,data in self._goal_conditions["known_data"].items()}
+        self._goal_conditions = new_goal
+    
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
         """
         Returns set of Service tuples from given hostIP
@@ -821,7 +894,8 @@ class NetworkSecurityEnvironment(object):
             # This means defender wins if both defender and attacker are successful
             # simuntaneously in the same step
             detected = self._is_detected(self._current_state, action)
-            if detected:
+            # Report detection, but not if in this same step the agent won
+            if not is_goal and detected:
                 # Reward should be negative
                 reward -= 50
                 # Mark the environment as detected
@@ -836,7 +910,8 @@ class NetworkSecurityEnvironment(object):
             logger.info(f'Current state: {self._current_state} ')
 
             # 4. Check if the max number of steps of the game passed already
-            if self._step_counter >= self._max_steps:
+            # But if the agent already won in this last step, count the win
+            if not is_goal and self._step_counter >= self._max_steps:
                 self._done = True
                 reason = {'end_reason':'max_steps'}
                 logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')

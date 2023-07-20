@@ -13,6 +13,7 @@ from env.game_components import IP, Data, Network, Service, GameState, Action, A
 import netaddr
 import logging
 import csv
+from random import randint
 
 def read_replay_buffer_from_csv(csvfile:str)->list:
     """
@@ -249,6 +250,16 @@ class ConfigParser():
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
 
+    def get_use_dynamic_addresses(self)->bool:
+        """
+        Reads if the IP and Network addresses should be dynamically changed.
+        """
+        try:
+            use_dynamic_addresses = self.config['env']['use_dynamic_addresses']
+        except KeyError:
+            use_dynamic_addresses = False
+        return bool(use_dynamic_addresses)
+
     def get_store_replay_buffer(self):
         """
         Read if the replay buffer should be stored in file
@@ -317,6 +328,8 @@ class ConfigParser():
         Get the seeds
         """
         seed = self.config[whom]['random_seed']
+        if seed == 'random':
+            seed = randint(0,100)
         return seed
     
     def get_randomize_goal_every_episode(self) -> bool:

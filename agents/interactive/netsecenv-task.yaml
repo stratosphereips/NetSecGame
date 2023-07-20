@@ -70,10 +70,14 @@ agents:
         tw_ratio: 0.25
 
 env:
-  random_seed: 42
+  # random means to choose the seed in a random way, so it is not fixed
+  random_seed: 'random'
+  # Or you can fix the seed
+  # random_seed: 42
   scenario: 'scenario1'
   max_steps: 15
   store_replay_buffer: True
+  use_dynamic_addresses: False
   actions:
     scan_network:
       prob_success: 0.9

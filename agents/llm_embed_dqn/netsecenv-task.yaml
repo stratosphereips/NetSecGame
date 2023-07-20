@@ -3,6 +3,7 @@
 
 # Attacker agent
 agents:
+  random_seed: 42
   attacker:
 
     goal:
@@ -27,7 +28,7 @@ agents:
       # Example to fix the data in two host
       #known_data: {213.47.23.195: [User1,DataFromServer1], 192.168.3.1: [User3,Data3FromServer3]}
       # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the goal data is
-      # known_data: {213.47.23.195: [random]}
+      #known_data: {213.47.23.195: [random]}
 
     start_position:
       known_networks: []
@@ -51,26 +52,23 @@ agents:
     type: 'NoDefender'
 
 env:
-  # random means to choose the seed in a random way, so it is not fixed
-  random_seed: 'random'
-  # Or you can fix the seed
-  # random_seed: 42
-  scenario: 'scenario1_small'
-  max_steps: 30
-  store_replay_buffer: True
+  random_seed: 42
+  scenario: 'scenario1_tiny'
+  max_steps: 32
+  store_replay_buffer: False
   actions:
     scan_network:
-      prob_success: 0.99
+      prob_success: 1.0
       prob_detection: 0.2
     find_services:
-      prob_success: 0.99
+      prob_success: 1.0
       prob_detection: 0.3
     exploit_services:
-      prob_success: 0.99
+      prob_success: 1.0
       prob_detection: 0.4
     find_data:
-      prob_success: 0.99
+      prob_success: 1.0
       prob_detection: 0.1
     exfiltrate_data:
-      prob_success: 0.99
+      prob_success: 1.0
       prob_detection: 0.1

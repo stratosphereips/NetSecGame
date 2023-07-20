@@ -52,7 +52,10 @@ agents:
     #type: 'NoDefender'
 
 env:
-  random_seed: 42
+  # random means to choose the seed in a random way, so it is not fixed
+  random_seed: 'random'
+  # Or you can fix the seed
+  # random_seed: 42
   scenario: 'scenario1'
   store_replay_buffer: True
   max_steps: 15
