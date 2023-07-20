@@ -827,6 +827,11 @@ class NetworkSecurityEnvironment(object):
         if self._episode_replay_buffer is not None:
             store_replay_buffer_in_csv(self._episode_replay_buffer, 'env/logs/replay_buffer.csv')
             self._episode_replay_buffer = [] 
+        
+        if self.task_config.get_use_dynamic_addresses():
+            logger.info("Changes IPs dyamically")
+            self._create_new_network_mapping()
+
         #reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         
