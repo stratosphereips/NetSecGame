@@ -7,6 +7,7 @@ agents:
   attacker:
 
     goal:
+      randomize_goal_every_episode: True
       known_networks: []
       #known_networks: [192.168.1.0/24, 192.168.3.0/24]
 
@@ -59,6 +60,7 @@ env:
   scenario: 'scenario1_small'
   max_steps: 30
   store_replay_buffer: True
+  use_dynamic_addresses: True
   actions:
     scan_network:
       prob_success: 1.0
