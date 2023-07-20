@@ -348,7 +348,7 @@ if __name__ == "__main__":
 
             # Store the first prompt in tensorboard
             if not save_first_prompt:
-                writer.add_text('prompt', f'{messages}')
+                writer.add_text('prompt_2', f'{messages}')
                 save_first_prompt = True
 
             # Query the LLM
