@@ -348,7 +348,7 @@ if __name__ == "__main__":
 
             # Store the first prompt in tensorboard
             if not save_first_prompt:
-                writer.add_text('prompt', f'{messages}')
+                writer.add_text('prompt_2', f'{messages}')
                 save_first_prompt = True
 
             # Query the LLM
@@ -360,10 +360,14 @@ if __name__ == "__main__":
             try:
                 if response.startswith("Action: "):
                     response = response[8:]
+                elif not response.startswith("{"):
+                    idx = response.find("{")
+                    if idx > 0:
+                        response = response[idx:]
                 response = eval(response)
                 # Validate action based on current states
                 is_valid, action = create_action_from_response(response, observation.state)
-            except SyntaxError:
+            except:
                 print("Eval failed")
                 is_valid = False
 
@@ -384,7 +388,7 @@ if __name__ == "__main__":
                 # is_detected if boolean
                 is_detected = env.detected
                 steps = env.timestamp
-                epi_return = observation.reward
+                epi_last_reward = observation.reward
                 num_actions_repeated += [repeated_actions]
                 if 'goal_reached' in reason['end_reason']:
                     wins += 1
@@ -399,11 +403,11 @@ if __name__ == "__main__":
                     num_detected_steps += [0]
                     reach_max_steps += 1
                     type_of_end = 'max_steps'
-                returns += [epi_return]
+                returns += [epi_last_reward]
                 num_steps += [steps]
 
-                logger.info(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
-                print(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
+                logger.info(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_last_reward}")
+                print(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_last_reward}")
                 break
 
             try:
@@ -424,7 +428,7 @@ if __name__ == "__main__":
 
                     # Store action in memory of all actions so far
                     actions_took_in_episode.append(action)
-            except TypeError:
+            except:
                 # if the LLM sends a response that is not properly formatted.
                 memories.append(f"Response '{response}' was badly formatted.")
 
@@ -432,14 +436,16 @@ if __name__ == "__main__":
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100
     test_max_steps_rate = (reach_max_steps/(args.test_episodes))*100
-    test_average_returns = np.mean(returns)
-    test_std_returns = np.std(returns)
+    test_average_returns = np.mean(total_reward)
+    test_std_returns = np.std(total_reward)
     test_average_episode_steps = np.mean(num_steps)
     test_std_episode_steps = np.std(num_steps)
     test_average_win_steps = np.mean(num_win_steps)
     test_std_win_steps = np.std(num_win_steps)
     test_average_detected_steps = np.mean(num_detected_steps)
     test_std_detected_steps = np.std(num_detected_steps)
+    test_average_repeated_steps = np.mean(num_actions_repeated)
+    test_std_repeated_steps = np.std(num_actions_repeated) 
     # Store in tensorboard
     tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate,
                         "charts/test_avg_detection_rate": test_detection_rate,
@@ -451,7 +457,9 @@ if __name__ == "__main__":
                         "charts/test_avg_win_steps": test_average_win_steps,
                         "charts/test_std_win_steps": test_std_win_steps,
                         "charts/test_avg_detected_steps": test_average_detected_steps,
-                        "charts/test_std_detected_steps": test_std_detected_steps}
+                        "charts/test_std_detected_steps": test_std_detected_steps,
+                        "charts/test_avg_repeated_steps": test_average_repeated_steps,
+                        "charts/test_std_repeated_steps": test_std_repeated_steps}
 
     text = f'''Final test after {args.test_episodes} episodes
         Wins={wins},
@@ -462,7 +470,8 @@ if __name__ == "__main__":
         average_returns={test_average_returns:.3f} +- {test_std_returns:.3f},
         average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f},
         average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
-        average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}'''
+        average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
+        average_repeated_steps={test_average_repeated_steps:.3f} += {test_std_repeated_steps:.3f}'''
 
     # Text that is going to be added to the tensorboard. Put any description you want
 
