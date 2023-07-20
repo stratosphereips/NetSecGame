@@ -428,7 +428,7 @@ if __name__ == "__main__":
 
                     # Store action in memory of all actions so far
                     actions_took_in_episode.append(action)
-            except TypeError:
+            except:
                 # if the LLM sends a response that is not properly formatted.
                 memories.append(f"Response '{response}' was badly formatted.")
 
