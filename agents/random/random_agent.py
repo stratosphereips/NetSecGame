@@ -17,8 +17,10 @@ from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, ActionType, GameState, Observation
 
 class RandomAgent:
-    def __init__(self, env):
+    def __init__(self, env, args):
         self.env = env
+        self.args = args
+        
 
     def _generate_valid_actions(self, state: GameState)->list:
         valid_actions = set()
@@ -45,26 +47,30 @@ class RandomAgent:
                         valid_actions.add(Action(ActionType.ExfiltrateData, params={"target_host": trg_host, "source_host": src_host, "data": data}))
         return list(valid_actions)
 
-    def move(self, observation:Observation) -> Action:
+    def move(self, observation:Observation, actions_taken) -> Action:
         state = observation.state
         # Randomly choose from the available actions
-        actions = self._generate_valid_actions(state)
-        return choice(actions)
+        valid_actions = self._generate_valid_actions(state)
+        if self.args.force_ignore:
+            valid_actions = [action for action in valid_actions if action not in actions_taken]
+        return choice(valid_actions)
 
     def evaluate(self, observation:Observation) -> tuple: #(cumulative_reward, goal?, detected?, num_steps)
         """
         Run the random agent for many steps until the game is ended
         """
         return_value = 0
+        actions_taken = []
         while not observation.done:
             # Select action
-            action = self.move(observation)
+            action = self.move(observation, actions_taken)
             # Get next observation of the environment
             next_observation = self.env.step(action)
             # Collect reward
             return_value += next_observation.reward
             # Move to next state
             observation = next_observation
+            actions_taken.append(action)
         game_ended_detected = self.env.detected
         return return_value, self.env.is_goal(observation.state), game_ended_detected, self.env.timestamp
 
@@ -76,6 +82,7 @@ if __name__ == '__main__':
     parser.add_argument("--test_for", help="Sets evaluation length", default=1000, type=int)
     parser.add_argument("--test_each", help="Sets periodic evaluation during testing", default=100, type=int)
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
+    parser.add_argument("--force_ignore", help="Force ignore repeated actions in code", default=False, action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
     # Create the environment
@@ -90,7 +97,7 @@ if __name__ == '__main__':
     writer = SummaryWriter(f"agents/random/logs/{run_name}")
 
     # Create agent
-    agent = RandomAgent(env)
+    agent = RandomAgent(env, args)
 
     # Testing
     wins = 0
