@@ -348,7 +348,7 @@ if __name__ == "__main__":
 
             # Store the first prompt in tensorboard
             if not save_first_prompt:
-                writer.add_text('prompt', f'{messages}')
+                writer.add_text('prompt_2', f'{messages}')
                 save_first_prompt = True
 
             # Query the LLM
@@ -360,10 +360,14 @@ if __name__ == "__main__":
             try:
                 if response.startswith("Action: "):
                     response = response[8:]
+                elif not response.startswith("{"):
+                    idx = response.find("{")
+                    if idx > 0:
+                        response = response[idx:]
                 response = eval(response)
                 # Validate action based on current states
                 is_valid, action = create_action_from_response(response, observation.state)
-            except SyntaxError:
+            except:
                 print("Eval failed")
                 is_valid = False
 
@@ -440,6 +444,8 @@ if __name__ == "__main__":
     test_std_win_steps = np.std(num_win_steps)
     test_average_detected_steps = np.mean(num_detected_steps)
     test_std_detected_steps = np.std(num_detected_steps)
+    test_average_repeated_steps = np.mean(num_actions_repeated)
+    test_std_repeated_steps = np.std(num_actions_repeated) 
     # Store in tensorboard
     tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate,
                         "charts/test_avg_detection_rate": test_detection_rate,
@@ -451,7 +457,9 @@ if __name__ == "__main__":
                         "charts/test_avg_win_steps": test_average_win_steps,
                         "charts/test_std_win_steps": test_std_win_steps,
                         "charts/test_avg_detected_steps": test_average_detected_steps,
-                        "charts/test_std_detected_steps": test_std_detected_steps}
+                        "charts/test_std_detected_steps": test_std_detected_steps,
+                        "charts/test_avg_repeated_steps": test_average_repeated_steps,
+                        "charts/test_std_repeated_steps": test_std_repeated_steps}
 
     text = f'''Final test after {args.test_episodes} episodes
         Wins={wins},
@@ -462,7 +470,8 @@ if __name__ == "__main__":
         average_returns={test_average_returns:.3f} +- {test_std_returns:.3f},
         average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f},
         average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
-        average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}'''
+        average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
+        average_repeated_steps={test_average_repeated_steps:.3f} += {test_std_repeated_steps:.3f}'''
 
     # Text that is going to be added to the tensorboard. Put any description you want
 
