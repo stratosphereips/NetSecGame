@@ -388,7 +388,7 @@ if __name__ == "__main__":
                 # is_detected if boolean
                 is_detected = env.detected
                 steps = env.timestamp
-                epi_return = observation.reward
+                epi_last_reward = observation.reward
                 num_actions_repeated += [repeated_actions]
                 if 'goal_reached' in reason['end_reason']:
                     wins += 1
@@ -403,11 +403,11 @@ if __name__ == "__main__":
                     num_detected_steps += [0]
                     reach_max_steps += 1
                     type_of_end = 'max_steps'
-                returns += [epi_return]
+                returns += [epi_last_reward]
                 num_steps += [steps]
 
-                logger.info(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
-                print(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
+                logger.info(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_last_reward}")
+                print(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_last_reward}")
                 break
 
             try:
@@ -436,8 +436,8 @@ if __name__ == "__main__":
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100
     test_max_steps_rate = (reach_max_steps/(args.test_episodes))*100
-    test_average_returns = np.mean(returns)
-    test_std_returns = np.std(returns)
+    test_average_returns = np.mean(total_reward)
+    test_std_returns = np.std(total_reward)
     test_average_episode_steps = np.mean(num_steps)
     test_std_episode_steps = np.std(num_steps)
     test_average_win_steps = np.mean(num_win_steps)
