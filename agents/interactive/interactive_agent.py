@@ -13,8 +13,6 @@ sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Network, IP
 from env.game_components import ActionType, Action, GameState, Observation
-import time
-from utils.utils import read_replay_buffer_from_csv
 
 
 class InteractiveAgent:
