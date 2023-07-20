@@ -9,7 +9,7 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
-from env.game_components import IP, Data, Network, Service, GameState, Action
+from env.game_components import IP, Data, Network, Service, GameState, Action, ActionType
 import netaddr
 import logging
 import csv
@@ -271,12 +271,41 @@ class ConfigParser():
             store_rb = False
         return store_rb
     
-    def get_defender_placement(self):
+    def get_defender_type(self):
         """
-        Get the position of the defender
+        Get the type of the defender
         """
-        defender_placements = self.config['agents']['defender']['type']
+        try:
+            defender_placements = self.config['agents']['defender']['type']
+        except KeyError:
+            # Option is not in the configuration - default to no defender present
+            defender_placements = "NoDefender"
         return defender_placements
+    
+    def get_defender_tw_size(self):
+        tw_size = self.config["agents"]["defender"]["tw_size"]
+        return tw_size
+    
+    def get_defender_thresholds(self):
+        """Function to read thresholds for stochastic defender with thresholds"""
+        thresholds = {}
+        config_thresholds = self.config["agents"]["defender"]["thresholds"]
+        # ScanNetwork
+        thresholds[ActionType.ScanNetwork] = {"consecutive_actions": config_thresholds["scan_network"]["consecutive_actions"]}
+        thresholds[ActionType.ScanNetwork]["tw_ratio"] = config_thresholds["scan_network"]["tw_ratio"]
+        # FindServices
+        thresholds[ActionType.FindServices] = {"consecutive_actions": config_thresholds["find_services"]["consecutive_actions"]}
+        thresholds[ActionType.FindServices]["tw_ratio"] = config_thresholds["find_services"]["tw_ratio"]
+        # FindData
+        thresholds[ActionType.FindData] = {"repeated_actions_episode": config_thresholds["find_data"]["repeated_actions_episode"]}
+        thresholds[ActionType.FindData]["tw_ratio"] = config_thresholds["find_data"]["tw_ratio"]
+        # ExploitService
+        thresholds[ActionType.ExploitService] = {"repeated_actions_episode": config_thresholds["exploit_service"]["repeated_actions_episode"]}
+        thresholds[ActionType.ExploitService]["tw_ratio"] = config_thresholds["exploit_service"]["tw_ratio"]
+        # ExfiltrateData
+        thresholds[ActionType.ExfiltrateData] = {"consecutive_actions": config_thresholds["exfiltrate_data"]["consecutive_actions"]}
+        thresholds[ActionType.ExfiltrateData]["tw_ratio"] = config_thresholds["exfiltrate_data"]["tw_ratio"]
+        return thresholds
 
     def get_scenario(self):
         """

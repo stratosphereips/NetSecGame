@@ -5,6 +5,7 @@
 import netaddr
 import env.game_components as components
 import random
+import itertools
 import copy
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 import numpy as np
@@ -119,9 +120,11 @@ class NetworkSecurityEnvironment(object):
         else:
             logger.info("Storing of replay buffer disabled")
             self._episode_replay_buffer = None
+        
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
         self._current_goal = None
+        self._actions_played = []
         # If the game finished
         self._done = None
         # If the episode/action was detected by the defender
@@ -323,16 +326,22 @@ class NetworkSecurityEnvironment(object):
         For now only if it is present
         """
         logger.info("\tStoring defender placement")
-        placements = self.task_config.get_defender_placement()
-        if placements == 'StochasticDefender':
-            logger.info(f"\t\tDefender placed as type {placements}")
-            # For now there is only one type of defender
-            self._defender_placements = True
-        elif placements == 'NoDefender':
-            logger.info("\t\tNo defender present in the environment")
-            self._defender_placements = False
-        else:
-            self._defender_placements = False
+        defender_type = self.task_config.get_defender_type()
+        match defender_type:
+            case 'StochasticDefender':
+                logger.info(f"\t\tDefender placed as type {defender_type}")
+                # For now there is only one type of defender
+                self._defender_type = "Stochastic"
+            case "NoDefender":
+                logger.info("\t\tNo defender present in the environment")
+                self._defender_type = None
+            case "StochasticWithThreshold":
+                logger.info(f"\t\tDefender placed as type '{defender_type}'")
+                self._defender_type = "StochasticWithThreshold"
+                self._defender_thresholds = self.task_config.get_defender_thresholds()
+                self._defender_thresholds["tw_size"] = self.task_config.get_defender_tw_size()
+            case _: # Default option - no defender
+                self._defender_type = None
 
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
@@ -726,36 +735,93 @@ class NetworkSecurityEnvironment(object):
         goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
         return goal_reached
 
+    def _stochastic_detection_with_thresholds(self, action:components.Action)->bool:        
+        """ Method used for detection with stochastic defender with minimal thresholds"""
+        if len(self._actions_played) > 1: # single action is never detected:
+            last_n_actions = self._actions_played[-self._defender_thresholds["tw_size"]:]
+            last_n_action_types = [action.type for action in last_n_actions]
+            repeated_action_episode = self._actions_played.count(action)
+            logger.info('\tThreshold check')
+            # update threh
+            match action.type: # thresholds are based on action type
+                case components.ActionType.ScanNetwork:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ScanNetwork)/self._defender_thresholds["tw_size"]
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ScanNetwork]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ScanNetwork]["consecutive_actions"]:
+                        return False
+                    else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ScanNetwork]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ScanNetwork]['consecutive_actions']})")
+                        return self._stochastic_detection(action)
+                case components.ActionType.FindServices:
+                    tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/self._defender_thresholds["tw_size"]
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.FindServices)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.FindServices]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.FindServices]["consecutive_actions"]:
+                        return False
+                    else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindServices]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.FindServices]['consecutive_actions']})")
+                        return self._stochastic_detection(action)
+                case components.ActionType.FindData:
+                    tw_ratio = last_n_action_types.count(components.ActionType.FindData)/self._defender_thresholds["tw_size"]
+                    if tw_ratio < self._defender_thresholds[components.ActionType.FindData]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.FindData]["repeated_actions_episode"]:
+                        return False
+                    else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindData]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
+                        return self._stochastic_detection(action)
+                case components.ActionType.ExploitService:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ExploitService)/self._defender_thresholds["tw_size"]
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ExploitService]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.ExploitService]["repeated_actions_episode"]:
+                        return False
+                    else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExploitService]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
+                        return self._stochastic_detection(action)
+                case components.ActionType.ExfiltrateData:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ExfiltrateData)/self._defender_thresholds["tw_size"]
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ExfiltrateData)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ExfiltrateData]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ExfiltrateData]["consecutive_actions"]:
+                        return False
+                    else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExfiltrateData]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ExfiltrateData]['consecutive_actions']})")
+                        return self._stochastic_detection(action)
+                case _: # default case - No detection
+                    return False
+        return False
+    
+    def _stochastic_detection(self, action: components.Action)->bool:
+        """ Method stochastic detection based on action default probability"""
+        return random.random() < action.type.default_detection_p
+    
     def _is_detected(self, state, action:components.Action)->bool:
         """
-        Check if this action was detected by the global defender
-        based on the probabilitiy distribution in the action configuration
+        Checks if current action was detected based on the defendr type:
         """
-        if self._defender_placements:
-            value = random.random() < action.type.default_detection_p
-            logger.info(f"\tAction detected?: {value}")
-            return value
-        else: #no defender
+        if self._defender_type is not None: # There is a defender present
+            match self._defender_type:
+                case "Stochastic":
+                    detection = self._stochastic_detection(action)
+                    logger.info(f"\tAction detected?: {detection}")
+                    return detection
+                case "StochasticWithThreshold":
+                    logger.info(f"Checking detection based on rules: {action}")
+                    detection = self._stochastic_detection_with_thresholds(action)
+                    logger.info(f"\tAction detected?: {detection}")
+                    return detection
+        else: # No defender in the environment
             logger.info("\tNo defender present")
             return False
 
     def reset(self)->components.Observation:
         """
         Function to reset the state of the game
-        and play a new episode
+        and prepare for a new episode
         """
         logger.info('--- Reseting env to its initial state ---')
         self._done = False
         self._step_counter = 0
         self._detected = False
-
-        # Also reset the seed. If it was fixed, then it is not going to change. If it was set random, it will.
-        # Set the seed 
-        seed = self.task_config.get_seed('env')
-        np.random.seed(seed)
-        random.seed(seed)
-        self._seed = seed
-        logger.info(f'Setting env seed to {seed}')
+        self._actions_played = []
         
         # write all steps in the episode replay buffer in the file
         if self._episode_replay_buffer is not None:
@@ -793,6 +859,7 @@ class NetworkSecurityEnvironment(object):
 
             # 1. Check if the action was successful or not
             if random.random() <= action.type.default_success_p:
+                self._actions_played.append(action)
                 # The action was successful
                 logger.info('\tAction sucessful')
 
