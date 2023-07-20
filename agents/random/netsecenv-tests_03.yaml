@@ -3,6 +3,7 @@
 
 # Attacker agent
 agents:
+  random_seed: 42
   attacker:
 
     goal:
@@ -47,7 +48,7 @@ agents:
 
   defender:
     # types are StochasticDefender and NoDefender
-    # type: 'StochasticDefender'
+    #type: 'StochasticDefender'
     type: 'NoDefender'
 
 env:
@@ -60,17 +61,17 @@ env:
   store_replay_buffer: True
   actions:
     scan_network:
-      prob_success: 0.99
-      prob_detection: 0.2
+      prob_success: 1.0
+      prob_detection: 0.05
     find_services:
-      prob_success: 0.99
-      prob_detection: 0.3
+      prob_success: 1.0
+      prob_detection: 0.075
     exploit_services:
-      prob_success: 0.99
-      prob_detection: 0.4
+      prob_success: 1.0
+      prob_detection: 0.1
     find_data:
-      prob_success: 0.99
-      prob_detection: 0.1
+      prob_success: 1.0
+      prob_detection: 0.025
     exfiltrate_data:
-      prob_success: 0.99
-      prob_detection: 0.1
+      prob_success: 1.0
+      prob_detection: 0.025
