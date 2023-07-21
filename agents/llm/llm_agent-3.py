@@ -280,12 +280,14 @@ if __name__ == "__main__":
     logger = logging.getLogger('llm')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-tests_01.yaml'), action='store', required=False)
-    parser.add_argument("--test_episodes", help="Number of test episodes to run", default=10, action='store', required=False, type=int)
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-tests_02.yaml'), action='store', required=False)
+    parser.add_argument("--test_episodes", help="Number of test episodes to run", default=30, action='store', required=False, type=int)
     parser.add_argument("--memory_buffer", help="Number of actions to remember and pass to the LLM", default=10, action='store', required=False, type=int)
-    parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
+    parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-0613", "gpt-3.5-turbo-0301"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
     parser.add_argument("--force_ignore", help="Force ignore repeated actions in code", default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument("--delay", help="Delay the requests to LLM by this amount of seconds.", type=float, default=0)
+    parser.add_argument("--variable_temperature", help="Change the temperature of the LLM according to the number of repetead actions", default=False, action=argparse.BooleanOptionalAction)
+
     args = parser.parse_args()
 
     # Create the environment
@@ -448,11 +450,12 @@ if __name__ == "__main__":
             print(f"Number actions: {len(memories)}")
             logger.info(f"Number actions: {len(memories)}")
             
+            if args.variable_temperature:
             # Get the count of the most common action in the last ten actions
-            last_actions = memories[-args.memory_buffer:]
-            hashable_last_actions = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in last_actions]
-            most_common_action_count = Counter(hashable_last_actions).most_common(1)[0][1]
-            temperature = ((most_common_action_count / (args.memory_buffer  * 1) ) * 0.8 ) + 0.3
+                last_actions = memories[-args.memory_buffer:]
+                hashable_last_actions = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in last_actions]
+                most_common_action_count = Counter(hashable_last_actions).most_common(1)[0][1]
+                temperature = ((most_common_action_count / (args.memory_buffer  * 1) ) * 0.8 ) + 0.3
 
            
 
