@@ -474,14 +474,21 @@ class NetworkSecurityEnvironment(object):
                 mapping_nets[net] = components.Network(fake.ipv4_public(), net.mask)
         private_nets = sorted(private_nets)
         
-        new_base = netaddr.IPNetwork(fake.ipv4_private(), private_nets[0].mask)
-        mapping_nets[private_nets[0]] = components.Network(str(new_base.network), private_nets[0].mask)
-        base = netaddr.IPNetwork(str(private_nets[0]))
-        for i in range(1,len(private_nets)):
-            current = netaddr.IPNetwork(str(private_nets[i]))
-            diff_ip = current.ip - base.ip
-            new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets[0]])).ip + diff_ip
-            mapping_nets[private_nets[i]] = components.Network(str(new_net_addr), private_nets[i].mask)
+        valid_valid_network_mapping = False
+        while not valid_valid_network_mapping:
+            try:
+                new_base = netaddr.IPNetwork(fake.ipv4_private(), private_nets[0].mask)
+                mapping_nets[private_nets[0]] = components.Network(str(new_base.network), private_nets[0].mask)
+                base = netaddr.IPNetwork(str(private_nets[0]))
+                for i in range(1,len(private_nets)):
+                    current = netaddr.IPNetwork(str(private_nets[i]))
+                    diff_ip = current.ip - base.ip
+                    new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets[0]])).ip + diff_ip
+                    mapping_nets[private_nets[i]] = components.Network(str(new_net_addr), private_nets[i].mask)
+                valid_valid_network_mapping=True
+            except IndexError:
+                pass
+                # Invalid IP address boundary
         
         # genereate mapping for ips:
         for net,ips in self._networks.items():
