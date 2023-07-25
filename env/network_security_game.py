@@ -486,6 +486,8 @@ class NetworkSecurityEnvironment(object):
         # genereate mapping for ips:
         for net,ips in self._networks.items():
             ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))
+            # remove broadcast and network ip from the list
+            ip_list -= [mapping_nets[net]].ip
             random.shuffle(ip_list)
             for i,ip in enumerate(ips):
                 mapping_ips[ip] = components.IP(str(ip_list[i]))
