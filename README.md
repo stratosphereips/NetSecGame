@@ -5,19 +5,6 @@
 The NetSecGame (Network Security Game) is a framework of reinceforcement learning environment and agents to train and evalate network security attacks and defenses. It builds a simulated local network using the [CYST](https://pypi.org/project/cyst/) network simulator, adds many conditions on the environment and can train reinforcement learning (RL) algorithms on how to better attack and defend the network.
 
 
-## How does it work
-You run an agent python file, which:
-- defines the attacker's goal, position of attacker and presence of defender.
-- initializes the game env 
-    - the env loads the network configuration from configuration files.
-- receives an observation and reward from the envirionment
-- decides which action to do based on its logic
-- trains and evaluates every some episodes
-- tests at the end for some episodes
-- saves the policy to disk
-- creates a log file
-- creates tensorboard files
-
 ## Install and Dependencies
 To run this code you need an environment and access to cyst code. However, the venv needs to be created for your own user
 
@@ -45,6 +32,14 @@ conda create --name aidojo python==3.10
 conda activate aidojo
 python3 -m pip install -r requirements.txt
 ```
+
+## Starting the environment
+The environment should be created by an agent upon starting. The properties of the environment can be defined in a YAML file.
+When created, the environment:
+1. reads the configuration file
+2. loads the network configuraion from the config file
+3. reads the defender type from the configuraion
+4. creates starting position and goal position following the config file
 
 ## Run the agents
 
