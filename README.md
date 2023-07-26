@@ -92,18 +92,18 @@ This will load and run the unit tests in the `tests` folder.
 ## Definition of the network topology
 The network topology and rules are defined using a Cyst simulator configuration. Cyst defines a complex network configuration, and this game does not use all Cyst features for now. The important ones for us are:
 
-- Server hosts (are a Node in Cyst)
+- Server hosts (are a NodeConf in CYST)
     - Interfaces, each with one IP address
     - Users that can login to the host
     - Active and passive services
     - Data in the server
     - To which network is connected
-- Client host (are a Node in Cyst)
+- Client host (are a Node in CYST)
     - Interfaces, each with one IP address
     - To which network is connected
     - Active and passive services if any
     - Data in the client
-- Router (are a Node in RouterConf)
+- Router (are a RouterConf in CYST)
     - Interfaces, each with one IP address
     - Networks
     - Allowed connections between hosts
@@ -157,17 +157,29 @@ In particular there are some actions that are possible, such as Scan a network t
 
 
 ## Configuration of the game and agents
-All the configuration of the environment and agents is done from the configuration file that is on the directory of the agents. For example, for the agent q_learning it is stored in the file `agents/double_q_learning/netsecenv-task.yaml`.
+All the configuration of the environment and agents is done from the configuration file that is on the directory of the agents. For example, for the agent q_learning it is stored in the file `agents/q_learning/netsecenv-task.yaml`.
 
 The configuration is a yaml file and allows for the setting of 
-- random seeds
-- the start position of the agent (state)
-- if the agent will start from a random position
-- the whole conditions to win (state)
-- if the goal of the agent is random or fixed
-- the scenario with the topology
-- the max steps
-- the probability of detection of each action 
+- random seeds (fixed or `random`)
+- the start position of the agent (state) in `start_position`:
+    - each component of the state can be either fixed (e.g. 'known_data'={IP(X.X.X.X):\[Data(owner, data_id)\]})
+    - or randomized (e.g. 'known_data'={IP(X.X.X.X):\['random'\]})
+
+- the description of the goal state in `goal`:
+    - each component of the state can be either fixed (e.g. 'known_data'={IP(X.X.X.X):\[Data(owner, data_id)\]})
+    - or randomized (e.g. 'known_data'={IP(X.X.X.X):\['random'\]})
+- in case there are any `random` fields, if the random assignment should be done at the beginning of *EVERY* episode `randomize_goal_every_episode:True`
+- the scenario with the topology (`scenario`)
+- the max steps (`max_steps`)
+- if all interaction (serialized replay_buffer) should be stored (`store_replay_buffer`)
+- if all network and ip addresses should be randomized every episode while keeping the same topology defined in `scenario`(`use_dynamic_addresses`)
+- probability of detection of each action
+- probability of success of each action
+- type of defender (selection from):
+    - `NoDefender` (default)
+    - `StochasticDefender`
+    - `StochasticWithThreshold`
+(see Defenders for details)
 
 ## Actions for the defender
 In this version of the game the defender does not have actions and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks the admins have tools that consume logs from all computers at the same time and they can detect actions from a central position (such as a SIEM). The defender has, however, probabilities to detect or not each action, which are defined in the file `game_components.py`.
