@@ -412,7 +412,7 @@ if __name__ == "__main__":
                 if args.long_memory:
                     reward_memory = get_long_term_interepisode_memory(actions_took_in_episode, type_of_end)
                     
-                returns += [epi_last_reward]
+                returns += [total_reward]
                 num_steps += [steps]
                 logger.info(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_last_reward}")
                 print(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_last_reward}")
@@ -454,8 +454,8 @@ if __name__ == "__main__":
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100
     test_max_steps_rate = (reach_max_steps/(args.test_episodes))*100
-    test_average_returns = np.mean(total_reward)
-    test_std_returns = np.std(total_reward)
+    test_average_returns = np.mean(returns)
+    test_std_returns = np.std(returns)
     test_average_episode_steps = np.mean(num_steps)
     test_std_episode_steps = np.std(num_steps)
     test_average_win_steps = np.mean(num_win_steps)
