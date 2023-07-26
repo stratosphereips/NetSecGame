@@ -100,7 +100,7 @@ class QAgent:
         actions = self.get_valid_actions(state)
         state_id = self.get_state_id(state)
         
-        logger.info(f'The valid actions in this state are: {[str(action) for action in actions]}')
+        #logger.info(f'The valid actions in this state are: {[str(action) for action in actions]}')
         if random.uniform(0, 1) <= self.epsilon and not testing:
             action = random.choice(list(actions))
             if (state_id, action) not in self.q_values:
@@ -152,7 +152,7 @@ class QAgent:
             state = observation.state
             state_id = self.get_state_id(state)
 
-            new_q = self.q_values[state_id, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[state_id, action])
+            new_q = self.q_values.get((state_id, action), 0) + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values.get((state_id, action), 0))
             self.q_values[state_id, action] = new_q
             
             rewards += next_observation.reward
