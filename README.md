@@ -52,21 +52,49 @@ python agents/q_learning/q_agent.py --episodes 100
 ```
 
 ## Components of the NetSecGame Environment
-The NetSecGame environment has several components
+The NetSecGame environment has several components in following files:
 
-- File `env/network_security_game.py`. Implements the game environment
-- File `env/game_components.py`. Implements a library with objects and functions that help the game env
-- Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the configuration of hosts, data, services, and connnections in the network game. It is taken from Cyst.
+- File `env/network_security_game.py` implements the game environment
+- File `env/game_components.py` implements a library with objects used int the environment
+- File `utils/utils.py` is a collenction of utils function which can be used by the agents
+- Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the configuration of hosts, data, services, and connnections in the network game. It is taken from CYST.
 - Files such as `agent/q_learning/q_agent.py` that implement the RL agents.
 
-The default configuration is defined in two places:
-1. The network environment 
+The scenarios define the **topology** of a network (number of hosts, connections, networks, services, data, users, firewall rules etc.) while the **task-configuration** is to be used for definition of exact task for the agent in one of the scenario (with fix topology).
 
-    It is defined in the files in the `env/scenarios` folder.
-
-2. The configuration of the run
-
-    This is defined in a configuration file in the directory on the agent. 
+### Task configuration
+The task configuration is a YAML file which is used for exact definiton of the task an agent shoul be solving. there are three main parts of the configuration
+#### Environment
+Environment part which defines properties of the environment for the task (see example below). In particular:
+- `random_seed` - sets seed s for any random process in the environment
+- `scenario` - sets the scenario (network topology) used in the task (currently `scenario1_tiny`, `scenario1_small` and `scenario1` are available)
+- `max_steps` - sets maximum number of steps an agent can make before episode is terminated
+- `store_replay_buffer` - if `True`, interaction of the agents is serialized and stored to a file
+- `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of **EVERY** episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)
+```YAML
+env:
+  random_seed: 42
+  scenario: 'scenario1'
+  max_steps: 15
+  store_replay_buffer: True
+  use_dynamic_addresses: False
+  actions:
+    scan_network:
+      prob_success: 0.9
+      prob_detection: 1
+    find_services:
+      prob_success: 0.9
+      prob_detection: 1
+    exploit_services:
+      prob_success: 0.7
+      prob_detection: 1
+    find_data:
+      prob_success: 0.8
+      prob_detection: 1
+    exfiltrate_data:
+      prob_success: 0.8
+      prob_detection: 1
+```
 
 ## Tensorboard logs
 
