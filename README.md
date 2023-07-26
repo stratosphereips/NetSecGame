@@ -63,7 +63,7 @@ The NetSecGame environment has several components in following files:
 The scenarios define the **topology** of a network (number of hosts, connections, networks, services, data, users, firewall rules etc.) while the **task-configuration** is to be used for definition of exact task for the agent in one of the scenario (with fix topology).
 
 ### Task configuration
-The task configuration is a YAML file which is used for exact definiton of the task an agent shoul be solving. there are three main parts of the configuration
+The task configuration is a YAML file which is used for exact definiton of the task an agent shoul be solving. there are two main parts of the configuration
 #### Environment
 Environment part which defines properties of the environment for the task (see example below). In particular:
 - `random_seed` - sets seed s for any random process in the environment
@@ -95,7 +95,67 @@ env:
       prob_success: 0.8
       prob_detection: 1
 ```
+#### Agents
+Configuration of the agents in the task. It consits of the *Attacker* and  *Defender*. 
 
+- `random_seed` - sets seed s for any random process in the agents
+
+```YAML
+agents:
+  random_seed: 42
+```
+##### Attacker
+Definition of attacking agent's properties:
+- `goal` Section defines the winning conditons for the attacker in each part: `known_networks:`(set), `known_hosts`(set), `controlled_hosts`(set), `known_services`(dict), `known_data`(dict). Each of the part can be empty (not part of the goal, exactly defined (e.g. `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`.
+- `start_position` Definiton of starting position (initial state) of the attacker. It consits of `known_networks:`(set), `known_hosts`(set), `controlled_hosts`(set), `known_services`(dict), `known_data`(dict). Each of the part can be empty (not part of the goal, exactly defined (e.g. `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`.
+- `randomize_goal_every_episode` - if `True`, each keyword `random` is replaced with a randomly selected, valid option at the beginning of **EVERY** episode. If set to `False`, randomization is performed only *once* when the environment is initialized.
+```YAML
+agents:
+  attacker:
+    goal:
+      randomize_goal_every_episode: False
+      #known_networks: [192.168.1.0/24, 192.168.3.0/24]
+      known_hosts: []
+      controlled_hosts: []
+      known_services: {192.168.1.3: [Local system, lanman server, 10.0.19041, False], 192.168.1.4: [Other system, SMB server, 21.2.39421, False]}
+      known_data: {213.47.23.195: ["random"]}
+
+    start_position:
+      known_networks: []
+      known_hosts: []
+      # The attacker must always at least control the CC if the goal is to exfiltrate there
+      # Example of fixing the starting point of the agent in a local host
+      controlled_hosts: [213.47.23.195, random]
+      # Services are defined as a target host where the service must be, and then a description in the form 'name,type,version,is_local'
+      known_services: {}
+      known_data: {}
+```
+##### Attacker
+```YAML
+agents:
+  defender:
+    # types are StochasticDefender and NoDefender
+    #type: 'StochasticDefender'
+    type: 'StochasticWithThreshold'
+    tw_size: 5
+    thresholds:
+      scan_network:
+        consecutive_actions: 2
+        tw_ratio: 0.25
+      find_services:
+        consecutive_actions: 3
+        tw_ratio: 0.3
+      exploit_service:
+        repeated_actions_episode: 2
+        tw_ratio: 0.25
+      find_data:
+        tw_ratio: 0.5
+        repeated_actions_episode: 2
+      exfiltrate_data:
+        consecutive_actions: 2
+        tw_ratio: 0.25
+
+```
 ## Tensorboard logs
 
 The logs for tensorboard are stored for all agents in `agents/tensorboard-logs/`.
