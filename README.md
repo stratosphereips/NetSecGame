@@ -33,6 +33,59 @@ conda activate aidojo
 python3 -m pip install -r requirements.txt
 ```
 
+## Components of the NetSecGame Environment
+The NetSecGame environment has several components in following files:
+
+- File `env/network_security_game.py` implements the game environment
+- File `env/game_components.py` implements a library with objects used int the environment
+- File `utils/utils.py` is a collenction of utils function which can be used by the agents
+- Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the configuration of hosts, data, services, and connections in the network game. It is taken from CYST.
+- Files such as `agent/q_learning/q_agent.py` that implement the RL agents.
+
+The [scenarios](#definition-of-the-network-topology) define the **topology** of a network (number of hosts, connections, networks, services, data, users, firewall rules, etc.) while the [task-configuration](#task-configuration) is to be used for definition of the exact task for the agent in one of the scenarios (with fix topology).
+
+### Assumptions of the NetSecGame
+1. We work with the closed-world assumption. Only the defined entities exist in the simulation.
+2. No actions have a "delete" effect (the attacker does not give up ownership of nodes, does not forget nodes or services, and when data is transferred we assume it's copied and therefore present in both nodes).
+3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
+
+### Actions
+There are currently implemented five types of actions:
+| Action name          | Description                                                              | Parameters                         | Effects                                          |
+|----------------------|--------------------------------------------------------------------------|---------------------------------------|--------------------------------------------------|
+| Scan Network          | Scans the given network for active hosts | network, mask                        | extends 'known_hosts'                            |
+| Find Services         | Scans given host for running services                                    | target IP                               | extends 'known_services' with host:service pairs |
+| Exploit Service | Runs exploit in service to gain control                                  | target IP, target service                     | extends 'controlled_hosts'                       |
+| Find Data            | Runs code to discover data either in a given service or in a controlled host | target IP, target service | extends 'known_data' with host:data pairs        |
+| Exfiltrate data      | Runds code to move data from host to host                                | source IP, data, target IP  | extends 'known_data with "target:data" pair      |
+
+#### Assumption and Conditions for Actions
+1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` prior to this action)
+2. The `Find Data` action finds all the available data in the host if successful.
+3. The `Find Data` action requires ownership of the target host.
+4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
+5. Playing `Find Services` can be used to discover hosts (if those have any active services)
+6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
+
+### Actions for the defender
+In this version of the environment, the defender does not have actions, and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks, the admins have tools that consume logs from all computers at the same time, and they can detect actions from a central position (such as a SIEM). There are several modes of the defender (see [Task Configuration - Defender](#defender-configuration) for details.
+
+
+### State of the game
+States in the game are represented as collection of assets of the agents. Actions, if successful, extend the assets. Currently, the state representation constis of follwing parts:
+* `known_networks` (set of networks known to the attacker)
+* `known_hosts` (set of hosts known to the attacker)
+* `controlled_hosts` (set of hosts controlled by the attacker)
+* `known_services` (dict of host:service pairs. A service is a port)
+* `known_data` (dict of host:path pairs. path is where the data was found)
+
+
+In every step, the environment provides an Observation. The observation includes:
+1. `state` - A GameState object
+2. `reward` - float of the immediate reward obtained from previous step
+3. `done` - boolean indicating if the interaction can continue
+4. `info` - a dictionary with additional information. Mainly use to determine the cause of the termination of the interaction (`goal_reached`/`detection`/'max_steps'
+
 ## Starting the environment
 The environment should be created by an agent upon starting. The properties of the environment can be defined in a YAML file.
 When created, the environment:
@@ -41,30 +94,17 @@ When created, the environment:
 3. reads the defender type from the configuraion
 4. creates starting position and goal position following the config file
 
-## Run the agents
+## Interaction with the Environment
+Each agent can interact with the environment using the `env.step(action:Action)` method which returns an Observation with `next_state`, `reward`, `is_terminal`, `done` and `info` values. Once the terminal state or timeout is reached, no more interaction is possible untile `env.reset()`.
 
-The game is played and started by running the differnt agents.
+## Restarting the environment
+`env.reset()` can be used for reseting the environment to the original state. That is to the state after `env.initialize()` was called. In other words, `env.current_state` is replaced with `attacker_start_position` and `step_counter` is set to zero.
+The environment is also resetted after initialization.
 
-To run the Q learning agent with default configuration for 100 episodes:
 
-```bash
-python agents/q_learning/q_agent.py --episodes 100
-```
-
-## Components of the NetSecGame Environment
-The NetSecGame environment has several components in following files:
-
-- File `env/network_security_game.py` implements the game environment
-- File `env/game_components.py` implements a library with objects used int the environment
-- File `utils/utils.py` is a collenction of utils function which can be used by the agents
-- Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the configuration of hosts, data, services, and connnections in the network game. It is taken from CYST.
-- Files such as `agent/q_learning/q_agent.py` that implement the RL agents.
-
-The scenarios define the **topology** of a network (number of hosts, connections, networks, services, data, users, firewall rules etc.) while the **task-configuration** is to be used for definition of exact task for the agent in one of the scenario (with fix topology).
-
-### Task configuration
+## Task configuration
 The task configuration is a YAML file which is used for exact definiton of the task an agent shoul be solving. there are two main parts of the configuration
-#### Environment
+### Environment configuration
 Environment part which defines properties of the environment for the task (see example below). In particular:
 - `random_seed` - sets seed s for any random process in the environment
 - `scenario` - sets the scenario (network topology) used in the task (currently `scenario1_tiny`, `scenario1_small` and `scenario1` are available)
@@ -95,7 +135,7 @@ env:
       prob_success: 0.8
       prob_detection: 1
 ```
-#### Agents
+### Agent configuration
 Configuration of the agents in the task. It consits of the *Attacker* and  *Defender*. 
 
 - `random_seed` - sets seed s for any random process in the agents
@@ -104,10 +144,10 @@ Configuration of the agents in the task. It consits of the *Attacker* and  *Defe
 agents:
   random_seed: 42
 ```
-##### Attacker
+#### Attacker configuration
 Definition of attacking agent's properties:
 - `goal` Section defines the winning conditons for the attacker in each part: `known_networks:`(set), `known_hosts`(set), `controlled_hosts`(set), `known_services`(dict), `known_data`(dict). Each of the part can be empty (not part of the goal, exactly defined (e.g. `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`.
-- `start_position` Definiton of starting position (initial state) of the attacker. It consits of `known_networks:`(set), `known_hosts`(set), `controlled_hosts`(set), `known_services`(dict), `known_data`(dict). Each of the part can be empty (not part of the goal, exactly defined (e.g. `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`.
+- `start_position` Definiton of starting position (initial state) of the attacker. It consits of `known_networks:`(set), `known_hosts`(set), `controlled_hosts`(set), `known_services`(dict), `known_data`(dict). Each of the part can be empty (not part of the goal, exactly defined (e.g. `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`. The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts` so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`
 - `randomize_goal_every_episode` - if `True`, each keyword `random` is replaced with a randomly selected, valid option at the beginning of **EVERY** episode. If set to `False`, randomization is performed only *once* when the environment is initialized.
 ```YAML
 agents:
@@ -130,7 +170,7 @@ agents:
       known_services: {}
       known_data: {}
 ```
-##### Defender
+#### Defender configuration
 Definition of defending agent's properties. Currently, the defender is **NOT** a separate agent but it is considered part of the environment.
 `type` - Type of the defender. Three types are currently implemented:
   1. `NoDefender` (default) - interation without defender
@@ -162,9 +202,10 @@ agents:
       exfiltrate_data:
         consecutive_actions: 2
         tw_ratio: 0.25
+```
 
 ## Definition of the network topology
-The network topology and rules are defined using a Cyst simulator configuration. Cyst defines a complex network configuration, and this game does not use all Cyst features for now. The important ones for us are:
+The network topology and rules are defined using a [CYST](https://pypi.org/project/cyst/) simulator configuration. Cyst defines a complex network configuration, and this environment does not use all Cyst features for now. CYST components currently used are:
 
 - Server hosts (are a NodeConf in CYST)
     - Interfaces, each with one IP address
@@ -184,6 +225,8 @@ The network topology and rules are defined using a Cyst simulator configuration.
 - Internet host (as external router) (are a Node in RouterConf)
     - Interfaces, each with one IP address
     - Which host can connect
+- Exploits
+    - which service is the exploit linked to
 
 Very important is that we made an addition to the NodeConfig objects in our Cyst configuration to include the property 'note' with the text 'can_start_attacker'. Meaning that the game env will take these host as candidates for the random start position.
 
@@ -193,110 +236,22 @@ Currently the implemented agents are:
 
 - Q learning agent in `agents/q_learning/`
 - Double Q learning agent in `agents/double_q_learning/`
-- Naive Q learning agent in `agents/naive_q_learning/`
 - Random agent in `agents/random/`
 - Interactive agent in `agents/interactive/`
 - LLM agent in `agents/llm/`
 - LLM QA agent in `agents/llm_qa/`
 - GNN Reinforce agent in `agents/gnn_reinforce/`
 
-## Assumptions of the NetSecGame
-1. We work with the closed-world assumption. Only the defined entities exist in the simulation.
-2. No actions have a "delete" effect (the attacker does not give up ownership of nodes, does not forget nodes or services, and when data is transfered we assume its copied and therefore present in both nodes).
-3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty and the game ends.
-4. If you want to exfiltrate data to an external IP, that IP must be in the 'controlled_hosts' part of the configuration. Or the agent will not controll that IP.
+## Run the agents
 
-### Assumption for actions
-1. When playing `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` prior to this action)
-2. The `Find Data` action finds all the available data in the host if successful.
+The game is played and started by running the differnt agents.
 
-## Actions for the Attacker
-| Action name          | Description                                                              | Parameters                         | Effects                                          |
-|----------------------|--------------------------------------------------------------------------|---------------------------------------|--------------------------------------------------|
-| Scan Network          | Scans the given network for active hosts | network, mask                        | extends 'known_hosts'                            |
-| Find Services         | Scans given host for running services                                    | target IP                               | extends 'known_services' with host:service pairs |
-| Exploit Service | Runs exploit in service to gain control                                  | target IP, target service                     | extends 'controlled_hosts'                       |
-| Find Data            | Runs code to discover data either in given service or in controlled host | target IP, target service | extends 'known_data' with host:data pairs        |
-| Exfiltrate data      | Runds code to move data from host to host                                | source IP, data, target IP  | extends 'known_data with "target:data" pair      |
+To run the Q learning agent with default configuration for 100 episodes:
 
-### Conditions on the actions
-For each action to succed there are some conditions that must be fulfilled:
-- Scan Network: The target network should be in the list of known networks by the agent.
-- Find Services: The target IP should be in the list of known hosts.
-- Exploit Service: The target IP should be in the list of known hosts. The service should be in the list of known services.
-- Find Data: The target IP should be in the list of known hosts and in the list of controlled hosts. The service should be in the list of known services. 
-- Exfiltrate Data: The source IP should be in the list of known hosts and in the list of controlled hosts. The target IP should be in the list of known hosts and in the list of controlled hosts. The data should be in the list of known data. 
-
-In particular there are some actions that are possible, such as Scan a network that you don't know.
-
-
-## Actions for the defender
-In this version of the game the defender does not have actions and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks the admins have tools that consume logs from all computers at the same time and they can detect actions from a central position (such as a SIEM). The defender has, however, probabilities to detect or not each action, which are defined in the file `game_components.py`.
-
-
-# Code adaptation for new configurations
-The code can be adapted to new configurations of games and for new agents.
-
-
-## State of the game
-The state of the game is an object with the following parts:
-* `known_networks` (set of networks known to the attacker)
-* `known_hosts` (set of hosts known to the attacker)
-* `controlled_hosts` (set of hosts controlled by the attacker)
-* `known_services` (dict of host:service pairs. A service is a port)
-* `known_data` (dict of host:path pairs. path is where the data was found)
-
-An observation is the object received by an agent that has its view of the state, the reward, if the game ended and information about the observation.
-
-## Defining starting position of the attacker
-The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts` so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`.
-
-## Defining defender position
-The defender can be present in the network or not. In case you defined in the configuration of the game that the defender is present (see below), then the detection probabilities of each actions are taken into account. If the defender is not present, then there is no detection and the game can only end in two ways: timeout or the goal of the attacker was acchieved.
-
-## Initializing the Environment
-Each agent must initialize the game environment with options. The function is:
-
-```python
-state = env.initialize(win_conditions=goal, defender_positions=args.defender, attacker_start_position=attacker_start, max_steps=args.max_steps)
+```bash
+python agents/q_learning/q_agent.py --episodes 100
 ```
 
-The `goal` is defined as a dictionary of conditions that must be met for the attacker to win. Example:
-
-```python
-goal = {
-    "known_networks":set(),
-    "known_hosts":set(),
-    "controlled_hosts":set(),
-    "known_services":{},
-    "known_data":{IP("213.47.23.195"):{Data("User1", "DataFromServer1")}}
-}
-```
-Empty set() mean that any value is ok. So it doesn't matter which networks are known, or hosts known or host controlled, or known servi ces. Only that the known data "DataFromServer1" is *successfully* exfiltrated to IP 213.47.23.195 using user "User1".
-
-The start position of the attacker is defined in a dictionary. For example:
-
-```python
-attacker_start = {
-    "known_networks":set(),
-    "known_hosts":set(),
-    "controlled_hosts":{IP("213.47.23.195"), IP("192.168.2.2")},
-    "known_services":{},
-    "known_data":{}
-}
-```
-An empty set() means no values. The set of `controlled_hosts` must be filled with 1. the external command and control host for exfiltration and 2. if the agent starts from a deterministic host, then add it here. The IP where exfiltration must happen must be controlled by the attacker or otherwise it will not succeed. To force the starting position of the attacker to be random in the network, just put random_start=True in the environment initialization. When the game starts, the known networks and known hosts of the attacker are updated to include the controlled hosts and the network where the controlled hosts is.
-
-The `defender_position` parameter in the initialization of the env can only be for now `True` or `False`.
-
-## Interaction with the Environment
-Each agent can interact with the environment using the `env.step(action:Action)` method which returns an Observation with `next_state`, `reward`, `is_terminal`, `done` and `info` values. Once the terminal state or timeout is reached, no more interaction is possible untile `env.reset()`.
-
-## Restarting the environment
-`env.reset()` can be used for reseting the environment to the original state. That is to the state after `env.initialize()` was called. In other words, `env.current_state` is replaced with `attacker_start_position` and `step_counter` is set to zero.
-The environment is also resetted after initialization.
-
-```
 ## Tensorboard logs
 
 The logs for tensorboard are stored for all agents in `agents/tensorboard-logs/`.
@@ -311,3 +266,6 @@ tests/run_all_tests.sh
 ```
 
 This will load and run the unit tests in the `tests` folder.
+
+## Code adaptation for new configurations
+The code can be adapted to new configurations of games and for new agents.
