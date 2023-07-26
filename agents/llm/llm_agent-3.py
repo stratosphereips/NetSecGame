@@ -427,7 +427,7 @@ if __name__ == "__main__":
 
                 num_repeated_actions += [num_rep_actions_episode]
                 num_diff_repeated_actions += [num_rep_diff_actions_episode]
-                returns += [epi_return]
+                returns += [total_reward]
                 num_steps += [steps]
                 logger.info(f"\tGame ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
                 print(f"\tGame ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
