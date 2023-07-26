@@ -130,12 +130,20 @@ agents:
       known_services: {}
       known_data: {}
 ```
-##### Attacker
+##### Defender
+Definition of defending agent's properties. Currently, the defender is **NOT** a separate agent but it is considered part of the environment.
+`type` - Type of the defender. Three types are currently implemented:
+  1. `NoDefender` (default) - interation without defender
+  2. `StochasticDefender` - detections are based on ActionType probabilities (defined in the task configuraion, section `[env][actions]`).
+  3. `StochasticDefenderWithThreshold` - Modification of stochastic defender. Detection probabilities are used *IF* threasholds in the particular ActionType is reached. Thresholds are computed in time windows defined by `tw_size` (`tw_size=5` means that 5 previous actions are taken into account). If ratio of some ActionType within the timewindow is above the threshold, the probability defined in the task configuraion, section `[env][actions]` is used to determine if the action was detected. For action *BELOW* the thresholds, no detection is made. Additionally, thresholds for consecutive action type is defined in `consecutive_actions`. For example with
+```YAML
+  scan_network:
+    consecutive_actions: 2
+```
+if the agent uses action ScanNetwork (regardless of the parameters) twice or more, the detection can occur. Action types `FindData` and `exploit_service` have additional thresholds for repeated actions (with parameters) throughout the **WHOLE** episode (e.g. if action `<ActionType.FindData|{'target_host': 192.168.2.2}>` is played more than 2 with following configuration, the detection can happen based on the defined probability).  
 ```YAML
 agents:
   defender:
-    # types are StochasticDefender and NoDefender
-    #type: 'StochasticDefender'
     type: 'StochasticWithThreshold'
     tw_size: 5
     thresholds:
