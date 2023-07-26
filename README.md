@@ -60,7 +60,7 @@ There are currently implemented five types of actions:
 | Exfiltrate data      | Runds code to move data from host to host                                | source IP, data, target IP  | extends 'known_data with "target:data" pair      |
 
 #### Assumption and Conditions for Actions
-1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` prior to this action)
+1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
 2. The `Find Data` action finds all the available data in the host if successful.
 3. The `Find Data` action requires ownership of the target host.
 4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
@@ -68,11 +68,11 @@ There are currently implemented five types of actions:
 6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
 
 ### Actions for the defender
-In this version of the environment, the defender does not have actions, and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks, the admins have tools that consume logs from all computers at the same time, and they can detect actions from a central position (such as a SIEM). There are several modes of the defender (see [Task Configuration - Defender](#defender-configuration) for details.
+In this version of the environment, the defender does not have actions, and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks, the admins have tools that consume logs from all computers simultaneously, and they can detect actions from a central position (such as a SIEM). There are several modes of the defender (see [Task Configuration - Defender](#defender-configuration) for details.
 
 
 ### State of the game
-States in the game are represented as collection of assets of the agents. Actions, if successful, extend the assets. Currently, the state representation constis of follwing parts:
+States in the game are represented as collections of assets of the agents. Actions, if successful, extend the assets. Currently, the state representation consists of the follwing parts:
 * `known_networks` (set of networks known to the attacker)
 * `known_hosts` (set of hosts known to the attacker)
 * `controlled_hosts` (set of hosts controlled by the attacker)
@@ -82,34 +82,34 @@ States in the game are represented as collection of assets of the agents. Action
 
 In every step, the environment provides an Observation. The observation includes:
 1. `state` - A GameState object
-2. `reward` - float of the immediate reward obtained from previous step
+2. `reward` - float of the immediate reward obtained from the previous step
 3. `done` - boolean indicating if the interaction can continue
-4. `info` - a dictionary with additional information. Mainly use to determine the cause of the termination of the interaction (`goal_reached`/`detection`/'max_steps'
+4. `info` - a dictionary with additional information. Mainly used to determine the cause of the termination of the interaction (`goal_reached`/`detection`/'max_steps'
 
-## Starting the environment
+### Starting the environment
 The environment should be created by an agent upon starting. The properties of the environment can be defined in a YAML file.
 When created, the environment:
 1. reads the configuration file
-2. loads the network configuraion from the config file
-3. reads the defender type from the configuraion
+2. loads the network configuration from the config file
+3. reads the defender type from the configuration
 4. creates starting position and goal position following the config file
 
-## Interaction with the Environment
-Each agent can interact with the environment using the `env.step(action:Action)` method which returns an Observation with `next_state`, `reward`, `is_terminal`, `done` and `info` values. Once the terminal state or timeout is reached, no more interaction is possible untile `env.reset()`.
+### Interaction with the Environment
+Each agent can interact with the environment using the `env.step(action:Action)` method, which returns an Observation with `next_state`, `reward`, `is_terminal`, `done`, and `info` values. Once the terminal state or timeout is reached, no more interaction is possible until `env.reset()`.
 
-## Restarting the environment
-`env.reset()` can be used for reseting the environment to the original state. That is to the state after `env.initialize()` was called. In other words, `env.current_state` is replaced with `attacker_start_position` and `step_counter` is set to zero.
-The environment is also resetted after initialization.
+### Restarting the environment
+`env.reset()` can be used for resetting the environment to the original state. That is to the state after `env.initialize()` was called. In other words, `env.current_state` is replaced with `attacker_start_position`, and `step_counter` is set to zero.
+The environment is also reset after initialization.
 
 
 ## Task configuration
-The task configuration is a YAML file which is used for exact definiton of the task an agent shoul be solving. there are two main parts of the configuration
+The task configuration is a YAML file that is used for the exact definition of the task an agent should be solving. there are two main parts of the configuration
 ### Environment configuration
-Environment part which defines properties of the environment for the task (see example below). In particular:
+The environment part defines the properties of the environment for the task (see the example below). In particular:
 - `random_seed` - sets seed s for any random process in the environment
-- `scenario` - sets the scenario (network topology) used in the task (currently `scenario1_tiny`, `scenario1_small` and `scenario1` are available)
-- `max_steps` - sets maximum number of steps an agent can make before episode is terminated
-- `store_replay_buffer` - if `True`, interaction of the agents is serialized and stored to a file
+- `scenario` - sets the scenario (network topology) used in the task (currently, `scenario1_tiny`, `scenario1_small`, and `scenario1` are available)
+- `max_steps` - sets the maximum number of steps an agent can make before an episode is terminated
+- `store_replay_buffer` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of **EVERY** episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)
 ```YAML
 env:
