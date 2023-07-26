@@ -163,23 +163,6 @@ agents:
         consecutive_actions: 2
         tw_ratio: 0.25
 
-```
-## Tensorboard logs
-
-The logs for tensorboard are stored for all agents in `agents/tensorboard-logs/`.
-
-
-## Testing the environment
-
-It is advised after every change you test if the env is running correctly by doing
-
-```bash
-tests/run_all_tests.sh
-```
-
-This will load and run the unit tests in the `tests` folder.
-
-
 ## Definition of the network topology
 The network topology and rules are defined using a Cyst simulator configuration. Cyst defines a complex network configuration, and this game does not use all Cyst features for now. The important ones for us are:
 
@@ -247,41 +230,12 @@ For each action to succed there are some conditions that must be fulfilled:
 In particular there are some actions that are possible, such as Scan a network that you don't know.
 
 
-## Configuration of the game and agents
-All the configuration of the environment and agents is done from the configuration file that is on the directory of the agents. For example, for the agent q_learning it is stored in the file `agents/q_learning/netsecenv-task.yaml`.
-
-The configuration is a yaml file and allows for the setting of 
-- random seeds (fixed or `random`)
-- the start position of the agent (state) in `start_position`:
-    - each component of the state can be either fixed (e.g. 'known_data'={IP(X.X.X.X):\[Data(owner, data_id)\]})
-    - or randomized (e.g. 'known_data'={IP(X.X.X.X):\['random'\]})
-
-- the description of the goal state in `goal`:
-    - each component of the state can be either fixed (e.g. 'known_data'={IP(X.X.X.X):\[Data(owner, data_id)\]})
-    - or randomized (e.g. 'known_data'={IP(X.X.X.X):\['random'\]})
-- in case there are any `random` fields, if the random assignment should be done at the beginning of *EVERY* episode `randomize_goal_every_episode:True`
-- the scenario with the topology (`scenario`)
-- the max steps (`max_steps`)
-- if all interaction (serialized replay_buffer) should be stored (`store_replay_buffer`)
-- if all network and ip addresses should be randomized every episode while keeping the same topology defined in `scenario`(`use_dynamic_addresses`)
-- probability of detection of each action
-- probability of success of each action
-- type of defender (selection from):
-    - `NoDefender` (default)
-    - `StochasticDefender`
-    - `StochasticWithThreshold`
-(see Defenders for details)
-
 ## Actions for the defender
 In this version of the game the defender does not have actions and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks the admins have tools that consume logs from all computers at the same time and they can detect actions from a central position (such as a SIEM). The defender has, however, probabilities to detect or not each action, which are defined in the file `game_components.py`.
 
 
-
 # Code adaptation for new configurations
 The code can be adapted to new configurations of games and for new agents.
-
-### Verification of actions
-The game environment has a function called ```get_valid_actions(state)```, which returns the valid actions for a given state. This allows the agents to always know the actions that can be played and therefore there should not be any check in the game env about if the action is possible or not.
 
 
 ## State of the game
@@ -342,3 +296,18 @@ Each agent can interact with the environment using the `env.step(action:Action)`
 `env.reset()` can be used for reseting the environment to the original state. That is to the state after `env.initialize()` was called. In other words, `env.current_state` is replaced with `attacker_start_position` and `step_counter` is set to zero.
 The environment is also resetted after initialization.
 
+```
+## Tensorboard logs
+
+The logs for tensorboard are stored for all agents in `agents/tensorboard-logs/`.
+
+
+## Testing the environment
+
+It is advised after every change you test if the env is running correctly by doing
+
+```bash
+tests/run_all_tests.sh
+```
+
+This will load and run the unit tests in the `tests` folder.
