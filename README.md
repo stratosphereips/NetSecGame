@@ -34,12 +34,12 @@ python3 -m pip install -r requirements.txt
 ```
 
 ## Components of the NetSecGame Environment
-The NetSecGame environment has several components in following files:
+The NetSecGame environment has several components in the following files:
 
 - File `env/network_security_game.py` implements the game environment
-- File `env/game_components.py` implements a library with objects used int the environment
-- File `utils/utils.py` is a collenction of utils function which can be used by the agents
-- Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the configuration of hosts, data, services, and connections in the network game. It is taken from CYST.
+- File `env/game_components.py` implements a library with objects used in the environment
+- File `utils/utils.py` is a collection of utils function which the agents can use
+- Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the network game's configuration of hosts, data, services, and connections. It is taken from CYST.
 - Files such as `agent/q_learning/q_agent.py` that implement the RL agents.
 
 The [scenarios](#definition-of-the-network-topology) define the **topology** of a network (number of hosts, connections, networks, services, data, users, firewall rules, etc.) while the [task-configuration](#task-configuration) is to be used for definition of the exact task for the agent in one of the scenarios (with fix topology).
@@ -49,7 +49,7 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 2. No actions have a "delete" effect (the attacker does not give up ownership of nodes, does not forget nodes or services, and when data is transferred we assume it's copied and therefore present in both nodes).
 3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
 
-### Actions
+## Actions
 There are currently implemented five types of actions:
 | Action name          | Description                                                              | Parameters                         | Effects                                          |
 |----------------------|--------------------------------------------------------------------------|---------------------------------------|--------------------------------------------------|
@@ -59,7 +59,7 @@ There are currently implemented five types of actions:
 | Find Data            | Runs code to discover data either in a given service or in a controlled host | target IP, target service | extends 'known_data' with host:data pairs        |
 | Exfiltrate data      | Runds code to move data from host to host                                | source IP, data, target IP  | extends 'known_data with "target:data" pair      |
 
-#### Assumption and Conditions for Actions
+### Assumption and Conditions for Actions
 1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
 2. The `Find Data` action finds all the available data in the host if successful.
 3. The `Find Data` action requires ownership of the target host.
@@ -71,7 +71,7 @@ There are currently implemented five types of actions:
 In this version of the environment, the defender does not have actions, and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks, the admins have tools that consume logs from all computers simultaneously, and they can detect actions from a central position (such as a SIEM). There are several modes of the defender (see [Task Configuration - Defender](#defender-configuration) for details.
 
 
-### State of the game
+## State of the game
 States in the game are represented as collections of assets of the agents. Actions, if successful, extend the assets. Currently, the state representation consists of the follwing parts:
 * `known_networks` (set of networks known to the attacker)
 * `known_hosts` (set of hosts known to the attacker)
@@ -222,17 +222,17 @@ The network topology and rules are defined using a [CYST](https://pypi.org/proje
     - Interfaces, each with one IP address
     - Networks
     - Allowed connections between hosts
-- Internet host (as external router) (are a Node in RouterConf)
+- Internet host (as an external router) (are a Node in RouterConf)
     - Interfaces, each with one IP address
     - Which host can connect
 - Exploits
     - which service is the exploit linked to
 
-Very important is that we made an addition to the NodeConfig objects in our Cyst configuration to include the property 'note' with the text 'can_start_attacker'. Meaning that the game env will take these host as candidates for the random start position.
+Very important is that we made an addition to the NodeConfig objects in our Cyst configuration to include the property 'note' with the text 'can_start_attacker'. Meaning that the game env will take these hosts as candidates for the random start position.
 
 
 ## Agents Implemented
-Currently the implemented agents are:
+Currently, the implemented agents are:
 
 - Q learning agent in `agents/q_learning/`
 - Double Q learning agent in `agents/double_q_learning/`
@@ -244,7 +244,7 @@ Currently the implemented agents are:
 
 ## Run the agents
 
-The game is played and started by running the differnt agents.
+The game is played and started by running the different agents.
 
 To run the Q learning agent with default configuration for 100 episodes:
 
