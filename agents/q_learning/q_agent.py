@@ -228,12 +228,13 @@ if __name__ == '__main__':
 
     logger.info('Creating the agent')
     agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
-    try:
-        # Load a previous qtable from a pickled file
-        logger.info(f'Loading a previous Qtable')
-        agent.load_q_table(args.filename)
-    except FileNotFoundError:
-        logger.info(f"No previous qtable file found to load, starting with an emptly zeroed qtable")
+    if args.filename:
+        try:
+            # Load a previous qtable from a pickled file
+            logger.info(f'Loading a previous Qtable')
+            agent.load_q_table(args.filename)
+        except FileNotFoundError:
+            logger.info(f"No previous qtable file found to load, starting with an emptly zeroed qtable")
 
     # If we are not evaluating the model
     if not args.test:
