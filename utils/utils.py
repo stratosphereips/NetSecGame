@@ -204,7 +204,6 @@ class ConfigParser():
 
         # Goal data
         known_data = self.read_agents_known_data('attacker', 'goal')
-        print(known_data)
 
         attacker_goal = {}
         attacker_goal['known_networks'] = known_networks
