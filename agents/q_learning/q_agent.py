@@ -189,7 +189,7 @@ class QAgent:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=8000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=4000, type=int)
     parser.add_argument("--epsilon", help="Sets epsilon for exploration", default=0.2, type=float)
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
     parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.3, type=float)
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     parser.add_argument("--filename", help="Load previous model file", type=str, default=False)
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
-    args.filename = f"QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key in ["episodes", "gamma", "epsilon", "alpha"])) + ".pickle"
+    #args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key in ["episodes", "gamma", "epsilon", "alpha"])) + f"_{time.strftime('%Y%m%d-%H%M%S')}.pickle"
 
     # Remove all handlers associated with the root logger object.
     for handler in logging.root.handlers[:]:
@@ -301,9 +301,11 @@ if __name__ == '__main__':
                 writer.add_scalar("charts/eval_std_detected_steps", eval_std_detected_steps , i)
 
         # Store the q table on disk
-        agent.store_q_table(args.filename)
-    agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
-    agent.load_q_table(args.filename)
+        if args.filename:
+            agent.store_q_table(args.filename)
+    if args.filename:
+        agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
+        agent.load_q_table(args.filename)
     # Test
     wins = 0
     detected = 0
