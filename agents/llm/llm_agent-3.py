@@ -389,8 +389,12 @@ if __name__ == "__main__":
                     current_state = observation.state
 
             logger.info(f"Iteration: {i}. Is action valid to be taken: {is_valid}, did action change status: {good_action}")
-            if observation.done:
-                reason = observation.info
+            if observation.done or i == (num_iterations-1): # if it is the last iteration gather statistics
+                if i < (num_iterations-1):
+                    reason = observation.info
+                else:
+                    reason= {'end_reason' : 'max_iterations'}
+
                 # Did we win?
                 win = 0
                 if observation.reward > 0:
@@ -404,11 +408,17 @@ if __name__ == "__main__":
                 elif 'detected' in reason['end_reason']:
                     detected += 1
                     num_detected_steps += [steps]
+                elif 'max_iterations' in reason['end_reason']:
+                    num_win_steps += [0]
+                    num_detected_steps += [0]
+                    type_of_end = 'max_iterations'
+                    total_reward = -env._max_steps
+                    steps = env._max_steps
                 else:
                     num_win_steps += [0]
                     num_detected_steps += [0]
                     
-                returns += [epi_return]
+                returns += [total_reward]
                 num_steps += [steps]
                 logger.info(f"\tGame ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
                 print(f"\tGame ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
