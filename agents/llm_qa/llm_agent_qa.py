@@ -76,8 +76,10 @@ The rules are:
 5. You can exfiltrate known data to and from controlled hosts.
 
 Do not repeat actions that you took in the past.
-Do not scan and exploit services in hosts you control.
+Do not scan services in hosts you control.
 Do not scan the same network twice.
+Do not exfiltrate the same data twice.
+Exploit services that you know and find data in all controlled hosts.
 Once you have known data exfiltrate them to the target one by one.
 """
 
@@ -85,7 +87,9 @@ Q1 = "List the objects in the current status and the actions they can be used. B
 Q2 = "List the top 3 sub-tasks you should follow with specific parameters. Indicate their priority out of 5."
 Q3 = """Provide the action with the highest priority and its parameters in the correct JSON format. Do not repeat past actions.
 Action: """
-Q4 = """Action: """
+Q4 = """Provide the best action and its parameters in the correct JSON format.
+Action: """
+
 
 def validate_action_in_state(llm_response, state):
     """Check the LLM response and validate it against the current state."""
@@ -104,7 +108,7 @@ def validate_action_in_state(llm_response, state):
                 if action_params["target_network"] in known_nets:
                     valid = True 
             case 'ScanServices':
-                if action_params["target_host"] in known_hosts:
+                if action_params["target_host"] in known_hosts or action_params["target_host"] in contr_hosts:
                     valid = True
             case 'ExploitService':
                 ip_addr = action_params["target_host"]
@@ -294,7 +298,7 @@ if __name__ == "__main__":
         observation = env.reset()
         current_state = observation.state
 
-        num_iterations = 100
+        num_iterations = env._max_steps + 20
         taken_action = None
         memories = []
         total_reward = 0
@@ -333,7 +337,7 @@ if __name__ == "__main__":
             #     {"role": "user", "content": Q2}
             # ]
 
-            # response = openai_query(messages, max_tokens=1024, model="gpt-4")
+            # response = openai_query(messages, max_tokens=1024, model=args.llm)
             # logger.info("LLM (step 2): %s", response)
 
             # Step 3
@@ -343,7 +347,7 @@ if __name__ == "__main__":
                 {"role": "user", "content": COT_PROMPT2},
                 {"role": "user", "content": response},
                 {"role": "user", "content": memory_prompt},
-                {"role": "user", "content": Q3}
+                {"role": "user", "content": Q4}
             ]
 
             # Store the first prompt in tensorboard
@@ -381,8 +385,11 @@ if __name__ == "__main__":
                     current_state = observation.state
 
             logger.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
-            if observation.done:
-                reason = observation.info
+            if observation.done or i == (num_iterations-1): # if it is the last iteration gather statistics
+                if i < (num_iterations-1):
+                    reason = observation.info
+                else:
+                    reason= {'end_reason' : 'max_iterations'}
 
                 win = 0
                 # is_detected if boolean
@@ -398,12 +405,19 @@ if __name__ == "__main__":
                     detected += 1
                     num_detected_steps += [steps]
                     type_of_end = 'detection'
+                elif 'max_iterations' in reason['end_reason']:
+                    num_win_steps += [0]
+                    num_detected_steps += [0]
+                    reach_max_steps += 1
+                    type_of_end = 'max_iterations'
+                    total_reward = -env._max_steps
+                    steps = env._max_steps
                 else:
                     num_win_steps += [0]
                     num_detected_steps += [0]
                     reach_max_steps += 1
                     type_of_end = 'max_steps'
-                returns += [epi_last_reward]
+                returns += [total_reward]
                 num_steps += [steps]
 
                 logger.info(f"\tEpisode {episode} of game ended after {steps} steps. Reason: {reason}. Last reward: {epi_last_reward}")
@@ -436,8 +450,8 @@ if __name__ == "__main__":
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100
     test_max_steps_rate = (reach_max_steps/(args.test_episodes))*100
-    test_average_returns = np.mean(total_reward)
-    test_std_returns = np.std(total_reward)
+    test_average_returns = np.mean(returns)
+    test_std_returns = np.std(returns)
     test_average_episode_steps = np.mean(num_steps)
     test_std_episode_steps = np.std(num_steps)
     test_average_win_steps = np.mean(num_win_steps)
