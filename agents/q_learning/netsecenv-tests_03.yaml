@@ -60,7 +60,7 @@ env:
   # random_seed: 42
   scenario: 'scenario1_small'
   max_steps: 30
-  store_replay_buffer: True
+  store_replay_buffer: False
   actions:
     scan_network:
       prob_success: 1.0
