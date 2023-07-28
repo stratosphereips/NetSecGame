@@ -382,8 +382,12 @@ if __name__ == "__main__":
 
             logger.info(f"Did action change status: {good_action}")
 
-            if observation.done:
-                reason = observation.info
+            if observation.done or i == (num_iterations-1): # if it is the last iteration gather statistics
+                if i < (num_iterations-1):
+                    reason = observation.info
+                else:
+                    reason= {'end_reason' : 'max_iterations'}
+
                 # Did we win?
                 win = 0
                 if observation.reward > 0:
@@ -400,6 +404,13 @@ if __name__ == "__main__":
                     detected += 1
                     num_detected_steps += [steps]
                     type_of_end = 'detection'
+                elif 'max_iterations' in reason['end_reason']:
+                    num_win_steps += [0]
+                    num_detected_steps += [0]
+                    reach_max_steps += 1
+                    type_of_end = 'max_iterations'
+                    total_reward = -env._max_steps
+                    steps = env._max_steps
                 else:
                     num_win_steps += [0]
                     num_detected_steps += [0]
