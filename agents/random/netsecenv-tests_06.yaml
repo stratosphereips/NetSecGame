@@ -75,7 +75,7 @@ env:
   random_seed: 'random'
   # Or you can fix the seed
   # random_seed: 42
-  scenario: 'scenario1_small'
+  scenario: 'scenario1'
   max_steps: 30
   store_replay_buffer: False
   actions:
