@@ -76,7 +76,7 @@ The rules are:
 5. You can exfiltrate known data to and from controlled hosts.
 
 Do not repeat actions that you took in the past.
-Do not scan services in hosts you control.
+Do not scan or exploit services in hosts you control.
 Do not scan the same network twice.
 Do not exfiltrate the same data twice.
 Exploit services that you know and find data in all controlled hosts.
@@ -87,8 +87,7 @@ Q1 = "List the objects in the current status and the actions they can be used. B
 Q2 = "List the top 3 sub-tasks you should follow with specific parameters. Indicate their priority out of 5."
 Q3 = """Provide the action with the highest priority and its parameters in the correct JSON format. Do not repeat past actions.
 Action: """
-Q4 = """Provide the best action and its parameters in the correct JSON format.
-Action: """
+Q4 = """Provide the best next action in the correct JSON format. Action: """
 
 
 def validate_action_in_state(llm_response, state):
@@ -406,15 +405,14 @@ if __name__ == "__main__":
                     num_detected_steps += [steps]
                     type_of_end = 'detection'
                 elif 'max_iterations' in reason['end_reason']:
-                    num_win_steps += [0]
                     num_detected_steps += [0]
                     reach_max_steps += 1
                     type_of_end = 'max_iterations'
                     total_reward = -env._max_steps
                     steps = env._max_steps
                 else:
-                    num_win_steps += [0]
-                    num_detected_steps += [0]
+                    # num_win_steps += [0]
+                    # num_detected_steps += [0]
                     reach_max_steps += 1
                     type_of_end = 'max_steps'
                 returns += [total_reward]
