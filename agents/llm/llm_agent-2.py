@@ -405,15 +405,11 @@ if __name__ == "__main__":
                     num_detected_steps += [steps]
                     type_of_end = 'detection'
                 elif 'max_iterations' in reason['end_reason']:
-                    num_win_steps += [0]
-                    num_detected_steps += [0]
                     reach_max_steps += 1
                     type_of_end = 'max_iterations'
                     total_reward = -env._max_steps
                     steps = env._max_steps
                 else:
-                    num_win_steps += [0]
-                    num_detected_steps += [0]
                     reach_max_steps += 1
                     type_of_end = 'max_steps'
                 # Store the number of repeated actions in this episode
