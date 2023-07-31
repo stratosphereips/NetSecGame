@@ -73,10 +73,11 @@ Keep in mind:
 5. You can exfiltrate known data to and from controlled hosts. This may make you complete your goal.
 
 Penetration methodology:
-if you find a new network, try to gain access one host at the time.
-if you find a new host, try to scan for services.
-if you find a new service, try to explot the service.
-if you exploit a service, try to exfiltrate data.
+if you find a new network, try to gain access. One host at the time.
+if you find a new host, try to scan for services. One host at the time.
+if you find a new service, try to exploit the service. A service at the time.
+if you have exploited a service, try to find data.
+if you found data, try to exfiltrate data to {{target_host}} immediately. This can make you win more money.
 the more data you exfiltrate the more money for you.
 try to to no repeat the same actions or you can be discovered.
 
@@ -280,12 +281,15 @@ if __name__ == "__main__":
     logger = logging.getLogger('llm')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-tests_01.yaml'), action='store', required=False)
-    parser.add_argument("--test_episodes", help="Number of test episodes to run", default=10, action='store', required=False, type=int)
+    parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-tests_02.yaml'), action='store', required=False)
+    parser.add_argument("--test_episodes", help="Number of test episodes to run", default=30, action='store', required=False, type=int)
     parser.add_argument("--memory_buffer", help="Number of actions to remember and pass to the LLM", default=10, action='store', required=False, type=int)
-    parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
+    parser.add_argument("--llm", type=str, choices=["gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-0613", "gpt-3.5-turbo-0301"], default="gpt-3.5-turbo", help="LLM used with OpenAI API")
     parser.add_argument("--force_ignore", help="Force ignore repeated actions in code", default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument("--delay", help="Delay the requests to LLM by this amount of seconds.", type=float, default=0)
+    parser.add_argument("--variable_temperature", help="Change the temperature of the LLM according to the number of repeated actions", default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--description", type=str, default="Default LLM agent", help="A brief description about the experiment")
+
     args = parser.parse_args()
 
     # Create the environment
@@ -298,10 +302,13 @@ if __name__ == "__main__":
     # Run multiple episodes to compute statistics
     wins = 0
     detected = 0
+    reach_max_steps = 0
     returns = []
     num_steps = []
     num_win_steps = []
     num_detected_steps = []
+    num_repeated_actions = []
+    num_diff_repeated_actions = []
     temperature = 0.0
 
     for episode in range(1, args.test_episodes + 1):
@@ -317,12 +324,14 @@ if __name__ == "__main__":
         # num_iterations is the max number of times we can ask the LLM to make 1 step. 
         # It is not the number of steps because many actions from the LLM are discarded.
         # All these iterations are for 1 episodes
-        num_iterations = 400
+        num_iterations = env._max_steps + 20
         taken_action = None
         memories = []
         total_reward = 0
         num_actions = 0
-
+        num_rep_actions_episode = 0
+        num_rep_diff_actions_episode = 0
+        last_action = "You did not take any action yet."
         # Populate the instructions based on the pre-defined goal
         # We do a deepcopy because when we later pop() the data will be also deleted in the env. Deepcopy avoids that.
         goal = copy.deepcopy(env._win_conditions)
@@ -347,8 +356,9 @@ if __name__ == "__main__":
             messages = [
                     {"role": "system", "content": instructions},
                     {"role": "user", "content": EXAMPLE_PROMPT},
-                    {"role": "user", "content": status_prompt},
                     {"role": "user", "content": "\nSelect a valid action with the correct format and parameters.\n pick the less repeated action."},
+                    {"role": "user", "content": f'Your last action was {last_action} do not pick the same'},
+                    {"role": "user", "content": status_prompt},
                     {"role": "user", "content": "Action: "}
                 ]
             
@@ -370,13 +380,16 @@ if __name__ == "__main__":
             response = openai_query(messages, args.llm, args.delay, temperature = temperature)
             logger.info(f"Action chosen (not still taken) by LLM: {response}")
             print(f"Action chosen (not still taken) by LLM: {response}")
-
+            last_action = response            
             try:
                 # Since the response should be JSON, we can eval it and crate a dict
                 response = eval(response)
                 is_valid, action, actions_took_in_episode = create_action_from_response(response, observation.state, actions_took_in_episode)
-            except:
+            except Exception as e:
+                logger.info(f"Error while creating action from response: {e}")
                 is_valid = False
+
+            logger.info(f"Iteration: {i}. Is action valid to be taken: {is_valid}, did action change status: {good_action}")
 
             if is_valid:
                 # Take action
@@ -399,7 +412,7 @@ if __name__ == "__main__":
                 win = 0
                 if observation.reward > 0:
                     win = 1
-                detected = env.detected
+                is_detected = env.detected
                 steps = env.timestamp
                 epi_return = observation.reward
                 if 'goal_reached' in reason['end_reason']:
@@ -408,13 +421,18 @@ if __name__ == "__main__":
                 elif 'detected' in reason['end_reason']:
                     detected += 1
                     num_detected_steps += [steps]
+                    type_of_end = 'detection'
                 elif 'max_iterations' in reason['end_reason']:
+                    reach_max_steps += 1
                     type_of_end = 'max_iterations'
                     total_reward = -env._max_steps
                     steps = env._max_steps
                 else:
-                    pass
-                    
+                    reach_max_steps += 1
+                    type_of_end = 'max_steps'
+
+                num_repeated_actions += [num_rep_actions_episode]
+                num_diff_repeated_actions += [num_rep_diff_actions_episode]
                 returns += [total_reward]
                 num_steps += [steps]
                 logger.info(f"\tGame ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
@@ -435,7 +453,7 @@ if __name__ == "__main__":
                         memories.append((response["action"], response["parameters"], "Bad."))
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
-                memories.append(f"Response '{response}' badly formatted.")
+                memories.append(("Bad Response", {'response':response}, f" is not valid JSON"))
                 
             # Convert the elements of memory_list to hashable types
             hashable_memory_list = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in memories]
@@ -448,18 +466,22 @@ if __name__ == "__main__":
                 action, message = memory[0], memory[2]
                 print(action + ": " + count * "*" + " (" + str(count) + ")" )
             # Find the number of repeated memories
-            num_repeated_actions = sum(count > 1 for count in memory_counts.values())
+            num_rep_actions_episode = sum( count for count in memory_counts.values() if count > 1 )
+            num_rep_diff_actions_episode = sum( count >1 for count in memory_counts.values() )
 
-            print(f"Number of repeated actions: {num_repeated_actions}")
-            logger.info(f"Number of repeated actions: {num_repeated_actions}")
+            print(f"Number of repeated actions: {num_rep_actions_episode}")
+            print(f"Number of different repeated actions: {num_rep_diff_actions_episode}")
+            logger.info(f"Number of repeated actions: {num_rep_actions_episode}")
+            logger.info(f"Number of different repeated actions: {num_rep_diff_actions_episode}")
             print(f"Number actions: {len(memories)}")
             logger.info(f"Number actions: {len(memories)}")
             
+            if args.variable_temperature and len(memories) > 1:
             # Get the count of the most common action in the last ten actions
-            last_actions = memories[-args.memory_buffer:]
-            hashable_last_actions = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in last_actions]
-            most_common_action_count = Counter(hashable_last_actions).most_common(1)[0][1]
-            temperature = ((most_common_action_count / (args.memory_buffer  * 1) ) * 0.8 ) + 0.3
+                last_actions = memories[-args.memory_buffer:]
+                hashable_last_actions = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in last_actions]
+                most_common_action_count = Counter(hashable_last_actions).most_common(1)[0][1]
+                temperature = ((most_common_action_count / (args.memory_buffer  * 1) ) * 0.8 ) + 0.3
 
            
 
@@ -468,6 +490,7 @@ if __name__ == "__main__":
     # After all episodes are done. Compute statistics
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100
+    test_max_steps_rate = (reach_max_steps/(args.test_episodes))*100
     test_average_returns = np.mean(returns)
     test_std_returns = np.std(returns)
     test_average_episode_steps = np.mean(num_steps)
@@ -476,8 +499,27 @@ if __name__ == "__main__":
     test_std_win_steps = np.std(num_win_steps)
     test_average_detected_steps = np.mean(num_detected_steps)
     test_std_detected_steps = np.std(num_detected_steps)
+    test_average_repeated_actions = np.mean(num_repeated_actions)
+    test_std_repeated_actions = np.std(num_repeated_actions)
+    test_average_diff_repeated_actions = np.mean(num_diff_repeated_actions)
+    test_std_diff_repeated_actions = np.std(num_diff_repeated_actions)
     # Store in tensorboard
-    tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate, "charts/test_avg_detection_rate": test_detection_rate, "charts/test_avg_returns": test_average_returns, "charts/test_std_returns": test_std_returns, "charts/test_avg_episode_steps": test_average_episode_steps, "charts/test_std_episode_steps": test_std_episode_steps, "charts/test_avg_win_steps": test_average_win_steps, "charts/test_std_win_steps": test_std_win_steps, "charts/test_avg_detected_steps": test_average_detected_steps, "charts/test_std_detected_steps": test_std_detected_steps}
+    tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate, 
+                        "charts/test_avg_detection_rate": test_detection_rate, 
+                        "charts/test_avg_max_steps_rate": test_max_steps_rate,
+                        "charts/test_avg_returns": test_average_returns, 
+                        "charts/test_std_returns": test_std_returns, 
+                        "charts/test_avg_episode_steps": test_average_episode_steps, 
+                        "charts/test_std_episode_steps": test_std_episode_steps, 
+                        "charts/test_avg_win_steps": test_average_win_steps, 
+                        "charts/test_std_win_steps": test_std_win_steps, 
+                        "charts/test_avg_detected_steps": test_average_detected_steps, 
+                        "charts/test_std_detected_steps": test_std_detected_steps,
+                        "charts/test_average_repetead_actions": test_average_repeated_actions,
+                        "charts/test_std_repetead_actions": test_std_repeated_actions,
+                        "charts/test_average_diff_repetead_actions": test_average_diff_repeated_actions,
+                        "charts/test_std_diff_repetead_actions": test_std_diff_repeated_actions
+                        }
 
     text = f'''Final test after {args.test_episodes} episodes
         Wins={wins},
@@ -487,7 +529,15 @@ if __name__ == "__main__":
         average_returns={test_average_returns:.3f} +- {test_std_returns:.3f},
         average_episode_steps={test_average_episode_steps:.3f} +- {test_std_episode_steps:.3f},
         average_win_steps={test_average_win_steps:.3f} +- {test_std_win_steps:.3f},
-        average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}'''
+        average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
+        average_detected_steps={test_average_detected_steps:.3f} +- {test_std_detected_steps:.3f}
+        average_repeated actions={test_average_repeated_actions:.3f} +- {test_std_repeated_actions:.3f}
+        average_diff_repeated actions={test_average_diff_repeated_actions:.3f} +- {test_std_diff_repeated_actions:.3f}
+        '''
+
+    # Text that is going to be added to the tensorboard. Put any description you want
+    
+    experiment_description = f"LLM agent desc:{args.description} " + f"Model: {args.llm}" + f"Conf: {args.task_config_file}" + f"Max steps: {env._max_steps}" + f"Seed: {env._seed}" 
 
     writer.add_text("Description", experiment_description)
     writer.add_hparams(vars(args), tensorboard_dict)
