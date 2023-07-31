@@ -418,11 +418,12 @@ if __name__ == "__main__":
                 if 'goal_reached' in reason['end_reason']:
                     wins += 1
                     num_win_steps += [steps]
-                    type_of_end = 'detection'
                 elif 'detected' in reason['end_reason']:
                     detected += 1
                     num_detected_steps += [steps]
+                    type_of_end = 'detection'
                 elif 'max_iterations' in reason['end_reason']:
+                    reach_max_steps += 1
                     type_of_end = 'max_iterations'
                     total_reward = -env._max_steps
                     steps = env._max_steps
@@ -489,6 +490,7 @@ if __name__ == "__main__":
     # After all episodes are done. Compute statistics
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100
+    test_max_steps_rate = (reach_max_steps/(args.test_episodes))*100
     test_average_returns = np.mean(returns)
     test_std_returns = np.std(returns)
     test_average_episode_steps = np.mean(num_steps)
@@ -504,6 +506,7 @@ if __name__ == "__main__":
     # Store in tensorboard
     tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate, 
                         "charts/test_avg_detection_rate": test_detection_rate, 
+                        "charts/test_avg_max_steps_rate": test_max_steps_rate
                         "charts/test_avg_returns": test_average_returns, 
                         "charts/test_std_returns": test_std_returns, 
                         "charts/test_avg_episode_steps": test_average_episode_steps, 
