@@ -300,7 +300,7 @@ if __name__ == "__main__":
         # num_iterations is the max number of times we can ask the LLM to make 1 step. 
         # It is not the number of steps because many actions from the LLM are discarded.
         # All these iterations are for 1 episodes
-        num_iterations = 50
+        num_iterations = env._max_steps + 20
         taken_action = None
         memories = []
         total_reward = 0
