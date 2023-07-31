@@ -330,7 +330,7 @@ if __name__ == "__main__":
         total_reward = 0
         num_actions = 0
         num_rep_actions_episode = 0
-        num_diff_rep_actions_episode = 0
+        num_rep_diff_actions_episode = 0
         last_action = "You did not take any action yet."
         # Populate the instructions based on the pre-defined goal
         # We do a deepcopy because when we later pop() the data will be also deleted in the env. Deepcopy avoids that.
@@ -451,7 +451,7 @@ if __name__ == "__main__":
                         memories.append((response["action"], response["parameters"], "Good."))
                     else:
                         memories.append((response["action"], response["parameters"], "Bad."))
-            except TypeError as e:
+            except TypeError:
                 # if the LLM sends a response that is not properly formatted.
                 memories.append(("Bad Response", {'response':response}, f" is not valid JSON"))
                 
