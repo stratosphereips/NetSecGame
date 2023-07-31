@@ -324,7 +324,7 @@ if __name__ == "__main__":
         # num_iterations is the max number of times we can ask the LLM to make 1 step. 
         # It is not the number of steps because many actions from the LLM are discarded.
         # All these iterations are for 1 episodes
-        num_iterations = 50
+        num_iterations = env._max_steps + 20
         taken_action = None
         memories = []
         total_reward = 0
@@ -506,7 +506,7 @@ if __name__ == "__main__":
     # Store in tensorboard
     tensorboard_dict = {"charts/test_avg_win_rate": test_win_rate, 
                         "charts/test_avg_detection_rate": test_detection_rate, 
-                        "charts/test_avg_max_steps_rate": test_max_steps_rate
+                        "charts/test_avg_max_steps_rate": test_max_steps_rate,
                         "charts/test_avg_returns": test_average_returns, 
                         "charts/test_std_returns": test_std_returns, 
                         "charts/test_avg_episode_steps": test_average_episode_steps, 
