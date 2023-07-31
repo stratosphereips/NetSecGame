@@ -423,17 +423,12 @@ if __name__ == "__main__":
                     detected += 1
                     num_detected_steps += [steps]
                 elif 'max_iterations' in reason['end_reason']:
-                    num_win_steps += [0]
-                    num_detected_steps += [0]
                     type_of_end = 'max_iterations'
                     total_reward = -env._max_steps
                     steps = env._max_steps
                 else:
-                    num_win_steps += [0]
-                    num_detected_steps += [0]
                     reach_max_steps += 1
                     type_of_end = 'max_steps'
-                    
 
                 num_repeated_actions += [num_rep_actions_episode]
                 num_diff_repeated_actions += [num_rep_diff_actions_episode]
