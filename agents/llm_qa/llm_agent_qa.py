@@ -383,7 +383,7 @@ if __name__ == "__main__":
                     good_action = True
                     current_state = observation.state
 
-            logger.info(f"Iteration: {i}. Is action valid: {is_valid}, is action good: {good_action}")
+            logger.info(f"Iteration: {i} Valid: {is_valid} Good: {good_action}")
             if observation.done or i == (num_iterations-1): # if it is the last iteration gather statistics
                 if i < (num_iterations-1):
                     reason = observation.info
