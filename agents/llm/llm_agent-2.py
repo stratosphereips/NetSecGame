@@ -368,7 +368,7 @@ if __name__ == "__main__":
                 logger.info(f"Error while creating action from response: {e}")
                 is_valid = False
 
-            logger.info(f"Iteration: {i}. Is action valid to be taken: {is_valid}, did action change status: {good_action}")
+            logger.info(f"Iteration: {i} Valid: {is_valid} Good: {good_action}")
 
             if is_valid:
                 # Take action
