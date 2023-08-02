@@ -61,6 +61,7 @@ env:
   scenario: 'scenario1'
   max_steps: 30
   store_replay_buffer: False
+  use_dynamic_addresses: True
   actions:
     scan_network:
       prob_success: 1.0
