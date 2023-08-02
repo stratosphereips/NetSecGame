@@ -257,7 +257,7 @@ class ConfigParser():
         try:
             goal_reward = self.config['env']['goal_reward']
             return float(goal_reward)
-        except KeyError
+        except KeyError:
             return 100
         except ValueError:
             return 100
@@ -270,7 +270,7 @@ class ConfigParser():
         try:
             detection_reward = self.config['env']['detection_reward']
             return float(detection_reward)
-        except KeyError
+        except KeyError:
             return -50
         except ValueError:
             return -50
@@ -283,7 +283,7 @@ class ConfigParser():
         try:
             step_reward = self.config['env']['step_reward']
             return float(step_reward)
-        except KeyError
+        except KeyError:
             return -1
         except ValueError:
             return -1
