@@ -69,11 +69,10 @@ if __name__ == '__main__':
                 step_seq.append(latest_step)
         
         # Check if the line contains the agent iteration
-        # TODO: Not finished yet.
-        if iteration_str in line and not stop_until_new:
-            parts = line.strip().split(":")
-            iteration = parts[1]
-            if parts[3] == 'False':
+        if iteration_str in line and not stop_until_new:            
+            parts = line.strip().split(" ")
+            iteration = parts[5]
+            if parts[7] == 'False':
                 invalid += 1
 
         # Check if the goal is reached
@@ -105,11 +104,10 @@ if __name__ == '__main__':
     print(f"Win rate: {100*total_wins/len(episode_starts)}%")
     print(f"Detected: {total_detected}")
     print(f"Detection rate: {100*total_detected/len(episode_starts)}%")
-    print(f"Average rewards: {np.mean(rewards)}")
+    print(f"Average rewards: {np.mean(rewards)} +- {np.std(rewards)}")
 
     episode_lengths = calculate_episode_lengths(step_seq)
     print(f"Average episode length: {np.mean(episode_lengths)} +- {np.std(episode_lengths)}")
     print(f"Average win length: {np.mean(win_lengths)} +- {np.std(win_lengths)}")
     print(f"Average detected length: {np.mean(detected_lengths)} +- {np.std(detected_lengths)}")
-    print(len(rewards))
     assert len(rewards) == len(episode_starts)
