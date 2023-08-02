@@ -235,7 +235,7 @@ In the current state, we support a single scenario: Data exfiltration to a remot
 
 #### Data exfiltration to a remote C&C
 For the data exfiltration we support 3 variants. 
-![Scenario 1 - Data exfiltration](/readme_images/scenario_1.png)
+![Scenario 1 - Data exfiltration](readme_images/scenario_1.png)
 
 ## Agents Implemented
 Currently, the implemented agents are:
