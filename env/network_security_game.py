@@ -78,10 +78,10 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"\tSetting max steps to {self._max_steps}")
 
         # Set rewards for goal/detection/step
-        self._reward_goal = self.task_config.get_goal_reward()
+        self._goal_reward = self.task_config.get_goal_reward()
         self._detection_reward = self.task_config.get_detection_reward()
         self._step_reward = self.task_config.get_step_reward()
-        logger.info(f"\tSetting rewards - goal:{self._reward_goal}, detection:{self.detection_reward}, step{self._step_reward}")
+        logger.info(f"\tSetting rewards - goal:{self._goal_reward}, detection:{self.detection_reward}, step{self._step_reward}")
 
         # Set the default parameters of all actionss
         # if the values of the actions were updated in the configuration file
@@ -886,7 +886,7 @@ class NetworkSecurityEnvironment(object):
                 # Get the next state given the action
                 next_state = self._execute_action(self._current_state, action)
                 # Reard for making an action
-                reward = -1
+                reward = self._step_reward
             else:
                 # The action was not successful
                 logger.info("\tAction NOT sucessful")
@@ -895,14 +895,14 @@ class NetworkSecurityEnvironment(object):
                 next_state = self._current_state
 
                 # Reward for taking an action
-                reward = -1
+                reward = self._step_reward
 
             # 2. Check if the new state is the goal state
             is_goal = self.is_goal(next_state)
             logger.info(f"\tGoal reached?: {is_goal}")
             if is_goal:
                 # Give reward
-                reward += 100
+                reward +=  self._goal_reward
                 # Game ended
                 self._done = True
                 reason = {'end_reason':'goal_reached'}
@@ -917,7 +917,7 @@ class NetworkSecurityEnvironment(object):
             # Report detection, but not if in this same step the agent won
             if not is_goal and detected:
                 # Reward should be negative
-                reward -= 50
+                reward -= self._detection_reward
                 # Mark the environment as detected
                 self._detected = True
                 self._done = True
