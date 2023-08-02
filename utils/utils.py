@@ -249,6 +249,43 @@ class ConfigParser():
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
 
+    def get_goal_reward(self)->float:
+        """
+        Reads  what is the reward for reaching the goal.
+        default: 100
+        """
+        try:
+            goal_reward = self.config['env']['goal_reward']
+            return float(goal_reward)
+        except KeyError
+            return 100
+        except ValueError:
+            return 100
+    def get_detection_reward(self)->float:
+        """
+        Reads what is the reward for detection.
+        default: -50
+        """
+        try:
+            detection_reward = self.config['env']['detection_reward']
+            return float(detection_reward)
+        except KeyError
+            return -50
+        except ValueError:
+            return -50
+    def get_step_reward(self)->float:
+        """
+        Reads what is the reward for detection.
+        default: -1
+        """
+        try:
+            step_reward = self.config['env']['step_reward']
+            return float(step_reward)
+        except KeyError
+            return -1
+        except ValueError:
+            return -1
+
     def get_use_dynamic_addresses(self)->bool:
         """
         Reads if the IP and Network addresses should be dynamically changed.
