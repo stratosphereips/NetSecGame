@@ -77,7 +77,7 @@ env:
   # random_seed: 42
   scenario: 'scenario1_small'
   use_dynamic_addresses: True
-  max_steps: 30
+  max_steps: 100
   store_replay_buffer: False
   actions:
     scan_network:
