@@ -917,7 +917,7 @@ class NetworkSecurityEnvironment(object):
             # Report detection, but not if in this same step the agent won
             if not is_goal and detected:
                 # Reward should be negative
-                reward -= self._detection_reward
+                reward += self._detection_reward
                 # Mark the environment as detected
                 self._detected = True
                 self._done = True
