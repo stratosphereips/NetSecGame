@@ -76,6 +76,9 @@ env:
   # random_seed: 42
   scenario: 'scenario1'
   max_steps: 15
+  goal_reward: 100
+  detection_reward: -50
+  step_reward: -1
   store_replay_buffer: True
   use_dynamic_addresses: False
   actions:
