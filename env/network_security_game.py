@@ -77,7 +77,13 @@ class NetworkSecurityEnvironment(object):
         self._max_steps = self.task_config.get_max_steps()
         logger.info(f"\tSetting max steps to {self._max_steps}")
 
-        # Set the default parameters of all actions
+        # Set rewards for goal/detection/step
+        self._reward_goal = self.task_config.get_goal_reward()
+        self._detection_reward = self.task_config.get_detection_reward()
+        self._step_reward = self.task_config.get_step_reward()
+        logger.info(f"\tSetting rewards - goal:{self._reward_goal}, detection:{self.detection_reward}, step{self._step_reward}")
+
+        # Set the default parameters of all actionss
         # if the values of the actions were updated in the configuration file
         components.ActionType.ScanNetwork.default_success_p, components.ActionType.ScanNetwork.default_detection_p = self.task_config.read_env_action_data('scan_network')
         components.ActionType.FindServices.default_success_p, components.ActionType.FindServices.default_detection_p = self.task_config.read_env_action_data('find_services')
