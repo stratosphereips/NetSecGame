@@ -261,6 +261,7 @@ class ConfigParser():
             return 100
         except ValueError:
             return 100
+    
     def get_detection_reward(self)->float:
         """
         Reads what is the reward for detection.
@@ -273,6 +274,7 @@ class ConfigParser():
             return -50
         except ValueError:
             return -50
+    
     def get_step_reward(self)->float:
         """
         Reads what is the reward for detection.
