@@ -81,7 +81,7 @@ class NetworkSecurityEnvironment(object):
         self._goal_reward = self.task_config.get_goal_reward()
         self._detection_reward = self.task_config.get_detection_reward()
         self._step_reward = self.task_config.get_step_reward()
-        logger.info(f"\tSetting rewards - goal:{self._goal_reward}, detection:{self.detection_reward}, step{self._step_reward}")
+        logger.info(f"\tSetting rewards - goal:{self._goal_reward}, detection:{self._detection_reward}, step:{self._step_reward}")
 
         # Set the default parameters of all actionss
         # if the values of the actions were updated in the configuration file
