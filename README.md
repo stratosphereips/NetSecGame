@@ -234,8 +234,11 @@ Very important is that we made an addition to the NodeConfig objects in our Cyst
 In the current state, we support a single scenario: Data exfiltration to a remote C&C server.
 
 #### Data exfiltration to a remote C&C
-For the data exfiltration we support 3 variants. 
-![Scenario 1 - Data exfiltration](readme_images/scenario_1.png)
+For the data exfiltration we support 3 variants. The full scenario contains 5 clients (where the attacker can start) and 5 servers where the data which is supposed to be exfiltrated can be located. *scenario1_small* is a variant with a single client (attacker always starts there) and all 5 servers. *scenario1_tiny* contains only single server with data. The tiny scenario is trivial and intended only for debuggin purposes.
+<table>
+  <tr><th>Scenario 1</th><th>Scenario 1 - small</th><th>Scenario 1 -tiny</th></tr>
+  <tr><td><img src="readme_images/scenario_1.png" alt="Scenario 1 - Data exfiltration" width="300"></td><td><img src="readme_images/scenario 1_small.png" alt="Scenario 1 - small" width="300"</td><td><img src="readme_images/scenario_1_tiny.png" alt="Scenario 1 - tiny" width="300"></td></tr>
+</table>
 
 ## Agents Implemented
 Currently, the implemented agents are:
