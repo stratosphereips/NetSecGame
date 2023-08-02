@@ -35,7 +35,7 @@ def reached_limit(current_step, max_steps, invalid_steps):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file_name", type=str, default="netsecenv.log", help="Path of the log file")
+    parser.add_argument("--file_name", type=str, default="netsecenv.log", help="Path of the log file", required=True)
     parser.add_argument("--max_steps", type=int, default=100, help="The max steps for the calculation")
     args = parser.parse_args()
 
