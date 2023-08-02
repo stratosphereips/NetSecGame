@@ -126,7 +126,7 @@ if __name__ == '__main__':
     print(f"Detections: {total_detected}")
     print(f"Win rate: {100*total_wins/len(episode_starts):.3f}%")
     print(f"Detection rate: {100*total_detected/len(episode_starts):.3f}%")
-    print(f"Average rewards: {np.mean(rewards):.3f} +- {np.std(rewards):.3f}")
+    print(f"Average return: {np.mean(rewards):.3f} +- {np.std(rewards):.3f}")
     print(f"Average episode length: {np.mean(episode_lengths):.3f} +- {np.std(episode_lengths):.3f}")
     print(f"Average win length: {np.mean(win_lengths):.3f} +- {np.std(win_lengths):.3f}")
     print(f"Average detected length: {np.mean(detected_lengths):.3f} +- {np.std(detected_lengths):.3f}")
