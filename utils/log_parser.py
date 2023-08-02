@@ -1,28 +1,42 @@
+# Log file parser for the NetSecGame environment log
+# The parse will go through the log file and calculate statistics 
+# per episode given a max steps parameter.
+# Author: Maria Rigaki (maria.rigaki@aic.fel.cvut.cz)
+
 import numpy as np
 import argparse
 
-def calculate_episode_lengths(step_seq):
+def calculate_episode_lengths(step_sequence):
+    """
+    Given the list with step numbers calculate 
+    the length of each episode and return a list of episode lengths.
+    """
     episode_lengths = []
-    for i in range(1, len(step_seq)):
+    for i in range(1, len(step_sequence)):
         if step_seq[i] == 0:
             # If the step is zero then it's a new episode
             # Take the last value as episode length
-            episode_lengths.append(step_seq[i-1]+1)
-    episode_lengths.append(step_seq[-1])
+            episode_lengths.append(step_sequence[i-1]+1)
+    # For the last episode take the latest step value
+    episode_lengths.append(step_sequence[-1] + 1)
     return episode_lengths
 
 def reached_limit(current_step, max_steps, invalid_steps):
-    if (invalid_steps + current_step) >= max_steps + 20:
+    """
+    Return True if either the alloted max steps have been reached or
+    the number of invalid steps + current steps is over max_steps + 20
+    """
+    if (invalid_steps + current_step) >= (max_steps + 20):
         return True
     elif current_step == max_steps:
         return True
     return False
-    
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file_name", type=str, default="netsecenv.log", help="Path of the file to be processed")
-    parser.add_argument("--max_steps", type=int, default=100, help="The max steps for statistics calculation")
+    parser.add_argument("--file_name", type=str, default="netsecenv.log", help="Path of the log file")
+    parser.add_argument("--max_steps", type=int, default=100, help="The max steps for the calculation")
     args = parser.parse_args()
 
 
@@ -67,9 +81,9 @@ if __name__ == '__main__':
             latest_step = int(line.strip().split(" ")[-1])
             if not stop_until_new:
                 step_seq.append(latest_step)
-        
+
         # Check if the line contains the agent iteration
-        if iteration_str in line and not stop_until_new:            
+        if iteration_str in line and not stop_until_new:     
             parts = line.strip().split(" ")
             iteration = parts[5]
             if parts[7] == 'False':
@@ -93,12 +107,16 @@ if __name__ == '__main__':
 
         # Check if we need to stop because of max steps or invalid steps
         if not stop_until_new:
-            stop_until_new = reached_limit(latest_step+1, args.max_steps, invalid)
+            stop_until_new = reached_limit(latest_step + 1, args.max_steps, invalid)
             if stop_until_new:
                 # print("here")
                 # rewards.append(-args.max_steps)
                 add_max_reward = True
-            
+
+    # If the last run reached the max steps add it here
+    if add_max_reward:
+        rewards.append(-args.max_steps)
+
     print(f"Episodes: {len(episode_starts)}")
     print(f"Wins: {total_wins}")
     print(f"Win rate: {100*total_wins/len(episode_starts)}%")
