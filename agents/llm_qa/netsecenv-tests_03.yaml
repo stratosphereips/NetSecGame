@@ -59,7 +59,7 @@ env:
   # Or you can fix the seed
   # random_seed: 42
   scenario: 'scenario1_small'
-  max_steps: 60
+  max_steps: 100
   store_replay_buffer: False
   use_dynamic_addresses: True
   actions:
