@@ -230,6 +230,12 @@ The network topology and rules are defined using a [CYST](https://pypi.org/proje
 
 Very important is that we made an addition to the NodeConfig objects in our Cyst configuration to include the property 'note' with the text 'can_start_attacker'. Meaning that the game env will take these hosts as candidates for the random start position.
 
+### Scenarios
+In the current state, we support a single scenario: Data exfiltration to a remote C&C server.
+
+#### Data exfiltration to a remote C&C
+For the data exfiltration we support 3 variants. 
+![Scenario 1 - Data exfiltration](/readme_images/scenario_1.png)
 
 ## Agents Implemented
 Currently, the implemented agents are:
