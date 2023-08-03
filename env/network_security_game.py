@@ -109,6 +109,8 @@ class NetworkSecurityEnvironment(object):
         # check if dynamic network and ip adddresses are required
         if self.task_config.get_use_dynamic_addresses():
             logger.info("Dynamic change of the IP and network addresses enabled")
+            self._faker_object = Faker()
+            Faker.seed(seed)
             self._create_new_network_mapping()
 
         # process episodic randomization
@@ -467,7 +469,7 @@ class NetworkSecurityEnvironment(object):
         """ Method that generates random IP and Network addreses
           while following the topology loaded in the environment.
          All internal data structures are updated with the newly generated addresses."""
-        fake = Faker()
+        fake = self._faker_object
         mapping_nets = {}
         mapping_ips = {}
         
@@ -478,25 +480,39 @@ class NetworkSecurityEnvironment(object):
                 private_nets.append(net)
             else:
                 mapping_nets[net] = components.Network(fake.ipv4_public(), net.mask)
-        private_nets = sorted(private_nets)
         
+        # for private networks, we want to keep the distances among them
+        private_nets_sorted = sorted(private_nets)
         valid_valid_network_mapping = False
+        counter_iter = 0
         while not valid_valid_network_mapping:
             try:
-                new_base = netaddr.IPNetwork(fake.ipv4_private(), private_nets[0].mask)
-                mapping_nets[private_nets[0]] = components.Network(str(new_base.network), private_nets[0].mask)
-                base = netaddr.IPNetwork(str(private_nets[0]))
-                for i in range(1,len(private_nets)):
-                    current = netaddr.IPNetwork(str(private_nets[i]))
+                # find the new lowest networks
+                new_base = netaddr.IPNetwork(fake.ipv4_private(), private_nets_sorted[0].mask)
+                # store its new mapping
+                mapping_nets[private_nets[0]] = components.Network(str(new_base.network), private_nets_sorted[0].mask)
+                base = netaddr.IPNetwork(str(private_nets_sorted[0]))
+                is_private_net_checks = []
+                for i in range(1,len(private_nets_sorted)):
+                    current = netaddr.IPNetwork(str(private_nets_sorted[i]))
+                    # find the distance before mapping
                     diff_ip = current.ip - base.ip
-                    new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets[0]])).ip + diff_ip
-                    mapping_nets[private_nets[i]] = components.Network(str(new_net_addr), private_nets[i].mask)
-                valid_valid_network_mapping=True
-            except IndexError:
-                logger.info(f"Dynamic address sampling failed, re-trying")
-                pass
+                    # find the new mapping 
+                    new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
+                    # evaluate if its still a private network
+                    is_private_net_checks.append(new_net_addr.is_private())
+                    # store the new mapping
+                    mapping_nets[private_nets_sorted[i]] = components.Network(str(new_net_addr), private_nets_sorted[i].mask)
+                if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
+                    valid_valid_network_mapping = True
+            except IndexError as e:
+                logger.info(f"Dynamic address sampling failed, re-trying.")
+                counter_iter +=1
+                if counter_iter > 10:
+                    logger.error(f"Dynamic address failed more than 10 times - exiting.")
+                    exit(-1)
                 # Invalid IP address boundary
-        
+        logger.info(f"New network mapping:{mapping_nets}")
         # genereate mapping for ips:
         for net,ips in self._networks.items():
             ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))[1:]
