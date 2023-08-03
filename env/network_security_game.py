@@ -506,10 +506,10 @@ class NetworkSecurityEnvironment(object):
                 if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
                     valid_valid_network_mapping = True
             except IndexError as e:
-                logger.info(f"Dynamic address sampling failed, re-trying.")
+                logger.info(f"Dynamic address sampling failed, re-trying. {e}")
                 counter_iter +=1
                 if counter_iter > 10:
-                    logger.error(f"Dynamic address failed more than 10 times - exiting.")
+                    logger.error("Dynamic address failed more than 10 times - stopping.")
                     exit(-1)
                 # Invalid IP address boundary
         logger.info(f"New network mapping:{mapping_nets}")
