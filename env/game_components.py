@@ -51,11 +51,10 @@ class Network():
     
     def __le__(self, other):
         return netaddr.IPNetwork(str(self)) <= netaddr.IPNetwork(str(other))
+    
     def __gt__(self, other):
         return netaddr.IPNetwork(str(self)) > netaddr.IPNetwork(str(other))
-    
-    def __le__(self, other):
-        return netaddr.IPNetwork(str(self)) >= netaddr.IPNetwork(str(other))
+
 """
 Data represents the data object in the NetSecGame
 """
