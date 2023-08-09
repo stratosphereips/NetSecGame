@@ -341,6 +341,12 @@ if __name__ == "__main__":
 
             try:
                 # Since the response should be JSON, we can eval it and crate a dict
+                if response.startswith("Action: "):
+                    response = response[8:]
+                elif not response.startswith("{"):
+                    idx = response.find("{")
+                    if idx > 0:
+                        response = response[idx:]
                 response = eval(response)
                 is_valid, action, actions_took_in_episode = create_action_from_response(response, observation.state, actions_took_in_episode)
             except:
