@@ -65,11 +65,13 @@ Action: {"action":"ScanServices", "parameters":{"target_host":"2.2.2.3"}}
 Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
 Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
 Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "data": ("User1", "WebData"), "source_host": "1.1.1.2"}}}
+End of examples.
 """
 
 # First instructions for the LLM (order 1 in sending)
 INSTRUCTIONS_TEMPLATE = """
 You are a pentester and your goal is to to exfiltrate data to target host {{target_host}}.
+The actions you can take are ScanServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData.
 
 The rules are:
 1. You can only scan networks in your list of known networks.
@@ -133,7 +135,7 @@ def create_status_from_state(state, memory_list):
     known_hosts = [host.ip for host in state.known_hosts if host.ip not in contr_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
-    prompt = "These are the actions you already took in the past:\n"
+    prompt = "Previous actions:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
             if memory[2]:
@@ -319,8 +321,8 @@ if __name__ == "__main__":
             status_prompt = create_status_from_state(observation.state, memories[-args.memory_buffer:])
             messages = [
                     {"role": "system", "content": instructions},
-                    {"role": "user", "content": EXAMPLE_PROMPT2},
                     {"role": "user", "content": status_prompt},
+                    {"role": "user", "content": EXAMPLE_PROMPT2},
                     {"role": "user", "content": "\nSelect a valid action with the correct format and parameters.\nIf an action is in your list of past actions do not chose that action!\nDO NOT REPEAT PAST ACTIONS!"},
                     {"role": "user", "content": "Action: "}
                 ]
@@ -403,13 +405,14 @@ if __name__ == "__main__":
                     # But we could a manual evaluation based on the prior knowledge and weight the different components.
                     # For example: finding new data is better than discovering hosts (?)
                     if good_action:
-                        memories.append((response["action"], response["parameters"], "was a good action to take."))
+                        memories.append((response["action"], response["parameters"], "was helpful."))
                     else:
-                        memories.append((response["action"], response["parameters"], "was a bad action to take. Do not repeat it."))
+                        memories.append((response["action"], response["parameters"], "was not helpful."))
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
                 memories.append(f"Response '{response}' was badly formatted.")
-    
+
+            time.sleep(3)
     # After all episodes are done. Compute statistics
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100
