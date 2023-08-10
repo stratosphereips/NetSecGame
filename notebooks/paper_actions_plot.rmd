@@ -1,0 +1,80 @@
+---
+title: "Generate Actions plots from "
+output: html_notebook
+---
+
+## Load libraries
+```{rinclude=F}
+library(dplyr)
+library(stringr)
+library(ggplot2)
+```
+
+## Setup
+```{r}
+dataDir='/home/harpo/hostdir/git-repos/game-states-maker/env/logs/'
+actions_file = "output.csv"
+```
+
+## Load data with actions
+```{r, include=F}
+actions_df = data.frame(read.csv(paste(dataDir, actions_file, sep = ''),header=T))
+actions_df
+```
+
+```{r}
+actions_df %>% group_by(action_type) %>% count() %>% select (action_type)
+```
+
+## Remove action type
+```{r}
+actions_df$action_type <- gsub("ActionType.", "", actions_df$action_type)
+```
+
+## Convert to factor 
+```{r}
+actions_df$action_type<-as.factor(actions_df$action_type)
+```
+
+## Reorder factor levels
+```{r}
+levels(actions_df$action_type)
+actions_df$action_type <- factor(actions_df$action_type, levels = c("ExfiltrateData",  "FindData", "ExploitService", "FindServices", "ScanNetwork"))
+```
+
+## episode to plot
+```{r}
+ep <- 1
+```
+
+## Action plot
+```{r fig.height=2.0, fig.width=15}
+action_plot <- actions_df %>% 
+  filter(episode == ep) %>%
+  #arrange(action_number) %>%
+  ggplot(aes(x = action_number %>% factor(), y = action_type, group = 1)) +  # Set group to a single value for all rows
+  #facet_wrap(~episode,ncol=2)+
+  geom_line(colour = '#333333') +
+  geom_point(aes( shape = action_type , color = target, fill = target ), size = 3) +
+  scale_shape_manual(values = c(21, 22, 23, 24, 25)) +
+  labs(fill = 'Action Type', shape = 'Action Type') +
+  theme_bw() + style +
+  theme(
+    # Adjust the size as needed
+    axis.title = element_text(size = rel(0.8)),  # Reduce axis title size
+    axis.text = element_text(size = rel(0.8)),   # Reduce axis text size
+    plot.title = element_text(size = rel(0.8)),  # Reduce plot title size
+    legend.text = element_text(size = rel(0.8)), # Reduce legend text size
+    legend.title = element_text(size = rel(0.8)), # Reduce legend title size
+    axis.text.x = element_text(size = rel(0.8)),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    strip.text.y = element_text(size = 20, angle = 0),
+    legend.position = "bottom"
+  )+
+  ylab("Action Type")+xlab("Action Number")+
+  guides(fill=FALSE, shape = FALSE, color = FALSE)+
+  labs(subtitle="Actions for LLM temp Agent", title = paste("Episode", ep,"\nBig Scenario. No defender."))
+action_plot  
+```
+
