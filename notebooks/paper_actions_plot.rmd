@@ -49,11 +49,12 @@ scenario_desc <-"Big Scenario. No Defender"
 ```
 
 ## Action plot
-```{r fig.height=2.0, fig.width=15}
-action_plot <- actions_df %>% 
-  filter(episode == ep) %>%
-  #arrange(action_number) %>%
-  ggplot(aes(x = action_number %>% factor(), y = action_type, group = 1)) +  # Set group to a single value for all rows
+```{r}
+
+create_action_plot<-function(df,ep = 1, scenario_desc ="no desc"){
+  
+  
+  ggplot( df %>% filter(episode == ep),aes(x = action_number, y = action_type, group = 1)) +  # Set group to a single value for all rows
   #facet_wrap(~episode,ncol=2)+
   geom_line(colour = '#333333') +
   geom_point(aes( shape = action_type , color = target, fill = target ), size = 3) +
@@ -73,9 +74,33 @@ action_plot <- actions_df %>%
     strip.text.y = element_text(size = 20, angle = 0),
     legend.position = "bottom"
   )+
+  #xlim(seq(100))+
   ylab("Action Type")+xlab("Action Number")+
   guides(fill=FALSE, shape = FALSE, color = FALSE)+
   labs(subtitle="Actions for LLM temp Agent", title = paste0("Episode ", ep,"\n",scenario_desc))
-action_plot  
+  
+
+}
+```
+
+```{r}
+library(gridExtra)
+plots <- list()
+for (e in 1:10){
+  plots[[e]] <- create_action_plot(actions_df,ep=e)
+}
+
+plots[[1]] <- create_action_plot(actions_df,ep=1)
+
+plots[[1]]
+```
+```{r}
+plots[1][[1]]
+```
+
+
+```{r fig.height=15, fig.width=20}
+grob_list <- lapply(plots, ggplotGrob)
+do.call(grid.arrange, c(grob_list, ncol=2))
 ```
 
