@@ -5,7 +5,7 @@
 
 import re
 import csv
-import args
+import argparse
 
 def parse_actions_taken(filename):
     with open(filename, 'r') as file:
@@ -72,8 +72,8 @@ if __name__ == '__main__':
     parser.add_argument("--csv_file_name", type=str, default="actions.csv", help="Path of the actions file in CSV format", required=True) 
     args = parser.parse_args()   
 
-    actions_data = parse_actions_taken(args$file_name))
-    write_actions_to_csv(actions_data, args$csv_file_name)))
+    actions_data = parse_actions_taken(args.file_name) 
+    write_actions_to_csv(actions_data, args.csv_file_name)
 
     #log_file = "netsecenv.log.bignodefence"
     #log_file = "netsecenv_gpt4_small_no_def.log"
