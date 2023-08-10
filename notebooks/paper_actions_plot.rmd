@@ -12,13 +12,13 @@ library(ggplot2)
 
 ## Setup
 ```{r}
-dataDir='/home/harpo/hostdir/git-repos/game-states-maker/env/logs/'
-actions_file = "output.csv"
+actions_file_path = "/home/harpo/hostdir/git-repos/game-states-maker/env/logs/netsec.log.csv"
 ```
 
 ## Load data with actions
 ```{r, include=F}
-actions_df = data.frame(read.csv(paste(dataDir, actions_file, sep = ''),header=T))
+actions_df <- read.csv(actions_file_path,header =T)
+
 actions_df
 ```
 
@@ -45,6 +45,7 @@ actions_df$action_type <- factor(actions_df$action_type, levels = c("ExfiltrateD
 ## episode to plot
 ```{r}
 ep <- 1
+scenario_desc <-"Big Scenario. No Defender"
 ```
 
 ## Action plot
@@ -74,7 +75,7 @@ action_plot <- actions_df %>%
   )+
   ylab("Action Type")+xlab("Action Number")+
   guides(fill=FALSE, shape = FALSE, color = FALSE)+
-  labs(subtitle="Actions for LLM temp Agent", title = paste("Episode", ep,"\nBig Scenario. No defender."))
+  labs(subtitle="Actions for LLM temp Agent", title = paste0("Episode ", ep,"\n",scenario_desc))
 action_plot  
 ```
 
