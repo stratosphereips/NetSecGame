@@ -18,6 +18,8 @@ def parse_actions_taken(filename):
     
     for line in lines:
         if "Agent's action" in line:
+            print (episode_number, end= " ")
+            print (line)
             # Extract the action type using regular expression
             match_action = re.search(r"Action <(ActionType\.[^|]+)", line)
             # Extract either target_host or target_network, if present
@@ -44,7 +46,7 @@ def parse_actions_taken(filename):
                 "target": target
                 }
                 current_episode_actions.append(current_action_data)
-        elif "Episode ended" in line:
+        elif  "episode " in line:
             all_actions.extend(current_episode_actions)
             current_episode_actions = []
             episode_number += 1
