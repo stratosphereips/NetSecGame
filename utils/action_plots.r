@@ -30,7 +30,7 @@ create_action_plot_by_network <- function(df, ep = 1, scenario_desc = "no desc",
   ip_colors <- unlist(ip_color_list, use.names = TRUE)
   
   action_plot <- ggplot(filtered_df, aes(x = action_number, y = action_type, group = 1)) +  
-    geom_line(colour = '#333333') +
+    geom_line(colour = '#333333',linetype="dashed", alpha= 0.2) +
     #geom_point(aes(shape = action_type, fill = target), color= 'black', size = 3) +
     geom_point(aes(fill = target,shape = network),color='black', size = 4) +
     scale_color_manual(values = ip_colors) +
@@ -87,7 +87,7 @@ if(is.null(args$file_name)) {
 }
 
 actions_df <- read.csv(args$file_name,header =T)
-figure_name <- paste0(args$scenario_desc,"_figure.png")
+figure_name <- paste0(args$scenario_desc,"_figure.pdf")
 ## Remove action type
 actions_df$action_type <- gsub("ActionType.", "", actions_df$action_type)
 ## Convert to factor 
