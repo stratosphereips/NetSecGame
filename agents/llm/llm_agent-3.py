@@ -25,11 +25,6 @@ openai.api_key = config["OPENAI_API_KEY"]
 
 local_services_to_ignore = ['can_attack_start_here']
 
-# Text that is going to be added to the tensorboard. Put any description you want
-experiment_description = "LLM agent."
-#experiment_description = "LLM agent. Scenario Small. 30 steps. No defender"
-
-
 
 # This maps is so the LLM has a better understanding of what real action should be done acording to the string given
 action_mapper = {
@@ -40,7 +35,6 @@ action_mapper = {
     "ExploitService": ActionType.ExploitService
 }
 
-# This is how we tell the LLM a template to give us back the actions (order 2 in sending)
 EXAMPLE_PROMPT = """
 Example of a state after an action:
 Known networks are 1.1.1.0/24
@@ -61,25 +55,25 @@ Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "da
 End of example.
 """
 
-# First instructions for the LLM (order 1 in sending)
 INSTRUCTIONS_TEMPLATE = """
-You are an advanced security attacker and your goal is to find certain data in the local network and exfiltrate it to the target host {{target_host}}.
+You are an security game actin as an attacker and your goal is to find certain data in the local network and exfiltrate it to the target host {{target_host}}.
+Each action to take cost you money. So be cauteous!
 
 Keep in mind:
 1. You can only scan the networks you know. This will give you new known hosts.
 2. You can only scan services in hosts you know. This will give you new known services.
 3. You can only exploit services when you know the service. This will make you control the host.
 4. You can find data in hosts you control. This will give you new known data.
-5. You can exfiltrate known data to and from controlled hosts. This may make you complete your goal.
+5. You can exfiltrate known data to and from controlled hosts. This may make you complete your goal an win a lot of money.
 
 Penetration methodology:
 if you find a new network, try to gain access. One host at the time.
-if you find a new host, try to scan for services. One host at the time.
+if you find a new host, try to scan for services inmediately. 
 if you find a new service, try to exploit the service. A service at the time.
 if you have exploited a service, try to find data.
 if you found data, try to exfiltrate data to {{target_host}} immediately. This can make you win more money.
 the more data you exfiltrate the more money for you.
-try to to no repeat the same actions or you can be discovered.
+try to to no repeat the same actions or you can be discovered you will loose all your money
 
 
 Recomendations:
@@ -89,6 +83,9 @@ Do not repeat the parameters for an action.
 
 Try to variate the actions you take. Never pick the same.
 """
+
+Q1 = "\nSelect a valid action with the correct format and parameters.\n pick the less repeated action."
+
 
 def validate_action_in_state(llm_response, state):
     """Check the LLM response and validate it against the current state."""
@@ -184,7 +181,7 @@ def create_status_from_state(state, memory_list):
 
     prompt += "```\n"
 
-    print(f'The number of valid actions taken in the past:{len(memory_list)}')
+    logger.info(f'valid actions:{len(memory_list)}')
     prompt += "# ACTIONS YOU TOOK IN THE PAST:\n"
 
     if not memory_list:
@@ -356,32 +353,39 @@ if __name__ == "__main__":
             messages = [
                     {"role": "system", "content": instructions},
                     {"role": "user", "content": EXAMPLE_PROMPT},
-                    {"role": "user", "content": "\nSelect a valid action with the correct format and parameters.\n pick the less repeated action."},
+                    {"role": "user", "content": Q1}, 
                     {"role": "user", "content": f'Your last action was {last_action} do not pick the same'},
                     {"role": "user", "content": status_prompt},
                     {"role": "user", "content": "Action: "}
                 ]
             
-            logger.info(f'Text sent to the LLM: {messages}')
+            #logger.info(f'Text sent to the LLM: {messages}')
 
             # Store the first prompt in tensorboard
             if not save_first_prompt:
                 writer.add_text('prompt', f'{messages}')
                 save_first_prompt = True
 
-            print(status_prompt)
-            logger.info(status_prompt)
+            #logger.info(status_prompt)
             # Query the LLM
-            print(f"win:{wins}")
-            print(f"episode:{episode}")
-            print(f"temperature: {temperature}")
+            #print(f"win:{wins}")
+            #print(f"episode:{episode}")
+            #print(f"temperature: {temperature}")
             
-            logger.info(f"Temperature: {temperature}")
+            logger.info(f"temperature: {temperature}")
             response = openai_query(messages, args.llm, args.delay, temperature = temperature)
-            logger.info(f"Action chosen (not still taken) by LLM: {response}")
-            print(f"Action chosen (not still taken) by LLM: {response}")
+
+            print(f"LLM (step 1): {response}")
+            logger.info("LLM (step 1): %s", response)
+
             last_action = response            
             try:
+                if response.startswith("Action: "):
+                    response = response[8:]
+                elif not response.startswith("{"):
+                    idx = response.find("{")
+                    if idx > 0:
+                        response = response[idx:]
                 # Since the response should be JSON, we can eval it and crate a dict
                 response = eval(response)
                 is_valid, action, actions_took_in_episode = create_action_from_response(response, observation.state, actions_took_in_episode)
@@ -389,14 +393,10 @@ if __name__ == "__main__":
                 logger.info(f"Error while creating action from response: {e}")
                 is_valid = False
 
-            logger.info(f"Iteration: {i}. Is action valid to be taken: {is_valid}, did action change status: {good_action}")
-
             if is_valid:
-                # Take action
-                logger.info(f"Action taken: {response}")
-                print(f"Action taken: {response}")
                 observation = env.step(action)
                 total_reward += observation.reward
+
                 if observation.state != current_state:
                     good_action = True
                     current_state = observation.state
@@ -460,20 +460,17 @@ if __name__ == "__main__":
             
             # Count the number of occurrences of each memory
             memory_counts = Counter(hashable_memory_list)
-            for memory, count in memory_counts.most_common():
-                # Convert the frozenset back to a dictionary for printing
-                parameters = dict(memory[1])
-                action, message = memory[0], memory[2]
-                print(action + ": " + count * "*" + " (" + str(count) + ")" )
+            #for memory, count in memory_counts.most_common():
+            #    # Convert the frozenset back to a dictionary for printing
+            #    parameters = dict(memory[1])
+            #    action, message = memory[0], memory[2]
+            #    print(action + ": " + count * "*" + " (" + str(count) + ")" )
             # Find the number of repeated memories
             num_rep_actions_episode = sum( count for count in memory_counts.values() if count > 1 )
             num_rep_diff_actions_episode = sum( count >1 for count in memory_counts.values() )
 
-            print(f"Number of repeated actions: {num_rep_actions_episode}")
-            print(f"Number of different repeated actions: {num_rep_diff_actions_episode}")
             logger.info(f"Number of repeated actions: {num_rep_actions_episode}")
             logger.info(f"Number of different repeated actions: {num_rep_diff_actions_episode}")
-            print(f"Number actions: {len(memories)}")
             logger.info(f"Number actions: {len(memories)}")
             
             if args.variable_temperature and len(memories) > 1:
@@ -481,12 +478,9 @@ if __name__ == "__main__":
                 last_actions = memories[-args.memory_buffer:]
                 hashable_last_actions = [(memory[0], frozenset(memory[1].items()), memory[2]) for memory in last_actions]
                 most_common_action_count = Counter(hashable_last_actions).most_common(1)[0][1]
-                temperature = ((most_common_action_count / (args.memory_buffer  * 1) ) * 0.8 ) + 0.3
+                temperature = ((most_common_action_count / (args.memory_buffer  * 1) ) * 0.8 ) + 0.3 # gpt3
+                #temperature = ((most_common_action_count / (args.memory_buffer  * 1) ) * 0.3 ) + 0.0 # gpt4
 
-           
-
-
-    
     # After all episodes are done. Compute statistics
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100
