@@ -1,0 +1,223 @@
+---
+title: "Generate Actions plots from "
+output: html_notebook
+---
+
+## Load libraries
+```{r}
+library(dplyr)
+library(stringr)
+library(ggplot2)
+```
+
+## Setup
+```{r}
+actions_file_path = "/home/harpo/hostdir/git-repos/game-states-maker/env/logs/netsec.log.bignodefence.csv"
+```
+
+## Load data with actions
+```{r}
+actions_df <- read.csv(actions_file_path,header =T)
+
+actions_df %>% group_by(episode) %>% count()
+```
+
+```{r}
+actions_df %>% group_by(action_type) %>% count() %>% select (action_type)
+```
+
+## Remove action type
+```{r}
+actions_df$action_type <- gsub("ActionType.", "", actions_df$action_type)
+```
+
+## Convert to factor 
+```{r}
+actions_df$action_type<-as.factor(actions_df$action_type)
+```
+
+## Reorder factor levels
+```{r}
+levels(actions_df$action_type)
+actions_df$action_type <- factor(actions_df$action_type, levels = c("ExfiltrateData",  "FindData", "ExploitService", "FindServices", "ScanNetwork"))
+```
+
+## episode to plot
+```{r}
+ep <- 1
+scenario_desc <-"Big Scenario. No Defender"
+```
+
+## Action plot
+```{r}
+
+create_action_plot<-function(df,ep = 1, scenario_desc ="no desc"){
+  
+  
+  ggplot( df %>% filter(episode == ep),aes(x = action_number, y = action_type, group = 1)) +  # Set group to a single value for all rows
+  #facet_wrap(~episode,ncol=2)+
+  geom_line(colour = '#333333') +
+  geom_point(aes( shape = action_type , color = target, fill = target ), size = 3) +
+  scale_shape_manual(values = c(21, 22, 23, 24, 25)) +
+  labs(fill = 'Action Type', shape = 'Action Type') +
+  theme_bw() + style +
+  theme(
+    # Adjust the size as needed
+    axis.title = element_text(size = rel(0.8)),  # Reduce axis title size
+    axis.text = element_text(size = rel(0.8)),   # Reduce axis text size
+    plot.title = element_text(size = rel(0.8)),  # Reduce plot title size
+    legend.text = element_text(size = rel(0.8)), # Reduce legend text size
+    legend.title = element_text(size = rel(0.8)), # Reduce legend title size
+    axis.text.x = element_text(size = rel(0.8)),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    strip.text.y = element_text(size = 20, angle = 0),
+    legend.position = "bottom"
+  )+
+  #xlim(seq(100))+
+  ylab("Action Type")+xlab("Action Number")+
+  guides(fill=FALSE, shape = FALSE, color = FALSE)+
+  labs(subtitle="Actions for LLM temp Agent", title = paste0("Episode ", ep,"\n",scenario_desc))
+  
+
+}
+```
+
+```{r}
+create_action_plot_by <- function(df, ep = 1, scenario_desc = "no desc", agent_desc = "no_desc"){
+  df$network <- sapply(df$target, function(ip) paste0(head(unlist(strsplit(ip, split = '\\.')), 3), collapse = '.'))
+  filtered_df <- df[df$episode == ep, ]
+  
+  ggplot(filtered_df, aes(x = action_number, y = action_type, group = 1)) +  
+    geom_line(colour = '#333333') +
+    geom_point(aes(shape = network, fill = target), color= 'black', size = 3) +
+    scale_shape_manual(values = c(21, 22, 23, 24, 25)) +
+    #labs(fill = 'Action Type', shape = 'Action Type') +
+    theme_bw()+
+    theme(
+      axis.title = element_text(size = rel(0.8)),
+      axis.text = element_text(size = rel(0.8)),
+      plot.title = element_text(size = rel(0.8)),
+      legend.text = element_text(size = rel(0.8)),
+      legend.title = element_text(size = rel(0.8)),
+      axis.text.x = element_text(size = rel(0.8)),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      strip.text.y = element_text(size = 20, angle = 0),
+      legend.position = "bottom",
+      axis.line = element_blank(),
+      panel.border = element_blank()
+    )+
+    ylab("Action Type")+xlab("Action Number")+
+    guides(
+      fill="none", 
+      shape = "none", 
+      color = TRUE
+      )+
+    labs(subtitle=agent_desc, title = paste0("Episode ", ep,"\n",scenario_desc))
+
+}
+
+```
+
+```{r}
+caca_df <- actions_df
+ caca_df$network <- sapply(caca_df$target, function(ip) paste0(head(unlist(strsplit(ip, split = '\\.')), 3), collapse = '.'))
+  filtered_df <- caca_df[caca_df$episode == ep, ]
+  # Extract unique networks
+  unique_networks <- unique(caca_df$network)
+  network_colors <- colorRampPalette(c("blue", "red", "green"))(length(unique_networks))
+  names(network_colors) <- unique_networks
+  
+  network_colors
+  
+```
+
+```{r}
+create_action_plot_by_network_color <- function(df, ep = 1, scenario_desc = "no desc", agent_desc = "no_desc"){
+  df$network <- sapply(df$target, function(ip) paste0(head(unlist(strsplit(ip, split = '\\.')), 3), collapse = '.'))
+  filtered_df <- df[df$episode == ep, ]
+  # Extract unique networks
+  unique_networks <- unique(filtered_df$network)
+  network_colors <- colorRampPalette(c("darkblue", "darkred", "darkgreen"))(length(unique_networks))
+  names(network_colors) <- unique_networks
+
+  # Function to generate shades for a given color
+  get_shades <- function(color, n) {
+  colorRampPalette(c('white', color))(n+2)[1:n+2]
+  }
+
+  # For each IP, assign a color based on its network
+  ip_colors <- unlist(sapply(unique_networks, function(net) {
+  ips_in_net <- unique(filtered_df$target[filtered_df$network == net])
+  get_shades(network_colors[net], length(ips_in_net))
+  }))
+
+  names(ip_colors) <- unique(filtered_df$target)
+  ggplot(filtered_df, aes(x = action_number, y = action_type, group = 1)) +  
+  
+    geom_line(colour = '#333333') +
+    #geom_point(aes(shape = action_type, fill = target), color= 'black', size = 3) +
+     geom_point(aes(shape = network, color = target, fill = network), size = 4) +
+    scale_color_manual(values = ip_colors) +
+    scale_fill_manual(values = network_colors) +
+    #scale_shape_manual(values = c(15,16,17,18,19)) +
+   
+    #labs(fill = 'Action Type', shape = 'Action Type') +
+    theme_bw()+
+    theme(
+      axis.title = element_text(size = rel(0.8)),
+      axis.text = element_text(size = rel(0.8)),
+      plot.title = element_text(size = rel(0.8)),
+      legend.text = element_text(size = rel(0.8)),
+      legend.title = element_text(size = rel(0.8)),
+      axis.text.x = element_text(size = rel(0.8)),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      strip.text.y = element_text(size = 20, angle = 0),
+      legend.position = "bottom",
+      axis.line = element_blank(),
+      panel.border = element_blank()
+    )+
+    ylab("Action Type")+xlab("Action Number")+
+    guides(
+      fill="none", 
+      shape = "none", 
+      color = 'none'
+      )+
+    labs(subtitle=agent_desc, title = paste0("Episode ", ep,"\n",scenario_desc))
+
+}
+```
+
+
+
+
+```{r fig.height=3.3, fig.width=10}
+plot <- create_action_plot_by_network_color(actions_df,ep = 8, scenario_desc = "big scenario. no defender", agent_desc = "LLM var temp Agent")
+#plot %>% filter(episode == 2 ) %>% group_by(network) %>% count()
+plot
+#ggsave(filename = "caca.png",plot = action_plot,width = 15, height = 2.5, units = 'in')
+```
+
+```{r}
+library(gridExtra)
+plots <- list()
+for (e in 1:10){
+  plots[[e]] <- create_action_plot(actions_df,ep=e)
+}
+
+plots[[1]] <- create_action_plot(actions_df,ep=1)
+
+plots[[1]]
+```
+```{r}
+plots[1][[1]]
+```
+
+
+```{r fig.height=15, fig.width=20}
+grob_list <- lapply(plots, ggplotGrob)
+do.call(grid.arrange, c(grob_list, ncol=2))
+```
+
