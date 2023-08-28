@@ -1,4 +1,0 @@
-[submodule "NetSecGameAgents"]
-	path = NetSecGameAgents
-	url = git@github.com:stratosphereips/NetSecGameAgents.git
-	branch = main
