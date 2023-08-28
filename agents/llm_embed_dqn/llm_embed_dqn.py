@@ -79,6 +79,7 @@ class LLMEmbedAgent:
         self.embedding_size = 384
 
         self.transformer_model = SentenceTransformer("all-MiniLM-L12-v2").eval()
+        # self.transformer_model = SentenceTransformer("BAAI/bge-small-en").eval()
         all_actions = env.get_all_actions()
         self.action_db = {}
         for action in all_actions.values():
