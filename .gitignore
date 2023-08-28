@@ -135,7 +135,7 @@ nohup.out
 # ignorre agent's logs
 agents/*/logs/
 # ignore venv
-ai-dojo-venv-sebas/
+
 .DS_Store
 *tensorboard-logs*
 
@@ -143,7 +143,6 @@ ai-dojo-venv-sebas/
 *.swp
 .vscode/launch.json
 logs/*
-<<<<<<< HEAD
 runs/*
 agents/*/runs/*
 replay_buffer.csv
