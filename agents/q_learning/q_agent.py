@@ -189,10 +189,10 @@ class QAgent:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=4000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=20000, type=int)
     parser.add_argument("--epsilon", help="Sets epsilon for exploration", default=0.2, type=float)
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
-    parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.3, type=float)
+    parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.1, type=float)
     parser.add_argument("--test", help="Do not train, only run test", default=False, action="store_true")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=100, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
