@@ -100,7 +100,7 @@ class QAgent:
         actions = self.get_valid_actions(state)
         state_id = self.get_state_id(state)
         
-        logger.info(f'The valid actions in this state are: {[str(action) for action in actions]}')
+        #logger.info(f'The valid actions in this state are: {[str(action) for action in actions]}')
         if random.uniform(0, 1) <= self.epsilon and not testing:
             action = random.choice(list(actions))
             if (state_id, action) not in self.q_values:
@@ -152,7 +152,7 @@ class QAgent:
             state = observation.state
             state_id = self.get_state_id(state)
 
-            new_q = self.q_values[state_id, action] + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values[state_id, action])
+            new_q = self.q_values.get((state_id, action), 0) + self.alpha*(next_observation.reward + self.gamma * max_q_next - self.q_values.get((state_id, action), 0))
             self.q_values[state_id, action] = new_q
             
             rewards += next_observation.reward
@@ -189,10 +189,10 @@ class QAgent:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--episodes", help="Sets number of training episodes", default=8000, type=int)
+    parser.add_argument("--episodes", help="Sets number of training episodes", default=20000, type=int)
     parser.add_argument("--epsilon", help="Sets epsilon for exploration", default=0.2, type=float)
     parser.add_argument("--gamma", help="Sets gamma for Q learing", default=0.9, type=float)
-    parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.3, type=float)
+    parser.add_argument("--alpha", help="Sets alpha for learning rate", default=0.1, type=float)
     parser.add_argument("--test", help="Do not train, only run test", default=False, action="store_true")
     parser.add_argument("--eval_each", help="During training, evaluate every this amount of episodes. Evaluation is for 100 episodes each time.", default=100, type=int)
     parser.add_argument("--eval_for", help="Sets evaluation length", default=100, type=int)
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     parser.add_argument("--filename", help="Load previous model file", type=str, default=False)
     parser.add_argument("--task_config_file", help="Reads the task definition from a configuration file", default=path.join(path.dirname(__file__), 'netsecenv-task.yaml'), action='store', required=False)
     args = parser.parse_args()
-    args.filename = f"QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key in ["episodes", "gamma", "epsilon", "alpha"])) + ".pickle"
+    #args.filename = "QAgent_" + ",".join(("{}={}".format(key, value) for key, value in sorted(vars(args).items()) if key in ["episodes", "gamma", "epsilon", "alpha"])) + f"_{time.strftime('%Y%m%d-%H%M%S')}.pickle"
 
     # Remove all handlers associated with the root logger object.
     for handler in logging.root.handlers[:]:
@@ -228,12 +228,13 @@ if __name__ == '__main__':
 
     logger.info('Creating the agent')
     agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
-    try:
-        # Load a previous qtable from a pickled file
-        logger.info(f'Loading a previous Qtable')
-        agent.load_q_table(args.filename)
-    except FileNotFoundError:
-        logger.info(f"No previous qtable file found to load, starting with an emptly zeroed qtable")
+    if args.filename:
+        try:
+            # Load a previous qtable from a pickled file
+            logger.info(f'Loading a previous Qtable')
+            agent.load_q_table(args.filename)
+        except FileNotFoundError:
+            logger.info(f"No previous qtable file found to load, starting with an emptly zeroed qtable")
 
     # If we are not evaluating the model
     if not args.test:
@@ -301,9 +302,11 @@ if __name__ == '__main__':
                 writer.add_scalar("charts/eval_std_detected_steps", eval_std_detected_steps , i)
 
         # Store the q table on disk
-        agent.store_q_table(args.filename)
-    agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
-    agent.load_q_table(args.filename)
+        if args.filename:
+            agent.store_q_table(args.filename)
+    if args.filename:
+        agent = QAgent(env, args.alpha, args.gamma, args.epsilon)
+        agent.load_q_table(args.filename)
     # Test
     wins = 0
     detected = 0

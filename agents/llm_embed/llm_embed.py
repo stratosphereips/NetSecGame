@@ -23,7 +23,8 @@ torch.autograd.set_detect_anomaly(True)
 from sentence_transformers import SentenceTransformer
 
 from sklearn.decomposition import PCA
-from sklearn.metrics.pairwise import cosine_distances, euclidean_distances
+from sklearn.metrics.pairwise import euclidean_distances
+from scipy.spatial import distance
 
 label_mapper = {
     "FindData":ActionType.FindData,
@@ -91,10 +92,10 @@ class Policy(nn.Module):
         """Forward pass"""
         x = self.linear1(input1)
         # x = self.dropout(x)
-        x = func.tanh(x)
+        x = func.relu(x)
         x = self.linear2(x)
         # x = self.dropout2(x)
-        x = func.tanh(x)
+        x = func.relu(x)
         return self.output(x)
 
 class Baseline(nn.Module):
@@ -155,6 +156,7 @@ class LLMEmbedAgent:
 
         self.gamma = args.gamma
         self.loss_fn = nn.MSELoss(reduction='mean')
+        # self.loss_fn = nn.SmoothL1Loss()
         self.summary_writer = SummaryWriter()
         self.eval_episodes = args.eval_episodes
         self.memory_len = args.memory_len
@@ -267,12 +269,15 @@ class LLMEmbedAgent:
         valid_embeddings = self.transformer_model.encode(all_actions_str)
         valid_pca = self.pca.transform(valid_embeddings)
         # dist = cosine_distances(valid_pca, new_action_embedding).flatten()
-        dist = euclidean_distances(valid_pca, new_action_embedding).flatten()
+        # dist = euclidean_distances(valid_pca, new_action_embedding).flatten()
+        dist = [distance.chebyshev(vector.flatten(), new_action_embedding.flatten()) for vector in valid_pca]
+        dist = np.array(dist).flatten()
         eps = np.finfo(np.float32).eps.item()
         if train:
             # action_id = random.choices(population=range(len(valid_pca)), weights=1.0/dist, k=1)[0]
             action_id = random.choices(population=range(len(valid_pca)), weights=1.0/(eps+dist), k=1)[0]
         else:
+            # TODO: Select one of the top-3 actions
             action_id = np.argmin(dist, axis=0)
 
         return valid_actions[action_id], valid_pca[action_id]
@@ -285,7 +290,8 @@ class LLMEmbedAgent:
         """
         all_actions_str = [str(action) for action in valid_actions]
         valid_embeddings = self.transformer_model.encode(all_actions_str)
-        dists = cosine_distances(valid_embeddings, new_action_embedding).flatten()
+        # dists = cosine_distances(valid_embeddings, new_action_embedding).flatten()
+        dists = euclidean_distances(valid_embeddings, new_action_embedding).flatten()
         eps = np.finfo(np.float32).eps.item()
         if train:
             action_id = random.choices(population=range(len(valid_actions)), weights=1.0/(eps+dists), k=1)[0]
@@ -338,8 +344,6 @@ class LLMEmbedAgent:
                 filtered_actions.append(action)
         return filtered_actions
 
-
-
     def _weight_histograms_linear(self, step, weights, layer_name):
         """
         Log the histograms of the weight of a specific layer to tensorboard
@@ -388,13 +392,14 @@ class LLMEmbedAgent:
         policy_losses = []
 
         for out_emb, real_emb, disc_ret in zip(out_embeddings, real_embeddings, returns):
-            rmse_loss = torch.sqrt(self.loss_fn(out_emb, real_emb))
-            policy_losses.append((-rmse_loss * disc_ret).reshape(1))
+            # rmse_loss = torch.sqrt(self.loss_fn(out_emb, real_emb))
+            mse_loss = self.loss_fn(out_emb, real_emb)
+            policy_losses.append((-mse_loss * disc_ret).reshape(1))
 
         self.optimizer.zero_grad()
         policy_loss = torch.cat(policy_losses).sum()
         policy_loss.backward(retain_graph=True)
-        torch.nn.utils.clip_grad_value_(self.policy.parameters(), 10)
+        torch.nn.utils.clip_grad_value_(self.policy.parameters(), 100)
 
         self.optimizer.step()
 
@@ -415,7 +420,7 @@ class LLMEmbedAgent:
 
         # torch.nn.utils.clip_grad_value_(self.policy.parameters(), 5)
         # torch.nn.utils.clip_grad_norm_(self.model.parameters(), 2.0)
-        torch.nn.utils.clip_grad_value_(self.baseline.parameters(), 10)
+        torch.nn.utils.clip_grad_value_(self.baseline.parameters(), 100)
         self.baseline_optimizer.step()
 
         for tag, param in self.baseline.named_parameters():
@@ -484,7 +489,7 @@ class LLMEmbedAgent:
             self._weight_histograms(episode)
             for _ in range(self.args.max_t):
                 # Create the status string from the observed state
-                status_str = self._create_status_from_state2(observation.state)
+                status_str = self._create_status_from_state(observation.state)
                 # Get the embedding of the string from the transformer
                 state_embed = self.transformer_model.encode(status_str)
                 state_embed = torch.tensor(state_embed, device=device).unsqueeze(0)
@@ -596,7 +601,7 @@ class LLMEmbedAgent:
             num_valid = len(valid_actions)
             while not done:
                 # Create the status string from the observed state
-                status_str = self._create_status_from_state2(observation.state)
+                status_str = self._create_status_from_state(observation.state)
                 # Get the embedding of the string from the transformer
                 state_embed = self.transformer_model.encode(status_str)
                 state_embed_t = torch.tensor(state_embed, device=device).unsqueeze(0)
@@ -690,7 +695,7 @@ if __name__ == '__main__':
     parser.add_argument("--train_every", type=int, default=4, help="Train every this ammount of episodes.")
     parser.add_argument("--eval_every", help="During training, evaluate every this amount of episodes.", default=128, type=int)
     parser.add_argument("--eval_episodes", help="Sets evaluation length", default=100, type=int)
-    parser.add_argument("--num_pca", type=int, default=24, help="Number of PCA components. Use 384 to disable PCA")
+    parser.add_argument("--num_pca", type=int, default=10, help="Number of PCA components. Use 384 to disable PCA")
     parser.add_argument("--buffer_size", type=int, default=128, help="Replay buffer size")
     # parser.add_argument("--top_k", type=int, default=5, help="The number of valid actions to consider for similarity")
 

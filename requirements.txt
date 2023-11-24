@@ -6,7 +6,7 @@ async-timeout==4.0.2
 attrs==23.1.0
 cachetools==5.3.1
 casefy==0.1.7
-certifi==2023.5.7
+certifi==2023.7.22
 charset-normalizer==3.1.0
 cyst==0.3.4
 cyst-core==0.4.0
@@ -76,7 +76,7 @@ tqdm==4.65.0
 typing-inspect==0.9.0
 typing_extensions==4.6.3
 tzdata==2023.3
-urllib3==1.26.16
+urllib3==1.26.18
 Werkzeug==2.3.6
 wrapt==1.14.1
 yarl==1.9.2
