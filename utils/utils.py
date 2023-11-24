@@ -9,10 +9,11 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
-from env.game_components import IP, Data, Network, Service, GameState, Action
+from env.game_components import IP, Data, Network, Service, GameState, Action, ActionType
 import netaddr
 import logging
 import csv
+from random import randint
 
 def read_replay_buffer_from_csv(csvfile:str)->list:
     """
@@ -203,7 +204,6 @@ class ConfigParser():
 
         # Goal data
         known_data = self.read_agents_known_data('attacker', 'goal')
-        print(known_data)
 
         attacker_goal = {}
         attacker_goal['known_networks'] = known_networks
@@ -249,6 +249,55 @@ class ConfigParser():
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
 
+    def get_goal_reward(self)->float:
+        """
+        Reads  what is the reward for reaching the goal.
+        default: 100
+        """
+        try:
+            goal_reward = self.config['env']['goal_reward']
+            return float(goal_reward)
+        except KeyError:
+            return 100
+        except ValueError:
+            return 100
+    
+    def get_detection_reward(self)->float:
+        """
+        Reads what is the reward for detection.
+        default: -50
+        """
+        try:
+            detection_reward = self.config['env']['detection_reward']
+            return float(detection_reward)
+        except KeyError:
+            return -50
+        except ValueError:
+            return -50
+    
+    def get_step_reward(self)->float:
+        """
+        Reads what is the reward for detection.
+        default: -1
+        """
+        try:
+            step_reward = self.config['env']['step_reward']
+            return float(step_reward)
+        except KeyError:
+            return -1
+        except ValueError:
+            return -1
+
+    def get_use_dynamic_addresses(self)->bool:
+        """
+        Reads if the IP and Network addresses should be dynamically changed.
+        """
+        try:
+            use_dynamic_addresses = self.config['env']['use_dynamic_addresses']
+        except KeyError:
+            use_dynamic_addresses = False
+        return bool(use_dynamic_addresses)
+
     def get_store_replay_buffer(self):
         """
         Read if the replay buffer should be stored in file
@@ -260,12 +309,41 @@ class ConfigParser():
             store_rb = False
         return store_rb
     
-    def get_defender_placement(self):
+    def get_defender_type(self):
         """
-        Get the position of the defender
+        Get the type of the defender
         """
-        defender_placements = self.config['agents']['defender']['type']
+        try:
+            defender_placements = self.config['agents']['defender']['type']
+        except KeyError:
+            # Option is not in the configuration - default to no defender present
+            defender_placements = "NoDefender"
         return defender_placements
+    
+    def get_defender_tw_size(self):
+        tw_size = self.config["agents"]["defender"]["tw_size"]
+        return tw_size
+    
+    def get_defender_thresholds(self):
+        """Function to read thresholds for stochastic defender with thresholds"""
+        thresholds = {}
+        config_thresholds = self.config["agents"]["defender"]["thresholds"]
+        # ScanNetwork
+        thresholds[ActionType.ScanNetwork] = {"consecutive_actions": config_thresholds["scan_network"]["consecutive_actions"]}
+        thresholds[ActionType.ScanNetwork]["tw_ratio"] = config_thresholds["scan_network"]["tw_ratio"]
+        # FindServices
+        thresholds[ActionType.FindServices] = {"consecutive_actions": config_thresholds["find_services"]["consecutive_actions"]}
+        thresholds[ActionType.FindServices]["tw_ratio"] = config_thresholds["find_services"]["tw_ratio"]
+        # FindData
+        thresholds[ActionType.FindData] = {"repeated_actions_episode": config_thresholds["find_data"]["repeated_actions_episode"]}
+        thresholds[ActionType.FindData]["tw_ratio"] = config_thresholds["find_data"]["tw_ratio"]
+        # ExploitService
+        thresholds[ActionType.ExploitService] = {"repeated_actions_episode": config_thresholds["exploit_service"]["repeated_actions_episode"]}
+        thresholds[ActionType.ExploitService]["tw_ratio"] = config_thresholds["exploit_service"]["tw_ratio"]
+        # ExfiltrateData
+        thresholds[ActionType.ExfiltrateData] = {"consecutive_actions": config_thresholds["exfiltrate_data"]["consecutive_actions"]}
+        thresholds[ActionType.ExfiltrateData]["tw_ratio"] = config_thresholds["exfiltrate_data"]["tw_ratio"]
+        return thresholds
 
     def get_scenario(self):
         """
@@ -288,6 +366,8 @@ class ConfigParser():
         Get the seeds
         """
         seed = self.config[whom]['random_seed']
+        if seed == 'random':
+            seed = randint(0,100)
         return seed
     
     def get_randomize_goal_every_episode(self) -> bool:

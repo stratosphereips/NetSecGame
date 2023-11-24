@@ -58,39 +58,40 @@ Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "da
 End of example.
 """
 
+EXAMPLE_PROMPT2 = """
+Here are some examples of actions:
+Action: {"action":"ScanNetwork", "parameters": {"target_network": "1.1.1.0/24"}}
+Action: {"action":"ScanServices", "parameters":{"target_host":"2.2.2.3"}}
+Action: {"action":"ExploitService", "parameters":{"target_host":"1.1.1.1", "target_service":"openssh"}}
+Action: {"action":"FindData", "parameters":{"target_host":"1.1.1.1"}}
+Action: {"action":"ExfiltrateData", "parameters": {"target_host": "2.2.2.2", "data": ("User1", "WebData"), "source_host": "1.1.1.2"}}}
+End of examples.
+"""
+
 # First instructions for the LLM (order 1 in sending)
 INSTRUCTIONS_TEMPLATE = """
-You are an advanced security attacker and your goal is to find certain data in the local network and exfiltrate it to the target host {{target_host}}.
-The actions you can do are 
-- ScanNetwork (find hosts in the network)
-- ScanServices (find services in a host)
-- FindData (find data in a host)
-- ExploitService (gain control of a host)
-- ExfiltrateData (send certain data from a host to another host)
-
-At each step you will be updated on the current status: 
-- how many networks you know
-- how many hosts you know
-- how many hosts you control
-- how many services you know
-- how many data you know
+You are a pentester and your goal is to to exfiltrate data to target host {{target_host}}.
+The actions you can take are ScanServices, FindData, ScanNetwork, ExploitService, and ExfiltrateData.
 
 The rules are:
-1. You can only scan the networks you know. This will give you new known hosts.
-2. You can only scan services in hosts you know. This will give you new known services.
-3. You can only exploit services when you know the service. This will make you control the host.
-4. You can find data in hosts you control. This will give you new known data.
-5. You can exfiltrate known data to and from controlled hosts. This may make you complete your goal.
+1. You can only scan networks in your list of known networks.
+2. You can only scan services in hosts you know.
+3. You can only exploit services when you know the service.
+4. You can find data in hosts you control.
+5. You can exfiltrate known data to and from controlled hosts.
 
 Do not repeat actions that you took in the past.
-Do not scan and exploit services in hosts you control.
+Do not scan or exploit services in hosts you control.
 Do not scan the same network twice.
+Do not exfiltrate the same data twice.
+Exploit services that you know and find data in all controlled hosts.
+Once you have known data exfiltrate them to the target one by one.
 """
 
 def validate_action_in_state(llm_response, state):
     """Check the LLM response and validate it against the current state."""
     contr_hosts = [str(host) for host in state.controlled_hosts]
-    known_hosts = [str(host) for host in state.known_hosts]
+    known_hosts = [str(host) for host in state.known_hosts if host.ip not in contr_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
     valid = False
@@ -104,14 +105,15 @@ def validate_action_in_state(llm_response, state):
                 if action_params["target_network"] in known_nets:
                     valid = True       
             case 'ScanServices':
-                if action_params["target_host"] in known_hosts:
+                if action_params["target_host"] in known_hosts or action_params["target_host"] in contr_hosts:
                     valid = True
             case 'ExploitService':
                 ip_addr = action_params["target_host"]
                 if ip_addr in known_hosts:
-                    for service in state.known_services[IP(ip_addr)]:
-                        if service.name == action_params["target_service"]:
-                            valid = True
+                    valid = True
+                    # for service in state.known_services[IP(ip_addr)]:
+                    #     if service.name == action_params["target_service"]:
+                    #         valid = True
             case 'FindData':
                 if action_params["target_host"] in contr_hosts:
                     valid = True
@@ -133,7 +135,7 @@ def create_status_from_state(state, memory_list):
     known_hosts = [host.ip for host in state.known_hosts if host.ip not in contr_hosts]
     known_nets = [str(net) for net in list(state.known_networks)]
 
-    prompt = "These are the actions you already took in the past:\n"
+    prompt = "Previous actions:\n"
     if len(memory_list) > 0:
         for memory in memory_list:
             if memory[2]:
@@ -290,7 +292,7 @@ if __name__ == "__main__":
         # num_iterations is the max number of times we can ask the LLM to make 1 step. 
         # It is not the number of steps because many actions from the LLM are discarded.
         # All these iterations are for 1 episodes
-        num_iterations = 400
+        num_iterations = env._max_steps + 20
         taken_action = None
         memories = []
         total_reward = 0
@@ -319,8 +321,8 @@ if __name__ == "__main__":
             status_prompt = create_status_from_state(observation.state, memories[-args.memory_buffer:])
             messages = [
                     {"role": "system", "content": instructions},
-                    {"role": "user", "content": EXAMPLE_PROMPT},
                     {"role": "user", "content": status_prompt},
+                    {"role": "user", "content": EXAMPLE_PROMPT2},
                     {"role": "user", "content": "\nSelect a valid action with the correct format and parameters.\nIf an action is in your list of past actions do not chose that action!\nDO NOT REPEAT PAST ACTIONS!"},
                     {"role": "user", "content": "Action: "}
                 ]
@@ -341,6 +343,12 @@ if __name__ == "__main__":
 
             try:
                 # Since the response should be JSON, we can eval it and crate a dict
+                if response.startswith("Action: "):
+                    response = response[8:]
+                elif not response.startswith("{"):
+                    idx = response.find("{")
+                    if idx > 0:
+                        response = response[idx:]
                 response = eval(response)
                 is_valid, action, actions_took_in_episode = create_action_from_response(response, observation.state, actions_took_in_episode)
             except:
@@ -356,9 +364,12 @@ if __name__ == "__main__":
                     good_action = True
                     current_state = observation.state
 
-            logger.info(f"Iteration: {i}. Is action valid to be taken: {is_valid}, did action change status: {good_action}")
-            if observation.done:
-                reason = observation.info
+            logger.info(f"Iteration: {i} Valid: {is_valid} Good: {good_action}")
+            if observation.done or i == (num_iterations-1): # if it is the last iteration gather statistics
+                if i < (num_iterations-1):
+                    reason = observation.info
+                else:
+                    reason= {'end_reason' : 'max_iterations'}
                 # Did we win?
                 win = 0
                 if observation.reward > 0:
@@ -372,11 +383,14 @@ if __name__ == "__main__":
                 elif 'detected' in reason['end_reason']:
                     detected += 1
                     num_detected_steps += [steps]
+                elif 'max_iterations' in reason['end_reason']:
+                    type_of_end = 'max_iterations'
+                    total_reward = -env._max_steps
+                    steps = env._max_steps
                 else:
-                    num_win_steps += [0]
-                    num_detected_steps += [0]
+                    pass
                     
-                returns += [epi_return]
+                returns += [total_reward]
                 num_steps += [steps]
                 logger.info(f"\tGame ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
                 print(f"\tGame ended after {steps} steps. Reason: {reason}. Last reward: {epi_return}")
@@ -391,13 +405,14 @@ if __name__ == "__main__":
                     # But we could a manual evaluation based on the prior knowledge and weight the different components.
                     # For example: finding new data is better than discovering hosts (?)
                     if good_action:
-                        memories.append((response["action"], response["parameters"], "was a good action to take."))
+                        memories.append((response["action"], response["parameters"], "was helpful."))
                     else:
-                        memories.append((response["action"], response["parameters"], "was a bad action to take. Do not repeat it."))
+                        memories.append((response["action"], response["parameters"], "was not helpful."))
             except TypeError:
                 # if the LLM sends a response that is not properly formatted.
                 memories.append(f"Response '{response}' was badly formatted.")
-    
+
+            time.sleep(3)
     # After all episodes are done. Compute statistics
     test_win_rate = (wins/(args.test_episodes))*100
     test_detection_rate = (detected/(args.test_episodes))*100

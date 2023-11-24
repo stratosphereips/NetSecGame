@@ -5,12 +5,14 @@
 import netaddr
 import env.game_components as components
 import random
+import itertools
 import copy
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 import numpy as np
 import logging
 import os
 from pathlib import Path
+from faker import Faker
 from utils.utils import ConfigParser, store_replay_buffer_in_csv
 
 
@@ -18,7 +20,7 @@ from utils.utils import ConfigParser, store_replay_buffer_in_csv
 log_filename=Path('env/logs/netsecenv.log')
 if not log_filename.parent.exists():
     os.makedirs(log_filename.parent)
-logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%H:%M:%S',level=logging.INFO)
+logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.INFO)
 logger = logging.getLogger('Netsecenv')
 
 class NetworkSecurityEnvironment(object):
@@ -64,7 +66,7 @@ class NetworkSecurityEnvironment(object):
         self._process_cyst_config(cyst_config)
         logger.info("CYST configuration processed successfully")
         
-        # Set the seed if passed by the agent
+        # Set the seed 
         seed = self.task_config.get_seed('env')
         np.random.seed(seed)
         random.seed(seed)
@@ -75,7 +77,13 @@ class NetworkSecurityEnvironment(object):
         self._max_steps = self.task_config.get_max_steps()
         logger.info(f"\tSetting max steps to {self._max_steps}")
 
-        # Set the default parameters of all actions
+        # Set rewards for goal/detection/step
+        self._goal_reward = self.task_config.get_goal_reward()
+        self._detection_reward = self.task_config.get_detection_reward()
+        self._step_reward = self.task_config.get_step_reward()
+        logger.info(f"\tSetting rewards - goal:{self._goal_reward}, detection:{self._detection_reward}, step:{self._step_reward}")
+
+        # Set the default parameters of all actionss
         # if the values of the actions were updated in the configuration file
         components.ActionType.ScanNetwork.default_success_p, components.ActionType.ScanNetwork.default_detection_p = self.task_config.read_env_action_data('scan_network')
         components.ActionType.FindServices.default_success_p, components.ActionType.FindServices.default_detection_p = self.task_config.read_env_action_data('find_services')
@@ -94,9 +102,17 @@ class NetworkSecurityEnvironment(object):
 
         # should be randomized once or every episode?
         self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
+        
         # store goal definition
         self._goal_conditions = self.task_config.get_attacker_win_conditions()
         
+        # check if dynamic network and ip adddresses are required
+        if self.task_config.get_use_dynamic_addresses():
+            logger.info("Dynamic change of the IP and network addresses enabled")
+            self._faker_object = Faker()
+            Faker.seed(seed)
+            self._create_new_network_mapping()
+
         # process episodic randomization
         if not self._randomize_goal_every_episode:
             # episodic randomization is not required, randomize once now
@@ -112,9 +128,11 @@ class NetworkSecurityEnvironment(object):
         else:
             logger.info("Storing of replay buffer disabled")
             self._episode_replay_buffer = None
+        
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
         self._current_goal = None
+        self._actions_played = []
         # If the game finished
         self._done = None
         # If the episode/action was detected by the defender
@@ -316,16 +334,22 @@ class NetworkSecurityEnvironment(object):
         For now only if it is present
         """
         logger.info("\tStoring defender placement")
-        placements = self.task_config.get_defender_placement()
-        if placements == 'StochasticDefender':
-            logger.info(f"\t\tDefender placed as type {placements}")
-            # For now there is only one type of defender
-            self._defender_placements = True
-        elif placements == 'NoDefender':
-            logger.info("\t\tNo defender present in the environment")
-            self._defender_placements = False
-        else:
-            self._defender_placements = False
+        defender_type = self.task_config.get_defender_type()
+        match defender_type:
+            case 'StochasticDefender':
+                logger.info(f"\t\tDefender placed as type {defender_type}")
+                # For now there is only one type of defender
+                self._defender_type = "Stochastic"
+            case "NoDefender":
+                logger.info("\t\tNo defender present in the environment")
+                self._defender_type = None
+            case "StochasticWithThreshold":
+                logger.info(f"\t\tDefender placed as type '{defender_type}'")
+                self._defender_type = "StochasticWithThreshold"
+                self._defender_thresholds = self.task_config.get_defender_thresholds()
+                self._defender_thresholds["tw_size"] = self.task_config.get_defender_tw_size()
+            case _: # Default option - no defender
+                self._defender_type = None
 
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
@@ -421,6 +445,7 @@ class NetworkSecurityEnvironment(object):
                     for rule in chain.rules:
                         if rule.policy == FirewallPolicy.ALLOW:
                             self._fw_rules.append(rule)
+        
         #process Nodes
         for n in nodes:
             process_node_config(n)
@@ -440,6 +465,94 @@ class NetworkSecurityEnvironment(object):
         #exploits
         self._exploits = exploits
 
+    def _create_new_network_mapping(self):
+        """ Method that generates random IP and Network addreses
+          while following the topology loaded in the environment.
+         All internal data structures are updated with the newly generated addresses."""
+        fake = self._faker_object
+        mapping_nets = {}
+        mapping_ips = {}
+        
+        # generate mapping for networks
+        private_nets = []
+        for net in self._networks.keys():
+            if netaddr.IPNetwork(str(net)).is_private():
+                private_nets.append(net)
+            else:
+                mapping_nets[net] = components.Network(fake.ipv4_public(), net.mask)
+        
+        # for private networks, we want to keep the distances among them
+        private_nets_sorted = sorted(private_nets)
+        valid_valid_network_mapping = False
+        counter_iter = 0
+        while not valid_valid_network_mapping:
+            try:
+                # find the new lowest networks
+                new_base = netaddr.IPNetwork(fake.ipv4_private(), private_nets_sorted[0].mask)
+                # store its new mapping
+                mapping_nets[private_nets[0]] = components.Network(str(new_base.network), private_nets_sorted[0].mask)
+                base = netaddr.IPNetwork(str(private_nets_sorted[0]))
+                is_private_net_checks = []
+                for i in range(1,len(private_nets_sorted)):
+                    current = netaddr.IPNetwork(str(private_nets_sorted[i]))
+                    # find the distance before mapping
+                    diff_ip = current.ip - base.ip
+                    # find the new mapping 
+                    new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
+                    # evaluate if its still a private network
+                    is_private_net_checks.append(new_net_addr.is_private())
+                    # store the new mapping
+                    mapping_nets[private_nets_sorted[i]] = components.Network(str(new_net_addr), private_nets_sorted[i].mask)
+                if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
+                    valid_valid_network_mapping = True
+            except IndexError as e:
+                logger.info(f"Dynamic address sampling failed, re-trying. {e}")
+                counter_iter +=1
+                if counter_iter > 10:
+                    logger.error("Dynamic address failed more than 10 times - stopping.")
+                    exit(-1)
+                # Invalid IP address boundary
+        logger.info(f"New network mapping:{mapping_nets}")
+        # genereate mapping for ips:
+        for net,ips in self._networks.items():
+            ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))[1:]
+            # remove broadcast and network ip from the list
+            random.shuffle(ip_list)
+            for i,ip in enumerate(ips):
+                mapping_ips[ip] = components.IP(str(ip_list[i]))
+        
+        # update ALL data structure in the environment with the new mappings
+        # self._networks
+        new_self_networks = {}
+        for net, ips in self._networks.items():
+            new_self_networks[mapping_nets[net]] = set()
+            for ip in ips:
+                new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
+        self._networks = new_self_networks
+        
+        #self._ip_to_hostname
+        new_self_ip_to_hostname  = {}
+        for ip, hostname in self._ip_to_hostname.items():
+            new_self_ip_to_hostname[mapping_ips[ip]] = hostname
+        self._ip_to_hostname = new_self_ip_to_hostname
+        
+        # attacker starting position
+        new_attacker_start = {}
+        new_attacker_start["known_networks"] = {mapping_nets[net] for net in self._attacker_start_position["known_networks"]}
+        new_attacker_start["known_hosts"] = {mapping_ips[ip] for ip in self._attacker_start_position["known_hosts"]}
+        new_attacker_start["controlled_hosts"] = {mapping_ips[ip] for ip in self._attacker_start_position["controlled_hosts"]}
+        new_attacker_start["known_services"] = {mapping_ips[ip]:service for ip,service in self._attacker_start_position["known_services"].items()}
+        new_attacker_start["known_data"] = {mapping_ips[ip]:data for ip,data in self._attacker_start_position["known_data"].items()}
+        self._attacker_start_position = new_attacker_start
+        # goal definition
+        new_goal = {}
+        new_goal["known_networks"] = {mapping_nets[net] for net in self._goal_conditions["known_networks"]}
+        new_goal["known_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["known_hosts"]}
+        new_goal["controlled_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["controlled_hosts"]}
+        new_goal["known_services"] = {mapping_ips[ip]:service for ip,service in self._goal_conditions["known_services"].items()}
+        new_goal["known_data"] = {mapping_ips[ip]:data for ip,data in self._goal_conditions["known_data"].items()}
+        self._goal_conditions = new_goal
+    
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
         """
         Returns set of Service tuples from given hostIP
@@ -653,33 +766,103 @@ class NetworkSecurityEnvironment(object):
         goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
         return goal_reached
 
+    def _stochastic_detection_with_thresholds(self, action:components.Action)->bool:        
+        """ Method used for detection with stochastic defender with minimal thresholds"""
+        if len(self._actions_played) > 1: # single action is never detected:
+            last_n_actions = self._actions_played[-self._defender_thresholds["tw_size"]:]
+            last_n_action_types = [action.type for action in last_n_actions]
+            repeated_action_episode = self._actions_played.count(action)
+            logger.info('\tThreshold check')
+            # update threh
+            match action.type: # thresholds are based on action type
+                case components.ActionType.ScanNetwork:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ScanNetwork)/self._defender_thresholds["tw_size"]
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ScanNetwork]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ScanNetwork]["consecutive_actions"]:
+                        return False
+                    else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ScanNetwork]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ScanNetwork]['consecutive_actions']})")
+                        return self._stochastic_detection(action)
+                case components.ActionType.FindServices:
+                    tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/self._defender_thresholds["tw_size"]
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.FindServices)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.FindServices]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.FindServices]["consecutive_actions"]:
+                        return False
+                    else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindServices]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.FindServices]['consecutive_actions']})")
+                        return self._stochastic_detection(action)
+                case components.ActionType.FindData:
+                    tw_ratio = last_n_action_types.count(components.ActionType.FindData)/self._defender_thresholds["tw_size"]
+                    if tw_ratio < self._defender_thresholds[components.ActionType.FindData]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.FindData]["repeated_actions_episode"]:
+                        return False
+                    else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindData]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
+                        return self._stochastic_detection(action)
+                case components.ActionType.ExploitService:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ExploitService)/self._defender_thresholds["tw_size"]
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ExploitService]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.ExploitService]["repeated_actions_episode"]:
+                        return False
+                    else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExploitService]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
+                        return self._stochastic_detection(action)
+                case components.ActionType.ExfiltrateData:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ExfiltrateData)/self._defender_thresholds["tw_size"]
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ExfiltrateData)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ExfiltrateData]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ExfiltrateData]["consecutive_actions"]:
+                        return False
+                    else:
+                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExfiltrateData]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ExfiltrateData]['consecutive_actions']})")
+                        return self._stochastic_detection(action)
+                case _: # default case - No detection
+                    return False
+        return False
+    
+    def _stochastic_detection(self, action: components.Action)->bool:
+        """ Method stochastic detection based on action default probability"""
+        return random.random() < action.type.default_detection_p
+    
     def _is_detected(self, state, action:components.Action)->bool:
         """
-        Check if this action was detected by the global defender
-        based on the probabilitiy distribution in the action configuration
+        Checks if current action was detected based on the defendr type:
         """
-        if self._defender_placements:
-            value = random.random() < action.type.default_detection_p
-            logger.info(f"\tAction detected?: {value}")
-            return value
-        else: #no defender
+        if self._defender_type is not None: # There is a defender present
+            match self._defender_type:
+                case "Stochastic":
+                    detection = self._stochastic_detection(action)
+                    logger.info(f"\tAction detected?: {detection}")
+                    return detection
+                case "StochasticWithThreshold":
+                    logger.info(f"Checking detection based on rules: {action}")
+                    detection = self._stochastic_detection_with_thresholds(action)
+                    logger.info(f"\tAction detected?: {detection}")
+                    return detection
+        else: # No defender in the environment
             logger.info("\tNo defender present")
             return False
 
     def reset(self)->components.Observation:
         """
         Function to reset the state of the game
-        and play a new episode
+        and prepare for a new episode
         """
         logger.info('--- Reseting env to its initial state ---')
         self._done = False
         self._step_counter = 0
         self._detected = False
+        self._actions_played = []
         
         # write all steps in the episode replay buffer in the file
         if self._episode_replay_buffer is not None:
             store_replay_buffer_in_csv(self._episode_replay_buffer, 'env/logs/replay_buffer.csv')
             self._episode_replay_buffer = [] 
+        
+        if self.task_config.get_use_dynamic_addresses():
+            logger.info("Changes IPs dyamically")
+            self._create_new_network_mapping()
+
         #reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         
@@ -712,13 +895,14 @@ class NetworkSecurityEnvironment(object):
 
             # 1. Check if the action was successful or not
             if random.random() <= action.type.default_success_p:
+                self._actions_played.append(action)
                 # The action was successful
                 logger.info('\tAction sucessful')
 
                 # Get the next state given the action
                 next_state = self._execute_action(self._current_state, action)
                 # Reard for making an action
-                reward = -1
+                reward = self._step_reward
             else:
                 # The action was not successful
                 logger.info("\tAction NOT sucessful")
@@ -727,14 +911,14 @@ class NetworkSecurityEnvironment(object):
                 next_state = self._current_state
 
                 # Reward for taking an action
-                reward = -1
+                reward = self._step_reward
 
             # 2. Check if the new state is the goal state
             is_goal = self.is_goal(next_state)
             logger.info(f"\tGoal reached?: {is_goal}")
             if is_goal:
                 # Give reward
-                reward += 100
+                reward +=  self._goal_reward
                 # Game ended
                 self._done = True
                 reason = {'end_reason':'goal_reached'}
@@ -746,9 +930,10 @@ class NetworkSecurityEnvironment(object):
             # This means defender wins if both defender and attacker are successful
             # simuntaneously in the same step
             detected = self._is_detected(self._current_state, action)
-            if detected:
+            # Report detection, but not if in this same step the agent won
+            if not is_goal and detected:
                 # Reward should be negative
-                reward -= 50
+                reward += self._detection_reward
                 # Mark the environment as detected
                 self._detected = True
                 self._done = True
@@ -761,7 +946,8 @@ class NetworkSecurityEnvironment(object):
             logger.info(f'Current state: {self._current_state} ')
 
             # 4. Check if the max number of steps of the game passed already
-            if self._step_counter >= self._max_steps:
+            # But if the agent already won in this last step, count the win
+            if not is_goal and self._step_counter >= self._max_steps:
                 self._done = True
                 reason = {'end_reason':'max_steps'}
                 logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
