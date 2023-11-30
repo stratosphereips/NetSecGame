@@ -19,6 +19,7 @@ class Service():
     version: str
     is_local: bool
 
+
 """
 IP represents the ip address object in the NetSecGame
 """
@@ -68,6 +69,7 @@ class Data():
     owner: str
     id: str
 
+
 class ActionType(enum.Enum):
     """
     ActionType represents generic action for attacker in the game. Each transition has a default probability
@@ -114,14 +116,15 @@ class ActionType(enum.Enum):
     ExploitService = 0.7, 0.4
     ExfiltrateData = 0.8, 0.1
 
+
 #Actions
 class Action():
     """
     Actions are composed of the action type (see ActionTupe) and additional parameters listed in dictionary
-    - ScanNetwork {"target_network": Network object}
-    - FindServices {"target_host": IP object}
-    - FindData {"target_host": IP object}
-    - ExploitService {"target_host": IP object, "target_service": Service object}
+    - ScanNetwork {"target_network": Network object, "source_host": IP object}
+    - FindServices {"target_host": IP object, "source_host": IP object,}
+    - FindData {"target_host": IP object, "source_host": IP object}
+    - ExploitService {"target_host": IP object, "target_service": Service object, "source_host": IP object}
     - ExfiltrateData {"target_host": IP object, "source_host": IP object, "data": Data object}
     """
     def __init__(self, action_type: ActionType, params: dict) -> None:
@@ -131,7 +134,6 @@ class Action():
     @property
     def type(self) -> ActionType:
         return self._type
-
     @property
     def parameters(self)->dict:
         return self._parameters
