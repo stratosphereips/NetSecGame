@@ -7,7 +7,7 @@ import os
 import sys
 import tensorflow_gnn as tfgnn
 import tensorflow as tf
-from random import choice, choices
+from random import choices
 from tensorflow_gnn.models.gcn import gcn_conv
 
 # This is used so the agent can see the environment and game components
@@ -17,8 +17,7 @@ sys.path.append(path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 
 # with the path fixed, we can import now
 from env.network_security_game import NetworkSecurityEnvironment
-from env.game_components import Action, ActionType, GameState, IP, Network, Data
-
+from env.game_components import Action, ActionType, GameState
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 tf.get_logger().setLevel("ERROR")
@@ -438,7 +437,7 @@ if __name__ == "__main__":
 
     # training arguments
     parser.add_argument(
-        "--episodes", help="Sets number of training episodes", default=10000, type=int
+        "--episodes", help="Sets number of training episodes", default=5000, type=int
     )
     parser.add_argument(
         "--eval_each",
@@ -485,6 +484,6 @@ if __name__ == "__main__":
 
     # #initialize agent
     agent = GnnReinforceAgent(env, args)
-    agent.train()
-    agent.evaluate()
+    #agent.train()
+    agent.load_model("./gnn_agent")
     agent.evaluate()
