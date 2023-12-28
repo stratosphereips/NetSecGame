@@ -12,19 +12,18 @@ import asyncio
 
 __version__ = 'v0.1'
 
-async def server(host, port):
+async def start_coordinator(host, port):
     """
-    Start the socket server
+    Start the coordinator
     Define the function to deal with data
     """
-    logger = logging.getLogger('SERVER')
-    logger.info('Starting server')
+    logger = logging.getLogger('Coordinator')
+    logger.info('Starting coordinator')
     server = await asyncio.start_server(handle_new_client, host, port)
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
     logger.info(f'Serving on {addrs}')
     async with server:
         await server.serve_forever()
-
 
 async def send_world(writer, world_json):
     """
@@ -32,8 +31,46 @@ async def send_world(writer, world_json):
     """
     writer.write(bytes(str(world_json).encode()))
 
+async def handle_new_client(reader, writer):
+    """
+    Function to deal with each new client
+    """
+    logger = logging.getLogger('Coordinator')
+    addr = writer.get_extra_info('peername')
+    logger.info(f"Handling data from client {addr}")
 
-class Game_HGW(object):
+    # Get a new world
+    myworld = NetSecGame()
+    world_env = myworld.get_world()
+
+    # Send welcome
+    message = '{"message":"Welcome to the NetSecGame environmet. Shall we play a game?"}'
+    logger.info(f"Sending: {message}")
+    await send_world(writer, message)
+    await writer.drain()
+
+    while True:
+        try:
+            data = await reader.read(20)
+            message = data.decode()
+
+            logger.info(f"Received {message!r} from {addr}")
+
+            #myworld.process_input_key(message)
+
+            message = '{"message":"Sup?"}'
+            logger.info(f"Sending: {message!r}")
+            await send_world(writer, message)
+            try:
+                await writer.drain()
+            except ConnectionResetError:
+                logger.info(f'Connection lost. Client disconnected.')
+
+        except Exception as e:
+            logger.info(f"Client disconnected: {e}")
+            break
+
+class NetSecGame(object):
     """
     Class Game_HGW
     Organizes and implements the logic of the game
@@ -59,7 +96,8 @@ class Game_HGW(object):
         """
         Get the world
         """
-        return self.world
+        return "Earth"
+        #return self.world
 
     def check_collisions(self):
         """
@@ -150,24 +188,20 @@ class Game_HGW(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser = argparse.ArgumentParser(description=f"Hacker Grid World Server version {__version__}. Author: Sebastian Garcia, eldraco@gmail.com", usage='%(prog)s -n <screen_name> [options]')
+    parser = argparse.ArgumentParser(description=f"NetSecGame Coordinator Server version {__version__}. Author: Sebastian Garcia, sebastian.garcia@agents.fel.cvut.cz", usage='%(prog)s [options]')
     parser.add_argument('-v', '--verbose', help='Verbosity level. This shows more info about the results.', action='store', required=False, type=int)
     parser.add_argument('-d', '--debug', help='Debugging level. This shows inner information about the flows.', action='store', required=False, type=int)
     parser.add_argument('-c', '--configfile', help='Configuration file.', action='store', required=True, type=str)
-    parser.add_argument('-t', '--test', help='Run serve in test mode. Speed is 0.1 and port is the port in the conf + 1', action='store_true', required=False)
 
     args = parser.parse_args()
-    logging.basicConfig(filename='server.log', filemode='a', format='%(asctime)s, %(name)s: %(message)s', datefmt='%H:%M:%S', level=logging.CRITICAL)
+    logging.basicConfig(filename='coordinator.log', filemode='a', format='%(asctime)s, %(name)s: %(message)s', datefmt='%H:%M:%S', level=logging.INFO)
 
     with open(args.configfile, 'r') as jfile:
         confjson = json.load(jfile)
-        if args.test:
-            confjson['speed'] = 0.1
-            confjson['port'] = confjson['port'] + 1
 
     try:
-        logging.debug('Server start')
-        asyncio.run(server(confjson.get('host', None), confjson.get('port', None)))
+        logging.debug('Coordinator starts')
+        asyncio.run(start_coordinator(confjson.get('host', None), confjson.get('port', None)))
     except KeyboardInterrupt:
         logging.debug('Terminating by KeyboardInterrupt')
         raise SystemExit
