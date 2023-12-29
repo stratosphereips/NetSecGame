@@ -1,0 +1,26 @@
+# Configuration file for the NetSecGame environment
+
+env:
+  # random means to choose the seed in a random way, so it is not fixed
+  random_seed: 'random'
+  # Or you can fix the seed
+  # random_seed: 42
+  scenario: 'scenario1'
+  max_steps: 30
+  store_replay_buffer: False
+  actions:
+    scan_network:
+      prob_success: 1.0
+      prob_detection: 0.05
+    find_services:
+      prob_success: 1.0
+      prob_detection: 0.075
+    exploit_services:
+      prob_success: 1.0
+      prob_detection: 0.1
+    find_data:
+      prob_success: 1.0
+      prob_detection: 0.025
+    exfiltrate_data:
+      prob_success: 1.0
+      prob_detection: 0.025
