@@ -1,7 +1,6 @@
-import argparse
-import json
 import logging
 from utils.utils import ConfigParser
+import time
 
 class NetSecGame(object):
     """
@@ -23,7 +22,6 @@ class NetSecGame(object):
         logger = logging.getLogger('NetSecEnv')
         logger.info(f"Starting a new world")
         self.world = {}
-    
 
     def get_world(self):
         """
