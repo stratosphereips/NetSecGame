@@ -6,7 +6,7 @@ from datetime import datetime
 import logging
 import json
 import asyncio
-#from env.network_security_game import NetworkSecurityEnvironment
+from env.network_security_game import NetworkSecurityEnvironment
 from env.NetSecGame import NetSecGame
 from pathlib import Path
 import os
@@ -20,7 +20,8 @@ logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(n
 logger = logging.getLogger('Coordinator')
 
 # Get a new world
-myworld = NetSecGame('env/netsecenv_conf.yaml')
+#myworld = NetSecGame('env/netsecenv_conf.yaml')
+myworld = NetworkSecurityEnvironment('env/netsecenv_conf.yaml')
 
 __version__ = 'v0.1'
 
@@ -72,6 +73,33 @@ def send_to_agent(message, answers_queue):
     """
     pass
 
+class Agent():
+    """
+    Class to keep all the data regarding the playing agents
+    """
+    def __init__(self, addr):
+        self.state = 'New'
+        self.address = addr
+    
+    def put_nick(self, nick):
+        """
+        Add a nick to the agent
+        Only possible after begin new
+        """
+        if self.state == 'New':
+            self.nick = nick
+            self.state = 'Registered'
+    
+    def choose_side(self, side):
+        """
+        Choose to play between Attacker, Defender or Human
+        Only possible after registration with a nick
+        """
+        if self.state == 'Registered':
+            self.side = side
+            self.state = 'Ready'
+    
+
 async def main_coordinator(actions_queue, answers_queue):
     """
     The main coordinator is in charge of everything exept the coomuncation with agents
@@ -80,21 +108,18 @@ async def main_coordinator(actions_queue, answers_queue):
     - Checking the actions done
     - Contacting the environment
     - Accesing the queue of answers
+    - With the agents, offer to register, put a nick, select a side, and start playing, wait for others or see status
     """
     try:
-        global myworld
-        world_env = myworld.get_world()
-
         logger.info("Main coordinator started.")
+        global myworld
+        world_env = {} #myworld._current_state
 
-        # First send them options
-        # - Start alone 
-        # - wait for other players
-        # - give a nick name
-        # - version
+        # Create dict of agents
+        # {addr: Agent()}
+        agents = {}
 
         while True:
-
             logger.info("Coordinator running.")
             # Read messages from the queue
             agent_addr, message = await actions_queue.get()
@@ -102,16 +127,49 @@ async def main_coordinator(actions_queue, answers_queue):
                 logger.info(f"Coordinator received: {message}.")
                 # Convert message to dict
                 message_dict = json.loads(message)
-                if message_dict['message'] == 'New agent':
-                    # Send initial message
+
+                action_str = message_dict['action']
+                try:
+                    action_dict = json.loads(action_str)
+                except json.decoder.JSONDecodeError:
+                    # Agent didn't send a JSON. Bad agent.
+                    action_dict = {}
+
+                if 'Register_New_agent' in action_dict.keys():
+                    # Create Agent if it doesnt exists
+                    try:
+                        _ = agents[agent_addr]
+                        logger.info(f"Agent for {agent_addr} already existed.")
+                        output_message = f'{"to_agent": {agent_addr}, "status": {"#players": 1, "running": "True", "time": "1"}, "message": "Agent already exists."}'
+                        await answers_queue.put(output_message)
+                    except KeyError:
+                        logger.info(f"Creating new agent for {agent_addr}.")
+                        new_agent = Agent(agent_addr)
+                        agents[agent_addr] = new_agent
+                    # Send initial message. Only for new clients
                     logger.info("Coordinator sending welcome message.")
                     output_message = '{"to_agent": "all", "status": {"#players": 1, "running": "True", "time": "0"}, "message": "Welcome to the NetSecEnv game! Insert your nickname."}'
                     await answers_queue.put(output_message)
+                elif 'PutNick' in action_dict.keys():
+                    try:
+                        agent = agents[agent_addr]
+                    except KeyError:
+                        logger.info("Agent does not exist.")
+                        output_message = '{"to_agent": "all", "status": {"#players": 1, "running": "True", "time": "0"}, "message": "Error."}'
+                        await answers_queue.put(output_message)
+                    # A nick was send
+                    nick = action_dict['PutNick']
+                    logger.info(f'Coordinator received from agent {agent_addr} its nick: {nick}')
+                    agent.put_nick(nick)
+                    output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "message": "Which side are you playing? Defender, Attacker or Human?."}
+                    output_message_str = json.dumps(output_message_dict)
+                    await answers_queue.put(output_message_str)
                 else:
+                    # Process generic messages
                     # Access agent information
                     logger.info(f'Coordinator received from agent {agent_addr}: {message}')
                     # Answer the agents
-                    message_out = f"I received your message {message}"
+                    message_out = json.dumps(world_env)
                     output_message_dict = {"agent": agent_addr, "message": message_out}
                     output_message = json.dumps(output_message_dict)
                     await answers_queue.put(output_message)
@@ -121,7 +179,6 @@ async def main_coordinator(actions_queue, answers_queue):
         raise SystemExit
     except Exception as e:
         logger.error(f'Exception in main_coordinator(): {e}')
-        print(f'Exception in main_coordinator(): {e}')
 
 async def send_world(writer, world_json):
     """
@@ -138,8 +195,9 @@ async def handle_new_agent(reader, writer, actions_queue, answers_queue):
         logger.info(f"New agent connected: {addr}")
 
         # Tell the coordinator a new agent connected
-        message = '{"message": "New agent"}'
-        await actions_queue.put((addr, message))
+        message_dict = {"action": '{"Register_New_agent": "True"}'}
+        message_str = json.dumps(message_dict)
+        await actions_queue.put((addr, message_str))
 
         # Get the message from the coordinator
         message = await answers_queue.get()
@@ -157,7 +215,7 @@ async def handle_new_agent(reader, writer, actions_queue, answers_queue):
             logger.info(f"Handler received from {addr}: {raw_message!r}")
 
             # Build the correct message format for the coordinator
-            message_dict = {"message": str(raw_message)}
+            message_dict = {"action": raw_message}
             message_str = json.dumps(message_dict)
 
             # Put the message and agent information into the queue
@@ -187,7 +245,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=f"NetSecGame Coordinator Server version {__version__}. Author: Sebastian Garcia, sebastian.garcia@agents.fel.cvut.cz", usage='%(prog)s [options]')
     parser.add_argument('-v', '--verbose', help='Verbosity level. This shows more info about the results.', action='store', required=False, type=int)
     parser.add_argument('-d', '--debug', help='Debugging level. This shows inner information about the flows.', action='store', required=False, type=int)
-    parser.add_argument('-c', '--configfile', help='Configuration file.', action='store', required=True, type=str)
+    parser.add_argument('-c', '--configfile', help='Configuration file.', action='store', required=False, type=str, default='coordinator.conf')
 
     args = parser.parse_args()
     # Get the event loop and run it
