@@ -96,8 +96,12 @@ class Agent():
         Only possible after registration with a nick
         """
         if self.state == 'Registered':
-            self.side = side
-            self.state = 'Ready'
+            if side in ['Attacker', 'Defender', 'Human']:
+                self.side = side
+                self.state = 'Ready'
+                return True
+            else:
+                return False
     
 
 async def main_coordinator(actions_queue, answers_queue):
@@ -162,6 +166,22 @@ async def main_coordinator(actions_queue, answers_queue):
                     logger.info(f'Coordinator received from agent {agent_addr} its nick: {nick}')
                     agent.put_nick(nick)
                     output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "message": "Which side are you playing? Defender, Attacker or Human?."}
+                    output_message_str = json.dumps(output_message_dict)
+                    await answers_queue.put(output_message_str)
+                elif 'ChooseSide' in action_dict.keys():
+                    try:
+                        agent = agents[agent_addr]
+                    except KeyError:
+                        logger.info("Agent does not exist.")
+                        output_message = '{"to_agent": "all", "status": {"#players": 1, "running": "True", "time": "0"}, "message": "Error."}'
+                        await answers_queue.put(output_message)
+                    # A side was choosn
+                    side = action_dict['ChooseSide']
+                    logger.info(f'Coordinator received from agent {agent_addr} its side: {side}')
+                    if agent.choose_side(side):
+                        output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "message": f"Welcome {side}! May the force be with you always!"}
+                    else:
+                        output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "message": "That side does not exists."}
                     output_message_str = json.dumps(output_message_dict)
                     await answers_queue.put(output_message_str)
                 else:
