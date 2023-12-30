@@ -17,10 +17,6 @@ from utils.utils import ConfigParser, store_replay_buffer_in_csv
 
 
 # Set the logging
-log_filename=Path('env/logs/netsecenv.log')
-if not log_filename.parent.exists():
-    os.makedirs(log_filename.parent)
-logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.INFO)
 logger = logging.getLogger('Netsecenv')
 
 class NetworkSecurityEnvironment(object):
@@ -95,7 +91,7 @@ class NetworkSecurityEnvironment(object):
         self._place_defences()
         
         # Get attacker start
-        self._attacker_start_position = self.task_config.get_attacker_start_position()
+        self._attacker_start_position = self.task_config.get_attackers_start_position()
 
         # Make a copy of data placements so it is possible to reset to it when episode ends
         self._data_original = copy.deepcopy(self._data)
@@ -104,7 +100,7 @@ class NetworkSecurityEnvironment(object):
         self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
         
         # store goal definition
-        self._goal_conditions = self.task_config.get_attacker_win_conditions()
+        self._goal_conditions = self.task_config.get_attackers_win_conditions()
         
         # check if dynamic network and ip adddresses are required
         if self.task_config.get_use_dynamic_addresses():
