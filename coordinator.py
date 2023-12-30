@@ -22,9 +22,6 @@ logger = logging.getLogger('Coordinator')
 # Get a new world
 myworld = NetSecGame('env/netsecenv_conf.yaml')
 
-clients = {}
-
-
 __version__ = 'v0.1'
 
 async def start_tasks():
@@ -48,7 +45,7 @@ async def start_tasks():
     actions_queue = asyncio.Queue()
     answers_queue = asyncio.Queue()
 
-    logger.info('Starting the server listening for clients')
+    logger.info('Starting the server listening for agents')
     # start_server returns a coroutine, so 'await' runs this coroutine
     server = await asyncio.start_server(lambda r, w: handle_new_agent(r, w, actions_queue, answers_queue), host, port)
 
@@ -69,6 +66,12 @@ async def start_tasks():
         server.close()
         await server.wait_closed()
 
+def send_to_agent(message, answers_queue):
+    """
+    Send a message string to the agent
+    """
+    pass
+
 async def main_coordinator(actions_queue, answers_queue):
     """
     The main coordinator is in charge of everything exept the coomuncation with agents
@@ -80,31 +83,49 @@ async def main_coordinator(actions_queue, answers_queue):
     """
     try:
         global myworld
-        logger.info("Main coordinator running.")
-        while True:
-            logger.info("Coordinator waiting.")
-            # Read messages from the queue
-            item = await actions_queue.get()
-            client_addr, message = item
-            if message is not None:
-                # Access client information
-                logger.info(f'Main received from client {client_addr}: {message}')
+        world_env = myworld.get_world()
 
-                # Answer the agents
-                message_out = f"Message from Coordinator: I received your message {message}"
-                output_message_dict = {"agent": client_addr, "message": message_out}
-                output_message = json.dumps(output_message_dict)
-                await answers_queue.put(output_message)
+        logger.info("Main coordinator started.")
+
+        # First send them options
+        # - Start alone 
+        # - wait for other players
+        # - give a nick name
+        # - version
+
+        while True:
+
+            logger.info("Coordinator running.")
+            # Read messages from the queue
+            agent_addr, message = await actions_queue.get()
+            if message is not None:
+                logger.info(f"Coordinator received: {message}.")
+                # Convert message to dict
+                message_dict = json.loads(message)
+                if message_dict['message'] == 'New agent':
+                    # Send initial message
+                    logger.info("Coordinator sending welcome message.")
+                    output_message = '{"to_agent": "all", "status": {"#players": 1, "running": "True", "time": "0"}, "message": "Welcome to the NetSecEnv game! Insert your nickname."}'
+                    await answers_queue.put(output_message)
+                else:
+                    # Access agent information
+                    logger.info(f'Coordinator received from agent {agent_addr}: {message}')
+                    # Answer the agents
+                    message_out = f"I received your message {message}"
+                    output_message_dict = {"agent": agent_addr, "message": message_out}
+                    output_message = json.dumps(output_message_dict)
+                    await answers_queue.put(output_message)
             await asyncio.sleep(1)
     except KeyboardInterrupt:
         logger.debug('Terminating by KeyboardInterrupt')
         raise SystemExit
     except Exception as e:
         logger.error(f'Exception in main_coordinator(): {e}')
+        print(f'Exception in main_coordinator(): {e}')
 
 async def send_world(writer, world_json):
     """
-    Send the world to the client
+    Send the world to the agent
     """
     writer.write(bytes(str(world_json).encode()))
 
@@ -113,47 +134,46 @@ async def handle_new_agent(reader, writer, actions_queue, answers_queue):
     Function to deal with each new agent
     """
     try:
-        global myworld
         addr = writer.get_extra_info('peername')
-        logger.info(f"New client connected: {addr}")
+        logger.info(f"New agent connected: {addr}")
 
-        world_env = myworld.get_world()
+        # Tell the coordinator a new agent connected
+        message = '{"message": "New agent"}'
+        await actions_queue.put((addr, message))
 
-        # Mix the message with the world data
-        first_message = '{"message": "Shall we play a game?"}'
-        json_message = json.loads(first_message)
-        json_message.update(world_env)
-        message = json.dumps(json_message, indent=2)
+        # Get the message from the coordinator
+        message = await answers_queue.get()
+        if message is None:
+            message = '{"message":"Waiting..."}'
 
-        logger.info(f"Sending to client {addr}: {message}")
+        logger.info(f"Sending to agent {addr}: {message}")
         await send_world(writer, message)
         await writer.drain()
 
         while True:
+            data = await reader.read(100)
+            raw_message = data.decode().strip()
+
+            logger.info(f"Handler received from {addr}: {raw_message!r}")
+
+            # Build the correct message format for the coordinator
+            message_dict = {"message": str(raw_message)}
+            message_str = json.dumps(message_dict)
+
+            # Put the message and agent information into the queue
+            await actions_queue.put((addr, message_str))
+
+            # Read messages from the queue and send to the agent
+            message = await answers_queue.get()
+            if message is None:
+                message = '{"message":"Waiting..."}'
+
+            logger.info(f"Handle sending to agent {addr}: {message!r}")
+            await send_world(writer, message)
             try:
-                data = await reader.read(20)
-                message = data.decode()
-
-                logger.info(f"Handle received from {addr}: {message!r}")
-
-                # Put the message and client information into the queue
-                await actions_queue.put((addr, message))
-
-                # Read messages from the queue and send to the client
-                message = await answers_queue.get()
-                if message is None:
-                    message = '{"message":"Waiting..."}'
-
-                logger.info(f"Handle sending to client {addr}: {message!r}")
-                await send_world(writer, message)
-                try:
-                    await writer.drain()
-                except ConnectionResetError:
-                    logger.info(f'Connection lost. Client disconnected.')
-
-            except Exception as e:
-                logger.info(f"Client disconnected: {e}")
-                break
+                await writer.drain()
+            except ConnectionResetError:
+                logger.info(f'Connection lost. Agent disconnected.')
     except KeyboardInterrupt:
         logger.debug('Terminating by KeyboardInterrupt')
         raise SystemExit
