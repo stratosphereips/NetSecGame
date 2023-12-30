@@ -93,7 +93,7 @@ class ConfigParser():
         """
         Generic function to read the known data for any agent and goal of position
         """
-        known_data_conf = self.config['agents'][type_agent][type_data]['known_data']
+        known_data_conf = self.config['coordinator']['agents'][type_agent][type_data]['known_data']
         known_data = {}
         for ip, data in known_data_conf.items():
             try:
@@ -118,6 +118,7 @@ class ConfigParser():
         """
         Generic function to read the known services for any agent and goal of position
         """
+        return {}
         known_services_conf = self.config['agents'][type_agent][type_data]['known_services']
         known_services = {}
         for ip, data in known_services_conf.items():
@@ -142,7 +143,7 @@ class ConfigParser():
         """
         Generic function to read the known networks for any agent and goal of position
         """
-        known_networks_conf = self.config['agents'][type_agent][type_data]['known_networks']
+        known_networks_conf = self.config['coordinator']['agents'][type_agent][type_data]['known_networks']
         known_networks = set()
         for net in known_networks_conf:
             try:
@@ -158,7 +159,7 @@ class ConfigParser():
         """
         Generic function to read the known hosts for any agent and goal of position
         """
-        known_hosts_conf = self.config['agents'][type_agent][type_data]['known_hosts']
+        known_hosts_conf = self.config['coordinator']['agents'][type_agent][type_data]['known_hosts']
         known_hosts = set()
         for ip in known_hosts_conf:
             try:
@@ -172,7 +173,7 @@ class ConfigParser():
         """
         Generic function to read the controlled hosts for any agent and goal of position
         """
-        controlled_hosts_conf = self.config['agents'][type_agent][type_data]['controlled_hosts']
+        controlled_hosts_conf = self.config['coordinator']['agents'][type_agent][type_data]['controlled_hosts']
         controlled_hosts = set()
         for ip in controlled_hosts_conf:
             try:
@@ -186,61 +187,61 @@ class ConfigParser():
                     self.logger(f'Configuration problem with the known hosts')
         return controlled_hosts
 
-    def get_attacker_win_conditions(self):
+    def get_attackers_win_conditions(self):
         """
         Get the goal of the attacker 
         """
         # Read known nets
-        known_networks = self.read_agents_known_networks('attacker', 'goal')
+        known_networks = self.read_agents_known_networks('attackers', 'goal')
 
         # Read known hosts
-        known_hosts = self.read_agents_known_hosts('attacker', 'goal')
+        known_hosts = self.read_agents_known_hosts('attackers', 'goal')
 
         # Read controlled hosts
-        controlled_hosts = self.read_agents_controlled_hosts('attacker', 'goal')
+        controlled_hosts = self.read_agents_controlled_hosts('attackers', 'goal')
 
         # Goal services
-        known_services = self.read_agents_known_services('attacker', 'goal')
+        known_services = self.read_agents_known_services('attackers', 'goal')
 
         # Goal data
-        known_data = self.read_agents_known_data('attacker', 'goal')
+        known_data = self.read_agents_known_data('attackers', 'goal')
 
-        attacker_goal = {}
-        attacker_goal['known_networks'] = known_networks
-        attacker_goal['controlled_hosts'] = controlled_hosts
-        attacker_goal['known_hosts'] = known_hosts
-        attacker_goal['known_data'] = known_data
-        attacker_goal['known_services'] = known_services
+        attackers_goal = {}
+        attackers_goal['known_networks'] = known_networks
+        attackers_goal['controlled_hosts'] = controlled_hosts
+        attackers_goal['known_hosts'] = known_hosts
+        attackers_goal['known_data'] = known_data
+        attackers_goal['known_services'] = known_services
 
-        return attacker_goal
+        return attackers_goal
     
-    def get_attacker_start_position(self):
+    def get_attackers_start_position(self):
         """
-        Get the winning conditions of the attcker
+        Generate the starting position of an attacking agent
         """
         # Read known nets
-        known_networks = self.read_agents_known_networks('attacker', 'start_position')
+        known_networks = self.read_agents_known_networks('attackers', 'start_position')
 
         # Read known hosts
-        known_hosts = self.read_agents_known_hosts('attacker', 'start_position')
+        known_hosts = self.read_agents_known_hosts('attackers', 'start_position')
 
         # Read controlled hosts
-        controlled_hosts = self.read_agents_controlled_hosts('attacker', 'start_position')
+        controlled_hosts = self.read_agents_controlled_hosts('attackers', 'start_position')
 
         # Start services
-        known_services = self.read_agents_known_services('attacker', 'start_position')
+        known_services = self.read_agents_known_services('attackers', 'start_position')
 
         # Start data
-        known_data = self.read_agents_known_data('attacker', 'start_position')
+        known_data = self.read_agents_known_data('attackers', 'start_position')
 
-        attacker_start_position = {}
-        attacker_start_position['known_networks'] = known_networks
-        attacker_start_position['controlled_hosts'] = controlled_hosts
-        attacker_start_position['known_hosts'] = known_hosts
-        attacker_start_position['known_data'] = known_data
-        attacker_start_position['known_services'] = known_services
+        attackers_start_position = {}
+        attackers_start_position['known_networks'] = known_networks
+        attackers_start_position['controlled_hosts'] = controlled_hosts
+        attackers_start_position['known_hosts'] = known_hosts
+        attackers_start_position['known_data'] = known_data
+        attackers_start_position['known_services'] = known_services
 
-        return attacker_start_position
+        return attackers_start_position
 
     def get_max_steps(self):
         """
@@ -375,7 +376,7 @@ class ConfigParser():
         Get if the randomization should be done only once or at the beginning of every episode
         """
         try:
-            randomize_goal_every_episode = self.config["agents"]["attacker"]["goal"]["randomize_goal_every_episode"]
+            randomize_goal_every_episode = self.config["agents"]["attackers"]["goal"]["randomize_goal_every_episode"]
         except KeyError:
             # Option is not in the configuration - default to FALSE
             randomize_goal_every_episode = False
