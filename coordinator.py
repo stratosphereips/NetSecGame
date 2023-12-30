@@ -91,8 +91,10 @@ async def main_coordinator(actions_queue, answers_queue):
                 logger.info(f'Main received from client {client_addr}: {message}')
 
                 # Answer the agents
-                #output_message = "Message from Coordinator: Cus Bus"
-                #await queue.put(output_message)
+                message_out = f"Message from Coordinator: I received your message {message}"
+                output_message_dict = {"agent": client_addr, "message": message_out}
+                output_message = json.dumps(output_message_dict)
+                await answers_queue.put(output_message)
             await asyncio.sleep(1)
     except KeyboardInterrupt:
         logger.debug('Terminating by KeyboardInterrupt')
@@ -138,10 +140,9 @@ async def handle_new_agent(reader, writer, actions_queue, answers_queue):
                 await actions_queue.put((addr, message))
 
                 # Read messages from the queue and send to the client
-                #message = await queue.get()
-                message = None
+                message = await answers_queue.get()
                 if message is None:
-                    message = '{"message":"Sup?"}'
+                    message = '{"message":"Waiting..."}'
 
                 logger.info(f"Handle sending to client {addr}: {message!r}")
                 await send_world(writer, message)
