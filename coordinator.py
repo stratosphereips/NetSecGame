@@ -22,28 +22,39 @@ logger = logging.getLogger('Coordinator')
 # Get a new world
 myworld = NetSecGame('env/netsecenv_conf.yaml')
 
+clients = {}
+
+
 __version__ = 'v0.1'
 
 async def start_tasks():
     """
-    Start the coordinator main part
-    This is an asynchronous function that deals with both the synchronous and asynchronous code
+    High level funciton to start all the other asynchronous tasks and queues
+    - Reads the conf of the coordinator
+    - Creates queues 
+    - Start the main part of the coordinator
+    - Start a server that listens for agents
     """
-    # Read the configuration
-    logger.info('Starting all coordinator tasks')
+    logger.info('Starting all tasks')
 
+    # Read the configuration
+    logger.info('Read configuration of coordinator.')
     with open(args.configfile, 'r') as jfile:
         confjson = json.load(jfile)
-    logger.info('Configuration of coordination read.')
     host = confjson.get('host', None)
     port = confjson.get('port', None)
 
-    logger.info('Starting main coordinator tasks')
-    asyncio.create_task(main_coordinator())
+    # Create two asyncio queues
+    actions_queue = asyncio.Queue()
+    answers_queue = asyncio.Queue()
 
     logger.info('Starting the server listening for clients')
     # start_server returns a coroutine, so 'await' runs this coroutine
-    server = await asyncio.start_server(handle_new_client, host, port)
+    server = await asyncio.start_server(lambda r, w: handle_new_agent(r, w, actions_queue, answers_queue), host, port)
+
+    logger.info('Starting main coordinator tasks')
+    asyncio.create_task(main_coordinator(actions_queue, answers_queue))
+
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
     logger.info(f'\tServing on {addrs}')
 
@@ -58,7 +69,7 @@ async def start_tasks():
         server.close()
         await server.wait_closed()
 
-async def main_coordinator():
+async def main_coordinator(actions_queue, answers_queue):
     """
     The main coordinator is in charge of everything exept the coomuncation with agents
     Work includes:
@@ -67,10 +78,27 @@ async def main_coordinator():
     - Contacting the environment
     - Accesing the queue of answers
     """
-    global myworld
-    while True:
-        print("Asynchronous function running...")
-        await asyncio.sleep(2)
+    try:
+        global myworld
+        logger.info("Main coordinator running.")
+        while True:
+            logger.info("Coordinator waiting.")
+            # Read messages from the queue
+            item = await actions_queue.get()
+            client_addr, message = item
+            if message is not None:
+                # Access client information
+                logger.info(f'Main received from client {client_addr}: {message}')
+
+                # Answer the agents
+                #output_message = "Message from Coordinator: Cus Bus"
+                #await queue.put(output_message)
+            await asyncio.sleep(1)
+    except KeyboardInterrupt:
+        logger.debug('Terminating by KeyboardInterrupt')
+        raise SystemExit
+    except Exception as e:
+        logger.error(f'Exception in main_coordinator(): {e}')
 
 async def send_world(writer, world_json):
     """
@@ -78,9 +106,9 @@ async def send_world(writer, world_json):
     """
     writer.write(bytes(str(world_json).encode()))
 
-async def handle_new_client(reader, writer):
+async def handle_new_agent(reader, writer, actions_queue, answers_queue):
     """
-    Function to deal with each new client
+    Function to deal with each new agent
     """
     try:
         global myworld
@@ -104,12 +132,18 @@ async def handle_new_client(reader, writer):
                 data = await reader.read(20)
                 message = data.decode()
 
-                logger.info(f"Received {message!r} from {addr}")
+                logger.info(f"Handle received from {addr}: {message!r}")
 
-                #myworld.process_input_key(message)
+                # Put the message and client information into the queue
+                await actions_queue.put((addr, message))
 
-                message = '{"message":"Sup?"}'
-                logger.info(f"Sending to client {addr}: {message!r}")
+                # Read messages from the queue and send to the client
+                #message = await queue.get()
+                message = None
+                if message is None:
+                    message = '{"message":"Sup?"}'
+
+                logger.info(f"Handle sending to client {addr}: {message!r}")
                 await send_world(writer, message)
                 try:
                     await writer.drain()
@@ -123,7 +157,7 @@ async def handle_new_client(reader, writer):
         logger.debug('Terminating by KeyboardInterrupt')
         raise SystemExit
     except Exception as e:
-        logger.error(f'Exception in handle_new_client(): {e}')
+        logger.error(f'Exception in handle_new_agent(): {e}')
 
 
 if __name__ == '__main__':
