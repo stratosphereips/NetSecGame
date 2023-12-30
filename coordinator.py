@@ -115,7 +115,7 @@ async def main_coordinator(actions_queue, answers_queue):
                     output_message_dict = {"agent": agent_addr, "message": message_out}
                     output_message = json.dumps(output_message_dict)
                     await answers_queue.put(output_message)
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
     except KeyboardInterrupt:
         logger.debug('Terminating by KeyboardInterrupt')
         raise SystemExit
@@ -151,7 +151,7 @@ async def handle_new_agent(reader, writer, actions_queue, answers_queue):
         await writer.drain()
 
         while True:
-            data = await reader.read(100)
+            data = await reader.read(500)
             raw_message = data.decode().strip()
 
             logger.info(f"Handler received from {addr}: {raw_message!r}")
