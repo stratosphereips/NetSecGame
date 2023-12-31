@@ -117,8 +117,13 @@ async def main_coordinator(actions_queue, answers_queue):
     try:
         logger.info("Main coordinator started.")
         global myworld
-        myworld.reset()
-        world_env = myworld._current_state
+        env_observation = myworld.reset()
+        env_state_str = env_observation.state.as_json()
+        env_reward_str = str(env_observation.reward)
+        env_end_str = str(env_observation.done)
+        env_info_str = str(env_observation.info)
+        env_observation_dict = {'state': env_state_str, 'reward': env_reward_str, 'end': env_end_str, 'info': env_info_str}
+        env_observation_str = json.dumps(env_observation_dict)
 
         # Create dict of agents
         # {addr: Agent()}
@@ -180,7 +185,7 @@ async def main_coordinator(actions_queue, answers_queue):
                     side = action_dict['ChooseSide']
                     logger.info(f'Coordinator received from agent {agent_addr} its side: {side}')
                     if agent.choose_side(side):
-                        output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "state": world_env.as_json(), "message": f"Welcome {side}! May the force be with you always!"}
+                        output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "observation": env_observation_str, "message": f"Welcome {side}! May the force be with you always!"}
                     else:
                         output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "message": "That side does not exists."}
                     output_message_str = json.dumps(output_message_dict)
@@ -190,9 +195,8 @@ async def main_coordinator(actions_queue, answers_queue):
                     # Access agent information
                     logger.info(f'Coordinator received from agent {agent_addr}: {message}')
                     # Answer the agents
-                    #message_out = json.dumps(world_env)
-                    message_out = world_env.as_json()
-                    output_message_dict = {"agent": agent_addr, "message": message_out}
+                    message_out = env_observation_str
+                    output_message_dict = {"agent": agent_addr, "observation": env_observation_str, "message": ""}
                     output_message = json.dumps(output_message_dict)
                     await answers_queue.put(output_message)
             await asyncio.sleep(0.1)
