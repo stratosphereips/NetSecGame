@@ -7,10 +7,16 @@ import logging
 import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
+<<<<<<< HEAD
 from env.game_components import Action
+=======
+from env.game_components import GameState, Action, Observation
+from env.NetSecGame import NetSecGame
+>>>>>>> Add ActionProcessor class
 from pathlib import Path
 import os
 import time
+
 
 # Set the logging
 log_filename=Path('coordinator.log')
@@ -19,9 +25,49 @@ if not log_filename.parent.exists():
 logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.INFO)
 logger = logging.getLogger('Coordinator')
 
+class ActionProcessor:
+
+    def __init__(self, logger) -> None:
+        self._logger = logger
+        self._observations = {}
+        self._logger.info("Action Processor created")
+    
+    def process_message_from_agent(self, agent_id:int, action_string:str)->Action:
+        """
+        Method for processing message coming from the agent for the game engine.
+        input str JSON
+        output Action
+        """
+        self._logger.info(f"Processing message from agent {agent_id}: {action_string}")
+        a =  Action.from_json(action_string)
+        return a
+       
+
+        
+    
+    def generate_observation_for_agent(self, agent_id:int, new_observation:Observation)->str:
+        """
+        Method for processing a NetSecGame gamestate into an partial observation for an agent
+
+        Action.from
+        """
+        self._logger.info(f"Processing message to agent {agent_id}: {new_observation}")
+        self._observations[agent_id] = new_observation
+        env_state_str = new_observation.state.as_json()
+        env_reward_str = str(new_observation.reward)
+        env_end_str = str(new_observation.done)
+        env_info_str = str(new_observation.info)
+        env_observation_dict = {'state': env_state_str, 'reward': env_reward_str, 'end': env_end_str, 'info': env_info_str}
+        msg_for_agent = json.dumps(env_observation_dict)
+        return msg_for_agent
+
+
+
 # Get a new world
 #myworld = NetSecGame('env/netsecenv_conf.yaml')
 myworld = NetworkSecurityEnvironment('env/netsecenv_conf.yaml')
+
+action_processor = ActionProcessor(logger)
 
 __version__ = 'v0.1'
 
