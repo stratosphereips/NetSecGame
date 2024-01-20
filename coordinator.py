@@ -8,6 +8,7 @@ import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
 from env.NetSecGame import NetSecGame
+from env.game_components import Action
 from pathlib import Path
 import os
 import time
@@ -118,12 +119,12 @@ async def main_coordinator(actions_queue, answers_queue):
         logger.info("Main coordinator started.")
         global myworld
         env_observation = myworld.reset()
-        env_state_str = env_observation.state.as_json()
-        env_reward_str = str(env_observation.reward)
-        env_end_str = str(env_observation.done)
-        env_info_str = str(env_observation.info)
-        env_observation_dict = {'state': env_state_str, 'reward': env_reward_str, 'end': env_end_str, 'info': env_info_str}
-        env_observation_str = json.dumps(env_observation_dict)
+        env_state_dict = json.loads(env_observation.state.as_json())
+        env_reward = env_observation.reward
+        env_end = env_observation.end
+        env_info_dict = env_observation.info
+        env_observation_dict = {'state': env_state_dict, 'reward': env_reward, 'end': env_end, 'info': env_info_dict}
+        # env_observation_str = json.dumps(env_observation_dict)
 
         # Create dict of agents
         # {addr: Agent()}
@@ -138,12 +139,11 @@ async def main_coordinator(actions_queue, answers_queue):
                 # Convert message to dict
                 message_dict = json.loads(message)
 
-                action_str = message_dict['action']
                 try:
-                    action_dict = json.loads(action_str)
-                except json.decoder.JSONDecodeError:
-                    # Agent didn't send a JSON. Bad agent.
-                    action_dict = {}
+                    action_dict = message_dict['action']
+                except KeyError:
+                    # An action was not included
+                    raise
 
                 if 'Register_New_agent' in action_dict.keys():
                     # Create Agent if it doesnt exists
@@ -185,7 +185,7 @@ async def main_coordinator(actions_queue, answers_queue):
                     side = action_dict['ChooseSide']
                     logger.info(f'Coordinator received from agent {agent_addr} its side: {side}')
                     if agent.choose_side(side):
-                        output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "observation": env_observation_str, "message": f"Welcome {side}! May the force be with you always!"}
+                        output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "observation": env_observation_dict, "message": f"Welcome {side}! May the force be with you always!"}
                     else:
                         output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "message": "That side does not exists."}
                     output_message_str = json.dumps(output_message_dict)
@@ -194,9 +194,18 @@ async def main_coordinator(actions_queue, answers_queue):
                     # Process generic messages
                     # Access agent information
                     logger.info(f'Coordinator received from agent {agent_addr}: {message}')
+                    # Send the action to the env
+                    # Convet json action into object
+                    action_obj = Action.from_json(message)
+                    # Send action to world and receive answer from world
+                    # observation is a named tuple
+                    state, reward, end, info = myworld.step(action_obj)
+                    env_observation_dict = {'state': json.loads(state.as_json()), 'reward': reward, 'end': end, 'info': info}
+                    logger.info(f'Observation received from env: {env_observation_dict}')
+
+                    #message_out = env_observation_str
                     # Answer the agents
-                    message_out = env_observation_str
-                    output_message_dict = {"agent": agent_addr, "observation": env_observation_str, "message": ""}
+                    output_message_dict = {"agent": agent_addr, "observation": env_observation_dict, "message": ""}
                     output_message = json.dumps(output_message_dict)
                     await answers_queue.put(output_message)
             await asyncio.sleep(0.1)
@@ -204,7 +213,7 @@ async def main_coordinator(actions_queue, answers_queue):
         logger.debug('Terminating by KeyboardInterrupt')
         raise SystemExit
     except Exception as e:
-        logger.error(f'Exception in main_coordinator(): {e}')
+        logger.error(f'Exception in main_coordinator(): {e}.')
 
 async def send_world(writer, world_json):
     """
@@ -221,7 +230,7 @@ async def handle_new_agent(reader, writer, actions_queue, answers_queue):
         logger.info(f"New agent connected: {addr}")
 
         # Tell the coordinator a new agent connected
-        message_dict = {"action": '{"Register_New_agent": "True"}'}
+        message_dict = {"action": {"Register_New_agent": True}}
         message_str = json.dumps(message_dict)
         await actions_queue.put((addr, message_str))
 
@@ -241,7 +250,7 @@ async def handle_new_agent(reader, writer, actions_queue, answers_queue):
             logger.info(f"Handler received from {addr}: {raw_message!r}")
 
             # Build the correct message format for the coordinator
-            message_dict = {"action": raw_message}
+            message_dict = {"action": json.loads(raw_message)}
             message_str = json.dumps(message_dict)
 
             # Put the message and agent information into the queue
