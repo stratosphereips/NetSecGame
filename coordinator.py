@@ -7,7 +7,6 @@ import logging
 import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
-from env.NetSecGame import NetSecGame
 from env.game_components import Action
 from pathlib import Path
 import os
