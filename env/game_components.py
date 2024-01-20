@@ -160,27 +160,27 @@ class Action():
         """
         Classmethod to ccreate Action object from json string representation
         """
-        json_data = json.loads(json_string)
-        action_type = action_type=ActionType.from_string(json_data["action_type"])
+        parameters_dict = json.loads(json_string)['action']
+        action_type = ActionType.from_string(parameters_dict["action_type"])
         parameters = {}
-        json_data = json_data["parameters"]
+        parameters_dict = parameters_dict["parameters"]
         match action_type:
             case ActionType.ScanNetwork:
-                parameters = {"target_network": Network(json_data["target_network"]["ip"], json_data["target_network"]["mask"])}
+                parameters = {"target_network": Network(parameters_dict["target_network"]["ip"], parameters_dict["target_network"]["mask"])}
             case ActionType.FindServices:
-                parameters = {"target_host": IP(json_data["target_host"]["ip"])}
+                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"])}
             case ActionType.FindData:
-                parameters = {"target_host": IP(json_data["target_host"]["ip"])}
+                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"])}
             case ActionType.ExploitService:
-                parameters = {"target_host": IP(json_data["target_host"]["ip"]),
-                              "target_service": Service(json_data["target_service"]["name"],
-                                    json_data["target_service"]["type"],
-                                    json_data["target_service"]["version"],
-                                    json_data["target_service"]["is_local"])}
+                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
+                              "target_service": Service(parameters_dict["target_service"]["name"],
+                                    parameters_dict["target_service"]["type"],
+                                    parameters_dict["target_service"]["version"],
+                                    parameters_dict["target_service"]["is_local"])}
             case ActionType.ExfiltrateData:
-                parameters = {"target_host": IP(json_data["target_host"]["ip"]),
-                                "source_host": IP(json_data["source_host"]["ip"]),
-                              "data": Data(json_data["data"]["owner"],json_data["data"]["id"])}
+                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
+                                "source_host": IP(parameters_dict["source_host"]["ip"]),
+                              "data": Data(parameters_dict["data"]["owner"],parameters_dict["data"]["id"])}
             case _:
                 raise ValueError(f"Unknown Action type:{action_type}")
         action = Action(action_type=action_type, params=parameters)
@@ -294,11 +294,11 @@ class GameState():
 Observations are given when making a step in the environment.
  - observation: current state of the environment
  - reward: float  value with immediate reward for last step
- - done: boolean, True if the game ended. 
+ - end: boolean, True if the game ended. 
     No further interaction is possible (either terminal state or because of timeout)
  - info: dict, can contain additional information about the reason for ending
 """
-Observation = namedtuple("Observation", ["state", "reward", "done", "info"])
+Observation = namedtuple("Observation", ["state", "reward", "end", "info"])
 
 
 # Main is only used for testing
