@@ -129,8 +129,8 @@ class NetworkSecurityEnvironment(object):
         self._current_state = None
         self._current_goal = None
         self._actions_played = []
-        # If the game finished
-        self._done = None
+        # If the game finished. Start with False
+        self._end = False
         # If the episode/action was detected by the defender
         self._detected = None
         logger.info("Environment initialization finished")
@@ -150,12 +150,12 @@ class NetworkSecurityEnvironment(object):
         return self._step_counter
 
     @property
-    def done(self):
+    def end(self):
         """
         Property used to for indication that
         no more interaction can be done in te currect episode
         """
-        return self._done
+        return self._end
 
     @property
     def detected(self):
@@ -164,7 +164,7 @@ class NetworkSecurityEnvironment(object):
         the attacker has been detected.
         Only returns value when episode is over
         """
-        if self.done: #Only tell if detected when the interaction ends
+        if self.end: #Only tell if detected when the interaction ends
             return self._detected
         else: 
             return None
@@ -845,7 +845,7 @@ class NetworkSecurityEnvironment(object):
         and prepare for a new episode
         """
         logger.info('--- Reseting env to its initial state ---')
-        self._done = False
+        self._end = False
         self._step_counter = 0
         self._detected = False
         self._actions_played = []
@@ -874,8 +874,8 @@ class NetworkSecurityEnvironment(object):
         logger.info(f'Current state: {self._current_state}')
         initial_reward = 0
         info = {}
-        # An observation has inside ["state", "reward", "done", "info"]
-        return components.Observation(self._current_state, initial_reward, self._done, info)
+        # An observation has inside ["state", "reward", "end", "info"]
+        return components.Observation(self._current_state, initial_reward, self._end, info)
 
     def step(self, action:components.Action)-> components.Observation:
         """
@@ -883,7 +883,7 @@ class NetworkSecurityEnvironment(object):
         in: action
         out: observation of the state of the env
         """
-        if not self._done:
+        if not self._end:
             logger.info(f'Step taken: {self._step_counter}')
             logger.info(f"Agent's action: {action}")
             self._step_counter += 1
@@ -916,7 +916,7 @@ class NetworkSecurityEnvironment(object):
                 # Give reward
                 reward +=  self._goal_reward
                 # Game ended
-                self._done = True
+                self._end = True
                 reason = {'end_reason':'goal_reached'}
                 logger.info(f'Episode ended. Reason: {reason}')
 
@@ -932,7 +932,7 @@ class NetworkSecurityEnvironment(object):
                 reward += self._detection_reward
                 # Mark the environment as detected
                 self._detected = True
-                self._done = True
+                self._end = True
                 reason = {'end_reason':'detected'}
                 logger.info(f'Episode ended. Reason: {reason}')
 
@@ -944,15 +944,15 @@ class NetworkSecurityEnvironment(object):
             # 4. Check if the max number of steps of the game passed already
             # But if the agent already won in this last step, count the win
             if not is_goal and self._step_counter >= self._max_steps:
-                self._done = True
+                self._end = True
                 reason = {'end_reason':'max_steps'}
                 logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
 
             # Save the transition to the episode replay buffer if there is any
             if self._episode_replay_buffer is not None:
-                self._episode_replay_buffer.append((current_state, action, reward, next_state, self._done))
+                self._episode_replay_buffer.append((current_state, action, reward, next_state, self._end))
             # Return an observation
-            return components.Observation(self._current_state, reward, self._done, reason)
+            return components.Observation(self._current_state, reward, self._end, reason)
         else:
             logger.warning("Interaction over! No more steps can be made in the environment")
             raise ValueError("Interaction over! No more steps can be made in the environment")
