@@ -650,7 +650,7 @@ class NetworkSecurityEnvironment(object):
                 new_ips.add(ip)
             next_known_hosts = next_known_hosts.union(new_ips)
 
-        elif action.type == components.ActionType.FindServices:
+        elif action.type == components.ActionType.FindServices and actions_type=='netsecenv':
             #get services for current states in target_host
             logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
             found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
@@ -666,6 +666,40 @@ class NetworkSecurityEnvironment(object):
                     logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
                     next_known_hosts.add(action.parameters["target_host"])
                     next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+
+        elif action.type == components.ActionType.FindServices and actions_type=='realworld':
+            logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
+            nmap_file_xml = 'nmap-result.xml'
+            command = f"nmap -sT -n {action.parameters['target_host']} -oX {nmap_file_xml}"
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
+            # We ignore the result variable for now
+            tree = ET.parse(nmap_file_xml)
+            root = tree.getroot()
+            new_ips = set()
+
+            for host in root.findall('.//host'):
+                status_elem = host.find('./status')
+                if status_elem is not None and status_elem.get('state') == 'up':
+                    ip_elem = host.find('./address[@addrtype="ipv4"]')
+                    if ip_elem is not None:
+                        ip = ip_elem.get('addr')
+
+                    ports_elem = host.find('./ports')
+                    if ports_elem is not None:
+                        services = []
+                        for port in ports_elem.findall('./port[@protocol="tcp"][./state[@state="open"]]'):
+                            port_id = port.get('portid')
+                            protocol = port.get('protocol')
+                            service_elem = port.find('./service[@name]')
+                            service_name = service_elem.get('name') if service_elem is not None else "Unknown"
+                            service_name = f'{port_id}/{protocol}/{service_name}'
+                            service = components.Service(name=service_name, type=service_name, version='', is_local=False)
+                            services.add(service)
+
+            if action.parameters["target_host"] not in next_known_services.keys():
+                next_known_services[action.parameters["target_host"]] = found_services
+            else:
+                next_known_services[action.parameters["target_host"]] = next_known_services[action.parameters["target_host"]].union(found_services)
 
         elif action.type == components.ActionType.FindData:
             logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
