@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 from faker import Faker
 from utils.utils import ConfigParser, store_replay_buffer_in_csv
+import subprocess
+import xml.etree.ElementTree as ET
 
 
 # Set the logging
@@ -590,11 +592,15 @@ class NetworkSecurityEnvironment(object):
             logger.info("\t\t\tCan't get data in host. The host is not controlled.")
         return data
 
-    def _execute_action(self, current:components.GameState, action:components.Action)-> components.GameState:
+    def _execute_action(self, current:components.GameState, action:components.Action, actions_type='netsecenv')-> components.GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
         So in here all actions were already successful.
+
+        - actions_type: Define if the action is simulated in netsecenv or in the real world
+
+        Returns: A new GameState
         """
         next_known_networks = copy.deepcopy(current.known_networks)
         next_known_hosts = copy.deepcopy(current.known_hosts)
@@ -602,7 +608,7 @@ class NetworkSecurityEnvironment(object):
         next_known_services = copy.deepcopy(current.known_services)
         next_known_data = copy.deepcopy(current.known_data)
 
-        if action.type == components.ActionType.ScanNetwork:
+        if action.type == components.ActionType.ScanNetwork and actions_type == 'netsecenv':
             logger.info(f"\t\tScanning {action.parameters['target_network']}")
             new_ips = set()
             for ip in self._ip_to_hostname.keys(): #check if IP exists
@@ -610,6 +616,38 @@ class NetworkSecurityEnvironment(object):
                 if str(ip) in netaddr.IPNetwork(str(action.parameters["target_network"])):
                     logger.info(f"\t\t\tAdding {ip} to new_ips")
                     new_ips.add(ip)
+            next_known_hosts = next_known_hosts.union(new_ips)
+        elif action.type == components.ActionType.ScanNetwork and actions_type == 'realworld':
+            logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
+            nmap_file_xml = 'nmap-result.xml'
+            command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
+            # We ignore the result variable for now
+            tree = ET.parse(nmap_file_xml)
+            root = tree.getroot()
+            new_ips = set()
+            for host in root.findall('.//host'):
+                status_elem = host.find('./status')
+                if status_elem is not None:
+                    status = host.find('./status').get('state')
+                else:
+                    status = ""
+                ip_elem = host.find('./address[@addrtype="ipv4"]')
+                if ip_elem is not None:
+                    ip = components.IP(str(ip_elem.get('addr')))
+                else:
+                    ip = ""
+                
+                mac_elem = host.find('./address[@addrtype="mac"]')
+                if mac_elem is not None:
+                    mac_address = mac_elem.get('addr', '')
+                    vendor = mac_elem.get('vendor', '')
+                else:
+                    mac_address = ""
+                    vendor = ""
+
+                logger.info(f"\t\t\tAdding {ip} to new_ips")
+                new_ips.add(ip)
             next_known_hosts = next_known_hosts.union(new_ips)
 
         elif action.type == components.ActionType.FindServices:
@@ -877,7 +915,7 @@ class NetworkSecurityEnvironment(object):
         # An observation has inside ["state", "reward", "end", "info"]
         return components.Observation(self._current_state, initial_reward, self._end, info)
 
-    def step(self, action:components.Action)-> components.Observation:
+    def step(self, action:components.Action, action_type='netsecenv')-> components.Observation:
         """
         Take a step in the environment given an action
         in: action
@@ -890,13 +928,14 @@ class NetworkSecurityEnvironment(object):
             reason = {}
 
             # 1. Check if the action was successful or not
-            if random.random() <= action.type.default_success_p:
+            # But ignore the probability if it is played in the real world
+            if random.random() <= action.type.default_success_p or action_type == 'realworld':
                 self._actions_played.append(action)
                 # The action was successful
                 logger.info('\tAction sucessful')
 
                 # Get the next state given the action
-                next_state = self._execute_action(self._current_state, action)
+                next_state = self._execute_action(self._current_state, action, actions_type=action_type)
                 # Reard for making an action
                 reward = self._step_reward
             else:
