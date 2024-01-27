@@ -198,7 +198,7 @@ async def main_coordinator(actions_queue, answers_queue):
                     action_obj = Action.from_json(message)
                     # Send action to world and receive answer from world
                     # observation is a named tuple
-                    state, reward, end, info = myworld.step(action_obj)
+                    state, reward, end, info = myworld.step(action_obj, action_type='realworld')
                     env_observation_dict = {'state': json.loads(state.as_json()), 'reward': reward, 'end': end, 'info': info}
                     logger.info(f'Observation received from env: {env_observation_dict}')
 
