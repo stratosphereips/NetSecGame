@@ -116,6 +116,10 @@ async def main_coordinator(actions_queue, answers_queue):
     """
     try:
         logger.info("Main coordinator started.")
+        with open(args.configfile, 'r') as jfile:
+            confjson = json.load(jfile)
+        world_type = confjson.get('world_type', None)
+
         global myworld
         env_observation = myworld.reset()
         env_state_dict = json.loads(env_observation.state.as_json())
@@ -198,7 +202,7 @@ async def main_coordinator(actions_queue, answers_queue):
                     action_obj = Action.from_json(message)
                     # Send action to world and receive answer from world
                     # observation is a named tuple
-                    state, reward, end, info = myworld.step(action_obj, action_type='realworld')
+                    state, reward, end, info = myworld.step(action_obj, action_type=world_type)
                     env_observation_dict = {'state': json.loads(state.as_json()), 'reward': reward, 'end': end, 'info': info}
                     logger.info(f'Observation received from env: {env_observation_dict}')
 
