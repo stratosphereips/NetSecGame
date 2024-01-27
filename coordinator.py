@@ -20,7 +20,7 @@ logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(n
 logger = logging.getLogger('Coordinator')
 
 # Get a new world
-#myworld = NetSecGame('env/netsecenv_conf.yaml')
+# NetSecEnv is Stratosphere's network security environment. Simple and working.
 myworld = NetworkSecurityEnvironment('env/netsecenv_conf.yaml')
 
 __version__ = 'v0.1'
