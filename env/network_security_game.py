@@ -656,10 +656,7 @@ class NetworkSecurityEnvironment(object):
             found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
             logger.info(f"\t\t\tFound {len(found_services)}: {found_services}")
             if len(found_services) > 0:
-                if action.parameters["target_host"] not in next_known_services.keys():
-                    next_known_services[action.parameters["target_host"]] = found_services
-                else:
-                    next_known_services[action.parameters["target_host"]] = next_known_services[action.parameters["target_host"]].union(found_services)
+                next_known_services[action.parameters["target_host"]] = found_services
 
                 #if host was not known, add it to the known_hosts ONLY if there are some found services
                 if action.parameters["target_host"] not in next_known_hosts:
@@ -677,6 +674,11 @@ class NetworkSecurityEnvironment(object):
             root = tree.getroot()
             new_ips = set()
 
+            # service_dict is a dict. Key=IP(), values= set of Service() objects
+            found_services = set()
+            ip = ''
+            port_id = ''
+            protocol = ''
             for host in root.findall('.//host'):
                 status_elem = host.find('./status')
                 if status_elem is not None and status_elem.get('state') == 'up':
@@ -686,20 +688,24 @@ class NetworkSecurityEnvironment(object):
 
                     ports_elem = host.find('./ports')
                     if ports_elem is not None:
-                        services = []
-                        for port in ports_elem.findall('./port[@protocol="tcp"][./state[@state="open"]]'):
-                            port_id = port.get('portid')
-                            protocol = port.get('protocol')
-                            service_elem = port.find('./service[@name]')
-                            service_name = service_elem.get('name') if service_elem is not None else "Unknown"
-                            service_name = f'{port_id}/{protocol}/{service_name}'
-                            service = components.Service(name=service_name, type=service_name, version='', is_local=False)
-                            services.add(service)
+                        for port in root.findall('.//port[@protocol="tcp"]'):
+                            state_elem = port.find('./state[@state="open"]')
+                            if state_elem is not None:
+                                port_id = port.get('portid')
+                                protocol = port.get('protocol')
+                                service_elem = port.find('./service[@name]')
+                                service_name = service_elem.get('name') if service_elem is not None else "Unknown"
+                                service_fullname = f'{port_id}/{protocol}/{service_name}'
+                                service = components.Service(name=service_fullname, type=service_name, version='', is_local=False)
+                                found_services.add(service)
 
-            if action.parameters["target_host"] not in next_known_services.keys():
-                next_known_services[action.parameters["target_host"]] = found_services
-            else:
-                next_known_services[action.parameters["target_host"]] = next_known_services[action.parameters["target_host"]].union(found_services)
+            next_known_services[action.parameters["target_host"]] = found_services
+            
+            # If host was not known, add it to the known_hosts and known_networks ONLY if there are some found services
+            if action.parameters["target_host"] not in next_known_hosts:
+                logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
+                next_known_hosts.add(action.parameters["target_host"])
+                next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
 
         elif action.type == components.ActionType.FindData:
             logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
