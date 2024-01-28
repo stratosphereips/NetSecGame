@@ -62,6 +62,8 @@ There are currently implemented five types of actions:
 | Find Data            | Runs code to discover data either in a given service or in a controlled host | target IP, target service | extends 'known_data' with host:data pairs        |
 | Exfiltrate data      | Runds code to move data from host to host                                | source IP, data, target IP  | extends 'known_data with "target:data" pair      |
 
+- The action FindServices finds the new services in a host. If in a subsequent call to FindServices there are less services, they completely replace the list of previous services found. That is, each list of services is the final one and no memory is retained of previous open services.
+
 ### Assumption and Conditions for Actions
 1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
 2. The `Find Data` action finds all the available data in the host if successful.
