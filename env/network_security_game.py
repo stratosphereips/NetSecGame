@@ -699,7 +699,7 @@ class NetworkSecurityEnvironment(object):
                                 service = components.Service(name=service_fullname, type=service_name, version='', is_local=False)
                                 found_services.add(service)
 
-            next_known_services[action.parameters["target_host"]] = found_services
+                    next_known_services[action.parameters["target_host"]] = found_services
             
             # If host was not known, add it to the known_hosts and known_networks ONLY if there are some found services
             if action.parameters["target_host"] not in next_known_hosts:
