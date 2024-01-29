@@ -7,12 +7,8 @@ import logging
 import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
-<<<<<<< HEAD
-from env.game_components import Action
-=======
 from env.game_components import GameState, Action, Observation
 from env.NetSecGame import NetSecGame
->>>>>>> Add ActionProcessor class
 from pathlib import Path
 import os
 import time
@@ -41,9 +37,7 @@ class ActionProcessor:
         self._logger.info(f"Processing message from agent {agent_id}: {action_string}")
         a =  Action.from_json(action_string)
         return a
-       
-
-        
+               
     
     def generate_observation_for_agent(self, agent_id:int, new_observation:Observation)->str:
         """
@@ -54,10 +48,8 @@ class ActionProcessor:
         self._logger.info(f"Processing message to agent {agent_id}: {new_observation}")
         self._observations[agent_id] = new_observation
         env_state_str = new_observation.state.as_json()
-        env_reward_str = str(new_observation.reward)
-        env_end_str = str(new_observation.done)
         env_info_str = str(new_observation.info)
-        env_observation_dict = {'state': env_state_str, 'reward': env_reward_str, 'end': env_end_str, 'info': env_info_str}
+        env_observation_dict = {'state': env_state_str, 'reward': new_observation.reward, 'end': new_observation.done, 'info': env_info_str}
         msg_for_agent = json.dumps(env_observation_dict)
         return msg_for_agent
 
@@ -164,12 +156,10 @@ async def main_coordinator(actions_queue, answers_queue):
         logger.info("Main coordinator started.")
         global myworld
         env_observation = myworld.reset()
-        env_state_dict = json.loads(env_observation.state.as_json())
-        env_reward = env_observation.reward
-        env_end = env_observation.end
-        env_info_dict = env_observation.info
-        env_observation_dict = {'state': env_state_dict, 'reward': env_reward, 'end': env_end, 'info': env_info_dict}
-        # env_observation_str = json.dumps(env_observation_dict)
+        env_state_str = env_observation.state.as_json()
+        env_info_str = str(env_observation.info)
+        env_observation_dict = {'state': env_state_str, 'reward': env_observation.reward, 'end': env_observation.done, 'info': env_info_str}
+        env_observation_str = json.dumps(env_observation_dict)
 
         # Create dict of agents
         # {addr: Agent()}
