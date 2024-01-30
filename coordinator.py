@@ -24,7 +24,7 @@ logger = logging.getLogger('Coordinator')
 class ActionProcessor:
 
     def __init__(self, logger) -> None:
-        self._logger = logger
+        self._logger = logging.getLogger('Coordinator-ActionProcessor')
         self._observations = {}
         self._logger.info("Action Processor created")
     
@@ -34,7 +34,7 @@ class ActionProcessor:
         input str JSON
         output Action
         """
-        self._logger.info(f"Processing message from agent {agent_id}: {action_string}")
+        self._logger.debug(f"Processing message from agent {agent_id}: {action_string}")
         a =  Action.from_json(action_string)
         return a
                
@@ -45,15 +45,13 @@ class ActionProcessor:
 
         Action.from
         """
-        self._logger.info(f"Processing message to agent {agent_id}: {new_observation}")
+        self._logger.debug(f"Processing message to agent {agent_id}: {new_observation}")
         self._observations[agent_id] = new_observation
         env_state_str = new_observation.state.as_json()
         env_info_str = str(new_observation.info)
         env_observation_dict = {'state': env_state_str, 'reward': new_observation.reward, 'end': new_observation.done, 'info': env_info_str}
         msg_for_agent = json.dumps(env_observation_dict)
         return msg_for_agent
-
-
 
 # Get a new world
 #myworld = NetSecGame('env/netsecenv_conf.yaml')
@@ -170,7 +168,7 @@ async def main_coordinator(actions_queue, answers_queue):
             # Read messages from the queue
             agent_addr, message = await actions_queue.get()
             if message is not None:
-                logger.info(f"Coordinator received: {message}.")
+                logger.debug(f"Coordinator received: {message}.")
                 # Convert message to dict
                 message_dict = json.loads(message)
 
@@ -223,6 +221,18 @@ async def main_coordinator(actions_queue, answers_queue):
                         output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "observation": env_observation_dict, "message": f"Welcome {side}! May the force be with you always!"}
                     else:
                         output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "message": "That side does not exists."}
+                    output_message_str = json.dumps(output_message_dict)
+                    await answers_queue.put(output_message_str)
+                elif "Reset" in action_dict.keys():
+                    logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
+                    # ADD THIS TO COORDINATOR
+                    new_env_observation = myworld.reset()
+                    new_env_state_str = new_env_observation.state.as_json()
+                    new_env_info_str = str(new_env_observation.info)
+
+                    new_env_observation_dict = {'state': new_env_state_str, 'reward': new_env_observation.reward, 'end': new_env_observation.done, 'info': new_env_info_str}
+                    new_env_observation_str = json.dumps(new_env_observation_dict)
+                    output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "observation": new_env_observation_str,"message": "Resetting Game and starting again."}
                     output_message_str = json.dumps(output_message_dict)
                     await answers_queue.put(output_message_str)
                 else:
