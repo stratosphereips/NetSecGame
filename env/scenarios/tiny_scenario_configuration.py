@@ -54,34 +54,6 @@ smb_server = cyst_cfg.NodeConfig(
             ]
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="remote desktop service",
-            owner="Local system",
-            version="10.0.19041",
-            local=False,
-            access_level=cyst_cfg.AccessLevel.ELEVATED,
-            parameters=[
-                (cyst_cfg.ServiceParameter.ENABLE_SESSION, True),
-                (cyst_cfg.ServiceParameter.SESSION_ACCESS_LEVEL, cyst_cfg.AccessLevel.LIMITED)
-            ],
-            authentication_providers=[],
-            access_schemes=[
-                cyst_cfg.AccessSchemeConfig(
-                    authentication_providers=["windows login"],
-                    authorization_domain=cyst_cfg.AuthorizationDomainConfig(
-                        type=cyst_cfg.AuthorizationDomainType.LOCAL,
-                        authorizations=[
-                            cyst_cfg.AuthorizationConfig("User1", cyst_cfg.AccessLevel.LIMITED),
-                            cyst_cfg.AuthorizationConfig("User2", cyst_cfg.AccessLevel.LIMITED),
-                            cyst_cfg.AuthorizationConfig("User3", cyst_cfg.AccessLevel.LIMITED),
-                            cyst_cfg.AuthorizationConfig("User4", cyst_cfg.AccessLevel.LIMITED),
-                            cyst_cfg.AuthorizationConfig("User5", cyst_cfg.AccessLevel.LIMITED),
-                            cyst_cfg.AuthorizationConfig("Administrator", cyst_cfg.AccessLevel.ELEVATED)
-                        ]
-                    )
-                )
-            ]
-        ),
-        cyst_cfg.PassiveServiceConfig(
             type="windows login",
             owner="Administrator",
             version="10.0.19041",
