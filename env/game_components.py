@@ -19,7 +19,6 @@ class Service():
     version: str
     is_local: bool
 
-
 """
 IP represents the ip address object in the NetSecGame
 """
@@ -69,7 +68,6 @@ class Data():
     owner: str
     id: str
 
-
 class ActionType(enum.Enum):
     """
     ActionType represents generic action for attacker in the game. Each transition has a default probability
@@ -80,6 +78,8 @@ class ActionType(enum.Enum):
     - FindData
     - ExploitService
     - ExfiltrateData
+    - JoinGame
+    - QuitGame
     """
 
     #override the __new__ method to enable multiple parameters
@@ -106,6 +106,10 @@ class ActionType(enum.Enum):
                 return ActionType.FindData
             case "ActionType.ExfiltrateData":
                 return ActionType.ExfiltrateData
+            case "ActionType.JoinGame":
+                return ActionType.JoinGame
+            case "ActionType.QuitGame":
+                return ActionType.QuitGame
             case _:
                 raise ValueError("Uknown Action Type")
 
@@ -115,7 +119,8 @@ class ActionType(enum.Enum):
     FindData = 0.8, 0.1
     ExploitService = 0.7, 0.4
     ExfiltrateData = 0.8, 0.1
-
+    JoinGame = 1,0
+    QuitGame = 1,0
 
 #Actions
 class Action():
