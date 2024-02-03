@@ -8,7 +8,6 @@ import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import GameState, Action, Observation
-from env.NetSecGame import NetSecGame
 from pathlib import Path
 import os
 import time
@@ -291,27 +290,31 @@ async def handle_new_agent(reader, writer, actions_queue, answers_queue):
         while True:
             data = await reader.read(500)
             raw_message = data.decode().strip()
+            if len(raw_message):
+                logger.info(f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}")
 
-            logger.info(f"Handler received from {addr}: {raw_message!r}")
+                # Build the correct message format for the coordinator
+                message_dict = {"action": raw_message}
+                message_str = json.dumps(message_dict)
 
-            # Build the correct message format for the coordinator
-            message_dict = {"action": json.loads(raw_message)}
-            message_str = json.dumps(message_dict)
+                # Put the message and agent information into the queue
+                await actions_queue.put((addr, message_str))
 
-            # Put the message and agent information into the queue
-            await actions_queue.put((addr, message_str))
+                # Read messages from the queue and send to the agent
+                message = await answers_queue.get()
+                if message is None:
+                    message = '{"message":"Waiting..."}'
 
-            # Read messages from the queue and send to the agent
-            message = await answers_queue.get()
-            if message is None:
-                message = '{"message":"Waiting..."}'
-
-            logger.info(f"Handle sending to agent {addr}: {message!r}")
-            await send_world(writer, message)
-            try:
-                await writer.drain()
-            except ConnectionResetError:
-                logger.info(f'Connection lost. Agent disconnected.')
+                logger.info(f"Handle sending to agent {addr}: {message!r}")
+                await send_world(writer, message)
+                try:
+                    await writer.drain()
+                except ConnectionResetError:
+                    logger.info(f'Connection lost. Agent disconnected.')
+            else:
+                logger.info(f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}")
+                logger.info(f"\tEmpty message, terminating agent on address {addr}")
+                break
     except KeyboardInterrupt:
         logger.debug('Terminating by KeyboardInterrupt')
         raise SystemExit
