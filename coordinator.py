@@ -7,7 +7,7 @@ import logging
 import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
-from env.game_components import GameState, Action, Observation, ActionType
+from env.game_components import GameState, Action, Observation, ActionType, GameStatus
 from pathlib import Path
 from enum import Flag
 import os
@@ -53,10 +53,6 @@ class ActionProcessor:
         msg_for_agent = json.dumps(env_observation_dict)
         return msg_for_agent
 
-class GameStatus(Flag):
-    OK = 200
-    CREATED = 201
-    BAD_REQUEST = 400
 
 
 # Get a new world
