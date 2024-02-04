@@ -292,7 +292,7 @@ async def main_coordinator_new(actions_queue, answers_queue, ALLOWED_ROLES=['Att
             # Read messages from the queue
             agent_addr, message = await actions_queue.get()
             if message is not None:
-                logger.debug(f"Coordinator received: {message}.")
+                logger.info(f"Coordinator received: {message}.")
                 
                 # Convert message to dict
                 try:
@@ -301,13 +301,15 @@ async def main_coordinator_new(actions_queue, answers_queue, ALLOWED_ROLES=['Att
                         case ActionType.JoinGame:
                             if agent_addr not in agents:
                                 logger.info(f"Creating new agent for {agent_addr}.")
-                                if action.parameters["agent_role"] in  ALLOWED_ROLES:
-                                    logger.info(f"\tAgent {action.parameters['agent_name']}, registred as {action.parameters['agent_role']}")
+                                agent_name = action.parameters["agent_info"]["name"]
+                                agent_role = action.parameters["agent_info"]["role"]
+                                if action.parameters["agent_info"]["role"] in  ALLOWED_ROLES:
+                                    logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
                                     agents[agent_addr] = action.parameters
-                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.CREATED), "observation": env_observation_str, "message": f"Welcome {action.parameters['agent_name']}, registred as {action.parameters['agent_role']}"}
+                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.CREATED), "observation": env_observation_str, "message": f"Welcome {agent_name}, registred as {agent_role}"}
                                 else:
-                                    logger.info(f"\tError in regitration, unknown agent role: {action.parameters['agent_role']}!")
-                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.BAD_REQUEST), "message": f"Incorrect agent_role {action.parameters['agent_role']}"}
+                                    logger.info(f"\tError in regitration, unknown agent role: {agent_role}!")
+                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.BAD_REQUEST), "message": f"Incorrect agent_role {agent_role}"}
                             else:
                                 logger.info(f"\tError in regitration, unknown agent already exists!")
                                 output_message_dict = {"to_agent": {agent_addr}, "status": str(GameStatus.BAD_REQUEST), "message": "Agent already exists."}
@@ -375,12 +377,8 @@ async def handle_new_agent_new(reader, writer, actions_queue, answers_queue):
             if len(raw_message):
                 logger.info(f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}")
 
-                # Build the correct message format for the coordinator
-                message_dict = {"action": raw_message}
-                message_str = json.dumps(message_dict)
-
                 # Put the message and agent information into the queue
-                await actions_queue.put((addr, message_str))
+                await actions_queue.put((addr, raw_message))
 
                 # Read messages from the queue and send to the agent
                 message = await answers_queue.get()
