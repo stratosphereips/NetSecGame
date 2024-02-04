@@ -146,7 +146,7 @@ class Action():
     - ExploitService {"target_host": IP object, "target_service": Service object, "source_host": IP object}
     - ExfiltrateData {"target_host": IP object, "source_host": IP object, "data": Data object}
     """
-    def __init__(self, action_type: ActionType, params: dict) -> None:
+    def __init__(self, action_type: ActionType, params: dict={}) -> None:
         self._type = action_type
         self._parameters = params
 
