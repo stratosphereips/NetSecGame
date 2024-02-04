@@ -7,9 +7,8 @@ import logging
 import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
-from env.game_components import GameState, Action, Observation, ActionType, GameStatus
+from env.game_components import Action, Observation, ActionType, GameStatus
 from pathlib import Path
-from enum import Flag
 import os
 import time
 
@@ -53,7 +52,6 @@ class ActionProcessor:
 
 
 # Get a new world
-#myworld = NetSecGame('env/netsecenv_conf.yaml')
 myworld = NetworkSecurityEnvironment('env/netsecenv_conf.yaml')
 
 action_processor = ActionProcessor(logger)
@@ -61,6 +59,9 @@ action_processor = ActionProcessor(logger)
 __version__ = 'v0.2'
 
 def observation_to_str(observation:Observation)-> str:
+    """
+    Generates JSON string representation of a given Observation object.
+    """
     state_str = observation.state.as_json()
     observation_dict = {
         'state': state_str,
@@ -289,12 +290,11 @@ async def main_coordinator(actions_queue, answers_queue, ALLOWED_ROLES=['Attacke
                         raise NotImplementedError
                     case ActionType.ResetGame:
                         logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
-                        # ADD THIS TO COORDINATOR
                         new_env_observation = myworld.reset()
                         agent_observation_str = action_processor.generate_observation_msg_for_agent(agent_addr, new_env_observation)
                         output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.OK), "observation": agent_observation_str, "message": "Resetting Game and starting again."}
                     case _:
-                        # Process generic messages
+                        # Process ALL other ActionTypes
                         # Access agent information
                         logger.info(f'Coordinator received from agent {agent_addr}: {action}')
                         # Process the message
@@ -307,10 +307,10 @@ async def main_coordinator(actions_queue, answers_queue, ALLOWED_ROLES=['Attacke
                 try:
                     # Convert message into string representation
                     output_message = json.dumps(output_message_dict)
-                    # Send to anwer_queue
                 except Exception as e:
                     logger.error(f"Error when converting msg to Json:{e}")
                     raise e
+                # Send to anwer_queue
                 await answers_queue.put(output_message)
             await asyncio.sleep(0.01)
     except KeyboardInterrupt:
@@ -338,15 +338,13 @@ async def handle_new_agent(reader, writer, actions_queue, answers_queue):
 
                 # Read messages from the queue and send to the agent
                 message = await answers_queue.get()
-                if message is None:
-                    message = '{"message":"Waiting..."}'
-
-                logger.info(f"Handle sending to agent {addr}: {message!r}")
-                await send_world(writer, message)
-                try:
-                    await writer.drain()
-                except ConnectionResetError:
-                    logger.info(f'Connection lost. Agent disconnected.')
+                if message:
+                    logger.info(f"Handle sending to agent {addr}: {message!r}")
+                    await send_data_to_agent(writer, message)
+                    try:
+                        await writer.drain()
+                    except ConnectionResetError:
+                        logger.info(f'Connection lost. Agent disconnected.')
             else:
                 logger.info(f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}")
                 logger.info(f"\tEmpty message, terminating agent on address {addr}")
@@ -357,11 +355,11 @@ async def handle_new_agent(reader, writer, actions_queue, answers_queue):
     except Exception as e:
         logger.error(f'Exception in handle_new_agent(): {e}')
 
-async def send_world(writer, world_json):
+async def send_data_to_agent(writer, data:str)->None:
     """
     Send the world to the agent
     """
-    writer.write(bytes(str(world_json).encode()))
+    writer.write(bytes(str(data).encode()))
 
 async def handle_new_agent_old(reader, writer, actions_queue, answers_queue):
     """
@@ -383,7 +381,7 @@ async def handle_new_agent_old(reader, writer, actions_queue, answers_queue):
             message = '{"message":"Waiting..."}'
 
         logger.info(f"Sending to agent {addr}: {message}")
-        await send_world(writer, message)
+        await send_data_to_agent(writer, message)
         await writer.drain()
 
         while True:
@@ -405,7 +403,7 @@ async def handle_new_agent_old(reader, writer, actions_queue, answers_queue):
                     message = '{"message":"Waiting..."}'
 
                 logger.info(f"Handle sending to agent {addr}: {message!r}")
-                await send_world(writer, message)
+                await send_data_to_agent(writer, message)
                 try:
                     await writer.drain()
                 except ConnectionResetError:
@@ -419,7 +417,6 @@ async def handle_new_agent_old(reader, writer, actions_queue, answers_queue):
         raise SystemExit
     except Exception as e:
         logger.error(f'Exception in handle_new_agent(): {e}')
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
