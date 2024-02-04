@@ -7,8 +7,9 @@ import logging
 import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
-from env.game_components import GameState, Action, Observation
+from env.game_components import GameState, Action, Observation, ActionType
 from pathlib import Path
+from enum import Flag
 import os
 import time
 
@@ -52,6 +53,12 @@ class ActionProcessor:
         msg_for_agent = json.dumps(env_observation_dict)
         return msg_for_agent
 
+class GameStatus(Flag):
+    OK = 200
+    CREATED = 201
+    BAD_REQUEST = 400
+
+
 # Get a new world
 #myworld = NetSecGame('env/netsecenv_conf.yaml')
 myworld = NetworkSecurityEnvironment('env/netsecenv_conf.yaml')
@@ -83,10 +90,10 @@ async def start_tasks():
 
     logger.info('Starting the server listening for agents')
     # start_server returns a coroutine, so 'await' runs this coroutine
-    server = await asyncio.start_server(lambda r, w: handle_new_agent(r, w, actions_queue, answers_queue), host, port)
+    server = await asyncio.start_server(lambda r, w: handle_new_agent_new(r, w, actions_queue, answers_queue), host, port)
 
     logger.info('Starting main coordinator tasks')
-    asyncio.create_task(main_coordinator(actions_queue, answers_queue))
+    asyncio.create_task(main_coordinator_new(actions_queue, answers_queue))
 
     addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
     logger.info(f'\tServing on {addrs}')
@@ -163,14 +170,17 @@ async def main_coordinator(actions_queue, answers_queue):
         agents = {}
 
         while True:
-            logger.info("Coordinator running.")
+            logger.debug("Coordinator running.")
             # Read messages from the queue
             agent_addr, message = await actions_queue.get()
             if message is not None:
                 logger.debug(f"Coordinator received: {message}.")
+                
                 # Convert message to dict
                 message_dict = json.loads(message)
 
+                action_str = message_dict['action']
+                
                 try:
                     action_dict = message_dict['action']
                 except KeyError:
@@ -222,6 +232,7 @@ async def main_coordinator(actions_queue, answers_queue):
                         output_message_dict = {"to_agent": agent_addr, "status": {"#players": 1, "running": "True", "time": "1"}, "message": "That side does not exists."}
                     output_message_str = json.dumps(output_message_dict)
                     await answers_queue.put(output_message_str)
+                
                 elif "Reset" in action_dict.keys():
                     logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
                     # ADD THIS TO COORDINATOR
@@ -258,6 +269,143 @@ async def main_coordinator(actions_queue, answers_queue):
         raise SystemExit
     except Exception as e:
         logger.error(f'Exception in main_coordinator(): {e}.')
+
+async def main_coordinator_new(actions_queue, answers_queue, ALLOWED_ROLES=['Attacker', 'Defender', 'Human']):
+    """
+    The main coordinator is in charge of everything exept the coomuncation with agents
+    Work includes:
+    - Accesing the queue of actions
+    - Checking the actions done
+    - Contacting the environment
+    - Accesing the queue of answers
+    - With the agents, offer to register, put a nick, select a side, and start playing, wait for others or see status
+    """
+    try:
+        logger.info("Main coordinator started.")
+        global myworld
+        env_observation = myworld.reset()
+        env_state_str = env_observation.state.as_json()
+        env_info_str = str(env_observation.info)
+        env_observation_dict = {'state': env_state_str, 'reward': env_observation.reward, 'end': env_observation.done, 'info': env_info_str}
+        env_observation_str = json.dumps(env_observation_dict)
+
+        agents = {}
+
+        while True:
+            logger.debug("Coordinator running.")
+            # Read messages from the queue
+            agent_addr, message = await actions_queue.get()
+            if message is not None:
+                logger.debug(f"Coordinator received: {message}.")
+                
+                # Convert message to dict
+                try:
+                    action = Action.from_json(message)
+                    match action.type:
+                        case ActionType.JoinGame:
+                            if agent_addr not in agents:
+                                logger.info(f"Creating new agent for {agent_addr}.")
+                                if action.parameters["agent_role"] in  ALLOWED_ROLES:
+                                    logger.info(f"\tAgent {action.parameters['agent_name']}, registred as {action.parameters['agent_role']}")
+                                    agents[agent_addr] = action.parameters
+                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.CREATED), "observation": env_observation_str, "message": f"Welcome {action.parameters['agent_name']}, registred as {action.parameters['agent_role']}"}
+                                else:
+                                    logger.info(f"\tError in regitration, unknown agent role: {action.parameters['agent_role']}!")
+                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.BAD_REQUEST), "message": f"Incorrect agent_role {action.parameters['agent_role']}"}
+                            else:
+                                logger.info(f"\tError in regitration, unknown agent already exists!")
+                                output_message_dict = {"to_agent": {agent_addr}, "status": str(GameStatus.BAD_REQUEST), "message": "Agent already exists."}
+                        case ActionType.QuitGame:
+                            raise NotImplementedError
+                        case ActionType.ResetGame:
+                            logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
+                            # ADD THIS TO COORDINATOR
+                            new_env_observation = myworld.reset()
+                            new_env_state_str = new_env_observation.state.as_json()
+                            new_env_info_str = str(new_env_observation.info)
+
+                            new_env_observation_dict = {'state': new_env_state_str, 'reward': new_env_observation.reward, 'end': new_env_observation.done, 'info': new_env_info_str}
+                            new_env_observation_str = json.dumps(new_env_observation_dict)
+                            output_message_dict = {"to_agent": agent_addr, "status": GameStatus.OK, "observation": new_env_observation_str,"message": "Resetting Game and starting again."}
+                        case _:
+                            # Process generic messages
+                            # Access agent information
+                            logger.info(f'Coordinator received from agent {agent_addr}: {action}')
+                            # Process the message
+                            action_for_env = action_processor.process_message_from_agent(agent_addr, action)
+                            new_observation = myworld.step(action_for_env)
+                            observation_for_agent = action_processor.generate_observation_for_agent(agent_addr,new_observation)
+                            # send the action to the env and get new gamestate
+                            # Answer the agents
+                            output_message_dict = {"agent": agent_addr, "observation": observation_for_agent, "status": GameStatus.OK}
+                    # Convert message into string representation
+                    output_message = json.dumps(output_message_dict)
+                    # Send to anwer_queue
+                    await answers_queue.put(output_message)
+                except Exception as e:
+                    logger.error(f"Error when converting msg to Action using Action.from_json():{e}")
+            await asyncio.sleep(0.01)
+    except KeyboardInterrupt:
+        logger.debug('Terminating by KeyboardInterrupt')
+        raise SystemExit
+    except Exception as e:
+        logger.error(f'Exception in main_coordinator(): {e}')
+
+async def handle_new_agent_new(reader, writer, actions_queue, answers_queue):
+    """
+    Function to deal with each new agent
+    """
+    try:
+        addr = writer.get_extra_info('peername')
+        logger.info(f"New agent connected: {addr}")
+        # data = await reader.read(500)
+        # raw_message = data.decode().strip()
+        
+        # # Tell the coordinator a new agent connected
+        # await actions_queue.put((addr, raw_message))
+
+        # # Get the message from the coordinator
+        # message = await answers_queue.get()
+        # if message is None:
+        #     message = '{"message":"Waiting..."}'
+
+        # logger.info(f"Sending to agent {addr}: {message}")
+        # await send_world(writer, message)
+        # await writer.drain()
+
+        while True:
+            data = await reader.read(500)
+            raw_message = data.decode().strip()
+            if len(raw_message):
+                logger.info(f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}")
+
+                # Build the correct message format for the coordinator
+                message_dict = {"action": raw_message}
+                message_str = json.dumps(message_dict)
+
+                # Put the message and agent information into the queue
+                await actions_queue.put((addr, message_str))
+
+                # Read messages from the queue and send to the agent
+                message = await answers_queue.get()
+                if message is None:
+                    message = '{"message":"Waiting..."}'
+
+                logger.info(f"Handle sending to agent {addr}: {message!r}")
+                await send_world(writer, message)
+                try:
+                    await writer.drain()
+                except ConnectionResetError:
+                    logger.info(f'Connection lost. Agent disconnected.')
+            else:
+                logger.info(f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}")
+                logger.info(f"\tEmpty message, terminating agent on address {addr}")
+                break
+    except KeyboardInterrupt:
+        logger.debug('Terminating by KeyboardInterrupt')
+        raise SystemExit
+    except Exception as e:
+        logger.error(f'Exception in handle_new_agent(): {e}')
 
 async def send_world(writer, world_json):
     """
