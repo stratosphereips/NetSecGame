@@ -66,7 +66,7 @@ def observation_to_str(observation:Observation)-> str:
     observation_dict = {
         'state': state_str,
         'reward': observation.reward,
-        'end': observation.done,
+        'end': observation.end,
         'info': str(observation.info)
     }
     try:
