@@ -125,6 +125,17 @@ class ActionType(enum.Enum):
     QuitGame = 1,0
     ResetGame = 1,0
 
+@dataclass(frozen=True, eq=True, order=True)
+class AgentInfo():
+    """
+    Receives one parameter ip that should be a string
+    """
+    name: str
+    role: str
+
+    def __repr__(self):
+        return f"{self.name}({self.role})"
+
 #Actions
 class Action():
     """
@@ -316,6 +327,11 @@ Observations are given when making a step in the environment.
 """
 Observation = namedtuple("Observation", ["state", "reward", "end", "info"])
 
+
+class GameStatus(enum.Flag):
+    OK = 200
+    CREATED = 201
+    BAD_REQUEST = 400
 
 # Main is only used for testing
 if __name__ == '__main__':
