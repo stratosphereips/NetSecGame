@@ -147,3 +147,4 @@ runs/*
 agents/*/runs/*
 replay_buffer.csv
 agents/*/saved_models/*
+nmap-result.xml
