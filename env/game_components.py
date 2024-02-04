@@ -182,29 +182,30 @@ class Action():
         """
         Classmethod to ccreate Action object from json string representation
         """
-        parameters_dict = json.loads(json_string)['action']
+        parameters_dict = json.loads(json_string)
         action_type = ActionType.from_string(parameters_dict["action_type"])
         parameters = {}
         parameters_dict = parameters_dict["parameters"]
         match action_type:
             case ActionType.ScanNetwork:
-                parameters = {"target_network": Network(parameters_dict["target_network"]["ip"], parameters_dict["target_network"]["mask"])}
+                parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]),"target_network": Network(parameters_dict["target_network"]["ip"], parameters_dict["target_network"]["mask"])}
             case ActionType.FindServices:
-                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"])}
+                parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]), "target_host": IP(parameters_dict["target_host"]["ip"])}
             case ActionType.FindData:
-                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"])}
+                parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]), "target_host": IP(parameters_dict["target_host"]["ip"])}
             case ActionType.ExploitService:
                 parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
                               "target_service": Service(parameters_dict["target_service"]["name"],
                                     parameters_dict["target_service"]["type"],
                                     parameters_dict["target_service"]["version"],
-                                    parameters_dict["target_service"]["is_local"])}
+                                    parameters_dict["target_service"]["is_local"]),
+                                    "source_host": IP(parameters_dict["source_host"]["ip"])}
             case ActionType.ExfiltrateData:
                 parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
                                 "source_host": IP(parameters_dict["source_host"]["ip"]),
                               "data": Data(parameters_dict["data"]["owner"],parameters_dict["data"]["id"])}
             case ActionType.JoinGame:
-                parameters = {"agent_name":parameters_dict["agent_name"], "agent_role":parameters_dict["agent_role"]}
+                parameters = {"agent_info":AgentInfo(parameters_dict["agent_info"]["name"], parameters_dict["agent_info"]["role"])}
             case ActionType.QuitGame:
                 parameters = {}
             case ActionType.ResetGame:
