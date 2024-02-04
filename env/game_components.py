@@ -108,6 +108,8 @@ class ActionType(enum.Enum):
                 return ActionType.ExfiltrateData
             case "ActionType.JoinGame":
                 return ActionType.JoinGame
+            case "ActionType.ResetGame":
+                return ActionType.ResetGame
             case "ActionType.QuitGame":
                 return ActionType.QuitGame
             case _:
@@ -121,6 +123,7 @@ class ActionType(enum.Enum):
     ExfiltrateData = 0.8, 0.1
     JoinGame = 1,0
     QuitGame = 1,0
+    ResetGame = 1,0
 
 #Actions
 class Action():
@@ -188,6 +191,12 @@ class Action():
                 parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
                                 "source_host": IP(parameters_dict["source_host"]["ip"]),
                               "data": Data(parameters_dict["data"]["owner"],parameters_dict["data"]["id"])}
+            case ActionType.JoinGame:
+                parameters = {"agent_name":parameters_dict["agent_name"], "agent_role":parameters_dict["agent_role"]}
+            case ActionType.QuitGame:
+                parameters = {}
+            case ActionType.ResetGame:
+                parameters = {}
             case _:
                 raise ValueError(f"Unknown Action type:{action_type}")
         action = Action(action_type=action_type, params=parameters)
