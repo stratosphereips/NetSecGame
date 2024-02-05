@@ -68,6 +68,7 @@ class Data():
     owner: str
     id: str
 
+@enum.unique
 class ActionType(enum.Enum):
     """
     ActionType represents generic action for attacker in the game. Each transition has a default probability
@@ -78,6 +79,8 @@ class ActionType(enum.Enum):
     - FindData
     - ExploitService
     - ExfiltrateData
+    - JoinGame
+    - QuitGame
     """
 
     #override the __new__ method to enable multiple parameters
@@ -104,6 +107,12 @@ class ActionType(enum.Enum):
                 return ActionType.FindData
             case "ActionType.ExfiltrateData":
                 return ActionType.ExfiltrateData
+            case "ActionType.JoinGame":
+                return ActionType.JoinGame
+            case "ActionType.ResetGame":
+                return ActionType.ResetGame
+            case "ActionType.QuitGame":
+                return ActionType.QuitGame
             case _:
                 raise ValueError("Uknown Action Type")
 
@@ -113,25 +122,38 @@ class ActionType(enum.Enum):
     FindData = 0.8, 0.1
     ExploitService = 0.7, 0.4
     ExfiltrateData = 0.8, 0.1
+    JoinGame = 1,0
+    QuitGame = 1,0
+    ResetGame = 1,0
+
+@dataclass(frozen=True, eq=True, order=True)
+class AgentInfo():
+    """
+    Receives one parameter ip that should be a string
+    """
+    name: str
+    role: str
+
+    def __repr__(self):
+        return f"{self.name}({self.role})"
 
 #Actions
 class Action():
     """
     Actions are composed of the action type (see ActionTupe) and additional parameters listed in dictionary
-    - ScanNetwork {"target_network": Network object}
-    - FindServices {"target_host": IP object}
-    - FindData {"target_host": IP object}
-    - ExploitService {"target_host": IP object, "target_service": Service object}
+    - ScanNetwork {"target_network": Network object, "source_host": IP object}
+    - FindServices {"target_host": IP object, "source_host": IP object,}
+    - FindData {"target_host": IP object, "source_host": IP object}
+    - ExploitService {"target_host": IP object, "target_service": Service object, "source_host": IP object}
     - ExfiltrateData {"target_host": IP object, "source_host": IP object, "data": Data object}
     """
-    def __init__(self, action_type: ActionType, params: dict) -> None:
+    def __init__(self, action_type: ActionType, params: dict={}) -> None:
         self._type = action_type
         self._parameters = params
 
     @property
     def type(self) -> ActionType:
         return self._type
-
     @property
     def parameters(self)->dict:
         return self._parameters
@@ -160,27 +182,34 @@ class Action():
         """
         Classmethod to ccreate Action object from json string representation
         """
-        parameters_dict = json.loads(json_string)['action']
+        parameters_dict = json.loads(json_string)
         action_type = ActionType.from_string(parameters_dict["action_type"])
         parameters = {}
         parameters_dict = parameters_dict["parameters"]
         match action_type:
             case ActionType.ScanNetwork:
-                parameters = {"target_network": Network(parameters_dict["target_network"]["ip"], parameters_dict["target_network"]["mask"])}
+                parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]),"target_network": Network(parameters_dict["target_network"]["ip"], parameters_dict["target_network"]["mask"])}
             case ActionType.FindServices:
-                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"])}
+                parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]), "target_host": IP(parameters_dict["target_host"]["ip"])}
             case ActionType.FindData:
-                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"])}
+                parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]), "target_host": IP(parameters_dict["target_host"]["ip"])}
             case ActionType.ExploitService:
                 parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
                               "target_service": Service(parameters_dict["target_service"]["name"],
                                     parameters_dict["target_service"]["type"],
                                     parameters_dict["target_service"]["version"],
-                                    parameters_dict["target_service"]["is_local"])}
+                                    parameters_dict["target_service"]["is_local"]),
+                                    "source_host": IP(parameters_dict["source_host"]["ip"])}
             case ActionType.ExfiltrateData:
                 parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
                                 "source_host": IP(parameters_dict["source_host"]["ip"]),
                               "data": Data(parameters_dict["data"]["owner"],parameters_dict["data"]["id"])}
+            case ActionType.JoinGame:
+                parameters = {"agent_info":AgentInfo(parameters_dict["agent_info"]["name"], parameters_dict["agent_info"]["role"])}
+            case ActionType.QuitGame:
+                parameters = {}
+            case ActionType.ResetGame:
+                parameters = {}
             case _:
                 raise ValueError(f"Unknown Action type:{action_type}")
         action = Action(action_type=action_type, params=parameters)
@@ -300,29 +329,49 @@ Observations are given when making a step in the environment.
 """
 Observation = namedtuple("Observation", ["state", "reward", "end", "info"])
 
+@enum.unique
+class GameStatus(enum.Enum):
+    OK = 200
+    CREATED = 201
+    BAD_REQUEST = 400
+    
+    @classmethod
+    def from_string(cls, string:str):
+        match string:
+            case "GameStatus.OK":
+                return GameStatus.OK
+            case "GameStatus.CREATED":
+                return GameStatus.CREATED
+            case "GameStatus.BAD_REQUEST":
+                return GameStatus.BAD_REQUEST
+    def __repr__(self) -> str:
+        return str(self)
 
 # Main is only used for testing
 if __name__ == '__main__':
-    state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
-                known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
-                known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
-                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
-                            IP("192.168.1.2"):{Data("McGiver", "data2")}})
-    # print(state)
-    # print("-------------AS JSON ------------")
-    # as_json = state.as_json()
-    # print(as_json)
-    # print("-------------FROM JSON ------------")
-    # new_state = GameState.from_json(as_json)
-    # print(new_state)
-    # print(new_state == state)
-    parameters = {"target_host":IP('192.168.1.3'), "target_service":Service('postgresql', 'passive', '14.3.0', False)}
-    action = Action(ActionType.from_string("ActionType.ExploitService"), parameters)
+    # state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
+    #             known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
+    #             known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
+    #             known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
+    #                         IP("192.168.1.2"):{Data("McGiver", "data2")}})
+    # # print(state)
+    # # print("-------------AS JSON ------------")
+    # # as_json = state.as_json()
+    # # print(as_json)
+    # # print("-------------FROM JSON ------------")
+    # # new_state = GameState.from_json(as_json)
+    # # print(new_state)
+    # # print(new_state == state)
+    # parameters = {"target_host":IP('192.168.1.3'), "target_service":Service('postgresql', 'passive', '14.3.0', False)}
+    # action = Action(ActionType.from_string("ActionType.ExploitService"), parameters)
 
-    parameters = {"target_host":IP('213.47.23.195'), "data":Data("User1", "DatabaseData"), "source_host":IP("192.168.1.3")}
-    action = Action(ActionType.ExfiltrateData, parameters)
-    as_json = action.as_json()
-    print(as_json)
-    new_action = Action.from_json(as_json)
-    print(new_action)
-    print(action==new_action)
+    # parameters = {"target_host":IP('213.47.23.195'), "data":Data("User1", "DatabaseData"), "source_host":IP("192.168.1.3")}
+    # action = Action(ActionType.ExfiltrateData, parameters)
+    # as_json = action.as_json()
+    # print(as_json)
+    # new_action = Action.from_json(as_json)
+    # print(new_action)
+    # print(action==new_action)
+    test  = {"staus": GameStatus.OK}
+    print(GameStatus.BAD_REQUEST)
+    json.dumps(test)
