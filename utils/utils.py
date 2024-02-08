@@ -9,7 +9,7 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
-from env.game_components import IP, Data, Network, Service, GameState, Action, ActionType
+from env.game_components import IP, Data, Network, Service, GameState, Action, ActionType, Observation
 import netaddr
 import logging
 import csv
@@ -58,6 +58,24 @@ def state_as_ordered_string(state:GameState)->str:
         ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_data[host])])}]"
     ret += "}"
     return ret
+
+def observation_to_str(observation:Observation)-> str:
+    """
+    Generates JSON string representation of a given Observation object.
+    """
+    state_str = observation.state.as_json()
+    observation_dict = {
+        'state': state_str,
+        'reward': observation.reward,
+        'end': observation.end,
+        'info': str(observation.info)
+    }
+    try:
+        observation_str = json.dumps(observation_dict)
+        return observation_str
+    except Exception as e:
+        logger.error(f"Error in encoding observation '{observation}' to JSON string: {e}")
+        raise e
 
 class ConfigParser():
     """
