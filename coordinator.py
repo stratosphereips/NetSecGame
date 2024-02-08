@@ -192,7 +192,7 @@ class ConnectionLimitServer(asyncio.Protocol):
 
         # Check if the maximum number of connections has been reached
         if self.current_connections >= self.max_connections:
-            print("Max connections reached. Rejecting new connection.")
+            self.logger(f"Max connections reached. Rejecting new connection from {writer.get_extra_info('peername')}")
             writer.close()
             return
 
