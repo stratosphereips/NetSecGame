@@ -172,18 +172,47 @@ class NetworkSecurityEnvironment(object):
     @property
     def num_actions(self):
         return len(components.ActionType)
+
+    def get_all_states(self):
+        import itertools
+        def all_combs(data):
+            combs = []
+            for i in range(1, len(data)+1):
+                els = [x for x in itertools.combinations(data, i)]
+                combs += els
+            return combs
+        combs_nets =  all_combs(self._networks.keys())
+        print(combs_nets)
+        coms_known_h = all_combs([x for x in self._ip_to_hostname.keys() if x not in [components.IP("192.168.1.1"),components.IP("192.168.2.1")]])
+        print(coms_known_h)
+        coms_owned_h = all_combs(self._ip_to_hostname.keys())
+        all_services = set()
+        for service_list in self._services.values():
+            for s in service_list:
+                if not s.is_local:
+                    all_services.add(s)
+        coms_services = all_combs(all_services)
+        print("\n",coms_services)
+        all_data = set()
+        for data_list in self._data.values():
+            for d in data_list:
+                all_data.add(d)
+        coms_data = all_combs(all_data)
+        print("\n",coms_data)
+        return set(itertools.product(combs_nets, coms_known_h, coms_owned_h, coms_services, coms_data))
     
     def get_all_actions(self):
         actions = set()
         # Get Network scans, Service Find and Data Find
-        for net,ips in self._networks.items():
-            #network scans
-            actions.add(components.Action(components.ActionType.ScanNetwork,{"target_network":net}))
-            for ip in ips:
-                # ServiceFind
-                actions.add(components.Action(components.ActionType.FindServices, {"target_host":ip}))
-                # DataFind
-                actions.add(components.Action(components.ActionType.FindData, {"target_host":ip}))
+        for src_ip in self._ip_to_hostname:
+            for net,ips in self._networks.items():
+                #network scans
+                actions.add(components.Action(components.ActionType.ScanNetwork,{"target_network":net, "source_host":src_ip}))
+                for ip in ips:
+                    # ServiceFind
+                    actions.add(components.Action(components.ActionType.FindServices, {"target_host":ip,"source_host":src_ip}))
+                    # DataFind
+                    actions.add(components.Action(components.ActionType.FindData, {"target_host":ip, "source_host":src_ip}))
         # Get Data exfiltration
         for src_ip in self._ip_to_hostname:
             for trg_ip in self._ip_to_hostname:
@@ -191,12 +220,13 @@ class NetworkSecurityEnvironment(object):
                     for data_list in self._data.values():
                         for data in data_list:
                             actions.add(components.Action(components.ActionType.ExfiltrateData, {"target_host":trg_ip, "data":data, "source_host":src_ip}))
-        # Get Execute services
-        for host_id, services in self._services.items():
-             for service in services:
-                for ip, host in self._ip_to_hostname.items():
-                    if host_id == host:
-                        actions.add(components.Action(components.ActionType.ExploitService, {"target_host":ip, "target_service":service}))
+        for src_ip in self._ip_to_hostname:
+            # Get Execute services
+            for host_id, services in self._services.items():
+                for service in services:
+                    for ip, host in self._ip_to_hostname.items():
+                        if host_id == host:
+                            actions.add(components.Action(components.ActionType.ExploitService, {"target_host":ip, "target_service":service, "source_host":src_ip}))
         return {k:v for k,v in enumerate(actions)}
     
     def _create_starting_state(self) -> components.GameState:
