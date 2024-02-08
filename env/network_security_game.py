@@ -91,7 +91,9 @@ class NetworkSecurityEnvironment(object):
         self._place_defences()
         
         # Get attacker start
-        self._attacker_start_position = self.task_config.get_attackers_start_position()
+        self._attacker_start_position = self.task_config.get_agent_start_position("Attacker")
+        self._defender_start_position = self.task_config.get_agent_start_position("Defender")
+        self._human_start_position = self.task_config.get_agent_start_position("Human")
 
         # Make a copy of data placements so it is possible to reset to it when episode ends
         self._data_original = copy.deepcopy(self._data)

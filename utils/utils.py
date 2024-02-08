@@ -233,33 +233,23 @@ class ConfigParser():
 
         return attackers_goal
     
-    def get_attackers_start_position(self):
+   
+    def get_agent_start_position(self, agent_role):
         """
-        Generate the starting position of an attacking agent
+        Generate the starting position of an agent based on its role
         """
-        # Read known nets
-        known_networks = self.read_agents_known_networks('attackers', 'start_position')
-
-        # Read known hosts
-        known_hosts = self.read_agents_known_hosts('attackers', 'start_position')
-
-        # Read controlled hosts
-        controlled_hosts = self.read_agents_controlled_hosts('attackers', 'start_position')
-
-        # Start services
-        known_services = self.read_agents_known_services('attackers', 'start_position')
-
-        # Start data
-        known_data = self.read_agents_known_data('attackers', 'start_position')
-
-        attackers_start_position = {}
-        attackers_start_position['known_networks'] = known_networks
-        attackers_start_position['controlled_hosts'] = controlled_hosts
-        attackers_start_position['known_hosts'] = known_hosts
-        attackers_start_position['known_data'] = known_data
-        attackers_start_position['known_services'] = known_services
-
-        return attackers_start_position
+        match agent_role:
+            case "Attacker": agent_key = "attackers"
+            case "Defender": agent_key = "defenders"
+            case "Human": agent_key = "humans"
+            case _: raise ValueError(f"Unsupported agent role '{agent_role}'")
+        start_position = {}
+        start_position['known_networks'] = self.read_agents_known_networks(agent_key, 'start_position')
+        start_position['controlled_hosts'] = self.read_agents_controlled_hosts(agent_key, 'start_position')
+        start_position['known_hosts'] = self.read_agents_known_hosts(agent_key, 'start_position')
+        start_position['known_data'] = self.read_agents_known_data(agent_key, 'start_position')
+        start_position['known_services'] = self.read_agents_known_services(agent_key, 'start_position')
+        return start_position
 
     def get_max_steps(self):
         """
