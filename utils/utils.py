@@ -9,11 +9,12 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
-from env.game_components import IP, Data, Network, Service, GameState, Action, ActionType
+from env.game_components import IP, Data, Network, Service, GameState, Action, ActionType, Observation
 import netaddr
 import logging
 import csv
 from random import randint
+import json
 
 def read_replay_buffer_from_csv(csvfile:str)->list:
     """
@@ -59,6 +60,23 @@ def state_as_ordered_string(state:GameState)->str:
     ret += "}"
     return ret
 
+def observation_to_str(observation:Observation)-> str:
+    """
+    Generates JSON string representation of a given Observation object.
+    """
+    state_str = observation.state.as_json()
+    observation_dict = {
+        'state': state_str,
+        'reward': observation.reward,
+        'end': observation.end,
+        'info': str(observation.info)
+    }
+    try:
+        observation_str = json.dumps(observation_dict)
+        return observation_str
+    except Exception as e:
+        print(f"Error in encoding observation '{observation}' to JSON string: {e}")
+        raise e
 class ConfigParser():
     """
     Class to deal with the configuration file
