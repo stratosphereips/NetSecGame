@@ -59,24 +59,6 @@ action_processor = ActionProcessor(logger)
 
 __version__ = 'v0.2'
 
-# def observation_to_str(observation:Observation)-> str:
-#     """
-#     Generates JSON string representation of a given Observation object.
-#     """
-#     state_str = observation.state.as_json()
-#     observation_dict = {
-#         'state': state_str,
-#         'reward': observation.reward,
-#         'end': observation.end,
-#         'info': str(observation.info)
-#     }
-#     try:
-#         observation_str = json.dumps(observation_dict)
-#         return observation_str
-#     except Exception as e:
-#         logger.error(f"Error in encoding observation '{observation}' to JSON string: {e}")
-#         raise e
-
 async def start_tasks():
     """
     High level funciton to start all the other asynchronous tasks and queues
