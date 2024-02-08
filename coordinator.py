@@ -8,7 +8,7 @@ import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, Observation, ActionType, GameStatus
-from utils import observation_to_str
+from utils.utils import observation_to_str
 from pathlib import Path
 import os
 import time
