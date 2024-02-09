@@ -183,7 +183,7 @@ class Coordinator:
         try:
             self.logger.info("Main coordinator started.")
             env_observation = self._world.reset()
-            agents = {}
+            self.agents = {}
 
             while True:
                 self.logger.debug("Coordinator running.")
@@ -197,21 +197,7 @@ class Coordinator:
                         self.logger.error(f"Error when converting msg to Action using Action.from_json():{e}")
                     match action.type:
                         case ActionType.JoinGame:
-                            if agent_addr not in agents:
-                                self.logger.info(f"Creating new agent for {agent_addr}.")
-                                agent_name = action.parameters["agent_info"].name
-                                agent_role = action.parameters["agent_info"].role
-                                if agent_role in  self.ALLOWED_ROLES:
-                                    self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
-                                    agents[agent_addr] = action.parameters
-                                    agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, env_observation)
-                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.CREATED), "observation": agent_observation_str, "message": f"Welcome {agent_name}, registred as {agent_role}"}
-                                else:
-                                    self.logger.info(f"\tError in regitration, unknown agent role: {agent_role}!")
-                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.BAD_REQUEST), "message": f"Incorrect agent_role {agent_role}"}
-                            else:
-                                self.logger.info(f"\tError in regitration, unknown agent already exists!")
-                                output_message_dict = {"to_agent": {agent_addr}, "status": str(GameStatus.BAD_REQUEST), "message": "Agent already exists."}
+                            output_message_dict = self._process_join_game_action(agent_addr, action, env_observation)
                         case ActionType.QuitGame:
                             raise NotImplementedError
                         case ActionType.ResetGame:
@@ -246,6 +232,27 @@ class Coordinator:
             self.logger.error(f'Exception in main_coordinator(): {e}')
             raise e
 
+    def _process_join_game_action(self,agent_addr:tuple, action:Action, current_observation:Observation)->dict:
+        """"
+        Method for processing Action of type ActionType.JoinGame
+        """
+        if agent_addr not in self.agents:
+            self.logger.info(f"Creating new agent for {agent_addr}.")
+            agent_name = action.parameters["agent_info"].name
+            agent_role = action.parameters["agent_info"].role
+            if agent_role in  self.ALLOWED_ROLES:
+                self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
+                self.agents[agent_addr] = action.parameters
+                agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, current_observation)
+                output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.CREATED), "observation": agent_observation_str, "message": f"Welcome {agent_name}, registred as {agent_role}"}
+            else:
+                self.logger.info(f"\tError in regitration, unknown agent role: {agent_role}!")
+                output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.BAD_REQUEST), "message": f"Incorrect agent_role {agent_role}"}
+        else:
+            self.logger.info(f"\tError in regitration, unknown agent already exists!")
+            output_message_dict = {"to_agent": {agent_addr}, "status": str(GameStatus.BAD_REQUEST), "message": "Agent already exists."}
+        return output_message_dict
+    
 __version__ = 'v0.2.1'
 
 
