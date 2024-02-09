@@ -66,6 +66,15 @@ ActionType is unique Enum that determines what kind of action is agent playing. 
 - **ExploitService**, params={`source_host`:\<IP\>, `target_host`:\<IP\>, `taget_service`:\<Service\>}: Exploits `target_service` in a specified `target_host`. If sucessful, the attacker gains control of the `target_host`.
 - **ExfiltrateData**, params{`source_host`:\<IP\>, `target_host`:\<IP\>, `data`:\<Data\>}: Copies `data` from the `source_host` to `target_host` IF both are controlled and `target_host` is accessible from `source_host`.
 
+### Action preconditons and effects
+| Action | Params | Preconditions | Effects |
+|----------------------|----------------------|----------------------|----------------------|
+| ScanNetwork| `source_host`, `target_network`| `source_host ` &isinv; `controlled_hosts`| extends `known_networks`|
+|FindServices| `source_host`, `target_host`| `source_host ` &isinv; `controlled_hosts`| extends `known_services` and `known_hosts`|
+|FindData| `source_host`, `target_host`| `source_host`, `target_host` ∈ `controlled_hosts`| extends `known_data`|
+|Exploit Service | `source_host`, `target_host`, `target_service`|`source_host ` &isinv; `controlled_hosts`| extends `controlled_hosts` with `target_host`|
+ExfiltrateData| |`source_host`, `target_host` ∈ `controlled_hosts` AND `data` ∈ `known_data`| extends `known_data[target_host]` with `data`|
+
 ## Observations
 After submitting Action `a` to the environment, agents receives an `Observation` in return. Each observation consists of 4 parts:
 - `state`:`Gamestate` - with the current view of the environment [state](#gamestate)
