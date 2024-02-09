@@ -5,7 +5,7 @@ The NetSecEnv game is using the client-server architecture. The Server runs the 
  - processing agent request (see [Actions](/docs/Components.md)) and responses (see [Observations](/docs/Components.md))
  - communication with the game engine and forwarding messages between the agents and the game engine
 
-![Tux, the Linux mascot](/assets/images/tux.png)
+![Architecture overview](/docs/figures/architecture_diagram.jpg)
 
  ## Agents
  Agents are separate programs that can interact with the NetSecEnv vie TCP sockets. See the [NetSecGameAgents](/NetSecGameAgents) repository for details on the agents.
