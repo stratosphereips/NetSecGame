@@ -195,7 +195,7 @@ class Coordinator:
                         action = Action.from_json(message)
                     except Exception as e:
                         self.logger.error(f"Error when converting msg to Action using Action.from_json():{e}")
-                    match action.type:
+                    match action.type: # process action based on its type
                         case ActionType.JoinGame:
                             output_message_dict = self._process_join_game_action(agent_addr, action, env_observation)
                         case ActionType.QuitGame:
@@ -203,16 +203,7 @@ class Coordinator:
                         case ActionType.ResetGame:
                             output_message_dict = self._process_reset_game_action(agent_addr)
                         case _:
-                            # Process ALL other ActionTypes
-                            # Access agent information
-                            self.logger.info(f'Coordinator received from agent {agent_addr}: {action}')
-                            # Process the message
-                            action_for_env = self._action_processor.process_message_from_agent(agent_addr, action)
-                            new_observation = self._world.step(action_for_env)
-                            agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr,new_observation)
-                            # send the action to the env and get new gamestate
-                            # Answer the agents
-                            output_message_dict = {"agent": agent_addr, "observation": agent_observation_str, "status": str(GameStatus.OK)}
+                            output_message_dict = self._process_generic_action(agent_addr, action)
                     try:
                         # Convert message into string representation
                         output_message = json.dumps(output_message_dict)
@@ -229,7 +220,7 @@ class Coordinator:
             self.logger.error(f'Exception in main_coordinator(): {e}')
             raise e
 
-    def _process_join_game_action(self,agent_addr:tuple, action:Action, current_observation:Observation)->dict:
+    def _process_join_game_action(self, agent_addr:tuple, action:Action, current_observation:Observation)->dict:
         """"
         Method for processing Action of type ActionType.JoinGame
         """
@@ -250,7 +241,7 @@ class Coordinator:
             output_message_dict = {"to_agent": {agent_addr}, "status": str(GameStatus.BAD_REQUEST), "message": "Agent already exists."}
         return output_message_dict
     
-    def _process_reset_game_action(self,agent_addr:tuple)->dict:
+    def _process_reset_game_action(self, agent_addr:tuple)->dict:
         """"
         Method for processing Action of type ActionType.ResetGame
         """
@@ -261,6 +252,15 @@ class Coordinator:
                                 "status": str(GameStatus.OK),
                                 "observation": agent_observation_str,
                                 "message": "Resetting Game and starting again."}
+        return output_message_dict
+
+    def _process_generic_action(self, agent_addr:tuple, action:Action)->dict:
+        self.logger.info(f'Coordinator received from agent {agent_addr}: {action}')
+        # Process the message
+        action_for_env = self._action_processor.process_message_from_agent(agent_addr, action)
+        new_observation = self._world.step(action_for_env)
+        agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr,new_observation)
+        output_message_dict = {"agent": agent_addr, "observation": agent_observation_str, "status": str(GameStatus.OK)}
         return output_message_dict
     
 __version__ = 'v0.2.1'
