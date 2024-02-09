@@ -7,7 +7,7 @@ Following classes are used in the game to hold information about the state of th
 ### IP
 IP is immutable object that represents an IPv4 object in the NetSecGame. It has a single parameter of the address in a dot-decimal notation (4 octet represeted as decimal value separeted by dots).
 
-Example:`ip = IP("192.168.1.1")`
+Example: `ip = IP("192.168.1.1")`
 
 ### Network
 Network is immutable object that represents a IPv4 network object in the NetSecGame. It has 2 parameters:
@@ -67,12 +67,14 @@ ActionType is unique Enum that determines what kind of action is agent playing. 
 - **ExfiltrateData**, params{`source_host`:\<IP\>, `target_host`:\<IP\>, `data`:\<Data\>}: Copies `data` from the `source_host` to `target_host` IF both are controlled and `target_host` is accessible from `source_host`.
 
 ### Action preconditons and effects
+In the following table, we describe effects of selected actions and their preconditions. Note that if the preconditions are not satisfied, the actions's effects are not applied.
+
 | Action | Params | Preconditions | Effects |
 |----------------------|----------------------|----------------------|----------------------|
-| ScanNetwork| `source_host`, `target_network`| `source_host ` &isinv; `controlled_hosts`| extends `known_networks`|
-|FindServices| `source_host`, `target_host`| `source_host ` &isinv; `controlled_hosts`| extends `known_services` and `known_hosts`|
+| ScanNetwork| `source_host`, `target_network`| `source_host` &isinv; `controlled_hosts`| extends `known_networks`|
+|FindServices| `source_host`, `target_host`| `source_host` &isinv; `controlled_hosts`| extends `known_services` AND `known_hosts`|
 |FindData| `source_host`, `target_host`| `source_host`, `target_host` ∈ `controlled_hosts`| extends `known_data`|
-|Exploit Service | `source_host`, `target_host`, `target_service`|`source_host ` &isinv; `controlled_hosts`| extends `controlled_hosts` with `target_host`|
+|Exploit Service | `source_host`, `target_host`, `target_service`|`source_host` &isinv; `controlled_hosts`| extends `controlled_hosts` with `target_host`|
 ExfiltrateData| |`source_host`, `target_host` ∈ `controlled_hosts` AND `data` ∈ `known_data`| extends `known_data[target_host]` with `data`|
 
 ## Observations
