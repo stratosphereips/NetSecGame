@@ -75,7 +75,7 @@ In the following table, we describe effects of selected actions and their precon
 |FindServices| `source_host`, `target_host`| `source_host` &isinv; `controlled_hosts`| extends `known_services` AND `known_hosts`|
 |FindData| `source_host`, `target_host`| `source_host`, `target_host` ∈ `controlled_hosts`| extends `known_data`|
 |Exploit Service | `source_host`, `target_host`, `target_service`|`source_host` &isinv; `controlled_hosts`| extends `controlled_hosts` with `target_host`|
-ExfiltrateData| |`source_host`, `target_host` ∈ `controlled_hosts` AND `data` ∈ `known_data`| extends `known_data[target_host]` with `data`|
+ExfiltrateData| `source_host`,`target_host`, `data` |`source_host`, `target_host` ∈ `controlled_hosts` AND `data` ∈ `known_data`| extends `known_data[target_host]` with `data`|
 
 ## Observations
 After submitting Action `a` to the environment, agents receives an `Observation` in return. Each observation consists of 4 parts:
