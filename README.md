@@ -40,7 +40,7 @@ The architecture of the environment can be seen [here](Architecture.md).
 The NetSecGame environment has several components in the following files:
 
 - File `env/network_security_game.py` implements the game environment
-- File `env/game_components.py` implements a library with objects used in the environment
+- File `env/game_components.py` implements a library with objects used in the environment. See [detailed explanation](docs/Components.md) of the game components.
 - File `utils/utils.py` is a collection of utils function which the agents can use
 - Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the network game's configuration of hosts, data, services, and connections. It is taken from CYST.
 - Files such as `agent/q_learning/q_agent.py` that implement the RL agents.
