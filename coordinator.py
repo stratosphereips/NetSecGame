@@ -172,13 +172,11 @@ class Coordinator:
 
     async def run(self):
         """
-        The main coordinator is in charge of everything exept the coomuncation with agents
-        Work includes:
-        - Accesing the queue of actions
-        - Checking the actions done
-        - Contacting the environment
-        - Accesing the queue of answers
-        - With the agents, offer to register, put a nick, select a side, and start playing, wait for others or see status
+        Main method to be run for coordinating the agent's interaction with the game engine.
+        - Reads messages from action queue
+        - processes actions based on their type
+        - Forwards actions in the game engine
+        - Forwards responses to teh answer queue
         """
         try:
             self.logger.info("Main coordinator started.")
