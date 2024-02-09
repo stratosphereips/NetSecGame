@@ -52,16 +52,6 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 2. No actions have a "delete" effect (the attacker does not give up ownership of nodes, does not forget nodes or services, and when data is transferred we assume it's copied and therefore present in both nodes).
 3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
 
-## Actions
-There are currently implemented five types of actions:
-| Action name          | Description                                                              | Parameters                         | Effects                                          |
-|----------------------|--------------------------------------------------------------------------|---------------------------------------|--------------------------------------------------|
-| Scan Network          | Scans the given network for active hosts | network, mask                        | extends 'known_hosts'                            |
-| Find Services         | Scans given host for running services                                    | target IP                               | extends 'known_services' with host:service pairs |
-| Exploit Service | Runs exploit in service to gain control                                  | target IP, target service                     | extends 'controlled_hosts'                       |
-| Find Data            | Runs code to discover data either in a given service or in a controlled host | target IP, target service | extends 'known_data' with host:data pairs        |
-| Exfiltrate data      | Runds code to move data from host to host                                | source IP, data, target IP  | extends 'known_data with "target:data" pair      |
-
 ### Assumption and Conditions for Actions
 1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
 2. The `Find Data` action finds all the available data in the host if successful.
