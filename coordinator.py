@@ -201,10 +201,7 @@ class Coordinator:
                         case ActionType.QuitGame:
                             raise NotImplementedError
                         case ActionType.ResetGame:
-                            self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
-                            new_env_observation = self._world.reset()
-                            agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, new_env_observation)
-                            output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.OK), "observation": agent_observation_str, "message": "Resetting Game and starting again."}
+                            output_message_dict = self._process_reset_game_action(agent_addr)
                         case _:
                             # Process ALL other ActionTypes
                             # Access agent information
@@ -251,6 +248,19 @@ class Coordinator:
         else:
             self.logger.info(f"\tError in regitration, unknown agent already exists!")
             output_message_dict = {"to_agent": {agent_addr}, "status": str(GameStatus.BAD_REQUEST), "message": "Agent already exists."}
+        return output_message_dict
+    
+    def _process_reset_game_action(self,agent_addr:tuple)->dict:
+        """"
+        Method for processing Action of type ActionType.ResetGame
+        """
+        self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
+        new_env_observation = self._world.reset()
+        agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, new_env_observation)
+        output_message_dict = {"to_agent": agent_addr,
+                                "status": str(GameStatus.OK),
+                                "observation": agent_observation_str,
+                                "message": "Resetting Game and starting again."}
         return output_message_dict
     
 __version__ = 'v0.2.1'
