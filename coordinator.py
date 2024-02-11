@@ -339,7 +339,7 @@ if __name__ == '__main__':
     log_filename=Path('coordinator.log')
     if not log_filename.parent.exists():
         os.makedirs(log_filename.parent)
-    logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.DEBUG)
+    logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.INFO)
     # load config for coordinator
     with open(args.configfile, 'r') as jfile:
         confjson = json.load(jfile)
