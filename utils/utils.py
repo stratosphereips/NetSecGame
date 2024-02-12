@@ -83,7 +83,7 @@ def observation_as_dict(observation:Observation)->dict:
     Generates dict string representation of a given Observation object.
     """
     observation_dict = {
-        'state': observation.state.as_dict(),
+        'state': observation.state.as_dict,
         'reward': observation.reward,
         'end': observation.end,
         'info': observation.info
