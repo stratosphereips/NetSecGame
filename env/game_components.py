@@ -295,13 +295,30 @@ class GameState():
         """
         Returns json representation of the GameState in string
         """
+        ret_dict = self.as_dict
+        return json.dumps(ret_dict)
+
+    @property
+    def as_dict(self)->dict:
+        """
+        Returns dict representation of the GameState in string
+        """
         ret_dict = {"known_networks":[dataclasses.asdict(x) for x in self.known_networks],
             "known_hosts":[dataclasses.asdict(x) for x in self.known_hosts],
             "controlled_hosts":[dataclasses.asdict(x) for x in self.controlled_hosts],
             "known_services": {str(host):[dataclasses.asdict(s) for s in services] for host,services in self.known_services.items()},
             "known_data":{str(host):[dataclasses.asdict(d) for d in data] for host,data in self.known_data.items()}}
-        return json.dumps(ret_dict) 
+        return ret_dict
 
+    @classmethod
+    def from_dict(cls, data_dict:dict):
+        state = GameState(known_networks={Network(x["ip"], x["mask"]) for x in data_dict["known_networks"]},
+            known_hosts={IP(x["ip"]) for x in data_dict["known_hosts"]},
+            controlled_hosts={IP(x["ip"]) for x in data_dict["controlled_hosts"]},
+            known_services={IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
+                for s in services} for k,services in data_dict["known_services"].items()},  
+            known_data={IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in data_dict["known_data"].items()}) 
+        return state
 
     @classmethod
     def from_json(cls, json_string):
