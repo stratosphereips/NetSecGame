@@ -69,7 +69,7 @@ def observation_to_str(observation:Observation)-> str:
         'state': state_str,
         'reward': observation.reward,
         'end': observation.end,
-        'info': str(observation.info)
+        'info': dict(observation.info)
     }
     try:
         observation_str = json.dumps(observation_dict)
@@ -77,6 +77,19 @@ def observation_to_str(observation:Observation)-> str:
     except Exception as e:
         print(f"Error in encoding observation '{observation}' to JSON string: {e}")
         raise e
+
+def observation_as_dict(observation:Observation)->dict:
+    """
+    Generates dict string representation of a given Observation object.
+    """
+    observation_dict = {
+        'state': observation.state.as_dict(),
+        'reward': observation.reward,
+        'end': observation.end,
+        'info': observation.info
+    }
+    return observation_dict
+
 class ConfigParser():
     """
     Class to deal with the configuration file
