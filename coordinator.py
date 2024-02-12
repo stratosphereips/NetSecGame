@@ -9,7 +9,7 @@ import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, Observation, ActionType, GameStatus
-from utils.utils import observation_to_str
+from utils.utils import observation_as_dict
 from pathlib import Path
 import os
 import time
@@ -70,82 +70,6 @@ class AIDojo:
             server.close()
             await server.wait_closed()
 
-    # async def main_coordinator(self, ALLOWED_ROLES=['Attacker', 'Defender', 'Human']):
-        """
-        The main coordinator is in charge of everything exept the coomuncation with agents
-        Work includes:
-        - Accesing the queue of actions
-        - Checking the actions done
-        - Contacting the environment
-        - Accesing the queue of answers
-        - With the agents, offer to register, put a nick, select a side, and start playing, wait for others or see status
-        """
-        try:
-            self.logger.info("Main coordinator started.")
-            env_observation = self._world.reset()
-            agents = {}
-
-            while True:
-                self.logger.debug("Coordinator running.")
-                # Read message from the queue
-                agent_addr, message = await self._action_queue.get()
-                if message is not None:
-                    self.logger.info(f"Coordinator received: {message}.")
-                    try:  # Convert message to Action
-                        action = Action.from_json(message)
-                    except Exception as e:
-                        self.logger.error(f"Error when converting msg to Action using Action.from_json():{e}")
-                    match action.type:
-                        case ActionType.JoinGame:
-                            if agent_addr not in agents:
-                                self.logger.info(f"Creating new agent for {agent_addr}.")
-                                agent_name = action.parameters["agent_info"].name
-                                agent_role = action.parameters["agent_info"].role
-                                if agent_role in  ALLOWED_ROLES:
-                                    self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
-                                    agents[agent_addr] = action.parameters
-                                    agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, env_observation)
-                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.CREATED), "observation": agent_observation_str, "message": f"Welcome {agent_name}, registred as {agent_role}"}
-                                else:
-                                    self.logger.info(f"\tError in regitration, unknown agent role: {agent_role}!")
-                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.BAD_REQUEST), "message": f"Incorrect agent_role {agent_role}"}
-                            else:
-                                self.logger.info(f"\tError in regitration, unknown agent already exists!")
-                                output_message_dict = {"to_agent": {agent_addr}, "status": str(GameStatus.BAD_REQUEST), "message": "Agent already exists."}
-                        case ActionType.QuitGame:
-                            raise NotImplementedError
-                        case ActionType.ResetGame:
-                            self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
-                            new_env_observation = self._world.reset()
-                            agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, new_env_observation)
-                            output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.OK), "observation": agent_observation_str, "message": "Resetting Game and starting again."}
-                        case _:
-                            # Process ALL other ActionTypes
-                            # Access agent information
-                            self.logger.info(f'Coordinator received from agent {agent_addr}: {action}')
-                            # Process the message
-                            action_for_env = self._action_processor.process_message_from_agent(agent_addr, action)
-                            new_observation = self._world.step(action_for_env)
-                            agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr,new_observation)
-                            # send the action to the env and get new gamestate
-                            # Answer the agents
-                            output_message_dict = {"agent": agent_addr, "observation": agent_observation_str, "status": str(GameStatus.OK)}
-                    try:
-                        # Convert message into string representation
-                        output_message = json.dumps(output_message_dict)
-                    except Exception as e:
-                        logger.error(f"Error when converting msg to Json:{e}")
-                        raise e
-                    # Send to anwer_queue
-                    await self._answer_queue.put(output_message)
-                await asyncio.sleep(0.1)
-        except KeyboardInterrupt:
-            logger.debug('Terminating by KeyboardInterrupt')
-            raise SystemExit
-        except Exception as e:
-            logger.error(f'Exception in main_coordinator(): {e}')
-            raise e
-
 class ActionProcessor:
 
     def __init__(self) -> None:
@@ -172,7 +96,7 @@ class ActionProcessor:
         """
         self._logger.debug(f"Processing message to agent {agent_id}: {new_observation}")
         self._observations[agent_id] = new_observation
-        msg_for_agent = observation_to_str(new_observation)
+        msg_for_agent = observation_as_dict(new_observation)
         return msg_for_agent
 
 class ConnectionLimitServer(asyncio.Protocol):
@@ -248,18 +172,16 @@ class Coordinator:
 
     async def run(self):
         """
-        The main coordinator is in charge of everything exept the coomuncation with agents
-        Work includes:
-        - Accesing the queue of actions
-        - Checking the actions done
-        - Contacting the environment
-        - Accesing the queue of answers
-        - With the agents, offer to register, put a nick, select a side, and start playing, wait for others or see status
+        Main method to be run for coordinating the agent's interaction with the game engine.
+        - Reads messages from action queue
+        - processes actions based on their type
+        - Forwards actions in the game engine
+        - Forwards responses to teh answer queue
         """
         try:
             self.logger.info("Main coordinator started.")
             env_observation = self._world.reset()
-            agents = {}
+            self.agents = {}
 
             while True:
                 self.logger.debug("Coordinator running.")
@@ -271,41 +193,15 @@ class Coordinator:
                         action = Action.from_json(message)
                     except Exception as e:
                         self.logger.error(f"Error when converting msg to Action using Action.from_json():{e}")
-                    match action.type:
+                    match action.type: # process action based on its type
                         case ActionType.JoinGame:
-                            if agent_addr not in agents:
-                                self.logger.info(f"Creating new agent for {agent_addr}.")
-                                agent_name = action.parameters["agent_info"].name
-                                agent_role = action.parameters["agent_info"].role
-                                if agent_role in  self.ALLOWED_ROLES:
-                                    self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
-                                    agents[agent_addr] = action.parameters
-                                    agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, env_observation)
-                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.CREATED), "observation": agent_observation_str, "message": f"Welcome {agent_name}, registred as {agent_role}"}
-                                else:
-                                    self.logger.info(f"\tError in regitration, unknown agent role: {agent_role}!")
-                                    output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.BAD_REQUEST), "message": f"Incorrect agent_role {agent_role}"}
-                            else:
-                                self.logger.info(f"\tError in regitration, unknown agent already exists!")
-                                output_message_dict = {"to_agent": {agent_addr}, "status": str(GameStatus.BAD_REQUEST), "message": "Agent already exists."}
+                            output_message_dict = self._process_join_game_action(agent_addr, action, env_observation)
                         case ActionType.QuitGame:
                             raise NotImplementedError
                         case ActionType.ResetGame:
-                            self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
-                            new_env_observation = self._world.reset()
-                            agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, new_env_observation)
-                            output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.OK), "observation": agent_observation_str, "message": "Resetting Game and starting again."}
+                            output_message_dict = self._process_reset_game_action(agent_addr)
                         case _:
-                            # Process ALL other ActionTypes
-                            # Access agent information
-                            self.logger.info(f'Coordinator received from agent {agent_addr}: {action}')
-                            # Process the message
-                            action_for_env = self._action_processor.process_message_from_agent(agent_addr, action)
-                            new_observation = self._world.step(action_for_env)
-                            agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr,new_observation)
-                            # send the action to the env and get new gamestate
-                            # Answer the agents
-                            output_message_dict = {"agent": agent_addr, "observation": agent_observation_str, "status": str(GameStatus.OK)}
+                            output_message_dict = self._process_generic_action(agent_addr, action)
                     try:
                         # Convert message into string representation
                         output_message = json.dumps(output_message_dict)
@@ -322,6 +218,49 @@ class Coordinator:
             self.logger.error(f'Exception in main_coordinator(): {e}')
             raise e
 
+    def _process_join_game_action(self, agent_addr:tuple, action:Action, current_observation:Observation)->dict:
+        """"
+        Method for processing Action of type ActionType.JoinGame
+        """
+        if agent_addr not in self.agents:
+            self.logger.info(f"Creating new agent for {agent_addr}.")
+            agent_name = action.parameters["agent_info"].name
+            agent_role = action.parameters["agent_info"].role
+            if agent_role in  self.ALLOWED_ROLES:
+                self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
+                self.agents[agent_addr] = action.parameters
+                agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, current_observation)
+                output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.CREATED), "observation": agent_observation_str, "message": f"Welcome {agent_name}, registred as {agent_role}"}
+            else:
+                self.logger.info(f"\tError in regitration, unknown agent role: {agent_role}!")
+                output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.BAD_REQUEST), "message": f"Incorrect agent_role {agent_role}"}
+        else:
+            self.logger.info(f"\tError in regitration, unknown agent already exists!")
+            output_message_dict = {"to_agent": {agent_addr}, "status": str(GameStatus.BAD_REQUEST), "message": "Agent already exists."}
+        return output_message_dict
+    
+    def _process_reset_game_action(self, agent_addr:tuple)->dict:
+        """"
+        Method for processing Action of type ActionType.ResetGame
+        """
+        self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
+        new_env_observation = self._world.reset()
+        agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, new_env_observation)
+        output_message_dict = {"to_agent": agent_addr,
+                                "status": str(GameStatus.OK),
+                                "observation": agent_observation_str,
+                                "message": "Resetting Game and starting again."}
+        return output_message_dict
+
+    def _process_generic_action(self, agent_addr:tuple, action:Action)->dict:
+        self.logger.info(f'Coordinator received from agent {agent_addr}: {action}')
+        # Process the message
+        action_for_env = self._action_processor.process_message_from_agent(agent_addr, action)
+        new_observation = self._world.step(action_for_env)
+        agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr,new_observation)
+        output_message_dict = {"agent": agent_addr, "observation": agent_observation_str, "status": str(GameStatus.OK)}
+        return output_message_dict
+    
 __version__ = 'v0.2.1'
 
 

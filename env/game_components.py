@@ -295,13 +295,30 @@ class GameState():
         """
         Returns json representation of the GameState in string
         """
+        ret_dict = self.as_dict
+        return json.dumps(ret_dict)
+
+    @property
+    def as_dict(self)->dict:
+        """
+        Returns dict representation of the GameState in string
+        """
         ret_dict = {"known_networks":[dataclasses.asdict(x) for x in self.known_networks],
             "known_hosts":[dataclasses.asdict(x) for x in self.known_hosts],
             "controlled_hosts":[dataclasses.asdict(x) for x in self.controlled_hosts],
             "known_services": {str(host):[dataclasses.asdict(s) for s in services] for host,services in self.known_services.items()},
             "known_data":{str(host):[dataclasses.asdict(d) for d in data] for host,data in self.known_data.items()}}
-        return json.dumps(ret_dict) 
+        return ret_dict
 
+    @classmethod
+    def from_dict(cls, data_dict:dict):
+        state = GameState(known_networks={Network(x["ip"], x["mask"]) for x in data_dict["known_networks"]},
+            known_hosts={IP(x["ip"]) for x in data_dict["known_hosts"]},
+            controlled_hosts={IP(x["ip"]) for x in data_dict["controlled_hosts"]},
+            known_services={IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
+                for s in services} for k,services in data_dict["known_services"].items()},  
+            known_data={IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in data_dict["known_data"].items()}) 
+        return state
 
     @classmethod
     def from_json(cls, json_string):
@@ -346,32 +363,3 @@ class GameStatus(enum.Enum):
                 return GameStatus.BAD_REQUEST
     def __repr__(self) -> str:
         return str(self)
-
-# Main is only used for testing
-if __name__ == '__main__':
-    # state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
-    #             known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
-    #             known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
-    #             known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
-    #                         IP("192.168.1.2"):{Data("McGiver", "data2")}})
-    # # print(state)
-    # # print("-------------AS JSON ------------")
-    # # as_json = state.as_json()
-    # # print(as_json)
-    # # print("-------------FROM JSON ------------")
-    # # new_state = GameState.from_json(as_json)
-    # # print(new_state)
-    # # print(new_state == state)
-    # parameters = {"target_host":IP('192.168.1.3'), "target_service":Service('postgresql', 'passive', '14.3.0', False)}
-    # action = Action(ActionType.from_string("ActionType.ExploitService"), parameters)
-
-    # parameters = {"target_host":IP('213.47.23.195'), "data":Data("User1", "DatabaseData"), "source_host":IP("192.168.1.3")}
-    # action = Action(ActionType.ExfiltrateData, parameters)
-    # as_json = action.as_json()
-    # print(as_json)
-    # new_action = Action.from_json(as_json)
-    # print(new_action)
-    # print(action==new_action)
-    test  = {"staus": GameStatus.OK}
-    print(GameStatus.BAD_REQUEST)
-    json.dumps(test)
