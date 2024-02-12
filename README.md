@@ -40,7 +40,7 @@ The architecture of the environment can be seen [here](Architecture.md).
 The NetSecGame environment has several components in the following files:
 
 - File `env/network_security_game.py` implements the game environment
-- File `env/game_components.py` implements a library with objects used in the environment
+- File `env/game_components.py` implements a library with objects used in the environment. See [detailed explanation](docs/Components.md) of the game components.
 - File `utils/utils.py` is a collection of utils function which the agents can use
 - Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the network game's configuration of hosts, data, services, and connections. It is taken from CYST.
 - Files such as `agent/q_learning/q_agent.py` that implement the RL agents.
@@ -51,16 +51,6 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 1. We work with the closed-world assumption. Only the defined entities exist in the simulation.
 2. No actions have a "delete" effect (the attacker does not give up ownership of nodes, does not forget nodes or services, and when data is transferred we assume it's copied and therefore present in both nodes).
 3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
-
-## Actions
-There are currently implemented five types of actions:
-| Action name          | Description                                                              | Parameters                         | Effects                                          |
-|----------------------|--------------------------------------------------------------------------|---------------------------------------|--------------------------------------------------|
-| Scan Network          | Scans the given network for active hosts | network, mask                        | extends 'known_hosts'                            |
-| Find Services         | Scans given host for running services                                    | target IP                               | extends 'known_services' with host:service pairs |
-| Exploit Service | Runs exploit in service to gain control                                  | target IP, target service                     | extends 'controlled_hosts'                       |
-| Find Data            | Runs code to discover data either in a given service or in a controlled host | target IP, target service | extends 'known_data' with host:data pairs        |
-| Exfiltrate data      | Runds code to move data from host to host                                | source IP, data, target IP  | extends 'known_data with "target:data" pair      |
 
 ### Assumption and Conditions for Actions
 1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
