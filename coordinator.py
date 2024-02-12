@@ -9,7 +9,7 @@ import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, Observation, ActionType, GameStatus
-from utils.utils import observation_to_str
+from utils.utils import observation_as_dict
 from pathlib import Path
 import os
 import time
@@ -96,7 +96,7 @@ class ActionProcessor:
         """
         self._logger.debug(f"Processing message to agent {agent_id}: {new_observation}")
         self._observations[agent_id] = new_observation
-        msg_for_agent = observation_to_str(new_observation)
+        msg_for_agent = observation_as_dict(new_observation)
         return msg_for_agent
 
 class ConnectionLimitServer(asyncio.Protocol):
