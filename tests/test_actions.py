@@ -15,7 +15,7 @@ import pytest
 @pytest.fixture
 def env_obs():
     """After init step"""
-    env = NetworkSecurityEnvironment('tests/netsecenv-task.yaml')
+    env = NetworkSecurityEnvironment('tests/netsecenv-task-for-testing.yaml')
     observation = env.reset()
     return (env, observation)
 
@@ -23,7 +23,7 @@ def env_obs():
 def env_obs_scan(env_obs):
     """After scanning network"""
     env, _ = env_obs
-    parameters = {"target_network":components.Network('192.168.1.0', 24), "source_host":components.IP("192.168.2.4")}
+    parameters = {"target_network":components.Network('192.168.1.0', 24), "source_host":components.IP("192.168.2.2")}
     action = components.Action(components.ActionType.ScanNetwork, parameters)
     new_obs = env.step(action)
     return (env, new_obs)
@@ -32,7 +32,7 @@ def env_obs_scan(env_obs):
 def env_obs_found_service(env_obs_scan):
     """After finding service"""
     env, _ = env_obs_scan
-    parameters = {"target_host":components.IP('192.168.1.3'), "source_host":components.IP("192.168.2.4")}
+    parameters = {"target_host":components.IP('192.168.1.3'), "source_host":components.IP("192.168.2.2")}
     action = components.Action(components.ActionType.FindServices, parameters)
     new_obs = env.step(action)
     return (env, new_obs)
@@ -41,7 +41,7 @@ def env_obs_found_service(env_obs_scan):
 def env_obs_found_service2(env_obs_scan):
     """After finding service"""
     env, _ = env_obs_scan
-    parameters = {"target_host":components.IP('192.168.1.4'), "source_host":components.IP("192.168.2.4")}
+    parameters = {"target_host":components.IP('192.168.1.4'), "source_host":components.IP("192.168.2.2")}
     action = components.Action(components.ActionType.FindServices, parameters)
     new_obs = env.step(action)
     return (env, new_obs)
@@ -51,7 +51,7 @@ def env_obs_exploited_service(env_obs_found_service):
     """After exploiting service"""
     env, _ = env_obs_found_service
     parameters = {"target_host":components.IP('192.168.1.3'), "target_service":components.Service('postgresql', 'passive', '14.3.0', False),
-                "source_host":components.IP("192.168.2.4")}
+                "source_host":components.IP("192.168.2.2")}
     action = components.Action(components.ActionType.ExploitService, parameters)
     new_obs = env.step(action)
     return (env, new_obs)
@@ -62,7 +62,7 @@ def env_obs_exploited_service2(env_obs_found_service2):
     env, _ = env_obs_found_service2
     parameters = {"target_host":components.IP('192.168.1.4'),
                    "target_service":components.Service('lighttpd', 'passive', '1.4.54', False),
-                   "source_host":components.IP("192.168.2.4")}
+                   "source_host":components.IP("192.168.2.2")}
     action = components.Action(components.ActionType.ExploitService, parameters)
     new_obs = env.step(action)
     return (env, new_obs)
@@ -91,16 +91,16 @@ class TestActionsNoDefender:
         Load initial state and scan a non-existing network
         """
         env, observation = env_obs
-        parameters = {"target_network":components.Network('192.168.5.0', 24), "source_host":components.IP("192.168.2.4")}
+        parameters = {"target_network":components.Network('192.168.5.0', 24), "source_host":components.IP("192.168.2.2")}
         action = components.Action(components.ActionType.ScanNetwork, parameters)
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_scan_network_exists(self, env_obs):
         env, observation = env_obs
-        parameters = {"target_network":components.Network('192.168.1.0', 24), "source_host":components.IP("192.168.2.4")}
+        parameters = {"target_network":components.Network('192.168.1.0', 24), "source_host":components.IP("192.168.2.2")}
         action = components.Action(components.ActionType.ScanNetwork, parameters)
         obs = env.step(action)
         assert obs.state != observation.state
@@ -116,28 +116,28 @@ class TestActionsNoDefender:
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_scan_service_exists(self, env_obs_scan):
         env, observation = env_obs_scan
-        parameters = {"target_host":components.IP('192.168.1.3'), "source_host":components.IP("192.168.2.4")}
+        parameters = {"target_host":components.IP('192.168.1.3'), "source_host":components.IP("192.168.2.2")}
         action = components.Action(components.ActionType.FindServices, parameters)
         obs = env.step(action)
         assert obs.state != observation.state
         assert components.Service('postgresql', 'passive', '14.3.0', False) in obs.state.known_services[components.IP('192.168.1.3')]
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_scan_service_not_exist(self, env_obs_scan):
         env, observation = env_obs_scan
-        parameters = {"target_host":components.IP('192.168.1.1'), "source_host":components.IP("192.168.2.4")}
+        parameters = {"target_host":components.IP('192.168.1.1'), "source_host":components.IP("192.168.2.2")}
         action = components.Action(components.ActionType.FindServices, parameters)
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
-    def test_scan_service_ource_host_not_valid(self, env_obs_scan):
+    def test_scan_service_source_host_not_valid(self, env_obs_scan):
         env, observation = env_obs_scan
         parameters = {"target_host":components.IP('192.168.1.3'), "source_host":components.IP("1.1.1.1")}
         action = components.Action(components.ActionType.FindServices, parameters)
@@ -145,31 +145,31 @@ class TestActionsNoDefender:
         assert components.IP('192.168.1.3') not in obs.state.known_services.keys()
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_exploit_service_remote_success(self, env_obs_found_service):
         env, observation = env_obs_found_service
         parameters = {"target_host":components.IP('192.168.1.3'),
                        "target_service":components.Service('postgresql', 'passive', '14.3.0', False),
-                       "source_host":components.IP("192.168.2.4")}
+                       "source_host":components.IP("192.168.2.2")}
         action = components.Action(components.ActionType.ExploitService, parameters)
         obs = env.step(action)
         assert obs.state != observation.state
         assert components.IP("192.168.1.3") in obs.state.controlled_hosts
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_exploit_service_remote_wrong_target_host(self, env_obs_found_service):
         """The service does not exist in this host"""
         env, observation = env_obs_found_service
         parameters = {"target_host":components.IP('192.168.1.4'),
                        "target_service":components.Service('postgresql', 'passive', '14.3.0', False),
-                       "source_host":components.IP("192.168.2.4")}
+                       "source_host":components.IP("192.168.2.2")}
         action = components.Action(components.ActionType.ExploitService, parameters)
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
     
     def test_exploit_service_remote_wrong_source_host(self, env_obs_found_service):
         """The service does not exist in this host"""
@@ -181,19 +181,19 @@ class TestActionsNoDefender:
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_exploit_service_remote_wrong_service(self, env_obs_found_service):
         """The service does not exist"""
         env, observation = env_obs_found_service
         parameters = {"target_host":components.IP('192.168.1.3'),
                        "target_service":components.Service('dummy', 'passive', '14.3.0', False),
-                       "source_host":components.IP("192.168.2.4")}
+                       "source_host":components.IP("192.168.2.2")}
         action = components.Action(components.ActionType.ExploitService, parameters)
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_find_data_in_after_exploit(self, env_obs_exploited_service):
         """Exploit known service"""
@@ -204,7 +204,7 @@ class TestActionsNoDefender:
         assert obs.state != observation.state
         assert components.Data("User1", "DatabaseData") in obs.state.known_data[components.IP('192.168.1.3')]
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_find_data_no_access(self, env_obs_exploited_service):
         """
@@ -217,7 +217,7 @@ class TestActionsNoDefender:
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_find_data_no_data(self, env_obs_exploited_service):
         """Controlled host with no data"""
@@ -228,7 +228,7 @@ class TestActionsNoDefender:
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
     
     def test_find_data_wrong_source_host(self, env_obs_exploited_service):
         """Controlled host with no data"""
@@ -239,7 +239,7 @@ class TestActionsNoDefender:
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_exfiltrate_data_to_host_win(self, env_obs_found_data):
         """Exfiltrate found data to the target"""
@@ -250,7 +250,7 @@ class TestActionsNoDefender:
         assert obs.state != observation.state
         assert components.Data("User1", "DatabaseData") in obs.state.known_data[components.IP('213.47.23.195')]
         assert obs.reward == 99
-        assert obs.done
+        assert obs.end
 
     def test_exfiltrate_data_to_host_nowin(self, env_obs_found_data):
         """
@@ -258,13 +258,13 @@ class TestActionsNoDefender:
         The exfiltration succeeds but it is not the correct host.
         """
         env, observation = env_obs_found_data
-        parameters = {"target_host":components.IP('192.168.2.4'), "data":components.Data("User1", "DatabaseData"), "source_host":components.IP("192.168.1.3")}
+        parameters = {"target_host":components.IP('192.168.2.2'), "data":components.Data("User1", "DatabaseData"), "source_host":components.IP("192.168.1.3")}
         action = components.Action(components.ActionType.ExfiltrateData, parameters)
         obs = env.step(action)
         assert obs.state != observation.state
-        assert components.Data("User1", "DatabaseData") in obs.state.known_data[components.IP('192.168.2.4')]
+        assert components.Data("User1", "DatabaseData") in obs.state.known_data[components.IP('192.168.2.2')]
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_exfiltrate_data_to_host_nowin2(self, env_obs_found_data2):
         """
@@ -278,7 +278,7 @@ class TestActionsNoDefender:
         assert obs.state != observation.state
         assert components.Data("User2", "WebServerData") in obs.state.known_data[components.IP('213.47.23.195')]
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_exfiltrate_data_wrong_data(self, env_obs_found_data):
         """Exfiltrate wrong data to the target"""
@@ -288,7 +288,7 @@ class TestActionsNoDefender:
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_exfiltrate_data_wrong_source(self, env_obs_found_data):
         """Try to exfiltrate data to a host we don't control"""
@@ -298,7 +298,7 @@ class TestActionsNoDefender:
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_exfiltrate_data_wrong_target(self, env_obs_found_data):
         """Try to exfiltrate data to a host we don't control"""
@@ -308,7 +308,7 @@ class TestActionsNoDefender:
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_exfiltrate_data_not_found(self, env_obs_exploited_service):
         """
@@ -324,7 +324,7 @@ class TestActionsNoDefender:
         obs = env.step(action)
         assert obs.state == observation.state
         assert obs.reward == -1
-        assert obs.done is False
+        assert obs.end is False
 
     def test_exploit_service_witout_find_service_in_host(self, env_obs_scan):
         """Try to exploit service without running FindServices first"""

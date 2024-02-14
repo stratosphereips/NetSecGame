@@ -1,0 +1,53 @@
+# Configuration file for the task of playing the NetSecGame
+# THIS VERSION SHOULD BE ONLY USE FOR PYTEST PURPOSES
+
+coordinator:
+  # Attacker agent
+  agents:
+    random_seed: 42
+    attackers:
+      goal:
+        randomize_goal_every_episode: False
+        known_networks: []
+        known_hosts: []
+        controlled_hosts: []
+        known_services: {}
+        known_data: {213.47.23.195: [[User1,DatabaseData]]}
+      start_position:
+        known_networks: []
+        known_hosts: []
+        # The attacker must always at least control the CC if the goal is to exfiltrate there
+        # Example of fixing the starting point of the agent in a local host
+        controlled_hosts: [213.47.23.195, 192.168.2.2]
+        known_services: {}
+        # Same format as before
+        known_data: {}
+
+    defender:
+      # types are StochasticDefender and NoDefender
+      #type: 'StochasticDefender'
+      type: 'NoDefender'
+
+env:
+  # random means to choose the seed in a random way, so it is not fixed
+  # random_seed: 'random'
+  # Or you can fix the seed
+  random_seed: 42
+  scenario: 'scenario1_small'
+  max_steps: 15
+  actions:
+    scan_network:
+      prob_success: 1
+      prob_detection: 0.2
+    find_services:
+      prob_success: 1
+      prob_detection: 0.3
+    exploit_services:
+      prob_success: 1
+      prob_detection: 0.4
+    find_data:
+      prob_success: 1
+      prob_detection: 0.1
+    exfiltrate_data:
+      prob_success: 1
+      prob_detection: 0.1
