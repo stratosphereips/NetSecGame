@@ -1,5 +1,5 @@
 # Configuration file for the task of playing the NetSecGame
-# It includes the agents and env conf
+# THIS VERSION SHOULD BE ONLY USE FOR PYTEST PURPOSES
 
 coordinator:
   # Attacker agent
