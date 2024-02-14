@@ -491,3 +491,29 @@ class TestGameState:
         deserialized_state = GameState.from_json(state_json)
         assert game_state is not deserialized_state
         assert game_state == deserialized_state
+
+    def test_game_state_as_dict(self):
+        game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
+                known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
+                known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
+                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
+                            IP("192.168.1.2"):{Data("McGiver", "data2")}})
+        game_dict = game_state.as_dict
+        assert game_dict is not None
+        assert {"ip": "1.1.1.1", "mask": 24} in game_dict["known_networks"]
+        assert {"ip": "192.168.1.3"} in game_dict["known_hosts"]
+        assert {"ip": "192.168.1.2"} in game_dict["controlled_hosts"]
+        assert ("192.168.1.3", [{"name": "service1", "type": "public", "version": "1.01", "is_local": True}]) in game_dict["known_services"].items()
+        assert {"owner": "ChuckNorris", "id": "data1"} in  game_dict["known_data"]["192.168.1.3"]
+        assert {"owner": "ChuckNorris", "id": "data2"} in  game_dict["known_data"]["192.168.1.3"]
+    
+    def test_game_state_from_dict(self):
+        game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
+                known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
+                known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
+                known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
+                            IP("192.168.1.2"):{Data("McGiver", "data2")}})
+        game_dict = game_state.as_dict
+        deserialized_state = GameState.from_dict(game_dict)
+        assert game_state is not deserialized_state
+        assert game_state == deserialized_state
