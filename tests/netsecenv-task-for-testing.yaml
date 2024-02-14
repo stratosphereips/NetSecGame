@@ -5,8 +5,7 @@ coordinator:
   # Attacker agent
   agents:
     random_seed: 42
-    attacker:
-
+    attackers:
       goal:
         randomize_goal_every_episode: False
         known_networks: []
