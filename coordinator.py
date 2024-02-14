@@ -15,49 +15,55 @@ import os
 import time
 
 
-
 class AIDojo:
-    def __init__(self, host:str,port:int, net_set_config:str) -> None:
+    def __init__(self, host: str, port: int, net_set_config: str) -> None:
         self.host = host
         self.port = port
-        self.logger = logging.getLogger('AIDojo-main')
+        self.logger = logging.getLogger("AIDojo-main")
         self._action_queue = asyncio.Queue()
         self._answer_queue = asyncio.Queue()
-        self._server = ConnectionLimitServer(self._action_queue, self._answer_queue, max_connections=2)
-        self._coordinator = Coordinator(self._action_queue, self._answer_queue, net_set_config, ALLOWED_ROLES=['Attacker', 'Defender', 'Human'])
+        self._server = ConnectionLimitServer(
+            self._action_queue, self._answer_queue, max_connections=2
+        )
+        self._coordinator = Coordinator(
+            self._action_queue,
+            self._answer_queue,
+            net_set_config,
+            ALLOWED_ROLES=["Attacker", "Defender", "Human"],
+        )
 
     def run(self):
         loop = asyncio.get_event_loop()
         try:
             loop.run_until_complete(self.start_tasks())
         except KeyboardInterrupt:
-            self.logger.debug('Terminating by KeyboardInterrupt')
+            self.logger.debug("Terminating by KeyboardInterrupt")
             raise SystemExit
         except Exception as e:
-            self.logger.error(f'Exception in AIDojo.run(): {e}')
+            self.logger.error(f"Exception in AIDojo.run(): {e}")
         finally:
             loop.close()
-    
+
     async def start_tasks(self):
         """
         High level funciton to start all the other asynchronous tasks and queues
         - Reads the conf of the coordinator
-        - Creates queues 
+        - Creates queues
         - Start the main part of the coordinator
         - Start a server that listens for agents
         """
-        self.logger.info('Starting all tasks')
+        self.logger.info("Starting all tasks")
 
-        self.logger.info('Starting the server listening for agents')
+        self.logger.info("Starting the server listening for agents")
         # start_server returns a coroutine, so 'await' runs this coroutine
 
         server = await asyncio.start_server(self._server, self.host, self.port)
 
-        self.logger.info('Starting main coordinator tasks')
+        self.logger.info("Starting main coordinator tasks")
         asyncio.create_task(self._coordinator.run())
 
-        addrs = ', '.join(str(sock.getsockname()) for sock in server.sockets)
-        self.logger.info(f'\tServing on {addrs}')
+        addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
+        self.logger.info(f"\tServing on {addrs}")
 
         try:
             async with server:
@@ -70,25 +76,26 @@ class AIDojo:
             server.close()
             await server.wait_closed()
 
-class ActionProcessor:
 
+class ActionProcessor:
     def __init__(self) -> None:
-        self._logger = logging.getLogger('Coordinator-ActionProcessor')
+        self._logger = logging.getLogger("Coordinator-ActionProcessor")
         self._observations = {}
         self._logger.info("Action Processor created")
-    
-    def process_message_from_agent(self, agent_id:int, action:Action)->Action:
+
+    def process_message_from_agent(self, agent_id: int, action: Action) -> Action:
         """
         Method for processing message coming from the agent for the game engine.
         input str JSON
         output Action
         """
         self._logger.debug(f"Processing message from agent {agent_id}: {Action}")
-        a =  action
+        a = action
         return a
-               
-    
-    def generate_observation_msg_for_agent(self, agent_id:int, new_observation:Observation)->str:
+
+    def generate_observation_msg_for_agent(
+        self, agent_id: int, new_observation: Observation
+    ) -> str:
         """
         Method for processing a NetSecGame gamestate into an partial observation for an agent
 
@@ -99,6 +106,7 @@ class ActionProcessor:
         msg_for_agent = observation_as_dict(new_observation)
         return msg_for_agent
 
+
 class ConnectionLimitServer(asyncio.Protocol):
     def __init__(self, actions_queue, answers_queue, max_connections):
         self.actions_queue = actions_queue
@@ -108,7 +116,7 @@ class ConnectionLimitServer(asyncio.Protocol):
         self.logger = logging.getLogger("AIDojo-Server")
 
     async def handle_new_agent(self, reader, writer):
-        async def send_data_to_agent(writer, data:str)->None:
+        async def send_data_to_agent(writer, data: str) -> None:
             """
             Send the world to the agent
             """
@@ -116,7 +124,9 @@ class ConnectionLimitServer(asyncio.Protocol):
 
         # Check if the maximum number of connections has been reached
         if self.current_connections >= self.max_connections:
-            self.logger(f"Max connections reached. Rejecting new connection from {writer.get_extra_info('peername')}")
+            self.logger.info(
+                f"Max connections reached. Rejecting new connection from {writer.get_extra_info('peername')}"
+            )
             writer.close()
             return
 
@@ -125,13 +135,15 @@ class ConnectionLimitServer(asyncio.Protocol):
 
         # Handle the new agent
         try:
-            addr = writer.get_extra_info('peername')
+            addr = writer.get_extra_info("peername")
             self.logger.info(f"New agent connected: {addr}")
             while True:
                 data = await reader.read(500)
                 raw_message = data.decode().strip()
                 if len(raw_message):
-                    self.logger.info(f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}")
+                    self.logger.info(
+                        f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}"
+                    )
 
                     # Put the message and agent information into the queue
                     await self.actions_queue.put((addr, raw_message))
@@ -144,29 +156,34 @@ class ConnectionLimitServer(asyncio.Protocol):
                         try:
                             await writer.drain()
                         except ConnectionResetError:
-                            self.logger.info(f'Connection lost. Agent disconnected.')
+                            self.logger.info(f"Connection lost. Agent disconnected.")
                 else:
-                    self.logger.info(f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}")
-                    self.logger.info(f"\tEmpty message, terminating agent on address {addr}")
+                    self.logger.info(
+                        f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}"
+                    )
+                    self.logger.info(
+                        f"\tEmpty message, terminating agent on address {addr}"
+                    )
                     break
         except KeyboardInterrupt:
-            self.logger.debug('Terminating by KeyboardInterrupt')
+            self.logger.debug("Terminating by KeyboardInterrupt")
             raise SystemExit
         except Exception as e:
-            self.logger.error(f'Exception in handle_new_agent(): {e}')
+            self.logger.error(f"Exception in handle_new_agent(): {e}")
         finally:
             # Decrement the count of current connections
             self.current_connections -= 1
-    
+
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
+
 
 class Coordinator:
     def __init__(self, actions_queue, answers_queue, net_set_config, ALLOWED_ROLES):
         self._actions_queue = actions_queue
         self._answers_queue = answers_queue
-        self.ALLOWED_ROLES =ALLOWED_ROLES
-        self.logger = logging.getLogger('AIDojo-Coordinator')
+        self.ALLOWED_ROLES = ALLOWED_ROLES
+        self.logger = logging.getLogger("AIDojo-Coordinator")
         self._world = NetworkSecurityEnvironment(net_set_config)
         self._action_processor = ActionProcessor()
 
@@ -192,16 +209,24 @@ class Coordinator:
                     try:  # Convert message to Action
                         action = Action.from_json(message)
                     except Exception as e:
-                        self.logger.error(f"Error when converting msg to Action using Action.from_json():{e}")
-                    match action.type: # process action based on its type
+                        self.logger.error(
+                            f"Error when converting msg to Action using Action.from_json():{e}"
+                        )
+                    match action.type:  # process action based on its type
                         case ActionType.JoinGame:
-                            output_message_dict = self._process_join_game_action(agent_addr, action, env_observation)
+                            output_message_dict = self._process_join_game_action(
+                                agent_addr, action, env_observation
+                            )
                         case ActionType.QuitGame:
                             raise NotImplementedError
                         case ActionType.ResetGame:
-                            output_message_dict = self._process_reset_game_action(agent_addr)
+                            output_message_dict = self._process_reset_game_action(
+                                agent_addr
+                            )
                         case _:
-                            output_message_dict = self._process_generic_action(agent_addr, action)
+                            output_message_dict = self._process_generic_action(
+                                agent_addr, action
+                            )
                     try:
                         # Convert message into string representation
                         output_message = json.dumps(output_message_dict)
@@ -210,81 +235,151 @@ class Coordinator:
                         raise e
                     # Send to anwer_queue
                     await self._answers_queue.put(output_message)
-                await asyncio.sleep(0.0000001)
+                await asyncio.sleep(0.1)
         except KeyboardInterrupt:
-            self.logger.debug('Terminating by KeyboardInterrupt')
+            self.logger.debug("Terminating by KeyboardInterrupt")
             raise SystemExit
         except Exception as e:
-            self.logger.error(f'Exception in main_coordinator(): {e}')
+            self.logger.error(f"Exception in main_coordinator(): {e}")
             raise e
 
-    def _process_join_game_action(self, agent_addr:tuple, action:Action, current_observation:Observation)->dict:
-        """"
+    def _process_join_game_action(
+        self, agent_addr: tuple, action: Action, current_observation: Observation
+    ) -> dict:
+        """ "
         Method for processing Action of type ActionType.JoinGame
         """
         if agent_addr not in self.agents:
             self.logger.info(f"Creating new agent for {agent_addr}.")
             agent_name = action.parameters["agent_info"].name
             agent_role = action.parameters["agent_info"].role
-            if agent_role in  self.ALLOWED_ROLES:
+            if agent_role in self.ALLOWED_ROLES:
                 self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
                 self.agents[agent_addr] = action.parameters
-                agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, current_observation)
-                output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.CREATED), "observation": agent_observation_str, "message": f"Welcome {agent_name}, registred as {agent_role}"}
+                agent_observation_str = (
+                    self._action_processor.generate_observation_msg_for_agent(
+                        agent_addr, current_observation
+                    )
+                )
+                output_message_dict = {
+                    "to_agent": agent_addr,
+                    "status": str(GameStatus.CREATED),
+                    "observation": agent_observation_str,
+                    "message": f"Welcome {agent_name}, registred as {agent_role}",
+                }
             else:
-                self.logger.info(f"\tError in regitration, unknown agent role: {agent_role}!")
-                output_message_dict = {"to_agent": agent_addr, "status": str(GameStatus.BAD_REQUEST), "message": f"Incorrect agent_role {agent_role}"}
+                self.logger.info(
+                    f"\tError in regitration, unknown agent role: {agent_role}!"
+                )
+                output_message_dict = {
+                    "to_agent": agent_addr,
+                    "status": str(GameStatus.BAD_REQUEST),
+                    "message": f"Incorrect agent_role {agent_role}",
+                }
         else:
             self.logger.info(f"\tError in regitration, unknown agent already exists!")
-            output_message_dict = {"to_agent": {agent_addr}, "status": str(GameStatus.BAD_REQUEST), "message": "Agent already exists."}
+            output_message_dict = {
+                "to_agent": {agent_addr},
+                "status": str(GameStatus.BAD_REQUEST),
+                "message": "Agent already exists.",
+            }
         return output_message_dict
-    
-    def _process_reset_game_action(self, agent_addr:tuple)->dict:
-        """"
+
+    def _process_reset_game_action(self, agent_addr: tuple) -> dict:
+        """ "
         Method for processing Action of type ActionType.ResetGame
         """
-        self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
+        self.logger.info(
+            f"Coordinator received from RESET request from agent {agent_addr}"
+        )
         new_env_observation = self._world.reset()
-        agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr, new_env_observation)
-        output_message_dict = {"to_agent": agent_addr,
-                                "status": str(GameStatus.OK),
-                                "observation": agent_observation_str,
-                                "message": "Resetting Game and starting again."}
+        agent_observation_str = (
+            self._action_processor.generate_observation_msg_for_agent(
+                agent_addr, new_env_observation
+            )
+        )
+        output_message_dict = {
+            "to_agent": agent_addr,
+            "status": str(GameStatus.OK),
+            "observation": agent_observation_str,
+            "message": "Resetting Game and starting again.",
+        }
         return output_message_dict
 
-    def _process_generic_action(self, agent_addr:tuple, action:Action)->dict:
-        self.logger.info(f'Coordinator received from agent {agent_addr}: {action}')
+    def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
+        self.logger.info(f"Coordinator received from agent {agent_addr}: {action}")
         # Process the message
-        action_for_env = self._action_processor.process_message_from_agent(agent_addr, action)
+        action_for_env = self._action_processor.process_message_from_agent(
+            agent_addr, action
+        )
         new_observation = self._world.step(action_for_env)
-        agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr,new_observation)
-        output_message_dict = {"to_agent": agent_addr, "observation": agent_observation_str, "status": str(GameStatus.OK)}
+        agent_observation_str = (
+            self._action_processor.generate_observation_msg_for_agent(
+                agent_addr, new_observation
+            )
+        )
+        output_message_dict = {
+            "agent": agent_addr,
+            "observation": agent_observation_str,
+            "status": str(GameStatus.OK),
+        }
         return output_message_dict
-    
-__version__ = 'v0.2.1'
 
 
+__version__ = "v0.2.1"
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser = argparse.ArgumentParser(description=f"NetSecGame Coordinator Server version {__version__}. Author: Sebastian Garcia, sebastian.garcia@agents.fel.cvut.cz", usage='%(prog)s [options]')
-    parser.add_argument('-v', '--verbose', help='Verbosity level. This shows more info about the results.', action='store', required=False, type=int)
-    parser.add_argument('-d', '--debug', help='Debugging level. This shows inner information about the flows.', action='store', required=False, type=int)
-    parser.add_argument('-c', '--configfile', help='Configuration file.', action='store', required=False, type=str, default='coordinator.conf')
+    parser = argparse.ArgumentParser(
+        description=f"NetSecGame Coordinator Server version {__version__}. Author: Sebastian Garcia, sebastian.garcia@agents.fel.cvut.cz",
+        usage="%(prog)s [options]",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="Verbosity level. This shows more info about the results.",
+        action="store",
+        required=False,
+        type=int,
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        help="Debugging level. This shows inner information about the flows.",
+        action="store",
+        required=False,
+        type=int,
+    )
+    parser.add_argument(
+        "-c",
+        "--configfile",
+        help="Configuration file.",
+        action="store",
+        required=False,
+        type=str,
+        default="coordinator.conf",
+    )
 
     args = parser.parse_args()
-   
+
     # Set the logging
-    log_filename=Path('coordinator.log')
+    log_filename = Path("coordinator.log")
     if not log_filename.parent.exists():
         os.makedirs(log_filename.parent)
-    logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.INFO)
+    logging.basicConfig(
+        filename=log_filename,
+        filemode="w",
+        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=logging.INFO,
+    )
     # load config for coordinator
-    with open(args.configfile, 'r') as jfile:
+    with open(args.configfile, "r") as jfile:
         confjson = json.load(jfile)
-    host = confjson.get('host', None)
-    port = confjson.get('port', None)
+    host = confjson.get("host", None)
+    port = confjson.get("port", None)
     # Create AI Dojo
-    ai_dojo = AIDojo(host,port, 'env/netsecenv_conf.yaml')
+    ai_dojo = AIDojo(host, port, "env/netsecenv_conf.yaml")
     # Run it!
     ai_dojo.run()
