@@ -144,63 +144,67 @@ class TestAction:
         """
         Test the creation of the FindData action
         """
-        action = Action(action_type=ActionType.FindData, params={"target_host":IP("192.168.12.12")})
+        action = Action(action_type=ActionType.FindData, params={"source_host":IP("192.168.12.12"),"target_host":IP("192.168.12.12")})
         assert action.type == ActionType.FindData
         assert action.parameters["target_host"] == IP("192.168.12.12")
+        assert action.parameters["source_host"] == IP("192.168.12.12")
 
     def test_create_find_data_str(self):
         """
         Test the string representation of the FindData action
         """
-        action = Action(action_type=ActionType.FindData, params={"target_host":IP("192.168.12.12")})
-        assert str(action) == "Action <ActionType.FindData|{'target_host': 192.168.12.12}>"
+        action = Action(action_type=ActionType.FindData, params={"source_host":IP("192.168.12.12"), "target_host":IP("192.168.12.12")})
+        assert str(action) == "Action <ActionType.FindData|{'source_host': 192.168.12.12, 'target_host': 192.168.12.12}>"
 
     def test_create_find_data_repr(self):
         """
         Test the repr of the FindData action
         """
-        action = Action(action_type=ActionType.FindData, params={"target_host":IP("192.168.12.12")})
-        assert repr(action) == "Action <ActionType.FindData|{'target_host': 192.168.12.12}>"
+        action = Action(action_type=ActionType.FindData, params={"source_host":IP("192.168.12.12"), "target_host":IP("192.168.12.12")})
+        assert repr(action) == "Action <ActionType.FindData|{'source_host': 192.168.12.12, 'target_host': 192.168.12.12}>"
 
     def test_action_find_services(self):
         """
         Test the creation of the FindServices action
         """
         action = Action(action_type=ActionType.FindServices,
-                        params={"target_host":IP("192.168.12.12")})
+                        params={"source_host":IP("192.168.12.11"), "target_host":IP("192.168.12.12")})
         assert action.type == ActionType.FindServices
         assert action.parameters["target_host"] == IP("192.168.12.12")
+        assert action.parameters["source_host"] == IP("192.168.12.11")
 
     def test_action_scan_network(self):
         """
         Test the creation of the ScanNetwork action
         """
         action = Action(action_type=ActionType.ScanNetwork,
-                        params={"target_network":Network("172.16.1.12", 24)})
+                        params={"source_host":IP("192.168.12.11"), "target_network":Network("172.16.1.12", 24)})
         assert action.type == ActionType.ScanNetwork
         assert action.parameters["target_network"] == Network("172.16.1.12", 24)
+        assert action.parameters["source_host"] == IP("192.168.12.11")
 
     def test_action_exploit_services(self):
         """
         Test the creation of the ExploitService action
         """
         action = Action(action_type=ActionType.ExploitService,
-                        params={"target_host":IP("172.16.1.12"),
+                        params={"source_host":IP("192.168.12.11"),"target_host":IP("172.16.1.12"),
                                 "target_service":Service("ssh", "passive", "0.23", False)})
         assert action.type == ActionType.ExploitService
         assert action.parameters["target_host"] == IP("172.16.1.12")
         assert action.parameters["target_service"].name == "ssh"
         assert action.parameters["target_service"].version == "0.23"
         assert action.parameters["target_service"].type == "passive"
+        assert action.parameters["source_host"] == IP("192.168.12.11")
 
     def test_action_equal(self):
         """
         Test that two actions with the same parameters are equal
         """
         action = Action(action_type=ActionType.FindServices,
-                        params={"target_host":IP("172.16.1.22")})
+                        params={"target_host":IP("172.16.1.22"),"source_host":IP("192.168.12.11")})
         action2 = Action(action_type=ActionType.FindServices,
-                         params={"target_host":IP("172.16.1.22")})
+                         params={"target_host":IP("172.16.1.22"), "source_host":IP("192.168.12.11")})
         assert action == action2
     
     def test_action_equal_params_order(self):
@@ -208,9 +212,9 @@ class TestAction:
         Test that two actions with the same parameters are equal
         """
         action = Action(action_type=ActionType.ExploitService,
-                    params={"target_host":IP("172.16.1.22") ,"target_service": Service("ssh", "passive", "0.23", False)})
+                    params={"target_host":IP("172.16.1.22"),"source_host":IP("192.168.12.11"),"target_service": Service("ssh", "passive", "0.23", False)})
         action2 = Action(action_type=ActionType.ExploitService,
-                    params={"target_service": Service("ssh", "passive", "0.23", False), "target_host":IP("172.16.1.22")})
+                    params={"target_service": Service("ssh", "passive", "0.23", False), "target_host":IP("172.16.1.22"), "source_host":IP("192.168.12.11")})
         assert action == action2
 
     def test_action_not_equal_different_target(self):
@@ -218,9 +222,9 @@ class TestAction:
         Test that two actions with different parameters are not equal
         """
         action = Action(action_type=ActionType.FindServices,
-                        params={"target_host":IP("172.16.1.22")})
+                        params={"source_host":IP("192.168.12.11"), "target_host":IP("172.16.1.22")})
         action2 = Action(action_type=ActionType.FindServices,
-                         params={"target_host":IP("172.15.1.22")})
+                         params={"source_host":IP("192.168.12.11"), "target_host":IP("172.15.1.22")})
         assert action != action2
 
     def test_action_not_equal_different_action_type(self):
@@ -228,30 +232,30 @@ class TestAction:
         Test that two actions with different parameters are not equal
         """
         action = Action(action_type=ActionType.FindServices,
-                        params={"target_host":IP("172.16.1.22")})
+                        params={"source_host":IP("192.168.12.11"),"target_host":IP("172.16.1.22")})
         action2 = Action(action_type=ActionType.FindData,
-                         params={"target_host":IP("172.16.1.22")})
+                         params={"source_host":IP("192.168.12.11"),"target_host":IP("172.16.1.22")})
         assert action != action2
     
     def test_action_set_member(self):
         action_set = set()
         action_set.add(Action(action_type=ActionType.FindServices,
-                        params={"target_host":IP("172.16.1.22")}))
+                        params={"source_host":IP("192.168.12.11"),"target_host":IP("172.16.1.22")}))
         action_set.add(Action(action_type=ActionType.FindData,
-                        params={"target_host":IP("172.16.1.24")}))
+                        params={"source_host":IP("192.168.12.11"), "target_host":IP("172.16.1.24")}))
         action_set.add(Action(action_type=ActionType.ExploitService,
-                        params={"target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)}))
+                        params={"source_host":IP("192.168.12.11"), "target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)}))
         action_set.add(Action(action_type=ActionType.ScanNetwork,
-                        params={"target_network":Network("172.16.1.12", 24)}))
+                        params={"source_host":IP("192.168.12.11"), "target_network":Network("172.16.1.12", 24)}))
         action_set.add(Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"),
                          "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")}))
         
-        assert Action(action_type=ActionType.FindServices, params={"target_host":IP("172.16.1.22")}) in action_set
-        assert Action(action_type=ActionType.FindData, params={"target_host":IP("172.16.1.24")}) in action_set
-        assert Action(action_type=ActionType.ExploitService, params={"target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)})in action_set
+        assert Action(action_type=ActionType.FindServices, params={"source_host":IP("192.168.12.11"), "target_host":IP("172.16.1.22")}) in action_set
+        assert Action(action_type=ActionType.FindData, params={"source_host":IP("192.168.12.11"), "target_host":IP("172.16.1.24")}) in action_set
+        assert Action(action_type=ActionType.ExploitService, params={"source_host":IP("192.168.12.11"), "target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)})in action_set
         #reverse params order
-        assert Action(action_type=ActionType.ExploitService, params={"target_service": Service("ssh", "passive", "0.23", False), "target_host":IP("172.16.1.24")})in action_set
-        assert Action(action_type=ActionType.ScanNetwork, params={"target_network":Network("172.16.1.12", 24)}) in action_set
+        assert Action(action_type=ActionType.ExploitService, params={"target_service": Service("ssh", "passive", "0.23", False), "target_host":IP("172.16.1.24"), "source_host":IP("192.168.12.11")})in action_set
+        assert Action(action_type=ActionType.ScanNetwork, params={"target_network":Network("172.16.1.12", 24), "source_host":IP("192.168.12.11")}) in action_set
         assert Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"), "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")}) in action_set
         #reverse params orders
         assert Action(action_type=ActionType.ExfiltrateData, params={"source_host": IP("172.16.1.2"), "target_host":IP("172.16.1.3"), "data":Data("User2", "PublicKey")}) in action_set
@@ -322,28 +326,30 @@ class TestAction:
     
     def test_action_scan_network_serialization(self):
         action = Action(action_type=ActionType.ScanNetwork,
-                        params={"target_network":Network("172.16.1.12", 24)})
+                        params={"target_network":Network("172.16.1.12", 24),"source_host": IP("172.16.1.2") })
         action_json = action.as_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
     
     def test_action_find_services_serialization(self):
         action = Action(action_type=ActionType.FindServices,
-                        params={"target_host":IP("172.16.1.22")})
+                        params={"target_host":IP("172.16.1.22"), "source_host": IP("172.16.1.2")})
         action_json = action.as_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
 
     def test_action_find_data_serialization(self):
         action = Action(action_type=ActionType.FindData,
-                        params={"target_host":IP("172.16.1.22")})
+                        params={"target_host":IP("172.16.1.22"), "source_host": IP("172.16.1.2")})
         action_json = action.as_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
 
     def test_action_exploit_service_serialization(self):
         action = Action(action_type=ActionType.ExploitService,
-                        params={"target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)})
+                        params={"source_host": IP("172.16.1.2"),
+                                "target_host":IP("172.16.1.24"),
+                                "target_service": Service("ssh", "passive", "0.23", False)})
         action_json = action.as_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
