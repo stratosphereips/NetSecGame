@@ -5,4 +5,5 @@
 
 python  -m pytest tests/test_actions.py -p no:warnings -vvvv -s --full-trace
 python  -m pytest tests/test_components.py -p no:warnings -vvvv -s --full-trace
+python  -m pytest tests/test_coordinator.py -p no:warnings -vvvv -s --full-trace
 
