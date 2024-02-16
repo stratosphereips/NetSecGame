@@ -3,7 +3,6 @@
 # Author: sebastian garcia, sebastian.garcia@agents.fel.cvut.cz
 # Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
 import argparse
-from datetime import datetime
 import logging
 import json
 import asyncio
@@ -12,7 +11,6 @@ from env.game_components import Action, Observation, ActionType, GameStatus
 from utils.utils import observation_as_dict
 from pathlib import Path
 import os
-import time
 
 
 class AIDojo:
@@ -29,7 +27,7 @@ class AIDojo:
             self._action_queue,
             self._answer_queue,
             net_set_config,
-            ALLOWED_ROLES=["Attacker", "Defender", "Human"],
+            allowed_roles=["Attacker", "Defender", "Human"],
         )
 
     def run(self):
@@ -179,10 +177,10 @@ class ConnectionLimitServer(asyncio.Protocol):
 
 
 class Coordinator:
-    def __init__(self, actions_queue, answers_queue, net_set_config, ALLOWED_ROLES):
+    def __init__(self, actions_queue, answers_queue, net_set_config, allowed_roles):
         self._actions_queue = actions_queue
         self._answers_queue = answers_queue
-        self.ALLOWED_ROLES = ALLOWED_ROLES
+        self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
         self._world = NetworkSecurityEnvironment(net_set_config)
         self._action_processor = ActionProcessor()
