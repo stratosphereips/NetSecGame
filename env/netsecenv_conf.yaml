@@ -5,7 +5,7 @@ coordinator:
   agents:
     attackers:
       goal:
-        randomize_goal_every_episode: True
+        randomize_goal_every_episode: False
         known_networks: []
         #known_networks: [192.168.1.0/24, 192.168.3.0/24]
         known_hosts: []
@@ -72,9 +72,12 @@ env:
   random_seed: 'random'
   # Or you can fix the seed
   # random_seed: 42
-  scenario: 'scenario1'
+  scenario: 'scenario1_tiny'
   max_steps: 100
   store_replay_buffer: False
+  goal_reward: 100
+  detection_reward: -5
+  step_reward: -1
   actions:
     scan_network:
       prob_success: 1.0
