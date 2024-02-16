@@ -2,7 +2,7 @@
 [![Python Checks](https://github.com/stratosphereips/game-states-maker/actions/workflows/python-checks.yml/badge.svg)](https://github.com/stratosphereips/game-states-maker/actions/workflows/python-checks.yml)
 [![Autotag](https://github.com/stratosphereips/game-states-maker/actions/workflows/autotag.yml/badge.svg)](https://github.com/stratosphereips/game-states-maker/actions/workflows/autotag.yml)
 
-The NetSecGame (Network Security Game) is a framework of reinceforcement learning environment and agents to train and evalate network security attacks and defenses. It builds a simulated local network using the [CYST](https://pypi.org/project/cyst/) network simulator, adds many conditions on the environment and can train reinforcement learning (RL) algorithms on how to better attack and defend the network.
+The NetSecGame (Network Security Game) is a framework for training and evaluation of AI agents in the network security tasks (both offensive and defensive). It builds a simulated local network using the [CYST](https://pypi.org/project/cyst/) network simulator, adds many conditions on the environment and can train reinforcement learning (RL) algorithms on how to better attack and defend the network.
 
 
 ## Install and Dependencies
@@ -47,8 +47,8 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 - Agents compatible with the NetSecGame are located in a separate repository [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main)
 
 ### Assumptions of the NetSecGame
-1. We work with the closed-world assumption. Only the defined entities exist in the simulation.
-2. No actions have a "delete" effect (the attacker does not give up ownership of nodes, does not forget nodes or services, and when data is transferred we assume it's copied and therefore present in both nodes).
+1. NetSecGame works with the closed-world assumption. Only the defined entities exist in the simulation.
+2. Actions have no `Delete` effect. No entity is removed from the environment, agents do not forget discovered assets.
 3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
 
 ### Assumption and Conditions for Actions
