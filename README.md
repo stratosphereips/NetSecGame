@@ -2,8 +2,7 @@
 [![Python Checks](https://github.com/stratosphereips/game-states-maker/actions/workflows/python-checks.yml/badge.svg)](https://github.com/stratosphereips/game-states-maker/actions/workflows/python-checks.yml)
 [![Autotag](https://github.com/stratosphereips/game-states-maker/actions/workflows/autotag.yml/badge.svg)](https://github.com/stratosphereips/game-states-maker/actions/workflows/autotag.yml)
 
-The NetSecGame (Network Security Game) is a framework for training and evaluation of AI agents in the network security tasks (both offensive and defensive). It builds a simulated local network using the [CYST](https://pypi.org/project/cyst/) network simulator, adds many conditions on the environment and can train reinforcement learning (RL) algorithms on how to better attack and defend the network.
-
+The NetSecGame (Network Security Game) is a framework for training and evaluation of AI agents in the network security tasks (both offensive and defensive). It builds a simulated local network using the [CYST](https://pypi.org/project/cyst/) network simulator, adds many conditions on the environment and can train reinforcement learning (RL) algorithms on how to better attack and defend the network. Examples of implemented agents can be seen in the submodule [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
 
 ## Install and Dependencies
 To run this code you need an environment and access to cyst code. However, the venv needs to be created for your own user
@@ -51,37 +50,23 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 2. Actions have no `Delete` effect. No entity is removed from the environment, agents do not forget discovered assets.
 3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
 
-### Assumption and Conditions for Actions
-1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
-2. The `Find Data` action finds all the available data in the host if successful.
-3. The `Find Data` action requires ownership of the target host.
-4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
-5. Playing `Find Services` can be used to discover hosts (if those have any active services)
-6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
 
-### Actions for the defender
+### Defender
 In this version of the environment, the defender does not have actions, and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks, the admins have tools that consume logs from all computers simultaneously, and they can detect actions from a central position (such as a SIEM). There are several modes of the defender (see [Task Configuration - Defender](#defender-configuration) for details.
 
-In every step, the environment provides an Observation. The observation includes:
-1. `state` - A GameState object
-2. `reward` - float of the immediate reward obtained from the previous step
-3. `done` - boolean indicating if the interaction can continue
-4. `info` - a dictionary with additional information. Mainly used to determine the cause of the termination of the interaction (`goal_reached`/`detection`/'max_steps'
+### Starting the game
+The environment should be created by an agent upon starting. The properties of the environment can be defined in a YAML file. The game server can be started by running:
+```python3 coordinator.py```
 
-### Starting the environment
-The environment should be created by an agent upon starting. The properties of the environment can be defined in a YAML file.
 When created, the environment:
 1. reads the configuration file
 2. loads the network configuration from the config file
 3. reads the defender type from the configuration
 4. creates starting position and goal position following the config file
+5. starts the game server in specified address and port
 
 ### Interaction with the Environment
-Each agent can interact with the environment using the `env.step(action:Action)` method, which returns an Observation with `next_state`, `reward`, `is_terminal`, `done`, and `info` values. Once the terminal state or timeout is reached, no more interaction is possible until `env.reset()`.
-
-### Restarting the environment
-`env.reset()` can be used for resetting the environment to the original state. That is to the state after `env.initialize()` was called. In other words, `env.current_state` is replaced with `attacker_start_position`, and `step_counter` is set to zero.
-The environment is also reset after initialization.
+When the game server is created, [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main) connect to it and interact with the environment. In every step of the interaction, agents submits an [Action](./docs/Components.md#actions) and receives [Observation](./docs/Components.md#observations) with `next_state`, `reward`, `is_terminal`, `end`, and `info` values. Once the terminal state or timeout is reached, no more interaction is possible until the agent asks for game reset. Each agent should extend the `BaseAgent` class in [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
 
 
 ## Task configuration
@@ -222,32 +207,6 @@ For the data exfiltration we support 3 variants. The full scenario contains 5 cl
   <tr><td><img src="readme_images/scenario_1.png" alt="Scenario 1 - Data exfiltration" width="300"></td><td><img src="readme_images/scenario 1_small.png" alt="Scenario 1 - small" width="300"</td><td><img src="readme_images/scenario_1_tiny.png" alt="Scenario 1 - tiny" width="300"></td></tr>
 </table>
 
-## Agents Implemented
-Currently, the implemented agents are:
-
-- Q learning agent in `agents/q_learning/`
-- Double Q learning agent in `agents/double_q_learning/`
-- Random agent in `agents/random/`
-- Interactive agent in `agents/interactive/`
-- LLM agent in `agents/llm/`
-- LLM QA agent in `agents/llm_qa/`
-- GNN Reinforce agent in `agents/gnn_reinforce/`
-
-## Run the agents
-
-The game is played and started by running the different agents.
-
-To run the Q learning agent with default configuration for 100 episodes:
-
-```bash
-python agents/q_learning/q_agent.py --episodes 100
-```
-
-## Tensorboard logs
-
-The logs for tensorboard are stored for all agents in `agents/tensorboard-logs/`.
-
-
 ## Testing the environment
 
 It is advised after every change you test if the env is running correctly by doing
@@ -255,8 +214,10 @@ It is advised after every change you test if the env is running correctly by doi
 ```bash
 tests/run_all_tests.sh
 ```
-
-This will load and run the unit tests in the `tests` folder.
+This will load and run the unit tests in the `tests` folder. 
 
 ## Code adaptation for new configurations
-The code can be adapted to new configurations of games and for new agents.
+The code can be adapted to new configurations of games and for new agents. See [Agent repository](https://github.com/stratosphereips/NetSecGameAgents/tree/main) for more details.
+
+## About us
+This code was developed at the [Stratosphere Laboratory at the Czech Technical University in Prague](https://www.stratosphereips.org/).
