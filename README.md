@@ -110,12 +110,28 @@ env:
 ```
 
 ## Task configuration
-The task configuration is a YAML file that is used for the exact definition of the task an agent should be solving. there are two main parts of the configuration
+The task configuration part (section `coordinator[agents]`) defines the starting and goal position of the attacker and type of defender that is used.
 
-### Agent configuration
-Configuration of the agents in the task. It consits of the *Attacker* and  *Defender*. 
+### Attacker configuration (`attackers`)
+Configuration of the attacking agents. Consists of two parts:
+1. Goal definition (`goal`) which describes the `GameState` properties that must be fullfiled to award `goal_reward` to the attacker:
+    - `known_networks:`(set)
+    - `known_hosts`(set)
+    - `controlled_hosts`(set)
+    - `known_services`(dict)
+    - `known_data`(dict)
 
-- `random_seed` - sets seed s for any random process in the agents
+     Each of the part can be empty (not part of the goal, exactly defined (e.g. `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`.
+    Addtitionally  if `random` keyword is used int he goal definition, 
+    `randomize_goal_every_episode`. If set to `True`, each keyword `random` is replaced with a randomly selected, valid option at the beginning of **EVERY** episode. If set to `False`, randomization is performed only **once** when the environment is 
+2. Definiton of starting position (`start_position`) which describes the `GameState` in which the attacker starts. It consists of:
+    - `known_networks:`(set)
+    - `known_hosts`(set)
+    - `controlled_hosts`(set)
+    - `known_services`(dict)
+    - `known_data`(dict)
+
+    The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts` so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`
 
 ```YAML
 agents:
