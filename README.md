@@ -43,9 +43,8 @@ The NetSecGame environment has several components in the following files:
 - File `env/game_components.py` implements a library with objects used in the environment. See [detailed explanation](docs/Components.md) of the game components.
 - File `utils/utils.py` is a collection of utils function which the agents can use
 - Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the network game's configuration of hosts, data, services, and connections. It is taken from CYST.
-- Files such as `agent/q_learning/q_agent.py` that implement the RL agents.
-
 The [scenarios](#definition-of-the-network-topology) define the **topology** of a network (number of hosts, connections, networks, services, data, users, firewall rules, etc.) while the [task-configuration](#task-configuration) is to be used for definition of the exact task for the agent in one of the scenarios (with fix topology).
+- Agents compatible with the NetSecGame are located in a separate repository [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main)
 
 ### Assumptions of the NetSecGame
 1. We work with the closed-world assumption. Only the defined entities exist in the simulation.
