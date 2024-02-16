@@ -81,16 +81,11 @@ env:
   actions:
     scan_network:
       prob_success: 1.0
-      prob_detection: 0.05
     find_services:
       prob_success: 1.0
-      prob_detection: 0.075
     exploit_services:
       prob_success: 1.0
-      prob_detection: 0.1
     find_data:
       prob_success: 1.0
-      prob_detection: 0.025
     exfiltrate_data:
       prob_success: 1.0
-      prob_detection: 0.025
