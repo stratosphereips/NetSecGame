@@ -10,8 +10,6 @@ import copy
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 import numpy as np
 import logging
-import os
-from pathlib import Path
 from faker import Faker
 from utils.utils import ConfigParser, store_replay_buffer_in_csv
 
