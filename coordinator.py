@@ -319,7 +319,7 @@ class Coordinator:
             )
         )
         output_message_dict = {
-            "agent": agent_addr,
+            "to_agent": agent_addr,
             "observation": agent_observation_str,
             "status": str(GameStatus.OK),
         }
