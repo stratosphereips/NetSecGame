@@ -69,15 +69,19 @@ When created, the environment:
 When the game server is created, [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main) connect to it and interact with the environment. In every step of the interaction, agents submits an [Action](./docs/Components.md#actions) and receives [Observation](./docs/Components.md#observations) with `next_state`, `reward`, `is_terminal`, `end`, and `info` values. Once the terminal state or timeout is reached, no more interaction is possible until the agent asks for game reset. Each agent should extend the `BaseAgent` class in [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
 
 
-## Task configuration
-The task configuration is a YAML file that is used for the exact definition of the task an agent should be solving. there are two main parts of the configuration
+## Configuration
+The NetSecEnv is highly configurable in terms of the properties of the world, tasks and agent interacation. Modification of the world is done in the YAML configuration file in two main areas:
+1. Environment (`env` section) controls the properties of the world (taxonomy of networks, maximum allowed steps per episode, probabilities of success of actions etc.)
+2. Task configuration defines the agents properties (starting position, goal)
+
 ### Environment configuration
 The environment part defines the properties of the environment for the task (see the example below). In particular:
-- `random_seed` - sets seed s for any random process in the environment
+- `random_seed` - sets seed for any random processes in the environment
 - `scenario` - sets the scenario (network topology) used in the task (currently, `scenario1_tiny`, `scenario1_small`, and `scenario1` are available)
 - `max_steps` - sets the maximum number of steps an agent can make before an episode is terminated
 - `store_replay_buffer` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of **EVERY** episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)
+
 ```YAML
 env:
   random_seed: 42
@@ -102,6 +106,10 @@ env:
       prob_success: 0.8
       prob_detection: 1
 ```
+
+## Task configuration
+The task configuration is a YAML file that is used for the exact definition of the task an agent should be solving. there are two main parts of the configuration
+
 ### Agent configuration
 Configuration of the agents in the task. It consits of the *Attacker* and  *Defender*. 
 
