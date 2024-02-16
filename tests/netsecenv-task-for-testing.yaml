@@ -38,16 +38,11 @@ env:
   actions:
     scan_network:
       prob_success: 1
-      prob_detection: 0.2
     find_services:
       prob_success: 1
-      prob_detection: 0.3
     exploit_services:
       prob_success: 1
-      prob_detection: 0.4
     find_data:
       prob_success: 1
-      prob_detection: 0.1
     exfiltrate_data:
       prob_success: 1
-      prob_detection: 0.1
