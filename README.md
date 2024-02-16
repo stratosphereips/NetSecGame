@@ -133,21 +133,13 @@ Configuration of the attacking agents. Consists of two parts:
 
     The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts` so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`
 
+Example attacker configuration:
 ```YAML
 agents:
-  random_seed: 42
-```
-#### Attacker configuration
-Definition of attacking agent's properties:
-- `goal` Section defines the winning conditons for the attacker in each part: `known_networks:`(set), `known_hosts`(set), `controlled_hosts`(set), `known_services`(dict), `known_data`(dict). Each of the part can be empty (not part of the goal, exactly defined (e.g. `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`.
-- `start_position` Definiton of starting position (initial state) of the attacker. It consits of `known_networks:`(set), `known_hosts`(set), `controlled_hosts`(set), `known_services`(dict), `known_data`(dict). Each of the part can be empty (not part of the goal, exactly defined (e.g. `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`. The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts` so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`
-- `randomize_goal_every_episode` - if `True`, each keyword `random` is replaced with a randomly selected, valid option at the beginning of **EVERY** episode. If set to `False`, randomization is performed only *once* when the environment is initialized.
-```YAML
-agents:
-  attacker:
+  attackers:
     goal:
       randomize_goal_every_episode: False
-      #known_networks: [192.168.1.0/24, 192.168.3.0/24]
+      known_networks: []
       known_hosts: []
       controlled_hosts: []
       known_services: {192.168.1.3: [Local system, lanman server, 10.0.19041, False], 192.168.1.4: [Other system, SMB server, 21.2.39421, False]}
@@ -163,20 +155,22 @@ agents:
       known_services: {}
       known_data: {}
 ```
-#### Defender configuration
+### Defender configuration (`defenders`)
 Definition of defending agent's properties. Currently, the defender is **NOT** a separate agent but it is considered part of the environment.
 `type` - Type of the defender. Three types are currently implemented:
   1. `NoDefender` (default) - interation without defender
-  2. `StochasticDefender` - detections are based on ActionType probabilities (defined in the task configuraion, section `[env][actions]`).
-  3. `StochasticDefenderWithThreshold` - Modification of stochastic defender. Detection probabilities are used *IF* threasholds in the particular ActionType is reached. Thresholds are computed in time windows defined by `tw_size` (`tw_size=5` means that 5 previous actions are taken into account). If ratio of some ActionType within the timewindow is above the threshold, the probability defined in the task configuraion, section `[env][actions]` is used to determine if the action was detected. For action *BELOW* the thresholds, no detection is made. Additionally, thresholds for consecutive action type is defined in `consecutive_actions`. For example with
+  2. `StochasticDefender` - detections are based on ActionType probabilities (defined in the task configuraion, section `action_detetection_prob`).
+  3. `StochasticDefenderWithThreshold` - Modification of stochastic defender. Detection probabilities are used *IF* threasholds in the particular ActionType is reached. Thresholds are computed in time windows defined by `tw_size` (`tw_size=5` means that 5 previous actions are taken into account). If ratio of some ActionType within the timewindow is above the threshold, the probability defined in the task configuraion, section `action_detetection_prob` is used to determine if the action was detected. For action *BELOW* the thresholds, no detection is made. Additionally, thresholds for consecutive action type is defined in `consecutive_actions`. For example with
 ```YAML
   scan_network:
     consecutive_actions: 2
 ```
 if the agent uses action ScanNetwork (regardless of the parameters) twice or more, the detection can occur. Action types `FindData` and `exploit_service` have additional thresholds for repeated actions (with parameters) throughout the **WHOLE** episode (e.g. if action `<ActionType.FindData|{'target_host': 192.168.2.2}>` is played more than 2 with following configuration, the detection can happen based on the defined probability).  
+
+Example of defender configuration:
 ```YAML
 agents:
-  defender:
+  defenders:
     type: 'StochasticWithThreshold'
     tw_size: 5
     thresholds:
@@ -195,6 +189,12 @@ agents:
       exfiltrate_data:
         consecutive_actions: 2
         tw_ratio: 0.25
+    action_detetection_prob:
+        scan_network: 0.05
+        find_services: 0.075
+        exploit_service: 0.1
+        find_data: 0.025
+        exfiltrate_data: 0.025
 ```
 
 ## Definition of the network topology
@@ -220,8 +220,6 @@ The network topology and rules are defined using a [CYST](https://pypi.org/proje
     - Which host can connect
 - Exploits
     - which service is the exploit linked to
-
-Very important is that we made an addition to the NodeConfig objects in our Cyst configuration to include the property 'note' with the text 'can_start_attacker'. Meaning that the game env will take these hosts as candidates for the random start position.
 
 ### Scenarios
 In the current state, we support a single scenario: Data exfiltration to a remote C&C server.
