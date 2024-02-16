@@ -81,6 +81,10 @@ The environment part defines the properties of the environment for the task (see
 - `max_steps` - sets the maximum number of steps an agent can make before an episode is terminated
 - `store_replay_buffer` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of **EVERY** episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)
+- `goal_reward` - sets reward which agent gets when it reaches the goal (default 100)
+- `detection_reward` - sets reward which agent gets when it is detected (default -50)
+- `step_reward` - sets reward which agent gets for every step taken (default -1)
+- `actions` - defines probability of success for every ActionType
 
 ```YAML
 env:
@@ -89,22 +93,20 @@ env:
   max_steps: 15
   store_replay_buffer: True
   use_dynamic_addresses: False
+  goal_reward: 100
+  detection_reward: -5
+  step_reward: -1
   actions:
     scan_network:
       prob_success: 0.9
-      prob_detection: 1
     find_services:
       prob_success: 0.9
-      prob_detection: 1
     exploit_services:
       prob_success: 0.7
-      prob_detection: 1
     find_data:
       prob_success: 0.8
-      prob_detection: 1
     exfiltrate_data:
       prob_success: 0.8
-      prob_detection: 1
 ```
 
 ## Task configuration
