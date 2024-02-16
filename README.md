@@ -62,16 +62,6 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 ### Actions for the defender
 In this version of the environment, the defender does not have actions, and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks, the admins have tools that consume logs from all computers simultaneously, and they can detect actions from a central position (such as a SIEM). There are several modes of the defender (see [Task Configuration - Defender](#defender-configuration) for details.
 
-
-## State of the game
-States in the game are represented as collections of assets of the agents. Actions, if successful, extend the assets. Currently, the state representation consists of the follwing parts:
-* `known_networks` (set of networks known to the attacker)
-* `known_hosts` (set of hosts known to the attacker)
-* `controlled_hosts` (set of hosts controlled by the attacker)
-* `known_services` (dict of host:service pairs. A service is a port)
-* `known_data` (dict of host:path pairs. path is where the data was found)
-
-
 In every step, the environment provides an Observation. The observation includes:
 1. `state` - A GameState object
 2. `reward` - float of the immediate reward obtained from the previous step
