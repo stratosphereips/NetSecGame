@@ -81,6 +81,6 @@ class TestCoordinator:
         )
         result = coord._process_generic_action(("192.168.1.1", "3300"), action)
 
-        assert result["agent"] == ("192.168.1.1", "3300")
+        assert result["to_agent"] == ("192.168.1.1", "3300")
         assert result["status"] == "GameStatus.OK"
         assert obs.state.as_dict != result["observation"]["state"]
