@@ -210,7 +210,7 @@ class Coordinator:
                         raise e
                     # Send to anwer_queue
                     await self._answers_queue.put(output_message)
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.0000001)
         except KeyboardInterrupt:
             self.logger.debug('Terminating by KeyboardInterrupt')
             raise SystemExit
