@@ -258,7 +258,7 @@ class Coordinator:
         action_for_env = self._action_processor.process_message_from_agent(agent_addr, action)
         new_observation = self._world.step(action_for_env)
         agent_observation_str = self._action_processor.generate_observation_msg_for_agent(agent_addr,new_observation)
-        output_message_dict = {"agent": agent_addr, "observation": agent_observation_str, "status": str(GameStatus.OK)}
+        output_message_dict = {"to_agent": agent_addr, "observation": agent_observation_str, "status": str(GameStatus.OK)}
         return output_message_dict
     
 __version__ = 'v0.2.1'
