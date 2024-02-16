@@ -77,6 +77,14 @@ In the following table, we describe effects of selected actions and their precon
 |Exploit Service | `source_host`, `target_host`, `target_service`|`source_host` &isinv; `controlled_hosts`| extends `controlled_hosts` with `target_host`|
 ExfiltrateData| `source_host`,`target_host`, `data` |`source_host`, `target_host` ∈ `controlled_hosts` AND `data` ∈ `known_data`| extends `known_data[target_host]` with `data`|
 
+#### Assumption and Conditions for Actions
+1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
+2. The `Find Data` action finds all the available data in the host if successful.
+3. The `Find Data` action requires ownership of the target host.
+4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
+5. Playing `Find Services` can be used to discover hosts (if those have any active services)
+6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
+
 ## Observations
 After submitting Action `a` to the environment, agents receives an `Observation` in return. Each observation consists of 4 parts:
 - `state`:`Gamestate` - with the current view of the environment [state](#gamestate)
