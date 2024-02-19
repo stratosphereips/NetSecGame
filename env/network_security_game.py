@@ -174,6 +174,11 @@ class NetworkSecurityEnvironment(object):
     def num_actions(self):
         return len(components.ActionType)
 
+    def get_goal_description(self):
+        orig_text = self.task_config.get_goal_description()
+        return orig_text
+            
+
     def get_all_states(self):
         import itertools
         def all_combs(data):
