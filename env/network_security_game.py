@@ -168,8 +168,16 @@ class NetworkSecurityEnvironment(object):
             return None
 
     @property
+    def timeout(self):
+        return self._max_steps
+    @property
     def num_actions(self):
         return len(components.ActionType)
+
+    def get_goal_description(self):
+        orig_text = self.task_config.get_goal_description()
+        return orig_text
+            
 
     def get_all_states(self):
         import itertools
