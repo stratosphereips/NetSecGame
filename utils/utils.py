@@ -155,7 +155,6 @@ class ConfigParser():
         """
         Generic function to read the known services for any agent and goal of position
         """
-        return {}
         known_services_conf = self.config['agents'][type_agent][type_data]['known_services']
         known_services = {}
         for ip, data in known_services_conf.items():
@@ -287,6 +286,16 @@ class ConfigParser():
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
 
+    def get_goal_description(self)->str:
+        """
+        Get goal description
+        """
+        try:
+            description = self.config['coordinator']['agents']["attackers"]["goal"]["description"]
+        except KeyError:
+            description = ""
+        return description
+        
     def get_goal_reward(self)->float:
         """
         Reads  what is the reward for reaching the goal.
