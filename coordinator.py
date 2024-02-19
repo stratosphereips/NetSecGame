@@ -21,7 +21,7 @@ class AIDojo:
         self._action_queue = asyncio.Queue()
         self._answer_queue = asyncio.Queue()
         self._server = ConnectionLimitServer(
-            self._action_queue, self._answer_queue, max_connections=2
+            self._action_queue, self._answer_queue, max_connections=1
         )
         self._coordinator = Coordinator(
             self._action_queue,
@@ -57,6 +57,7 @@ class AIDojo:
         
         # prepare the stopping event for keyboard interrupt
         stop = loop.create_future()
+        
         # register the signal handler to the stopping event
         loop.add_signal_handler(signal.SIGINT, stop.set_result, None)
 
