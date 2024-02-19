@@ -11,7 +11,7 @@ from env.game_components import Action, Observation, ActionType, GameStatus
 from utils.utils import observation_as_dict
 from pathlib import Path
 import os
-
+import signal
 
 class AIDojo:
     def __init__(self, host: str, port: int, net_set_config: str) -> None:
@@ -31,17 +31,27 @@ class AIDojo:
         )
 
     def run(self):
-        loop = asyncio.get_event_loop()
-        try:
-            loop.run_until_complete(self.start_tasks())
-        except KeyboardInterrupt:
-            self.logger.debug("Terminating by KeyboardInterrupt")
-            raise SystemExit
-        except Exception as e:
-            self.logger.error(f"Exception in AIDojo.run(): {e}")
-        finally:
-            loop.close()
+        # loop = asyncio.get_event_loop()
+        # try:
+        #     loop.run_until_complete(self.start_tasks())
+        # except KeyboardInterrupt:
+        #     self.logger.debug("Terminating by KeyboardInterrupt")
 
+        #     raise SystemExit
+        # except Exception as e:
+        #     self.logger.error(f"Exception in AIDojo.run(): {e}")
+        # finally:
+        #     loop.close()
+        asyncio.run(self.start_tasks())
+
+    async def run_server(self):
+        loop = asyncio.get_running_loop()
+        server = await loop.create_server(self._server, self.host, self.port)
+        addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
+        self.logger.info(f"\tServing on {addrs}")
+        async with server:
+            await server.serve_forever()
+    
     async def start_tasks(self):
         """
         High level funciton to start all the other asynchronous tasks and queues
@@ -50,30 +60,56 @@ class AIDojo:
         - Start the main part of the coordinator
         - Start a server that listens for agents
         """
+        # self.logger.info("Starting all tasks")
+
+        # self.logger.info("Starting the server listening for agents")
+        # # start_server returns a coroutine, so 'await' runs this coroutine
+
+        # server = await asyncio.start_server(self._server, self.host, self.port)
+
+        # self.logger.info("Starting main coordinator tasks")
+        # asyncio.create_task(self._coordinator.run())
+
+        # addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
+        # self.logger.info(f"\tServing on {addrs}")
+
+        # try:
+        #     async with server:
+        #         # The server will keep running concurrently due to serve_forever
+        #         await server.serve_forever()
+        #         # When you call await server.serve_forever(), it doesn't block the execution of the program. Instead, it starts an event loop that keeps running in the background, accepting and handling connections as they come in. The await keyword allows the event loop to run other asynchronous tasks while waiting for events like incoming connections.
+        # except KeyboardInterrupt:
+        #     pass
+        # finally:
+        #     server.close()
+        #     await server.wait_closed()
+        
         self.logger.info("Starting all tasks")
+        loop = asyncio.get_running_loop()
+
+        self.logger.info("Starting Coordinator taks")
+        coordinator_task = asyncio.create_task(self._coordinator.run())
 
         self.logger.info("Starting the server listening for agents")
-        # start_server returns a coroutine, so 'await' runs this coroutine
-
-        server = await asyncio.start_server(self._server, self.host, self.port)
-
-        self.logger.info("Starting main coordinator tasks")
-        asyncio.create_task(self._coordinator.run())
-
-        addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
+        running_server = await asyncio.start_server(self._server, host, port)
+        addrs = ", ".join(str(sock.getsockname()) for sock in running_server.sockets)
         self.logger.info(f"\tServing on {addrs}")
+        
+        # prepare the stopping event for keyboard interrupt
+        stop = loop.create_future()
+        # register the signal handler to the stopping event
+        loop.add_signal_handler(signal.SIGINT, stop.set_result, None)
 
-        try:
-            async with server:
-                # The server will keep running concurrently due to serve_forever
-                await server.serve_forever()
-                # When you call await server.serve_forever(), it doesn't block the execution of the program. Instead, it starts an event loop that keeps running in the background, accepting and handling connections as they come in. The await keyword allows the event loop to run other asynchronous tasks while waiting for events like incoming connections.
-        except KeyboardInterrupt:
-            pass
-        finally:
-            server.close()
-            await server.wait_closed()
-
+        await stop
+        self.logger.info("Initializing server shutdown")
+        running_server.close()
+        await running_server.wait_closed()
+        self.logger.info("\tServer stopped")
+        self.logger.info("Initializing coordinator shutdown")
+        coordinator_task.cancel()
+        await asyncio.gather(coordinator_task, return_exceptions=True)
+        self.logger.info("\tCoordinator stopped")
+        self.logger.info("AIDojo terminating")
 
 class ActionProcessor:
     def __init__(self) -> None:
@@ -154,7 +190,7 @@ class ConnectionLimitServer(asyncio.Protocol):
                         try:
                             await writer.drain()
                         except ConnectionResetError:
-                            self.logger.info(f"Connection lost. Agent disconnected.")
+                            self.logger.info("Connection lost. Agent disconnected.")
                 else:
                     self.logger.info(
                         f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}"
@@ -234,9 +270,8 @@ class Coordinator:
                     # Send to anwer_queue
                     await self._answers_queue.put(output_message)
                 await asyncio.sleep(0.0000001)
-        except KeyboardInterrupt:
-            self.logger.debug("Terminating by KeyboardInterrupt")
-            raise SystemExit
+        except asyncio.CancelledError:
+            self.logger.info("\tTerminating by CancelledError")
         except Exception as e:
             self.logger.error(f"Exception in main_coordinator(): {e}")
             raise e
@@ -275,7 +310,7 @@ class Coordinator:
                     "message": f"Incorrect agent_role {agent_role}",
                 }
         else:
-            self.logger.info(f"\tError in regitration, unknown agent already exists!")
+            self.logger.info("\tError in regitration, unknown agent already exists!")
             output_message_dict = {
                 "to_agent": {agent_addr},
                 "status": str(GameStatus.BAD_REQUEST),
