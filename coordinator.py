@@ -43,15 +43,7 @@ class AIDojo:
         # finally:
         #     loop.close()
         asyncio.run(self.start_tasks())
-
-    async def run_server(self):
-        loop = asyncio.get_running_loop()
-        server = await loop.create_server(self._server, self.host, self.port)
-        addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
-        self.logger.info(f"\tServing on {addrs}")
-        async with server:
-            await server.serve_forever()
-    
+   
     async def start_tasks(self):
         """
         High level funciton to start all the other asynchronous tasks and queues
