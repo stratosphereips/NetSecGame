@@ -263,7 +263,11 @@ class Coordinator:
                     "to_agent": agent_addr,
                     "status": str(GameStatus.CREATED),
                     "observation": agent_observation_str,
-                    "message": f"Welcome {agent_name}, registred as {agent_role}",
+                    "message": {
+                        "message": f"Welcome {agent_name}, registred as {agent_role}",
+                        "max_steps": self._world._max_steps,
+                        "goal_description": self._world.get_goal_description()
+                        },
                 }
             else:
                 self.logger.info(
