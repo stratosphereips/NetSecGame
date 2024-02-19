@@ -53,7 +53,8 @@ class TestCoordinator:
 
         assert result["to_agent"] == ("192.168.1.1", "3300")
         assert result["status"] == "GameStatus.CREATED"
-        assert "Welcome" in result["message"]
+        assert "max_steps" in result["message"].keys()
+        assert "goal_description" in result["message"].keys()
         assert not result["observation"]["end"]
         assert result["observation"]["state"] == obs.state.as_dict
         assert result["observation"]["info"] == obs.info
