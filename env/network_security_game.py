@@ -268,15 +268,15 @@ class NetworkSecurityEnvironment(object):
         for controlled_host in controlled_hosts:
             for net in self._get_networks_from_host(controlled_host): #TODO
                 net_obj = netaddr.IPNetwork(str(net))
-                if net_obj.is_private(): #TODO
+                if net_obj.ip.is_ipv4_private_use(): #TODO
                     known_networks.add(net)
                     net_obj.value += 256
-                    if net_obj.is_private():
+                    if net_obj.ip.is_ipv4_private_use():
                         ip = components.Network(str(net_obj.ip), net_obj.prefixlen)
                         logger.info(f'\tAdding {ip} to agent')
                         known_networks.add(ip)
                     net_obj.value -= 2*256
-                    if net_obj.is_private():
+                    if net_obj.ip.is_ipv4_private_use():
                         ip = components.Network(str(net_obj.ip), net_obj.prefixlen)
                         logger.info(f'\tAdding {ip} to agent')
                         known_networks.add(ip)
