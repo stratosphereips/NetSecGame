@@ -109,7 +109,7 @@ class ConfigParser():
             with open(conf_file_name) as source:
                 self.config = yaml.safe_load(source)
         except (IOError, TypeError):
-            self.logger.error(f'Error loading the configuration file')
+            self.logger.error('Error loading the configuration file')
             pass
 
     def read_env_action_data(self, action_name: str) -> dict:
@@ -188,7 +188,7 @@ class ConfigParser():
                     host_part, net_part = net.split('/')
                     known_networks.add(Network(host_part, int(net_part)))
             except (ValueError, TypeError, netaddr.AddrFormatError):
-                self.logger(f'Configuration problem with the known networks')
+                self.logger('Configuration problem with the known networks')
         return known_networks
 
     def read_agents_known_hosts(self, type_agent: str, type_data: str) -> dict:
@@ -202,7 +202,7 @@ class ConfigParser():
                 _ = netaddr.IPAddress(ip)
                 known_hosts.add(IP(ip))
             except (ValueError, netaddr.AddrFormatError):
-                self.logger(f'Configuration problem with the known hosts')
+                self.logger('Configuration problem with the known hosts')
         return known_hosts
 
     def read_agents_controlled_hosts(self, type_agent: str, type_data: str) -> dict:
@@ -220,7 +220,7 @@ class ConfigParser():
                     # A random start ip was asked for
                     controlled_hosts.add('random')
                 else:
-                    self.logger(f'Configuration problem with the known hosts')
+                    self.logger('Configuration problem with the known hosts')
         return controlled_hosts
 
     def get_attackers_win_conditions(self):
@@ -295,7 +295,7 @@ class ConfigParser():
         except KeyError:
             description = ""
         return description
-        
+
     def get_goal_reward(self)->float:
         """
         Reads  what is the reward for reaching the goal.
