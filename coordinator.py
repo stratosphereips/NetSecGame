@@ -91,9 +91,7 @@ class ActionProcessor:
         a = action
         return a
 
-    def generate_observation_msg_for_agent(
-        self, agent_id: int, new_observation: Observation
-    ) -> str:
+    def generate_observation_msg_for_agent(self, agent_id: int, new_observation: Observation) -> str:
         """
         Method for processing a NetSecGame gamestate into an partial observation for an agent
 
@@ -240,9 +238,7 @@ class Coordinator:
             self.logger.error(f"Exception in main_coordinator(): {e}")
             raise e
 
-    def _process_join_game_action(
-        self, agent_addr: tuple, action: Action, current_observation: Observation
-    ) -> dict:
+    def _process_join_game_action(self, agent_addr: tuple, action: Action, current_observation: Observation) -> dict:
         """ "
         Method for processing Action of type ActionType.JoinGame
         """
