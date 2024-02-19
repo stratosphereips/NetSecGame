@@ -168,6 +168,9 @@ class NetworkSecurityEnvironment(object):
             return None
 
     @property
+    def timeout(self):
+        return self._max_steps
+    @property
     def num_actions(self):
         return len(components.ActionType)
 
