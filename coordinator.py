@@ -30,52 +30,20 @@ class AIDojo:
             allowed_roles=["Attacker", "Defender", "Human"],
         )
 
-    def run(self):
-        # loop = asyncio.get_event_loop()
-        # try:
-        #     loop.run_until_complete(self.start_tasks())
-        # except KeyboardInterrupt:
-        #     self.logger.debug("Terminating by KeyboardInterrupt")
-
-        #     raise SystemExit
-        # except Exception as e:
-        #     self.logger.error(f"Exception in AIDojo.run(): {e}")
-        # finally:
-        #     loop.close()
+    def run(self)->None:
+        """
+        Wrapper for ayncio run function. Starts all tasks in AIDojo
+        """
         asyncio.run(self.start_tasks())
    
     async def start_tasks(self):
         """
-        High level funciton to start all the other asynchronous tasks and queues
+        High level funciton to start all the other asynchronous tasks.
         - Reads the conf of the coordinator
         - Creates queues
         - Start the main part of the coordinator
         - Start a server that listens for agents
-        """
-        # self.logger.info("Starting all tasks")
-
-        # self.logger.info("Starting the server listening for agents")
-        # # start_server returns a coroutine, so 'await' runs this coroutine
-
-        # server = await asyncio.start_server(self._server, self.host, self.port)
-
-        # self.logger.info("Starting main coordinator tasks")
-        # asyncio.create_task(self._coordinator.run())
-
-        # addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
-        # self.logger.info(f"\tServing on {addrs}")
-
-        # try:
-        #     async with server:
-        #         # The server will keep running concurrently due to serve_forever
-        #         await server.serve_forever()
-        #         # When you call await server.serve_forever(), it doesn't block the execution of the program. Instead, it starts an event loop that keeps running in the background, accepting and handling connections as they come in. The await keyword allows the event loop to run other asynchronous tasks while waiting for events like incoming connections.
-        # except KeyboardInterrupt:
-        #     pass
-        # finally:
-        #     server.close()
-        #     await server.wait_closed()
-        
+        """      
         self.logger.info("Starting all tasks")
         loop = asyncio.get_running_loop()
 
@@ -92,15 +60,18 @@ class AIDojo:
         # register the signal handler to the stopping event
         loop.add_signal_handler(signal.SIGINT, stop.set_result, None)
 
-        await stop
+        await stop # Event that triggers stopping the AIDojo
+        # Stop the server
         self.logger.info("Initializing server shutdown")
         running_server.close()
         await running_server.wait_closed()
         self.logger.info("\tServer stopped")
+        # Stop coordinator taks
         self.logger.info("Initializing coordinator shutdown")
         coordinator_task.cancel()
         await asyncio.gather(coordinator_task, return_exceptions=True)
         self.logger.info("\tCoordinator stopped")
+        # Everything stopped correctly, terminate
         self.logger.info("AIDojo terminating")
 
 class ActionProcessor:
