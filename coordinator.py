@@ -20,9 +20,6 @@ class AIDojo:
         self.logger = logging.getLogger("AIDojo-main")
         self._action_queue = asyncio.Queue()
         self._answer_queue = asyncio.Queue()
-        self._server = ConnectionLimitServer(
-            self._action_queue, self._answer_queue, max_connections=1
-        )
         self._coordinator = Coordinator(
             self._action_queue,
             self._answer_queue,
@@ -51,7 +48,15 @@ class AIDojo:
         coordinator_task = asyncio.create_task(self._coordinator.run())
 
         self.logger.info("Starting the server listening for agents")
-        running_server = await asyncio.start_server(self._server, host, port)
+        running_server = await asyncio.start_server(
+            ConnectionLimitProtocol(
+                self._action_queue,
+                self._answer_queue,
+                max_connections=1
+            ),
+            host,
+            port
+        )
         addrs = ", ".join(str(sock.getsockname()) for sock in running_server.sockets)
         self.logger.info(f"\tServing on {addrs}")
         
@@ -103,7 +108,7 @@ class ActionProcessor:
         return msg_for_agent
 
 
-class ConnectionLimitServer(asyncio.Protocol):
+class ConnectionLimitProtocol(asyncio.Protocol):
     def __init__(self, actions_queue, answers_queue, max_connections):
         self.actions_queue = actions_queue
         self.answers_queue = answers_queue
