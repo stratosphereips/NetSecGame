@@ -99,7 +99,9 @@ class NetworkSecurityEnvironment(object):
         
         # store goal definition
         self._goal_conditions = self.task_config.get_attackers_win_conditions()
-        
+
+        # store goal description = 
+        self._goal_description = self.task_config.get_goal_description()
         # check if dynamic network and ip adddresses are required
         if self.task_config.get_use_dynamic_addresses():
             logger.info("Dynamic change of the IP and network addresses enabled")
@@ -173,12 +175,11 @@ class NetworkSecurityEnvironment(object):
     @property
     def num_actions(self):
         return len(components.ActionType)
-
-    def get_goal_description(self):
-        orig_text = self.task_config.get_goal_description()
-        return orig_text
-            
-
+    
+    @property
+    def goal_description(self):
+       return self._goal_description
+        
     def get_all_states(self):
         import itertools
         def all_combs(data):
@@ -508,7 +509,7 @@ class NetworkSecurityEnvironment(object):
         # generate mapping for networks
         private_nets = []
         for net in self._networks.keys():
-            if netaddr.IPNetwork(str(net)).is_private():
+            if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
                 private_nets.append(net)
             else:
                 mapping_nets[net] = components.Network(fake.ipv4_public(), net.mask)
@@ -520,7 +521,7 @@ class NetworkSecurityEnvironment(object):
         while not valid_valid_network_mapping:
             try:
                 # find the new lowest networks
-                new_base = netaddr.IPNetwork(fake.ipv4_private(), private_nets_sorted[0].mask)
+                new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets_sorted[0].mask}")
                 # store its new mapping
                 mapping_nets[private_nets[0]] = components.Network(str(new_base.network), private_nets_sorted[0].mask)
                 base = netaddr.IPNetwork(str(private_nets_sorted[0]))
@@ -532,7 +533,7 @@ class NetworkSecurityEnvironment(object):
                     # find the new mapping 
                     new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
                     # evaluate if its still a private network
-                    is_private_net_checks.append(new_net_addr.is_private())
+                    is_private_net_checks.append(new_net_addr.is_ipv4_private_use())
                     # store the new mapping
                     mapping_nets[private_nets_sorted[i]] = components.Network(str(new_net_addr), private_nets_sorted[i].mask)
                 if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
@@ -583,6 +584,11 @@ class NetworkSecurityEnvironment(object):
         new_goal["controlled_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["controlled_hosts"]}
         new_goal["known_services"] = {mapping_ips[ip]:service for ip,service in self._goal_conditions["known_services"].items()}
         new_goal["known_data"] = {mapping_ips[ip]:data for ip,data in self._goal_conditions["known_data"].items()}
+        
+        for old_ip in mapping_ips.keys():
+            if str(old_ip) in self._goal_description:
+                self._goal_description = self._goal_description.replace(str(old_ip), str(mapping_ips[old_ip]))
+                logger.info(f"New goal desc: {self.goal_description}| {old_ip}-> {mapping_ips[old_ip]}")
         self._goal_conditions = new_goal
     
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:

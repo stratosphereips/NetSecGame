@@ -76,6 +76,7 @@ env:
   scenario: 'scenario1_tiny'
   max_steps: 100
   store_replay_buffer: False
+  use_dynamic_addresses: False
   goal_reward: 100
   detection_reward: -5
   step_reward: -1
