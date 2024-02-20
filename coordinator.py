@@ -266,7 +266,7 @@ class Coordinator:
                     "message": {
                         "message": f"Welcome {agent_name}, registred as {agent_role}",
                         "max_steps": self._world._max_steps,
-                        "goal_description": self._world.get_goal_description()
+                        "goal_description": self._world.goal_description
                         },
                 }
             else:
@@ -307,7 +307,7 @@ class Coordinator:
             "message": {
                         "message": "Resetting Game and starting again.",
                         "max_steps": self._world._max_steps,
-                        "goal_description": self._world.get_goal_description()
+                        "goal_description": self._world.goal_description
                         },
         }
         return output_message_dict
