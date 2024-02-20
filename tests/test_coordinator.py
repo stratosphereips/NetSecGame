@@ -65,7 +65,9 @@ class TestCoordinator:
         result = coord._process_reset_game_action(("192.168.1.1", "3300"))
 
         assert result["to_agent"] == ("192.168.1.1", "3300")
-        assert "Resetting" in result["message"]
+        assert "Resetting" in result["message"]["message"]
+        assert "max_steps" in result["message"].keys()
+        assert "goal_description" in result["message"].keys()
         assert result["status"] == "GameStatus.OK"
 
     def test_generic_action(self, coordinator_init):
