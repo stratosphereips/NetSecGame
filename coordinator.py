@@ -304,7 +304,11 @@ class Coordinator:
             "to_agent": agent_addr,
             "status": str(GameStatus.OK),
             "observation": agent_observation_str,
-            "message": "Resetting Game and starting again.",
+            "message": {
+                        "message": "Resetting Game and starting again.",
+                        "max_steps": self._world._max_steps,
+                        "goal_description": self._world.get_goal_description()
+                        },
         }
         return output_message_dict
 
