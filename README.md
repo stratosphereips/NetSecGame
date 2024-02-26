@@ -55,7 +55,7 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 In this version of the environment, the defender does not have actions, and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks, the admins have tools that consume logs from all computers simultaneously, and they can detect actions from a central position (such as a SIEM). There are several modes of the defender (see [Task Configuration - Defender](#defender-configuration) for details.
 
 ### Starting the game
-The environment should be created by an agent upon starting. The properties of the environment can be defined in a YAML file. The game server can be started by running:
+The environment should be created prior strating the agents. The properties of the environment can be defined in a YAML file. The game server can be started by running:
 ```python3 coordinator.py```
 
 When created, the environment:
