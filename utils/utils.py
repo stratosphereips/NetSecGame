@@ -111,20 +111,23 @@ class ConfigParser():
         except (IOError, TypeError):
             self.logger.error('Error loading the configuration file')
             pass
+    
+    def read_defender_detection_prob(self, action_name: str) -> dict:
+        if self.config["coordinator"]["agents"]["defenders"]["type"] in ["StochasticWithThreshold", "StochasticDefender"]:
+            action_detect_p = self.config["coordinator"]["agents"]["defenders"]["action_detetection_prob"][action_name]
+        else:
+            action_detect_p = 0
+        return action_detect_p  
 
     def read_env_action_data(self, action_name: str) -> dict:
         """
         Generic function to read the known data for any agent and goal of position
         """
-        action_success_p = self.config['env']['actions'][action_name]['prob_success']
         try:
-            if self.config["coordinator"]["agents"]["defenders"]["type"] in ["StochasticWithThreshold", "Stochastic"]:
-                action_detect_p = self.config["coordinator"]["agents"]["defenders"]["action_detetection_prob"][action_name]
-            else:
-                action_detect_p = 0
+            action_success_p = self.config['env']['actions'][action_name]['prob_success']
         except KeyError:
-            action_detect_p = 0
-        return action_success_p, action_detect_p
+            action_success_p = 1
+        return action_success_p
 
     def read_agents_known_data(self, type_agent: str, type_data: str) -> dict:
         """
@@ -361,20 +364,20 @@ class ConfigParser():
         Get the type of the defender
         """
         try:
-            defender_placements = self.config['agents']['defender']['type']
+            defender_placements = self.config["coordinator"]['agents']['defenders']['type']
         except KeyError:
             # Option is not in the configuration - default to no defender present
             defender_placements = "NoDefender"
         return defender_placements
     
     def get_defender_tw_size(self):
-        tw_size = self.config["agents"]["defender"]["tw_size"]
+        tw_size = self.config["coordinator"]['agents']['defenders']
         return tw_size
     
     def get_defender_thresholds(self):
         """Function to read thresholds for stochastic defender with thresholds"""
         thresholds = {}
-        config_thresholds = self.config["agents"]["defender"]["thresholds"]
+        config_thresholds = self.config["coordinator"]['agents']['defenders']["thresholds"]
         # ScanNetwork
         thresholds[ActionType.ScanNetwork] = {"consecutive_actions": config_thresholds["scan_network"]["consecutive_actions"]}
         thresholds[ActionType.ScanNetwork]["tw_ratio"] = config_thresholds["scan_network"]["tw_ratio"]

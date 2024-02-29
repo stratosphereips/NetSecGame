@@ -42,8 +42,8 @@ coordinator:
 
     defenders:
       # types are StochasticDefender and NoDefender
-      # type: 'StochasticDefender'
-      type: 'StochasticWithThreshold'
+      type: 'StochasticDefender'
+      #type: 'StochasticWithThreshold'
       # type: 'NoDefender'
       tw_size: 5
       thresholds:
@@ -85,7 +85,7 @@ env:
       prob_success: 1.0
     find_services:
       prob_success: 1.0
-    exploit_services:
+    exploit_service:
       prob_success: 1.0
     find_data:
       prob_success: 1.0

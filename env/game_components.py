@@ -90,9 +90,8 @@ class ActionType(enum.Enum):
         obj._value_ = value
         return obj
 
-    def __init__(self, default_success_p: float, default_detection_p: float):
+    def __init__(self, default_success_p: float):
         self.default_success_p = default_success_p
-        self.default_detection_p = default_detection_p
 
     @classmethod
     def from_string(cls, string:str):
@@ -117,14 +116,14 @@ class ActionType(enum.Enum):
                 raise ValueError("Uknown Action Type")
 
     #ActionTypes
-    ScanNetwork = 0.9, 0.2
-    FindServices = 0.9, 0.3
-    FindData = 0.8, 0.1
-    ExploitService = 0.7, 0.4
-    ExfiltrateData = 0.8, 0.1
-    JoinGame = 1,0
-    QuitGame = 1,0
-    ResetGame = 1,0
+    ScanNetwork = 0.9
+    FindServices = 0.9
+    FindData = 0.8
+    ExploitService = 0.7
+    ExfiltrateData = 0.8
+    JoinGame = 1
+    QuitGame = 1
+    ResetGame = 1
 
 @dataclass(frozen=True, eq=True, order=True)
 class AgentInfo():
