@@ -17,6 +17,123 @@ from utils.utils import ConfigParser, store_replay_buffer_in_csv
 # Set the logging
 logger = logging.getLogger('Netsecenv')
 
+class SimplisticDefender:
+    def __init__(self, config_file) -> None:
+        self.task_config = ConfigParser(config_file)
+        defender_type = self.task_config.get_defender_type()
+        self.logger = logging.getLogger('Netsecenv-Defender')
+        match defender_type:
+            case "NoDefender":
+                self.logger.info("\t\tNo defender present in the environment")
+                self._defender_type = None
+            case 'StochasticDefender':
+                self.logger.info(f"\t\tDefender placed as type {defender_type}")
+                # For now there is only one type of defender
+                self._defender_type = "Stochastic"
+                self.detecion_probability = self._read_detection_probabilities()
+            case "StochasticWithThreshold":
+                self.logger.info(f"\t\tDefender placed as type '{defender_type}'")
+                self._defender_type = "StochasticWithThreshold"
+                self.detecion_probability = self._read_detection_probabilities()
+                self._defender_thresholds = self.task_config.get_defender_thresholds()
+                self._defender_thresholds["tw_size"] = self.task_config.get_defender_tw_size()
+                self._actions_played = []
+            case _: # Default option - no defender
+                self._defender_type = None
+    
+    def _read_detection_probabilities(self)->dict:
+        """
+        Method to read detection probabilities from the task config task.
+        """
+        detection_probability = {}
+        _, detection_probability[components.ActionType.ScanNetwork] = self.task_config.read_env_action_data('scan_network')
+        _, detection_probability[components.ActionType.FindServices] = self.task_config.read_env_action_data('find_services')
+        _, detection_probability[components.ActionType.ExploitService] = self.task_config.read_env_action_data('exploit_services')
+        _, detection_probability[components.ActionType.FindData] = self.task_config.read_env_action_data('find_data')
+        _, detection_probability[components.ActionType.ExfiltrateData] = self.task_config.read_env_action_data('exfiltrate_data')
+        return detection_probability
+
+    def detect(self, state:components.GameState, action:components.Action):
+        """
+        Checks if current action was detected based on the defendr type:
+        """
+        if self._defender_type is not None: # There is a defender present
+            match self._defender_type:
+                case "Stochastic":
+                    detection = self._stochastic_detection(action)
+                    self.logger.info(f"\tAction detected?: {detection}")
+                    return detection
+                case "StochasticWithThreshold":
+                    self.logger.info(f"Checking detection based on rules: {action}")
+                    detection = self._stochastic_detection_with_thresholds(action)
+                    self.logger.info(f"\tAction detected?: {detection}")
+                    return detection
+        else: # No defender in the environment
+            logger.info("\tNo defender present")
+            return False
+    
+    def _stochastic_detection_with_thresholds(self, action:components.Action)->bool:        
+        """ Method used for detection with stochastic defender with minimal thresholds"""
+        if len(self._actions_played) > 1: # single action is never detected:
+            last_n_actions = self._actions_played[-self._defender_thresholds["tw_size"]:]
+            last_n_action_types = [action.type for action in last_n_actions]
+            repeated_action_episode = self._actions_played.count(action)
+            self.logger.info('\tThreshold check')
+            # update threh
+            match action.type: # thresholds are based on action type
+                case components.ActionType.ScanNetwork:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ScanNetwork)/self._defender_thresholds["tw_size"]
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ScanNetwork]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ScanNetwork]["consecutive_actions"]:
+                        return False
+                    else:
+                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ScanNetwork]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ScanNetwork]['consecutive_actions']})")
+                        return self._stochastic_detection(action)
+                case components.ActionType.FindServices:
+                    tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/self._defender_thresholds["tw_size"]
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.FindServices)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.FindServices]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.FindServices]["consecutive_actions"]:
+                        return False
+                    else:
+                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindServices]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.FindServices]['consecutive_actions']})")
+                        return self._stochastic_detection(action)
+                case components.ActionType.FindData:
+                    tw_ratio = last_n_action_types.count(components.ActionType.FindData)/self._defender_thresholds["tw_size"]
+                    if tw_ratio < self._defender_thresholds[components.ActionType.FindData]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.FindData]["repeated_actions_episode"]:
+                        return False
+                    else:
+                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindData]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
+                        return self._stochastic_detection(action)
+                case components.ActionType.ExploitService:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ExploitService)/self._defender_thresholds["tw_size"]
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ExploitService]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.ExploitService]["repeated_actions_episode"]:
+                        return False
+                    else:
+                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExploitService]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
+                        return self._stochastic_detection(action)
+                case components.ActionType.ExfiltrateData:
+                    tw_ratio = last_n_action_types.count(components.ActionType.ExfiltrateData)/self._defender_thresholds["tw_size"]
+                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ExfiltrateData)
+                                                for _,grouped in itertools.groupby(last_n_action_types))
+                    if tw_ratio < self._defender_thresholds[components.ActionType.ExfiltrateData]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ExfiltrateData]["consecutive_actions"]:
+                        return False
+                    else:
+                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExfiltrateData]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ExfiltrateData]['consecutive_actions']})")
+                        return self._stochastic_detection(action)
+                case _: # default case - No detection
+                    return False
+        return False
+    
+    def _stochastic_detection(self, action: components.Action)->bool:
+        """ Method stochastic detection based on action default probability"""
+        return random.random() < self.detection_probability[action.type]
+    
+    def reset(self)->None:
+        self._actions_played = []
+        self.logger.info("Defender resetted")
+
 class NetworkSecurityEnvironment(object):
     """
     Class to manage the whole network security game
@@ -86,7 +203,7 @@ class NetworkSecurityEnvironment(object):
         components.ActionType.ExfiltrateData.default_success_p, components.ActionType.ExfiltrateData.default_detection_p = self.task_config.read_env_action_data('exfiltrate_data')
 
         # Place the defender
-        self._place_defences()
+        self._defender = SimplisticDefender(task_config_file)
         
         # Get attacker start
         self._attacker_start_position = self.task_config.get_attackers_start_position()
@@ -128,7 +245,7 @@ class NetworkSecurityEnvironment(object):
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
         self._current_goal = None
-        self._actions_played = []
+        # self._actions_played = []
         # If the game finished. Start with False
         self._end = False
         # If the episode/action was detected by the defender
@@ -361,7 +478,7 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"\tGoal known_data: {updated_win_conditions['known_data']}")
         return updated_win_conditions
        
-    def _place_defences(self)->None:
+    # def _place_defences(self)->None:
         """
         Place the defender
         For now only if it is present
@@ -816,82 +933,85 @@ class NetworkSecurityEnvironment(object):
         goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
         return goal_reached
 
-    def _stochastic_detection_with_thresholds(self, action:components.Action)->bool:        
-        """ Method used for detection with stochastic defender with minimal thresholds"""
-        if len(self._actions_played) > 1: # single action is never detected:
-            last_n_actions = self._actions_played[-self._defender_thresholds["tw_size"]:]
-            last_n_action_types = [action.type for action in last_n_actions]
-            repeated_action_episode = self._actions_played.count(action)
-            logger.info('\tThreshold check')
-            # update threh
-            match action.type: # thresholds are based on action type
-                case components.ActionType.ScanNetwork:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ScanNetwork)/self._defender_thresholds["tw_size"]
-                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
-                                                for _,grouped in itertools.groupby(last_n_action_types))
-                    if tw_ratio < self._defender_thresholds[components.ActionType.ScanNetwork]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ScanNetwork]["consecutive_actions"]:
-                        return False
-                    else:
-                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ScanNetwork]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ScanNetwork]['consecutive_actions']})")
-                        return self._stochastic_detection(action)
-                case components.ActionType.FindServices:
-                    tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/self._defender_thresholds["tw_size"]
-                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.FindServices)
-                                                for _,grouped in itertools.groupby(last_n_action_types))
-                    if tw_ratio < self._defender_thresholds[components.ActionType.FindServices]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.FindServices]["consecutive_actions"]:
-                        return False
-                    else:
-                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindServices]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.FindServices]['consecutive_actions']})")
-                        return self._stochastic_detection(action)
-                case components.ActionType.FindData:
-                    tw_ratio = last_n_action_types.count(components.ActionType.FindData)/self._defender_thresholds["tw_size"]
-                    if tw_ratio < self._defender_thresholds[components.ActionType.FindData]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.FindData]["repeated_actions_episode"]:
-                        return False
-                    else:
-                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindData]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
-                        return self._stochastic_detection(action)
-                case components.ActionType.ExploitService:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ExploitService)/self._defender_thresholds["tw_size"]
-                    if tw_ratio < self._defender_thresholds[components.ActionType.ExploitService]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.ExploitService]["repeated_actions_episode"]:
-                        return False
-                    else:
-                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExploitService]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
-                        return self._stochastic_detection(action)
-                case components.ActionType.ExfiltrateData:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ExfiltrateData)/self._defender_thresholds["tw_size"]
-                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ExfiltrateData)
-                                                for _,grouped in itertools.groupby(last_n_action_types))
-                    if tw_ratio < self._defender_thresholds[components.ActionType.ExfiltrateData]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ExfiltrateData]["consecutive_actions"]:
-                        return False
-                    else:
-                        logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExfiltrateData]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ExfiltrateData]['consecutive_actions']})")
-                        return self._stochastic_detection(action)
-                case _: # default case - No detection
-                    return False
-        return False
+    # def _stochastic_detection_with_thresholds(self, action:components.Action)->bool:        
+    #     """ Method used for detection with stochastic defender with minimal thresholds"""
+    #     raise DeprecationWarning
+    #     if len(self._actions_played) > 1: # single action is never detected:
+    #         last_n_actions = self._actions_played[-self._defender_thresholds["tw_size"]:]
+    #         last_n_action_types = [action.type for action in last_n_actions]
+    #         repeated_action_episode = self._actions_played.count(action)
+    #         logger.info('\tThreshold check')
+    #         # update threh
+    #         match action.type: # thresholds are based on action type
+    #             case components.ActionType.ScanNetwork:
+    #                 tw_ratio = last_n_action_types.count(components.ActionType.ScanNetwork)/self._defender_thresholds["tw_size"]
+    #                 num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
+    #                                             for _,grouped in itertools.groupby(last_n_action_types))
+    #                 if tw_ratio < self._defender_thresholds[components.ActionType.ScanNetwork]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ScanNetwork]["consecutive_actions"]:
+    #                     return False
+    #                 else:
+    #                     logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ScanNetwork]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ScanNetwork]['consecutive_actions']})")
+    #                     return self._stochastic_detection(action)
+    #             case components.ActionType.FindServices:
+    #                 tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/self._defender_thresholds["tw_size"]
+    #                 num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.FindServices)
+    #                                             for _,grouped in itertools.groupby(last_n_action_types))
+    #                 if tw_ratio < self._defender_thresholds[components.ActionType.FindServices]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.FindServices]["consecutive_actions"]:
+    #                     return False
+    #                 else:
+    #                     logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindServices]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.FindServices]['consecutive_actions']})")
+    #                     return self._stochastic_detection(action)
+    #             case components.ActionType.FindData:
+    #                 tw_ratio = last_n_action_types.count(components.ActionType.FindData)/self._defender_thresholds["tw_size"]
+    #                 if tw_ratio < self._defender_thresholds[components.ActionType.FindData]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.FindData]["repeated_actions_episode"]:
+    #                     return False
+    #                 else:
+    #                     logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindData]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
+    #                     return self._stochastic_detection(action)
+    #             case components.ActionType.ExploitService:
+    #                 tw_ratio = last_n_action_types.count(components.ActionType.ExploitService)/self._defender_thresholds["tw_size"]
+    #                 if tw_ratio < self._defender_thresholds[components.ActionType.ExploitService]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.ExploitService]["repeated_actions_episode"]:
+    #                     return False
+    #                 else:
+    #                     logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExploitService]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
+    #                     return self._stochastic_detection(action)
+    #             case components.ActionType.ExfiltrateData:
+    #                 tw_ratio = last_n_action_types.count(components.ActionType.ExfiltrateData)/self._defender_thresholds["tw_size"]
+    #                 num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ExfiltrateData)
+    #                                             for _,grouped in itertools.groupby(last_n_action_types))
+    #                 if tw_ratio < self._defender_thresholds[components.ActionType.ExfiltrateData]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ExfiltrateData]["consecutive_actions"]:
+    #                     return False
+    #                 else:
+    #                     logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExfiltrateData]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ExfiltrateData]['consecutive_actions']})")
+    #                     return self._stochastic_detection(action)
+    #             case _: # default case - No detection
+    #                 return False
+    #     return False
     
-    def _stochastic_detection(self, action: components.Action)->bool:
-        """ Method stochastic detection based on action default probability"""
-        return random.random() < action.type.default_detection_p
+    # def _stochastic_detection(self, action: components.Action)->bool:
+    #     """ Method stochastic detection based on action default probability"""
+    #     raise DeprecationWarning
+    #     return random.random() < action.type.default_detection_p
     
-    def _is_detected(self, state, action:components.Action)->bool:
-        """
-        Checks if current action was detected based on the defendr type:
-        """
-        if self._defender_type is not None: # There is a defender present
-            match self._defender_type:
-                case "Stochastic":
-                    detection = self._stochastic_detection(action)
-                    logger.info(f"\tAction detected?: {detection}")
-                    return detection
-                case "StochasticWithThreshold":
-                    logger.info(f"Checking detection based on rules: {action}")
-                    detection = self._stochastic_detection_with_thresholds(action)
-                    logger.info(f"\tAction detected?: {detection}")
-                    return detection
-        else: # No defender in the environment
-            logger.info("\tNo defender present")
-            return False
+    # def _is_detected(self, state, action:components.Action)->bool:
+        # """
+        # Checks if current action was detected based on the defendr type:
+        # """
+        # if self._defender_type is not None: # There is a defender present
+        #     match self._defender_type:
+        #         case "Stochastic":
+        #             detection = self._stochastic_detection(action)
+        #             logger.info(f"\tAction detected?: {detection}")
+        #             return detection
+        #         case "StochasticWithThreshold":
+        #             logger.info(f"Checking detection based on rules: {action}")
+        #             detection = self._stochastic_detection_with_thresholds(action)
+        #             logger.info(f"\tAction detected?: {detection}")
+        #             return detection
+        # else: # No defender in the environment
+        #     logger.info("\tNo defender present")
+        #     return False
+        return self._defender.detect(state, action)
 
     def reset(self)->components.Observation:
         """
@@ -902,8 +1022,10 @@ class NetworkSecurityEnvironment(object):
         self._end = False
         self._step_counter = 0
         self._detected = False
-        self._actions_played = []
         
+        #self._actions_played = []
+        self._defender.reset()
+
         # write all steps in the episode replay buffer in the file
         if self._episode_replay_buffer is not None:
             store_replay_buffer_in_csv(self._episode_replay_buffer, 'env/logs/replay_buffer.csv')
@@ -945,7 +1067,7 @@ class NetworkSecurityEnvironment(object):
 
             # 1. Check if the action was successful or not
             if random.random() <= action.type.default_success_p:
-                self._actions_played.append(action)
+                # self._actions_played.append(action)
                 # The action was successful
                 logger.info('\tAction sucessful')
 
@@ -979,7 +1101,7 @@ class NetworkSecurityEnvironment(object):
             # correct penalty, even if the action was successfully executed.
             # This means defender wins if both defender and attacker are successful
             # simuntaneously in the same step
-            detected = self._is_detected(self._current_state, action)
+            detected = self._defender_detect(self._current_state, action)
             # Report detection, but not if in this same step the agent won
             if not is_goal and detected:
                 # Reward should be negative
