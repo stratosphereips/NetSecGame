@@ -361,20 +361,20 @@ class ConfigParser():
         Get the type of the defender
         """
         try:
-            defender_placements = self.config['agents']['defender']['type']
+            defender_placements = self.config["coordinator"]['agents']['defenders']['type']
         except KeyError:
             # Option is not in the configuration - default to no defender present
             defender_placements = "NoDefender"
         return defender_placements
     
     def get_defender_tw_size(self):
-        tw_size = self.config["agents"]["defender"]["tw_size"]
+        tw_size = self.config["coordinator"]['agents']['defenders']
         return tw_size
     
     def get_defender_thresholds(self):
         """Function to read thresholds for stochastic defender with thresholds"""
         thresholds = {}
-        config_thresholds = self.config["agents"]["defender"]["thresholds"]
+        config_thresholds = self.config["coordinator"]['agents']['defenders']["thresholds"]
         # ScanNetwork
         thresholds[ActionType.ScanNetwork] = {"consecutive_actions": config_thresholds["scan_network"]["consecutive_actions"]}
         thresholds[ActionType.ScanNetwork]["tw_ratio"] = config_thresholds["scan_network"]["tw_ratio"]
