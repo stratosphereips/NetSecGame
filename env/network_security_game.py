@@ -44,11 +44,11 @@ class SimplisticDefender:
         Method to read detection probabilities from the task config task.
         """
         detection_probability = {}
-        _, detection_probability[components.ActionType.ScanNetwork] = self.task_config.read_env_action_data('scan_network')
-        _, detection_probability[components.ActionType.FindServices] = self.task_config.read_env_action_data('find_services')
-        _, detection_probability[components.ActionType.ExploitService] = self.task_config.read_env_action_data('exploit_service')
-        _, detection_probability[components.ActionType.FindData] = self.task_config.read_env_action_data('find_data')
-        _, detection_probability[components.ActionType.ExfiltrateData] = self.task_config.read_env_action_data('exfiltrate_data')
+        _, detection_probability[components.ActionType.ScanNetwork] = self.task_config.read_defender_detection_prob('scan_network')
+        _, detection_probability[components.ActionType.FindServices] = self.task_config.read_defender_detection_prob('find_services')
+        _, detection_probability[components.ActionType.ExploitService] = self.task_config.read_defender_detection_prob('exploit_service')
+        _, detection_probability[components.ActionType.FindData] = self.task_config.read_defender_detection_prob('find_data')
+        _, detection_probability[components.ActionType.ExfiltrateData] = self.task_config.read_defender_detection_prob('exfiltrate_data')
         self.logger.info(f"Detection probabilities:{detection_probability}")
         return detection_probability
 
@@ -197,11 +197,11 @@ class NetworkSecurityEnvironment(object):
 
         # Set the default parameters of all actionss
         # if the values of the actions were updated in the configuration file
-        components.ActionType.ScanNetwork.default_success_p, _ = self.task_config.read_env_action_data('scan_network')
-        components.ActionType.FindServices.default_success_p, _ = self.task_config.read_env_action_data('find_services')
-        components.ActionType.ExploitService.default_success_p, _ = self.task_config.read_env_action_data('exploit_service')
-        components.ActionType.FindData.default_success_p, _ = self.task_config.read_env_action_data('find_data')
-        components.ActionType.ExfiltrateData.default_success_p, _ = self.task_config.read_env_action_data('exfiltrate_data')
+        components.ActionType.ScanNetwork.default_success_p = self.task_config.read_env_action_data('scan_network')
+        components.ActionType.FindServices.default_success_p = self.task_config.read_env_action_data('find_services')
+        components.ActionType.ExploitService.default_success_p = self.task_config.read_env_action_data('exploit_service')
+        components.ActionType.FindData.default_success_p = self.task_config.read_env_action_data('find_data')
+        components.ActionType.ExfiltrateData.default_success_p = self.task_config.read_env_action_data('exfiltrate_data')
 
         # Place the defender
         self._defender = SimplisticDefender(task_config_file)

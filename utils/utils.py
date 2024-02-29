@@ -111,17 +111,23 @@ class ConfigParser():
         except (IOError, TypeError):
             self.logger.error('Error loading the configuration file')
             pass
+    
+    def read_defender_detection_prob(self, action_name: str) -> dict:
+        if self.config["coordinator"]["agents"]["defenders"]["type"] in ["StochasticWithThreshold", "StochasticDefender"]:
+            action_detect_p = self.config["coordinator"]["agents"]["defenders"]["action_detetection_prob"][action_name]
+        else:
+            action_detect_p = 0
+        return action_detect_p  
 
     def read_env_action_data(self, action_name: str) -> dict:
         """
         Generic function to read the known data for any agent and goal of position
         """
-        action_success_p = self.config['env']['actions'][action_name]['prob_success']
-        if self.config["coordinator"]["agents"]["defenders"]["type"] in ["StochasticWithThreshold", "StochasticDefender"]:
-            action_detect_p = self.config["coordinator"]["agents"]["defenders"]["action_detetection_prob"][action_name]
-        else:
-            action_detect_p = 0
-        return action_success_p, action_detect_p
+        try:
+            action_success_p = self.config['env']['actions'][action_name]['prob_success']
+        except KeyError:
+            action_success_p = 1
+        return action_success_p
 
     def read_agents_known_data(self, type_agent: str, type_data: str) -> dict:
         """
