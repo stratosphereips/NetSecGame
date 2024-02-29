@@ -117,12 +117,9 @@ class ConfigParser():
         Generic function to read the known data for any agent and goal of position
         """
         action_success_p = self.config['env']['actions'][action_name]['prob_success']
-        try:
-            if self.config["coordinator"]["agents"]["defenders"]["type"] in ["StochasticWithThreshold", "Stochastic"]:
-                action_detect_p = self.config["coordinator"]["agents"]["defenders"]["action_detetection_prob"][action_name]
-            else:
-                action_detect_p = 0
-        except KeyError:
+        if self.config["coordinator"]["agents"]["defenders"]["type"] in ["StochasticWithThreshold", "StochasticDefender"]:
+            action_detect_p = self.config["coordinator"]["agents"]["defenders"]["action_detetection_prob"][action_name]
+        else:
             action_detect_p = 0
         return action_success_p, action_detect_p
 
