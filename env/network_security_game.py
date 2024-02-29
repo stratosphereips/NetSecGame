@@ -44,11 +44,11 @@ class SimplisticDefender:
         Method to read detection probabilities from the task config task.
         """
         detection_probability = {}
-        _, detection_probability[components.ActionType.ScanNetwork] = self.task_config.read_defender_detection_prob('scan_network')
-        _, detection_probability[components.ActionType.FindServices] = self.task_config.read_defender_detection_prob('find_services')
-        _, detection_probability[components.ActionType.ExploitService] = self.task_config.read_defender_detection_prob('exploit_service')
-        _, detection_probability[components.ActionType.FindData] = self.task_config.read_defender_detection_prob('find_data')
-        _, detection_probability[components.ActionType.ExfiltrateData] = self.task_config.read_defender_detection_prob('exfiltrate_data')
+        detection_probability[components.ActionType.ScanNetwork] = self.task_config.read_defender_detection_prob('scan_network')
+        detection_probability[components.ActionType.FindServices] = self.task_config.read_defender_detection_prob('find_services')
+        detection_probability[components.ActionType.ExploitService] = self.task_config.read_defender_detection_prob('exploit_service')
+        detection_probability[components.ActionType.FindData] = self.task_config.read_defender_detection_prob('find_data')
+        detection_probability[components.ActionType.ExfiltrateData] = self.task_config.read_defender_detection_prob('exfiltrate_data')
         self.logger.info(f"Detection probabilities:{detection_probability}")
         return detection_probability
 
