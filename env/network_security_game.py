@@ -46,9 +46,10 @@ class SimplisticDefender:
         detection_probability = {}
         _, detection_probability[components.ActionType.ScanNetwork] = self.task_config.read_env_action_data('scan_network')
         _, detection_probability[components.ActionType.FindServices] = self.task_config.read_env_action_data('find_services')
-        _, detection_probability[components.ActionType.ExploitService] = self.task_config.read_env_action_data('exploit_services')
+        _, detection_probability[components.ActionType.ExploitService] = self.task_config.read_env_action_data('exploit_service')
         _, detection_probability[components.ActionType.FindData] = self.task_config.read_env_action_data('find_data')
         _, detection_probability[components.ActionType.ExfiltrateData] = self.task_config.read_env_action_data('exfiltrate_data')
+        self.logger.info(f"Detection probabilities:{detection_probability}")
         return detection_probability
 
     def detect(self, state:components.GameState, action:components.Action):
@@ -126,7 +127,9 @@ class SimplisticDefender:
     
     def _stochastic_detection(self, action: components.Action)->bool:
         """ Method stochastic detection based on action default probability"""
-        return random.random() < self.detection_probability[action.type]
+        roll = random.random()
+        self.logger.info(f"\tRunning stochastic detection. {roll} < {self.detection_probability[action.type]}")
+        return roll < self.detection_probability[action.type]
     
     def reset(self)->None:
         self._actions_played = []
@@ -196,7 +199,7 @@ class NetworkSecurityEnvironment(object):
         # if the values of the actions were updated in the configuration file
         components.ActionType.ScanNetwork.default_success_p, components.ActionType.ScanNetwork.default_detection_p = self.task_config.read_env_action_data('scan_network')
         components.ActionType.FindServices.default_success_p, components.ActionType.FindServices.default_detection_p = self.task_config.read_env_action_data('find_services')
-        components.ActionType.ExploitService.default_success_p, components.ActionType.ExploitService.default_detection_p = self.task_config.read_env_action_data('exploit_services')
+        components.ActionType.ExploitService.default_success_p, components.ActionType.ExploitService.default_detection_p = self.task_config.read_env_action_data('exploit_service')
         components.ActionType.FindData.default_success_p, components.ActionType.FindData.default_detection_p = self.task_config.read_env_action_data('find_data')
         components.ActionType.ExfiltrateData.default_success_p, components.ActionType.ExfiltrateData.default_detection_p = self.task_config.read_env_action_data('exfiltrate_data')
 
