@@ -128,7 +128,7 @@ dmypy.json
 
 
 #dont track pickle files by default
-*.pickle
+*.pickle*
 
 images
 nohup.out
@@ -150,3 +150,4 @@ agents/*/saved_models/*
 nmap-result.xml
 mlruns.db
 mlruns/
+aim/
