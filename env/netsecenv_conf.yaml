@@ -6,7 +6,7 @@ coordinator:
     attackers:
       goal:
         description: "Exfiltrate data to '213.47.23.195'"
-        randomize_goal_every_episode: False
+        randomize_goal_every_episode: True
         known_networks: []
         #known_networks: [192.168.1.0/24, 192.168.3.0/24]
         known_hosts: []
@@ -31,7 +31,7 @@ coordinator:
         known_hosts: []
         # The attacker must always at least control the CC if the goal is to exfiltrate there
         # Example of fixing the starting point of the agent in a local host
-        controlled_hosts: [213.47.23.195, 192.168.2.2]
+        controlled_hosts: [213.47.23.195, random]
         # Example of asking a random position to start the agent
         # controlled_hosts: [213.47.23.195, random]
         # Services are defined as a target host where the service must be, and then a description in the form 'name,type,version,is_local'
@@ -73,7 +73,7 @@ env:
   random_seed: 'random'
   # Or you can fix the seed
   # random_seed: 42
-  scenario: 'scenario1_tiny'
+  scenario: 'scenario1'
   max_steps: 100
   store_replay_buffer: False
   use_dynamic_addresses: False
