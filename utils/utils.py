@@ -422,7 +422,7 @@ class ConfigParser():
         Get if the randomization should be done only once or at the beginning of every episode
         """
         try:
-            randomize_goal_every_episode = self.config["agents"]["attackers"]["goal"]["randomize_goal_every_episode"]
+            randomize_goal_every_episode = self.config["coordinator"]["agents"]["attackers"]["goal"]["randomize_goal_every_episode"]
         except KeyError:
             # Option is not in the configuration - default to FALSE
             randomize_goal_every_episode = False
