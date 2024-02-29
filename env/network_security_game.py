@@ -20,19 +20,17 @@ logger = logging.getLogger('Netsecenv')
 class SimplisticDefender:
     def __init__(self, config_file) -> None:
         self.task_config = ConfigParser(config_file)
-        defender_type = self.task_config.get_defender_type()
         self.logger = logging.getLogger('Netsecenv-Defender')
+        defender_type = self.task_config.get_defender_type()
+        self.logger.info(f"Defender set to be of type '{defender_type}'")
         match defender_type:
             case "NoDefender":
-                self.logger.info("\t\tNo defender present in the environment")
                 self._defender_type = None
             case 'StochasticDefender':
-                self.logger.info(f"\t\tDefender placed as type {defender_type}")
                 # For now there is only one type of defender
                 self._defender_type = "Stochastic"
-                self.detecion_probability = self._read_detection_probabilities()
+                self.detection_probability = self._read_detection_probabilities()
             case "StochasticWithThreshold":
-                self.logger.info(f"\t\tDefender placed as type '{defender_type}'")
                 self._defender_type = "StochasticWithThreshold"
                 self.detecion_probability = self._read_detection_probabilities()
                 self._defender_thresholds = self.task_config.get_defender_thresholds()
@@ -1101,7 +1099,7 @@ class NetworkSecurityEnvironment(object):
             # correct penalty, even if the action was successfully executed.
             # This means defender wins if both defender and attacker are successful
             # simuntaneously in the same step
-            detected = self._defender_detect(self._current_state, action)
+            detected = self._defender.detect(self._current_state, action)
             # Report detection, but not if in this same step the agent won
             if not is_goal and detected:
                 # Reward should be negative
