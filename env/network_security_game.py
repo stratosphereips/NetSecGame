@@ -52,7 +52,7 @@ class SimplisticDefender:
         self.logger.info(f"Detection probabilities:{detection_probability}")
         return detection_probability
 
-    def detect(self, state:components.GameState, action:components.Action):
+    def detect(self, state:components.GameState, action:components.Action, actions_played):
         """
         Checks if current action was detected based on the defendr type:
         """
@@ -64,19 +64,19 @@ class SimplisticDefender:
                     return detection
                 case "StochasticWithThreshold":
                     self.logger.info(f"Checking detection based on rules: {action}")
-                    detection = self._stochastic_detection_with_thresholds(action)
+                    detection = self._stochastic_detection_with_thresholds(action, actions_played)
                     self.logger.info(f"\tAction detected?: {detection}")
                     return detection
         else: # No defender in the environment
             logger.info("\tNo defender present")
             return False
     
-    def _stochastic_detection_with_thresholds(self, action:components.Action)->bool:        
+    def _stochastic_detection_with_thresholds(self, action:components.Action, actions_played)->bool:        
         """ Method used for detection with stochastic defender with minimal thresholds"""
         if len(actions_played) > self._defender_thresholds["tw_size"]: # single action is never detected:
-            last_n_actions = self._actions_played[-self._defender_thresholds["tw_size"]:]
+            last_n_actions = actions_played[-self._defender_thresholds["tw_size"]:]
             last_n_action_types = [action.type for action in last_n_actions]
-            repeated_action_episode = self._actions_played.count(action)
+            repeated_action_episode = actions_played.count(action)
             self.logger.info('\tThreshold check')
             # update threh
             match action.type: # thresholds are based on action type
@@ -132,7 +132,6 @@ class SimplisticDefender:
         return roll < self.detection_probability[action.type]
     
     def reset(self)->None:
-        self._actions_played = []
         self.logger.info("Defender resetted")
 
 class NetworkSecurityEnvironment(object):
@@ -246,7 +245,7 @@ class NetworkSecurityEnvironment(object):
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
         self._current_goal = None
-        # self._actions_played = []
+        self._actions_played = []
         # If the game finished. Start with False
         self._end = False
         # If the episode/action was detected by the defender
@@ -944,7 +943,7 @@ class NetworkSecurityEnvironment(object):
         self._step_counter = 0
         self._detected = False
         
-        #self._actions_played = []
+        self._actions_played = []
         self._defender.reset()
 
         # write all steps in the episode replay buffer in the file
@@ -988,7 +987,7 @@ class NetworkSecurityEnvironment(object):
 
             # 1. Check if the action was successful or not
             if random.random() <= action.type.default_success_p:
-                # self._actions_played.append(action)
+                self._actions_played.append(action)
                 # The action was successful
                 logger.info('\tAction sucessful')
 
@@ -1022,7 +1021,7 @@ class NetworkSecurityEnvironment(object):
             # correct penalty, even if the action was successfully executed.
             # This means defender wins if both defender and attacker are successful
             # simuntaneously in the same step
-            detected = self._defender.detect(self._current_state, action)
+            detected = self._defender.detect(self._current_state, action, self._actions_played)
             # Report detection, but not if in this same step the agent won
             if not is_goal and detected:
                 # Reward should be negative
