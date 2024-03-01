@@ -32,7 +32,7 @@ class SimplisticDefender:
                 self.detection_probability = self._read_detection_probabilities()
             case "StochasticWithThreshold":
                 self._defender_type = "StochasticWithThreshold"
-                self.detecion_probability = self._read_detection_probabilities()
+                self.detection_probability = self._read_detection_probabilities()
                 self._defender_thresholds = self.task_config.get_defender_thresholds()
                 self._defender_thresholds["tw_size"] = self.task_config.get_defender_tw_size()
                 self._actions_played = []
