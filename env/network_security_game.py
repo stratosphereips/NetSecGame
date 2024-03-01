@@ -73,7 +73,7 @@ class SimplisticDefender:
     
     def _stochastic_detection_with_thresholds(self, action:components.Action)->bool:        
         """ Method used for detection with stochastic defender with minimal thresholds"""
-        if len(self._actions_played) > 1: # single action is never detected:
+        if len(actions_played) > self._defender_thresholds["tw_size"]: # single action is never detected:
             last_n_actions = self._actions_played[-self._defender_thresholds["tw_size"]:]
             last_n_action_types = [action.type for action in last_n_actions]
             repeated_action_episode = self._actions_played.count(action)
