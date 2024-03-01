@@ -6,7 +6,7 @@ coordinator:
     attackers:
       goal:
         description: "Exfiltrate data to '213.47.23.195'"
-        randomize_goal_every_episode: True
+        randomize_goal_every_episode: False
         known_networks: []
         #known_networks: [192.168.1.0/24, 192.168.3.0/24]
         known_hosts: []
@@ -42,8 +42,8 @@ coordinator:
 
     defenders:
       # types are StochasticDefender and NoDefender
-      type: 'StochasticDefender'
-      #type: 'StochasticWithThreshold'
+      #type: 'StochasticDefender'
+      type: 'StochasticWithThreshold'
       # type: 'NoDefender'
       tw_size: 5
       thresholds:
