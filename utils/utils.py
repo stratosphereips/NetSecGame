@@ -371,7 +371,7 @@ class ConfigParser():
         return defender_placements
     
     def get_defender_tw_size(self):
-        tw_size = self.config["coordinator"]['agents']['defenders']
+        tw_size = self.config["coordinator"]['agents']['defenders']['tw_size']
         return tw_size
     
     def get_defender_thresholds(self):
