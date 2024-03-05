@@ -673,6 +673,8 @@ class NetworkSecurityEnvironment(object):
             random.shuffle(ip_list)
             for i,ip in enumerate(ips):
                 mapping_ips[ip] = components.IP(str(ip_list[i]))
+            # Always add random, in case random is selected for ips
+            mapping_ips['random'] = 'random'
         
         # update ALL data structure in the environment with the new mappings
         # self._networks
