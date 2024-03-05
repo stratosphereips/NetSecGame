@@ -78,7 +78,7 @@ env:
   scenario: 'scenario1'
   max_steps: 100
   store_replay_buffer: False
-  use_dynamic_addresses: False
+  use_dynamic_addresses: True
   goal_reward: 100
   detection_reward: -5
   step_reward: -1
