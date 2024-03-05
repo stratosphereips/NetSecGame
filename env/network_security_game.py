@@ -217,8 +217,9 @@ class NetworkSecurityEnvironment(object):
         # store goal definition
         self._goal_conditions = self.task_config.get_attackers_win_conditions()
 
-        # store goal description = 
+        # store goal description
         self._goal_description = self.task_config.get_goal_description()
+
         # check if dynamic network and ip adddresses are required
         if self.task_config.get_use_dynamic_addresses():
             logger.info("Dynamic change of the IP and network addresses enabled")
@@ -226,7 +227,9 @@ class NetworkSecurityEnvironment(object):
             Faker.seed(seed)
             self._create_new_network_mapping()
 
-        # process episodic randomization
+        # Here check if the ips should be randomize... 
+
+        # process episodic randomization of goal position
         if not self._randomize_goal_every_episode:
             # episodic randomization is not required, randomize once now
             logger.info("Episodic randomization disabled, generating static goal_conditions")
