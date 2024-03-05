@@ -24,7 +24,9 @@ coordinator:
         # Example to fix the data in two host
         #known_data: {213.47.23.195: [User1,DataFromServer1], 192.168.3.1: [User3,Data3FromServer3]}
         # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the goal data is
-        known_data: {213.47.23.195: [random]}
+        #known_data: {213.47.23.195: [random]}
+        
+        known_data: {213.47.23.195: [[User1,DataFromServer1]]}
 
       start_position:
         known_networks: []
