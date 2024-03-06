@@ -208,9 +208,6 @@ class NetworkSecurityEnvironment(object):
         # Get attacker start
         self._attacker_start_position = self.task_config.get_attackers_start_position()
 
-        # Make a copy of data placements so it is possible to reset to it when episode ends
-        self._data_original = copy.deepcopy(self._data)
-
         # should be randomized once or every episode?
         self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
         
@@ -220,22 +217,21 @@ class NetworkSecurityEnvironment(object):
         # store goal description
         self._goal_description = self.task_config.get_goal_description()
 
-        # check if dynamic network and ip adddresses are required
+        # Process episodic randomization of goal position
+        #if not self._randomize_goal_every_episode:
+        #    # episodic randomization is not required, randomize once now
+        #    logger.info("Episodic randomization disabled, generating static goal_conditions")
+        self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
+        #else:
+        #    logger.info("Episodic randomization enabled")
+
+        # At this point all 'random' values should be assigned to something
+        # Check if dynamic network and ip adddresses are required
         if self.task_config.get_use_dynamic_addresses():
             logger.info("Dynamic change of the IP and network addresses enabled")
             self._faker_object = Faker()
             Faker.seed(seed)
             self._create_new_network_mapping()
-
-        # Here check if the ips should be randomize... 
-
-        # process episodic randomization of goal position
-        if not self._randomize_goal_every_episode:
-            # episodic randomization is not required, randomize once now
-            logger.info("Episodic randomization disabled, generating static goal_conditions")
-            self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
-        else:
-            logger.info("Episodic randomization enabled")
 
         # read if replay buffer should be store on disc
         if self.task_config.get_store_replay_buffer():
@@ -244,6 +240,9 @@ class NetworkSecurityEnvironment(object):
         else:
             logger.info("Storing of replay buffer disabled")
             self._episode_replay_buffer = None
+
+        # Make a copy of data placements so it is possible to reset to it when episode ends
+        self._data_original = copy.deepcopy(self._data)
         
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
@@ -690,6 +689,12 @@ class NetworkSecurityEnvironment(object):
         for ip, hostname in self._ip_to_hostname.items():
             new_self_ip_to_hostname[mapping_ips[ip]] = hostname
         self._ip_to_hostname = new_self_ip_to_hostname
+
+        # Map hosts_to_start
+        new_self_host_to_start  = []
+        for ip in self.hosts_to_start:
+            new_self_host_to_start.append(mapping_ips[ip])
+        self.hosts_to_start = new_self_host_to_start
         
         # attacker starting position
         new_attacker_start = {}
