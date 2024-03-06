@@ -6,7 +6,8 @@ coordinator:
     attackers:
       goal:
         description: "Exfiltrate data to '213.47.23.195'"
-        randomize_goal_every_episode: False
+        # Put randomize_goal_every_episode in True if you put any of the goal values in 'random'
+        is_any_part_of_goal_random: True
         known_networks: []
         #known_networks: [192.168.1.0/24, 192.168.3.0/24]
         known_hosts: []
@@ -24,9 +25,7 @@ coordinator:
         # Example to fix the data in two host
         #known_data: {213.47.23.195: [User1,DataFromServer1], 192.168.3.1: [User3,Data3FromServer3]}
         # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the goal data is
-        #known_data: {213.47.23.195: [random]}
-        
-        known_data: {213.47.23.195: [[User1,DataFromServer1]]}
+        known_data: {213.47.23.195: [random]}
 
       start_position:
         known_networks: []
@@ -78,7 +77,7 @@ env:
   scenario: 'scenario1'
   max_steps: 100
   store_replay_buffer: False
-  use_dynamic_addresses: True
+  use_dynamic_addresses: False
   goal_reward: 100
   detection_reward: -5
   step_reward: -1
