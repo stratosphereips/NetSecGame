@@ -7,6 +7,7 @@ import json
 import enum
 import sys
 import netaddr
+import ipaddress
 
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -32,6 +33,13 @@ class IP():
     def __repr__(self):
         return self.ip
 
+    def is_private(self):
+        """
+        Return if the IP is private or not
+        """
+        return ipaddress.IPv4Network(self.ip).is_private
+
+
 @dataclass(frozen=True, eq=True)
 class Network():
     """
@@ -54,6 +62,12 @@ class Network():
     
     def __gt__(self, other):
         return netaddr.IPNetwork(str(self)) > netaddr.IPNetwork(str(other))
+    
+    def is_private(self):
+        """
+        Return if a network is private or not
+        """
+        return ipaddress.IPv4Network(f'{self.ip}/{self.mask}').is_private
 
 """
 Data represents the data object in the NetSecGame
