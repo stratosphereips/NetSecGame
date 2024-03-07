@@ -208,31 +208,31 @@ class NetworkSecurityEnvironment(object):
         # Get attacker start
         self._attacker_start_position = self.task_config.get_attackers_start_position()
 
-        # Make a copy of data placements so it is possible to reset to it when episode ends
-        self._data_original = copy.deepcopy(self._data)
-
         # should be randomized once or every episode?
         self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
         
         # store goal definition
         self._goal_conditions = self.task_config.get_attackers_win_conditions()
 
-        # store goal description = 
+        # store goal description
         self._goal_description = self.task_config.get_goal_description()
-        # check if dynamic network and ip adddresses are required
-        if self.task_config.get_use_dynamic_addresses():
-            logger.info("Dynamic change of the IP and network addresses enabled")
-            self._faker_object = Faker()
-            Faker.seed(seed)
-            self._create_new_network_mapping()
 
-        # process episodic randomization
+        # Process episodic randomization of goal position
         if not self._randomize_goal_every_episode:
             # episodic randomization is not required, randomize once now
             logger.info("Episodic randomization disabled, generating static goal_conditions")
             self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
         else:
+            self._orig_goal_conditions = copy.deepcopy(self._goal_conditions)
             logger.info("Episodic randomization enabled")
+
+        # At this point all 'random' values should be assigned to something
+        # Check if dynamic network and ip adddresses are required
+        if self.task_config.get_use_dynamic_addresses():
+            logger.info("Dynamic change of the IP and network addresses enabled")
+            self._faker_object = Faker()
+            Faker.seed(seed)
+            self._create_new_network_mapping()
 
         # read if replay buffer should be store on disc
         if self.task_config.get_store_replay_buffer():
@@ -241,6 +241,9 @@ class NetworkSecurityEnvironment(object):
         else:
             logger.info("Storing of replay buffer disabled")
             self._episode_replay_buffer = None
+
+        # Make a copy of data placements so it is possible to reset to it when episode ends
+        self._data_original = copy.deepcopy(self._data)
         
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
@@ -670,6 +673,8 @@ class NetworkSecurityEnvironment(object):
             random.shuffle(ip_list)
             for i,ip in enumerate(ips):
                 mapping_ips[ip] = components.IP(str(ip_list[i]))
+            # Always add random, in case random is selected for ips
+            mapping_ips['random'] = 'random'
         
         # update ALL data structure in the environment with the new mappings
         # self._networks
@@ -685,6 +690,12 @@ class NetworkSecurityEnvironment(object):
         for ip, hostname in self._ip_to_hostname.items():
             new_self_ip_to_hostname[mapping_ips[ip]] = hostname
         self._ip_to_hostname = new_self_ip_to_hostname
+
+        # Map hosts_to_start
+        new_self_host_to_start  = []
+        for ip in self.hosts_to_start:
+            new_self_host_to_start.append(mapping_ips[ip])
+        self.hosts_to_start = new_self_host_to_start
         
         # attacker starting position
         new_attacker_start = {}
@@ -902,32 +913,32 @@ class NetworkSecurityEnvironment(object):
             return False        
         # Networks
         # If empty goal, then should be true for this element
-        if set(self._win_conditions["known_networks"]) <= set(state.known_networks):
+        if set(self._goal_conditions["known_networks"]) <= set(state.known_networks):
             networks_goal = True
         else:
             networks_goal = False
         # Known hosts
         # If empty goal, then should be true for this element
-        if set(self._win_conditions["known_hosts"]) <= set(state.known_hosts):
+        if set(self._goal_conditions["known_hosts"]) <= set(state.known_hosts):
             known_hosts_goal = True
         else:
             known_hosts_goal = False
         # Controlled hosts
         # If empty goal, then should be true for this element
-        if set(self._win_conditions["controlled_hosts"]) <= set(state.controlled_hosts):
+        if set(self._goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts):
             controlled_hosts_goal = True
         else:
             controlled_hosts_goal = False       
         # Services
         # If empty goal, then should be true for this element
         logger.info('Checking the goal of services')
-        logger.info(f'\tServices needed to win {self._win_conditions["known_services"]}')
-        services_goal = goal_dict_satistfied(self._win_conditions["known_services"], state.known_services)
+        logger.info(f'\tServices needed to win {self._goal_conditions["known_services"]}')
+        services_goal = goal_dict_satistfied(self._goal_conditions["known_services"], state.known_services)
 
         # Data
         logger.info('Checking the goal of data')
-        logger.info(f'\tData needed to win {self._win_conditions["known_data"]}')
-        known_data_goal = goal_dict_satistfied(self._win_conditions["known_data"], state.known_data)
+        logger.info(f'\tData needed to win {self._goal_conditions["known_data"]}')
+        known_data_goal = goal_dict_satistfied(self._goal_conditions["known_data"], state.known_data)
 
         logger.info(f"\tnets:{networks_goal}, known_hosts:{known_hosts_goal}, controlled_hosts:{controlled_hosts_goal},services:{services_goal}, data:{known_data_goal}")
         goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
@@ -963,9 +974,9 @@ class NetworkSecurityEnvironment(object):
 
         #create win conditions for this episode (randomize if needed)
         if self._randomize_goal_every_episode:
-            self._win_conditions = copy.deepcopy(self._generate_win_conditions(self._goal_conditions))
+            self._goal_conditions = copy.deepcopy(self._generate_win_conditions(self._orig_goal_conditions))
         else:
-            self._win_conditions = copy.deepcopy(self._goal_conditions)
+            self._goal_conditions = copy.deepcopy(self._goal_conditions)
 
         logger.info(f'Current state: {self._current_state}')
         initial_reward = 0

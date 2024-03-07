@@ -6,7 +6,8 @@ coordinator:
     attackers:
       goal:
         description: "Exfiltrate data to '213.47.23.195'"
-        randomize_goal_every_episode: False
+        # Put randomize_goal_every_episode in True if you put any of the goal values in 'random'
+        is_any_part_of_goal_random: True
         known_networks: []
         #known_networks: [192.168.1.0/24, 192.168.3.0/24]
         known_hosts: []

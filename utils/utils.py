@@ -425,12 +425,12 @@ class ConfigParser():
         Get if the randomization should be done only once or at the beginning of every episode
         """
         try:
-            randomize_goal_every_episode = self.config["coordinator"]["agents"]["attackers"]["goal"]["randomize_goal_every_episode"]
+            randomize_goal_every_episode = self.config["coordinator"]["agents"]["attackers"]["goal"]["is_any_part_of_goal_random"]
         except KeyError:
             # Option is not in the configuration - default to FALSE
             randomize_goal_every_episode = False
         return randomize_goal_every_episode
-    
+
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
             known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
