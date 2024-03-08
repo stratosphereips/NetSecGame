@@ -19,13 +19,13 @@ coordinator:
         #known_services: {192.168.1.3: [Local system, lanman server, 10.0.19041, False], 192.168.1.4: [Other system, SMB server, 21.2.39421, False]}
         # In data, put the target host that must have the data and which data in format user,data
         # Example to fix the data in one host
-        # known_data: {213.47.23.195: [[User1,DataFromServer1]]}
+        known_data: {213.47.23.195: [[User1,DataFromServer1]]}
         # Example to fix two data in one host
         #known_data: {213.47.23.195: [[User1,DataFromServer1], [User5,DataFromServer5]]}
         # Example to fix the data in two host
         #known_data: {213.47.23.195: [User1,DataFromServer1], 192.168.3.1: [User3,Data3FromServer3]}
         # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the goal data is
-        known_data: {213.47.23.195: [random]}
+        # known_data: {213.47.23.195: [random]}
 
       start_position:
         known_networks: []
