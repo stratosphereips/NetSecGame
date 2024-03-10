@@ -717,7 +717,7 @@ outside_node = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("213.47.23.195"), cyst_cfg.IPNetwork("213.47.23.195/26"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("213.47.23.195"), cyst_cfg.IPNetwork("213.47.23.192/26"))],
     shell="bash",
     id="outside_node"
 )
