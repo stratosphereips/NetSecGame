@@ -37,7 +37,11 @@ class IP():
         """
         Return if the IP is private or not
         """
-        return ipaddress.IPv4Network(self.ip).is_private
+        try:
+            return ipaddress.IPv4Network(self.ip).is_private
+        except:
+            # We assume that if the IP is not are al ip, then it is private.
+            return True
 
 
 @dataclass(frozen=True, eq=True)
@@ -55,19 +59,32 @@ class Network():
         return f"{self.ip}/{self.mask}"
 
     def __lt__(self, other):
-        return netaddr.IPNetwork(str(self)) < netaddr.IPNetwork(str(other))
+        try:
+            return netaddr.IPNetwork(str(self)) < netaddr.IPNetwork(str(other))
+        except netaddr.core.AddrFormatError:
+            return str(self.ip) < str(other.ip)
     
     def __le__(self, other):
-        return netaddr.IPNetwork(str(self)) <= netaddr.IPNetwork(str(other))
+        try:
+            return netaddr.IPNetwork(str(self)) <= netaddr.IPNetwork(str(other))
+        except netaddr.core.AddrFormatError:
+            return str(self.ip) <= str(other.ip)
     
     def __gt__(self, other):
-        return netaddr.IPNetwork(str(self)) > netaddr.IPNetwork(str(other))
+        try:
+            return netaddr.IPNetwork(str(self)) > netaddr.IPNetwork(str(other))
+        except netaddr.core.AddrFormatError:
+            return str(self.ip) > str(other.ip)
     
     def is_private(self):
         """
         Return if a network is private or not
         """
-        return ipaddress.IPv4Network(f'{self.ip}/{self.mask}').is_private
+        try:
+            return ipaddress.IPv4Network(f'{self.ip}/{self.mask}').is_private
+        except:
+            # If we are dealing with strings, assume they are local networks
+            return True
 
 """
 Data represents the data object in the NetSecGame
