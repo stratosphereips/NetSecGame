@@ -52,6 +52,7 @@ if __name__ == '__main__':
     # Statistics
     episode_starts = []
     win_lengths = []
+    invalid_lengths = []
     detected_lengths = []
     step_seq = []
     rewards = []
@@ -62,14 +63,14 @@ if __name__ == '__main__':
     invalid = 0
     stop_until_new = False
     add_max_reward = False
-    latest_step = 0
-
+    latest_step = -1
     for i, line in enumerate(data):
+        
         # Check if a new episode starts and if yes initialize the variables
         if start_str in line:
             episode_starts.append(i)
             stop_until_new = False
-            latest_step = 0
+            latest_step = -1
             invalid = 0
             if add_max_reward:
                 rewards.append(-args.max_steps)
@@ -87,7 +88,6 @@ if __name__ == '__main__':
             iteration = parts[5]
             if parts[7] == 'False':
                 invalid += 1
-
         # Check if the goal is reached
         if win_str in line and latest_step < args.max_steps:
             total_wins += 1
@@ -95,6 +95,8 @@ if __name__ == '__main__':
             rewards.append(100-(step_seq[-1] + 1))
             add_max_reward = False
             stop_until_new = True
+            print(f"Episode: {len(episode_starts)} | Invalid:{invalid}  | win")
+            invalid_lengths.append(invalid)
 
         # Check if the agent was detected
         if detected_str in line and not stop_until_new:
@@ -103,20 +105,25 @@ if __name__ == '__main__':
             rewards.append(-50-(latest_step+1))
             add_max_reward = False
             stop_until_new = True
+            print(f"Episode: {len(episode_starts)} | Invalid:{invalid}  | detected")
+            invalid_lengths.append(invalid)
 
         # Check if we need to stop because of max steps or invalid steps
         if not stop_until_new:
             stop_until_new = reached_limit(latest_step + 1, args.max_steps, invalid)
             if stop_until_new:
+                invalid_lengths.append(invalid)
                 # Add the negative reward at the start of the next episode
                 # This is needed because in the last step the agent may win
                 # and this takes precedence over the max steps calculation
                 add_max_reward = True
-
+                # If the last run reached the max steps with not valid actions
+                if latest_step == -1:
+                    step_seq.append(0)
+                print(f"Episode: {len(episode_starts)} | Invalid:{invalid}  | max iter reached: {iteration}" )                   
     # If the last run reached the max steps add it here
     if add_max_reward:
         rewards.append(-args.max_steps)
-
     episode_lengths = calculate_episode_lengths(step_seq)
     assert len(rewards) == len(episode_starts)
     assert len(episode_lengths) == len(episode_starts)
@@ -129,4 +136,6 @@ if __name__ == '__main__':
     print(f"Average return: {np.mean(rewards):.3f} +- {np.std(rewards):.3f}")
     print(f"Average episode length: {np.mean(episode_lengths):.3f} +- {np.std(episode_lengths):.3f}")
     print(f"Average win length: {np.mean(win_lengths):.3f} +- {np.std(win_lengths):.3f}")
-    print(f"Average detected length: {np.mean(detected_lengths):.3f} +- {np.std(detected_lengths):.3f}")
+    print(f"Average invalid length: {np.mean(invalid_lengths):.3f} +- {np.std(invalid_lengths):.3f}")
+    if detected_lengths:
+        print(f"Average detected length: {np.mean(detected_lengths):.3f} +- {np.std(detected_lengths):.3f}")
