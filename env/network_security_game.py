@@ -294,7 +294,7 @@ class NetworkSecurityEnvironment(object):
         return self._max_steps
     @property
     def num_actions(self):
-        return len(components.ActionType)
+        return len(self.get_all_actions())
     
     @property
     def goal_description(self):
@@ -330,24 +330,24 @@ class NetworkSecurityEnvironment(object):
     
     def get_all_actions(self):
         actions = set()
+        
+        # Network scans
+        for net,ips in self._networks.items():
+            for ip in ips:
+                actions.add(components.Action(components.ActionType.ScanNetwork,{"target_network":net, "source_host":ip}))
+
         # Get Network scans, Service Find and Data Find
         for src_ip in self._ip_to_hostname:
-            for net,ips in self._networks.items():
-                #network scans
-                actions.add(components.Action(components.ActionType.ScanNetwork,{"target_network":net, "source_host":src_ip}))
-                for ip in ips:
-                    # ServiceFind
-                    actions.add(components.Action(components.ActionType.FindServices, {"target_host":ip,"source_host":src_ip}))
-                    # DataFind
-                    actions.add(components.Action(components.ActionType.FindData, {"target_host":ip, "source_host":src_ip}))
-        # Get Data exfiltration
-        for src_ip in self._ip_to_hostname:
             for trg_ip in self._ip_to_hostname:
-                if src_ip != trg_ip:
+                if trg_ip != src_ip:
+                    # ServiceFind
+                    actions.add(components.Action(components.ActionType.FindServices, {"target_host":trg_ip,"source_host":src_ip}))
+                    # Data Exfiltration
                     for data_list in self._data.values():
                         for data in data_list:
                             actions.add(components.Action(components.ActionType.ExfiltrateData, {"target_host":trg_ip, "data":data, "source_host":src_ip}))
-        for src_ip in self._ip_to_hostname:
+                # DataFind
+                actions.add(components.Action(components.ActionType.FindData, {"target_host":ip, "source_host":src_ip}))
             # Get Execute services
             for host_id, services in self._services.items():
                 for service in services:
