@@ -29,7 +29,6 @@ smb_server = cyst_cfg.NodeConfig(
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
             type="microsoft-ds",
-            tags="445/TCP",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -68,7 +67,6 @@ smb_server = cyst_cfg.NodeConfig(
         ),
         cyst_cfg.PassiveServiceConfig(
             type="ms-wbt-server",
-            tags="3389/TCP",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -133,7 +131,6 @@ db_server = cyst_cfg.NodeConfig(
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
             type="ssh",
-            tags="22/TCP",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -160,7 +157,6 @@ db_server = cyst_cfg.NodeConfig(
         ),
         cyst_cfg.PassiveServiceConfig(
             type="postgresql",
-            tags="5432/TCP",
             owner="postgresql",
             version="14.3.0",
             private_data=[
@@ -200,7 +196,6 @@ web_server = cyst_cfg.NodeConfig(
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
             type="http",
-            tags="80/TCP",
             owner="lighttpd",
             version="1.4.54",
             local=False,
@@ -217,7 +212,6 @@ web_server = cyst_cfg.NodeConfig(
         ),
         cyst_cfg.PassiveServiceConfig(
             type="ssh",
-            tags="22/TCP",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -268,7 +262,6 @@ other_server_1 = cyst_cfg.NodeConfig(
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
             type="ssh",
-            tags="22/TCP",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -314,7 +307,6 @@ other_server_2 = cyst_cfg.NodeConfig(
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
             type="ssh",
-            tags="22/TCP",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -371,7 +363,6 @@ client_1 = cyst_cfg.NodeConfig(
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
             type="ms-wbt-server",
-            tags="3389/TCP",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -429,7 +420,6 @@ client_2 = cyst_cfg.NodeConfig(
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
             type="ms-wbt-server",
-            tags="3389/TCP",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -487,7 +477,6 @@ client_3 = cyst_cfg.NodeConfig(
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
             type="ssh",
-            tags="22/TCP",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -543,7 +532,6 @@ client_4 = cyst_cfg.NodeConfig(
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
             type="ssh",
-            tags="22/TCP",
             owner="openssh",
             version="8.1.0",
             local=False,
