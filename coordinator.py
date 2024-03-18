@@ -367,9 +367,17 @@ if __name__ == "__main__":
         type=str,
         default="coordinator.conf",
     )
+    parser.add_argument(
+        "-t",
+        "--task_config",
+        help="Task configuration file.",
+        action="store",
+        required=False,
+        type=str,
+    )
 
     args = parser.parse_args()
-
+    print(args)
     # Set the logging
     log_filename = Path("coordinator.log")
     if not log_filename.parent.exists():
@@ -384,9 +392,19 @@ if __name__ == "__main__":
     # load config for coordinator
     with open(args.configfile, "r") as jfile:
         confjson = json.load(jfile)
+    
     host = confjson.get("host", None)
     port = confjson.get("port", None)
+
+    # prioritize task config from CLI
+    if args.task_config:
+        task_config_file = args.task_config
+    else:
+        # Try to use task config from coordinator.conf
+        task_config_file = confjson.get("task_config", None)
+    if task_config_file is None:
+        raise KeyError("Task configuration must be provided to start the coordinator! Use -h for more details.")
     # Create AI Dojo
-    ai_dojo = AIDojo(host, port, "env/netsecenv_conf.yaml")
+    ai_dojo = AIDojo(host, port, task_config_file)
     # Run it!
     ai_dojo.run()
