@@ -174,7 +174,6 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         finally:
             # Decrement the count of current connections
             self.current_connections -= 1
-
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
 
@@ -226,6 +225,8 @@ class Coordinator:
                         case ActionType.QuitGame:
                             raise NotImplementedError
                         case ActionType.ResetGame:
+                            self.logger.info("Saving trajectories")
+                            self._world.store_trajectories("./trajectories.json")
                             output_message_dict = self._process_reset_game_action(
                                 agent_addr
                             )
