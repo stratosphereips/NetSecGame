@@ -190,6 +190,15 @@ class Action():
     def parameters(self)->dict:
         return self._parameters
 
+    @property
+    def as_dict(self)->dict:
+        return {"type": str(self.type), "params": {k:str(v) for k,v in self.parameters.items()} }
+    
+    @classmethod
+    def from_dict(cls, data_dict:dict):
+        action = Action(action_type=ActionType.from_string(data_dict["type"]), params=data_dict["params"])
+        return action
+    
     def __repr__(self) -> str:
         return f"Action <{self._type}|{self._parameters}>"
 
@@ -209,6 +218,8 @@ class Action():
         ret_dict["parameters"] = {k:dataclasses.asdict(v) for k,v in self.parameters.items()}
         return json.dumps(ret_dict) 
     
+
+
     @classmethod
     def from_json(cls, json_string:str):
         """
