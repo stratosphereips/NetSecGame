@@ -11,6 +11,7 @@ from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, E
 import numpy as np
 import logging
 from faker import Faker
+import json
 from utils.utils import ConfigParser, store_replay_buffer_in_csv
 import subprocess
 import xml.etree.ElementTree as ElementTree
@@ -240,7 +241,7 @@ class NetworkSecurityEnvironment(object):
         if self.task_config.get_store_replay_buffer():
             logger.info("Storing of replay buffer enabled")
             self._episode_replay_buffer = []
-            self._trajectories = {}
+            self._trajectories = []
         else:
             logger.info("Storing of replay buffer disabled")
             self._episode_replay_buffer = None
@@ -254,6 +255,7 @@ class NetworkSecurityEnvironment(object):
         self._actions_played = []
         # If the game finished. Start with False
         self._end = False
+        self._end_reason = None
         # If the episode/action was detected by the defender
         self._detected = None
         logger.info("Environment initialization finished")
@@ -998,6 +1000,12 @@ class NetworkSecurityEnvironment(object):
         goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
         return goal_reached
 
+    def store_trajectories(self, filename:str)->None:
+        if self._trajectories:
+            logger.info(json.dumps(self._trajectories))
+            with open(filename, "w") as outfile:
+                json.dump(self._trajectories, outfile)
+        
     def reset(self)->components.Observation:
         """
         Function to reset the state of the game
@@ -1005,10 +1013,20 @@ class NetworkSecurityEnvironment(object):
         """
         # write all steps in the episode replay buffer in the file
         if self._episode_replay_buffer is not None:
+            steps = []
+            for state,action,reward,next_state in self._episode_replay_buffer:
+                steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
+            goal_state = components.GameState(
+                known_hosts=self._goal_conditions["known_hosts"],
+                known_networks=self._goal_conditions["known_networks"],
+                controlled_hosts=self._goal_conditions["controlled_hosts"],
+                known_services=self._goal_conditions["known_services"],
+                known_data=self._goal_conditions["known_data"]
+            )
             trajectory = {
-                "goal":self._goal_conditions,
-                "end_reason":self._get_end_reason(),
-                "trajectory":self._episode_replay_buffer
+                "goal": goal_state.as_dict,
+                "end_reason":self._end_reason,
+                "trajectory":steps
             }
             # store_replay_buffer_in_csv(self._episode_replay_buffer, 'env/logs/replay_buffer.csv')
             self._trajectories.append(trajectory)
@@ -1016,13 +1034,12 @@ class NetworkSecurityEnvironment(object):
         
         logger.info('--- Reseting env to its initial state ---')
         self._end = False
+        self._end_reason = None
         self._step_counter = 0
         self._detected = False
         
         self._actions_played = []
         self._defender.reset()
-
-
 
         if self.task_config.get_use_dynamic_addresses():
             logger.info("Changes IPs dyamically")
@@ -1087,7 +1104,8 @@ class NetworkSecurityEnvironment(object):
                 reward +=  self._goal_reward
                 # Game ended
                 self._end = True
-                reason = {'end_reason':'goal_reached'}
+                self._end_reason = 'goal_reached'
+                reason = {'end_reason': self._end_reason}
                 logger.info(f'Episode ended. Reason: {reason}')
 
             # 3. Check if the action was detected
@@ -1103,6 +1121,7 @@ class NetworkSecurityEnvironment(object):
                 # Mark the environment as detected
                 self._detected = True
                 self._end = True
+                self._end_reason = 'detected'
                 reason = {'end_reason':'detected'}
                 logger.info(f'Episode ended. Reason: {reason}')
 
@@ -1115,12 +1134,13 @@ class NetworkSecurityEnvironment(object):
             # But if the agent already won in this last step, count the win
             if not is_goal and self._step_counter >= self._max_steps:
                 self._end = True
+                self._end_reason = 'max_steps'
                 reason = {'end_reason':'max_steps'}
                 logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
 
             # Save the transition to the episode replay buffer if there is any
             if self._episode_replay_buffer is not None:
-                self._episode_replay_buffer.append((current_state, action, reward, next_state, self._end))
+                self._episode_replay_buffer.append((current_state, action, reward, next_state))
             # Return an observation
             return components.Observation(self._current_state, reward, self._end, reason)
         else:
