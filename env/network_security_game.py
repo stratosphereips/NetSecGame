@@ -240,6 +240,7 @@ class NetworkSecurityEnvironment(object):
         if self.task_config.get_store_replay_buffer():
             logger.info("Storing of replay buffer enabled")
             self._episode_replay_buffer = []
+            self._trajectories = {}
         else:
             logger.info("Storing of replay buffer disabled")
             self._episode_replay_buffer = None
@@ -1002,6 +1003,17 @@ class NetworkSecurityEnvironment(object):
         Function to reset the state of the game
         and prepare for a new episode
         """
+        # write all steps in the episode replay buffer in the file
+        if self._episode_replay_buffer is not None:
+            trajectory = {
+                "goal":self._goal_conditions,
+                "end_reason":self._get_end_reason(),
+                "trajectory":self._episode_replay_buffer
+            }
+            # store_replay_buffer_in_csv(self._episode_replay_buffer, 'env/logs/replay_buffer.csv')
+            self._trajectories.append(trajectory)
+            self._episode_replay_buffer = [] 
+        
         logger.info('--- Reseting env to its initial state ---')
         self._end = False
         self._step_counter = 0
@@ -1010,11 +1022,8 @@ class NetworkSecurityEnvironment(object):
         self._actions_played = []
         self._defender.reset()
 
-        # write all steps in the episode replay buffer in the file
-        if self._episode_replay_buffer is not None:
-            store_replay_buffer_in_csv(self._episode_replay_buffer, 'env/logs/replay_buffer.csv')
-            self._episode_replay_buffer = [] 
-        
+
+
         if self.task_config.get_use_dynamic_addresses():
             logger.info("Changes IPs dyamically")
             self._create_new_network_mapping()
