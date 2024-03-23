@@ -40,9 +40,11 @@ class IP():
         try:
             return ipaddress.IPv4Network(self.ip).is_private
         except:
-            # We assume that if the IP is not are al ip, then it is private.
-            return True
-
+            # The IP is a string 
+            # In the concepts, 'external' is the string used for external hosts.
+            if self.ip != 'external':
+                return True
+            return False
 
 @dataclass(frozen=True, eq=True)
 class Network():
