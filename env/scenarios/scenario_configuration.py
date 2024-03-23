@@ -22,12 +22,13 @@ Server 1:
 
 - the only windows server. It does not connect to the AD
 - access schemes for remote desktop and file sharing are kept separate, but can be integrated into one if needed
+- Service types should be derived from nmap services https://svn.nmap.org/nmap/nmap-services
 '''
 smb_server = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="lanman server",
+            type="microsoft-ds",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -65,7 +66,7 @@ smb_server = cyst_cfg.NodeConfig(
             ]
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="remote desktop service",
+            type="ms-wbt-server",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -129,7 +130,7 @@ db_server = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="openssh",
+            type="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -194,7 +195,7 @@ web_server = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="lighttpd",
+            type="http",
             owner="lighttpd",
             version="1.4.54",
             local=False,
@@ -210,7 +211,7 @@ web_server = cyst_cfg.NodeConfig(
             access_schemes=[]
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="openssh",
+            type="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -260,7 +261,7 @@ other_server_1 = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="openssh",
+            type="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -305,7 +306,7 @@ other_server_2 = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="openssh",
+            type="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -361,7 +362,7 @@ client_1 = cyst_cfg.NodeConfig(
     ],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="remote desktop service",
+            type="ms-wbt-server",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -418,7 +419,7 @@ client_2 = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="remote desktop service",
+            type="ms-wbt-server",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -475,7 +476,7 @@ client_3 = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="openssh",
+            type="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -530,7 +531,7 @@ client_4 = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="openssh",
+            type="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -748,7 +749,7 @@ exploits = [
     cyst_cfg.ExploitConfig(
         services=[
             cyst_cfg.VulnerableServiceConfig(
-                name="lanman server",
+                name="microsoft-ds",
                 min_version="10.0.19041",
                 max_version="10.0.19041"
             )
