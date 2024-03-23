@@ -198,6 +198,11 @@ class Coordinator:
         """
         try:
             self.logger.info("Main coordinator started.")
+            # Get which type of world we are playing, real or simulated?
+            with open(args.configfile, 'r') as jfile:
+                confjson = json.load(jfile)
+                self.world_type = confjson.get('world_type', 'netsecgame')
+
             env_observation = self._world.reset()
             self.agents = {}
 
@@ -319,7 +324,7 @@ class Coordinator:
         action_for_env = self._action_processor.process_message_from_agent(
             agent_addr, action
         )
-        new_observation = self._world.step(action_for_env)
+        new_observation = self._world.step(action_for_env, self.world_type)
         agent_observation_str = (
             self._action_processor.generate_observation_msg_for_agent(
                 agent_addr, new_observation
