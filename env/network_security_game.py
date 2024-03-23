@@ -12,6 +12,8 @@ import numpy as np
 import logging
 from faker import Faker
 from utils.utils import ConfigParser, store_replay_buffer_in_csv
+import subprocess
+import xml.etree.ElementTree as ET
 
 
 # Set the logging
@@ -760,11 +762,15 @@ class NetworkSecurityEnvironment(object):
             logger.info("\t\t\tCan't get data in host. The host is not controlled.")
         return data
 
-    def _execute_action(self, current:components.GameState, action:components.Action)-> components.GameState:
+    def _execute_action(self, current:components.GameState, action:components.Action, action_type='netsecenv')-> components.GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
         So in here all actions were already successful.
+
+        - actions_type: Define if the action is simulated in netsecenv or in the real world
+
+        Returns: A new GameState
         """
         next_known_networks = copy.deepcopy(current.known_networks)
         next_known_hosts = copy.deepcopy(current.known_hosts)
@@ -772,39 +778,105 @@ class NetworkSecurityEnvironment(object):
         next_known_services = copy.deepcopy(current.known_services)
         next_known_data = copy.deepcopy(current.known_data)
 
-        if action.type == components.ActionType.ScanNetwork:
+        if action.type == components.ActionType.ScanNetwork and action_type == 'netsecenv':
             logger.info(f"\t\tScanning {action.parameters['target_network']}")
-            if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-                new_ips = set()
-                for ip in self._ip_to_hostname.keys(): #check if IP exists
-                    logger.info(f"\t\tChecking if {ip} in {action.parameters['target_network']}")
-                    if str(ip) in netaddr.IPNetwork(str(action.parameters["target_network"])):
-                        logger.info(f"\t\t\tAdding {ip} to new_ips")
-                        new_ips.add(ip)
-                next_known_hosts = next_known_hosts.union(new_ips)
-            else:
-                logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+            new_ips = set()
+            for ip in self._ip_to_hostname.keys(): #check if IP exists
+                logger.info(f"\t\tChecking if {ip} in {action.parameters['target_network']}")
+                if str(ip) in netaddr.IPNetwork(str(action.parameters["target_network"])):
+                    logger.info(f"\t\t\tAdding {ip} to new_ips")
+                    new_ips.add(ip)
+            next_known_hosts = next_known_hosts.union(new_ips)
+        elif action.type == components.ActionType.ScanNetwork and action_type == 'realworld':
+            logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
+            nmap_file_xml = 'nmap-result.xml'
+            command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
+            # We ignore the result variable for now
+            tree = ET.parse(nmap_file_xml)
+            root = tree.getroot()
+            new_ips = set()
+            for host in root.findall('.//host'):
+                status_elem = host.find('./status')
+                if status_elem is not None:
+                    status = host.find('./status').get('state')
+                else:
+                    status = ""
+                ip_elem = host.find('./address[@addrtype="ipv4"]')
+                if ip_elem is not None:
+                    ip = components.IP(str(ip_elem.get('addr')))
+                else:
+                    ip = ""
+                
+                mac_elem = host.find('./address[@addrtype="mac"]')
+                if mac_elem is not None:
+                    mac_address = mac_elem.get('addr', '')
+                    vendor = mac_elem.get('vendor', '')
+                else:
+                    mac_address = ""
+                    vendor = ""
 
-        elif action.type == components.ActionType.FindServices:
+                logger.info(f"\t\t\tAdding {ip} to new_ips")
+                new_ips.add(ip)
+            next_known_hosts = next_known_hosts.union(new_ips)
+
+        elif action.type == components.ActionType.FindServices and action_type=='netsecenv':
             #get services for current states in target_host
             logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
-            if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-                found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
-                logger.info(f"\t\t\tFound {len(found_services)}: {found_services}")
-                if len(found_services) > 0:
-                    if action.parameters["target_host"] not in next_known_services.keys():
-                        next_known_services[action.parameters["target_host"]] = found_services
-                    else:
-                        next_known_services[action.parameters["target_host"]] = next_known_services[action.parameters["target_host"]].union(found_services)
+            found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
+            logger.info(f"\t\t\tFound {len(found_services)}: {found_services}")
+            if len(found_services) > 0:
+                next_known_services[action.parameters["target_host"]] = found_services
 
-                    #if host was not known, add it to the known_hosts ONLY if there are some found services
-                    if action.parameters["target_host"] not in next_known_hosts:
-                        logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
-                        next_known_hosts.add(action.parameters["target_host"])
-                        next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
-            else:
-                logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        
+                #if host was not known, add it to the known_hosts ONLY if there are some found services
+                if action.parameters["target_host"] not in next_known_hosts:
+                    logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
+                    next_known_hosts.add(action.parameters["target_host"])
+                    next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+
+        elif action.type == components.ActionType.FindServices and action_type=='realworld':
+            logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
+            nmap_file_xml = 'nmap-result.xml'
+            command = f"nmap -sT -n {action.parameters['target_host']} -oX {nmap_file_xml}"
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
+            # We ignore the result variable for now
+            tree = ET.parse(nmap_file_xml)
+            root = tree.getroot()
+            new_ips = set()
+
+            # service_dict is a dict. Key=IP(), values= set of Service() objects
+            found_services = set()
+            ip = ''
+            port_id = ''
+            protocol = ''
+            for host in root.findall('.//host'):
+                status_elem = host.find('./status')
+                if status_elem is not None and status_elem.get('state') == 'up':
+                    ip_elem = host.find('./address[@addrtype="ipv4"]')
+                    if ip_elem is not None:
+                        ip = ip_elem.get('addr')
+
+                    ports_elem = host.find('./ports')
+                    if ports_elem is not None:
+                        for port in root.findall('.//port[@protocol="tcp"]'):
+                            state_elem = port.find('./state[@state="open"]')
+                            if state_elem is not None:
+                                port_id = port.get('portid')
+                                protocol = port.get('protocol')
+                                service_elem = port.find('./service[@name]')
+                                service_name = service_elem.get('name') if service_elem is not None else "Unknown"
+                                service_fullname = f'{port_id}/{protocol}/{service_name}'
+                                service = components.Service(name=service_fullname, type=service_name, version='', is_local=False)
+                                found_services.add(service)
+
+                    next_known_services[action.parameters["target_host"]] = found_services
+            
+            # If host was not known, add it to the known_hosts and known_networks ONLY if there are some found services
+            if action.parameters["target_host"] not in next_known_hosts:
+                logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
+                next_known_hosts.add(action.parameters["target_host"])
+                next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+
         elif action.type == components.ActionType.FindData:
             logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
             if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
@@ -984,7 +1056,7 @@ class NetworkSecurityEnvironment(object):
         # An observation has inside ["state", "reward", "end", "info"]
         return components.Observation(self._current_state, initial_reward, self._end, info)
 
-    def step(self, action:components.Action)-> components.Observation:
+    def step(self, action:components.Action, action_type='netsecenv')-> components.Observation:
         """
         Take a step in the environment given an action
         in: action
@@ -997,13 +1069,14 @@ class NetworkSecurityEnvironment(object):
             reason = {}
 
             # 1. Check if the action was successful or not
-            if random.random() <= action.type.default_success_p:
+            # But ignore the probability if it is played in the real world
+            if random.random() <= action.type.default_success_p or action_type == 'realworld':
                 self._actions_played.append(action)
                 # The action was successful
                 logger.info('\tAction sucessful')
 
                 # Get the next state given the action
-                next_state = self._execute_action(self._current_state, action)
+                next_state = self._execute_action(self._current_state, action, action_type=action_type)
                 # Reard for making an action
                 reward = self._step_reward
             else:
