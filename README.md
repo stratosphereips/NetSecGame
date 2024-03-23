@@ -51,7 +51,17 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
 
 
-### Defender
+- The action FindServices finds the new services in a host. If in a subsequent call to FindServices there are less services, they completely replace the list of previous services found. That is, each list of services is the final one and no memory is retained of previous open services.
+
+### Assumption and Conditions for Actions
+1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
+2. The `Find Data` action finds all the available data in the host if successful.
+3. The `Find Data` action requires ownership of the target host.
+4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
+5. Playing `Find Services` can be used to discover hosts (if those have any active services)
+6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
+
+### Actions for the defender
 In this version of the environment, the defender does not have actions, and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks, the admins have tools that consume logs from all computers simultaneously, and they can detect actions from a central position (such as a SIEM). There are several modes of the defender (see [Task Configuration - Defender](#defender-configuration) for details.
 
 ### Starting the game
