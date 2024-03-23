@@ -762,7 +762,7 @@ class NetworkSecurityEnvironment(object):
             logger.info("\t\t\tCan't get data in host. The host is not controlled.")
         return data
 
-    def _execute_action(self, current:components.GameState, action:components.Action, actions_type='netsecenv')-> components.GameState:
+    def _execute_action(self, current:components.GameState, action:components.Action, action_type='netsecenv')-> components.GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
@@ -778,7 +778,7 @@ class NetworkSecurityEnvironment(object):
         next_known_services = copy.deepcopy(current.known_services)
         next_known_data = copy.deepcopy(current.known_data)
 
-        if action.type == components.ActionType.ScanNetwork and actions_type == 'netsecenv':
+        if action.type == components.ActionType.ScanNetwork and action_type == 'netsecenv':
             logger.info(f"\t\tScanning {action.parameters['target_network']}")
             new_ips = set()
             for ip in self._ip_to_hostname.keys(): #check if IP exists
@@ -787,7 +787,7 @@ class NetworkSecurityEnvironment(object):
                     logger.info(f"\t\t\tAdding {ip} to new_ips")
                     new_ips.add(ip)
             next_known_hosts = next_known_hosts.union(new_ips)
-        elif action.type == components.ActionType.ScanNetwork and actions_type == 'realworld':
+        elif action.type == components.ActionType.ScanNetwork and action_type == 'realworld':
             logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
             command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
@@ -820,7 +820,7 @@ class NetworkSecurityEnvironment(object):
                 new_ips.add(ip)
             next_known_hosts = next_known_hosts.union(new_ips)
 
-        elif action.type == components.ActionType.FindServices and actions_type=='netsecenv':
+        elif action.type == components.ActionType.FindServices and action_type=='netsecenv':
             #get services for current states in target_host
             logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
             found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
@@ -834,7 +834,7 @@ class NetworkSecurityEnvironment(object):
                     next_known_hosts.add(action.parameters["target_host"])
                     next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
 
-        elif action.type == components.ActionType.FindServices and actions_type=='realworld':
+        elif action.type == components.ActionType.FindServices and action_type=='realworld':
             logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
             command = f"nmap -sT -n {action.parameters['target_host']} -oX {nmap_file_xml}"
@@ -1076,7 +1076,7 @@ class NetworkSecurityEnvironment(object):
                 logger.info('\tAction sucessful')
 
                 # Get the next state given the action
-                next_state = self._execute_action(self._current_state, action, actions_type=action_type)
+                next_state = self._execute_action(self._current_state, action, action_type=action_type)
                 # Reard for making an action
                 reward = self._step_reward
             else:
