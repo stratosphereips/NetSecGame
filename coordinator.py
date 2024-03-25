@@ -393,7 +393,7 @@ if __name__ == "__main__":
         filemode="w",
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.CRITICAL,
+        level=logging.ERROR,
     )
     # load config for coordinator
     with open(args.configfile, "r") as jfile:
