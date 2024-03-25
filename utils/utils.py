@@ -108,8 +108,8 @@ class ConfigParser():
         try:
             with open(conf_file_name) as source:
                 self.config = yaml.safe_load(source)
-        except (IOError, TypeError):
-            self.logger.error('Error loading the configuration file')
+        except (IOError, TypeError) as e:
+            self.logger.error(f'Error loading the configuration file{e}')
             pass
     
     def read_defender_detection_prob(self, action_name: str) -> dict:
