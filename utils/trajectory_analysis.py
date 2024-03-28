@@ -85,7 +85,7 @@ def plot_histogram(data:dict, fileneme, ignore_types = [ActionType.JoinGame, Act
     for action_type, values in action_counts.items():
         ax.bar(data.keys(), values, width = 0.5, label=str(action_type).lstrip("ActionType."), bottom=bottom)
         bottom += values
-    ax.set_title("Number of action types per step")
+    ax.set_title("ActionType distribution per step")
     plt.xticks(np.arange(0, len(data), step=1), labels=[i+1 for i in range(0,len(data))])
     plt.xlabel("Step number")
     plt.ylabel("ActionType usage (%)")
