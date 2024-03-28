@@ -3,6 +3,10 @@ import numpy as np
 import sys
 import os 
 import utils
+import matplotlib.pyplot as plt
+
+
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
 from env.game_components import GameState, Action, ActionType
 
@@ -65,6 +69,29 @@ def compare_action_type_sequence(game_plays:list, end_reason=None):
     for i, actions in actions_per_step.items():
         print(f"Step {i}, #different action_types:{len(actions)}")
 
+def plot_histogram(data:dict, fileneme, ignore_types = [ActionType.JoinGame, ActionType.QuitGame, ActionType.ResetGame]):
+    fig, ax = plt.subplots()
+    bottom = np.zeros(len(data))
+    action_counts = {}
+    names = []
+    for action_type in ActionType:
+        if action_type not in ignore_types:
+            tmp = np.zeros(len(data))
+            names.append(str(action_type))
+            for i in range(len(data)):
+                tmp[i] = data[i][action_type]
+            action_counts[action_type] = tmp
+    
+    for action_type, values in action_counts.items():
+        ax.bar(data.keys(), values, width = 0.5, label=str(action_type).lstrip("ActionType."), bottom=bottom)
+        bottom += values
+    ax.set_title("Number of action types per step")
+    plt.xticks(np.arange(0, len(data), step=1), labels=[i+1 for i in range(0,len(data))])
+    plt.xlabel("Step number")
+    plt.ylabel("ActionType usage (%)")
+    ax.legend(loc='best', ncol=1)
+    plt.savefig(fileneme)
+
 def get_action_type_hist_per_step(game_plays:list, end_reason=None):
     actions_per_step = {}
     for play in game_plays:
@@ -72,17 +99,23 @@ def get_action_type_hist_per_step(game_plays:list, end_reason=None):
             continue
         for i,step in enumerate(play["trajectory"]):
             if i not in actions_per_step.keys():
-                actions_per_step[i] = {}
+                actions_per_step[i] = {action_type:0 for action_type in ActionType}
             #state = GameState.from_dict(step["s"])
             action = Action.from_dict(step["a"])
             # reward = step["r"]
-            # next_state = step["s_next"]
-            if action.type not in actions_per_step[i].keys():
-                actions_per_step[i][action.type] = 0
+            # next_state = step["s_next"] 
             actions_per_step[i][action.type] += 1
+
+    to_plot = {}
     for i, actions in actions_per_step.items():
         total_actions = sum(actions.values())
-        print(f"Step {i} ({total_actions}), #different action_types:{sorted(actions.items(), key=lambda x: x[0].name)}")
+        per_step = {}
+        for a in actions:
+            per_step[a] = actions[a]/total_actions
+        to_plot[i] = per_step
+        print(f"Step {i} ({total_actions}), #different action_types:{list(actions.values())[:-3]}")
+    
+    plot_histogram(to_plot , "test_histogram.png")
 
 def compare_state_sequence(game_plays:list, end_reason=None)->float:
     states_per_step = {}
@@ -104,8 +137,8 @@ def compare_state_sequence(game_plays:list, end_reason=None)->float:
 
 game_plays = read_json(sys.argv[1])
 print(f"mean episode length:{compute_mean_length(game_plays)}")
-compare_state_sequence(game_plays, end_reason="detected")
+compare_state_sequence(game_plays)
 print("-------------------------------")
-compare_action_type_sequence(game_plays, end_reason="detected")
+compare_action_type_sequence(game_plays)
 print("-------------------------------")
-get_action_type_hist_per_step(game_plays, end_reason="detected")
+get_action_type_hist_per_step(game_plays)
