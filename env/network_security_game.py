@@ -1022,15 +1022,7 @@ class NetworkSecurityEnvironment(object):
 
     def store_trajectories(self, filename:str)->None:
         if self._trajectories:
-            #try to load previous trajectories
-            # data = []
-            # if os.path.isfile(filename):
-            #     try:
-            #         with open(filename, "r") as infile:
-            #             data = json.load(infile)
-            #     except Exception as e:
-            #         logger.error(e)
-            # data += self._trajectories
+            logger.info(f"Saving trajectories to '{filename}'")
             with open(filename, "w") as outfile:
                 json.dump(self._trajectories, outfile)
         
@@ -1056,7 +1048,6 @@ class NetworkSecurityEnvironment(object):
                 "end_reason":self._end_reason,
                 "trajectory":steps
             }
-            # store_replay_buffer_in_csv(self._episode_replay_buffer, 'env/logs/replay_buffer.csv')
             if not trajectory_filename:
                 trajectory_filename = "NSG_trajectories.json"
             if trajectory["end_reason"]:
