@@ -151,3 +151,7 @@ nmap-result.xml
 mlruns.db
 mlruns/
 aim/
+
+#ignore
+figures/*
+*trajecories.json
