@@ -12,11 +12,9 @@ import numpy as np
 import logging
 from faker import Faker
 import json
-from utils.utils import ConfigParser, store_replay_buffer_in_csv
+from utils.utils import ConfigParser
 import subprocess
 import xml.etree.ElementTree as ET
-
-import os
 
 # Set the logging
 logger = logging.getLogger('Netsecenv')
