@@ -92,7 +92,7 @@ def plot_histogram(data:dict, fileneme, ignore_types = [ActionType.JoinGame, Act
     ax.legend(loc='best', ncol=1)
     plt.savefig(fileneme)
 
-def get_action_type_hist_per_step(game_plays:list, end_reason=None):
+def get_action_type_hist_per_step(game_plays:list, end_reason=None, filename="action_type_histogram.png"):
     actions_per_step = {}
     for play in game_plays:
         if end_reason and play["end_reason"] != end_reason:
@@ -114,8 +114,9 @@ def get_action_type_hist_per_step(game_plays:list, end_reason=None):
             per_step[a] = actions[a]/total_actions
         to_plot[i] = per_step
         print(f"Step {i} ({total_actions}), #different action_types:{list(actions.values())[:-3]}")
-    
-    plot_histogram(to_plot , "test_histogram.png")
+    if not os.path.exists("figures"):
+        os.makedirs("figures")
+    plot_histogram(to_plot , os.path.join("figures", filename))
 
 def compare_state_sequence(game_plays:list, end_reason=None)->float:
     states_per_step = {}
