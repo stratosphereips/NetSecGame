@@ -16,6 +16,7 @@ from utils.utils import ConfigParser, store_replay_buffer_in_csv
 import subprocess
 import xml.etree.ElementTree as ElementTree
 
+import os
 
 # Set the logging
 logger = logging.getLogger('Netsecenv')
@@ -1002,11 +1003,19 @@ class NetworkSecurityEnvironment(object):
 
     def store_trajectories(self, filename:str)->None:
         if self._trajectories:
-            logger.info(json.dumps(self._trajectories))
+            #try to load previous trajectories
+            # data = []
+            # if os.path.isfile(filename):
+            #     try:
+            #         with open(filename, "r") as infile:
+            #             data = json.load(infile)
+            #     except Exception as e:
+            #         logger.error(e)
+            # data += self._trajectories
             with open(filename, "w") as outfile:
                 json.dump(self._trajectories, outfile)
         
-    def reset(self)->components.Observation:
+    def reset(self, trajectory_filename=None)->components.Observation:
         """
         Function to reset the state of the game
         and prepare for a new episode
@@ -1029,7 +1038,12 @@ class NetworkSecurityEnvironment(object):
                 "trajectory":steps
             }
             # store_replay_buffer_in_csv(self._episode_replay_buffer, 'env/logs/replay_buffer.csv')
-            self._trajectories.append(trajectory)
+            if not trajectory_filename:
+                trajectory_filename = "NSG_trajectories.json"
+            if trajectory["end_reason"]:
+                self._trajectories.append(trajectory)
+                logger.info("Saving trajectories")
+                self.store_trajectories(trajectory_filename)
             self._episode_replay_buffer = [] 
         
         logger.info('--- Reseting env to its initial state ---')
