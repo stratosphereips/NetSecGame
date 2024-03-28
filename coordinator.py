@@ -299,8 +299,6 @@ class Coordinator:
         self.logger.info(
             f"Coordinator received from RESET request from agent {agent_addr}"
         )
-        self.logger.info("Saving trajectories")
-        self._world.store_trajectories("./trajectories.json")
         new_env_observation = self._world.reset()
         agent_observation_str = (
             self._action_processor.generate_observation_msg_for_agent(
