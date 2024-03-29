@@ -6,9 +6,11 @@ import sys
 from os import path
 
 sys.path.append(
-    path.dirname(path.dirname(path.dirname(path.dirname(path.abspath(__file__)))))
+path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 )
 
+##print(sys.path)
+##sys.exit()
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import ActionType, Action, IP, Data, Network, Service
 
@@ -18,6 +20,7 @@ import argparse
 import jinja2
 import copy
 import json
+import torch
 # import re
 
 from dotenv import dotenv_values
@@ -31,7 +34,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 import mlflow
 
 mlflow.set_tracking_uri("http://147.32.83.60")
-mlflow.set_experiment("llm_qa_tuning")
+mlflow.set_experiment("llm_qa_tuning_lora")
 
 config = dotenv_values(".env")
 openai.api_key = config["OPENAI_API_KEY"]
@@ -327,6 +330,11 @@ def model_query(model, tokenizer, messages, max_tokens=100):
         messages.insert(0, {"role": "system", "content": ""})
     # Create a chat template because this is what the chat models expect.
     prompt = tokenizer.apply_chat_template(messages, add_generation_prompt=True, tokenize=False)
+    
+    device = f"cuda:{args.gpu_device_id}"
+    # Set the device for PyTorch
+    torch.cuda.set_device(device)
+    
     model_inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
 
     # Parameters that control how to generate the output
@@ -374,6 +382,16 @@ if __name__ == "__main__":
         required=False,
         type=int,
     )
+    
+    parser.add_argument(
+        "--gpu_device_id",
+        help="Id of the GPU to use",
+        default=0,
+        action="store",
+        required=False,
+        type=int,
+    )
+    
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
@@ -397,12 +415,14 @@ if __name__ == "__main__":
     mlflow.log_params(params)
 
     if 'mistral' in args.llm or 'zephyr' in args.llm:
-        model = AutoModelForCausalLM.from_pretrained(args.llm, device_map="auto")
+        model = AutoModelForCausalLM.from_pretrained(args.llm, 
+                                                     device_map={"": args.gpu_device_id}
+                                                     )
         # model = AutoModelForCausalLM.from_pretrained(args.llm, device_map="auto", load_in_4bit=True)
         # tokenizer = AutoTokenizer.from_pretrained(args.llm, padding_side="right")
         
         # Taken from the alignment handbook tokenizer code
-        tokenizer = AutoTokenizer.from_pretrained(args.llm)
+        tokenizer = AutoTokenizer.from_pretrained(args.llm,device_map={"": args.gpu_device_id})
         if tokenizer.pad_token_id is None:
             tokenizer.pad_token_id = tokenizer.eos_token_id
 
