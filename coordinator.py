@@ -378,6 +378,7 @@ if __name__ == "__main__":
         help="Task configuration file.",
         action="store",
         required=False,
+        default='./env/netsecenv_conf.yaml',
         type=str,
     )
 
