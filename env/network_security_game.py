@@ -7,7 +7,7 @@ import env.game_components as components
 import random
 import itertools
 import copy
-from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
+from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy, RouteConfig
 import numpy as np
 import logging
 from faker import Faker
@@ -175,10 +175,13 @@ class NetworkSecurityEnvironment(object):
         
         # Load CYST configuration
         logger.info("Reading from CYST configuration:")
-        cyst_config = self.task_config.get_scenario()
-        self._process_cyst_config(cyst_config)
+        self.world_config = self.task_config.get_scenario()
+        if self.world_config == 'real_world':
+            self._process_real_world_config()
+        else:
+            self._process_cyst_config(self.world_config)
         logger.info("CYST configuration processed successfully")
-        
+
         # Set the seed 
         seed = self.task_config.get_seed('env')
         np.random.seed(seed)
@@ -505,6 +508,70 @@ class NetworkSecurityEnvironment(object):
                 self._defender_thresholds["tw_size"] = self.task_config.get_defender_tw_size()
             case _: # Default option - no defender
                 self._defender_type = None
+    
+    def _process_real_world_config(self)-> None:
+        """
+        Create the basic objects from a real world configuration 
+        """
+        # Find the ip of the coordinator and network and mask
+        import cyst.api.configuration as cyst_cfg
+        logger.info(f"\tProcessing real world data")
+        nodes_ip = '147.32.83.61'
+
+        # Create a node config for it
+        client_1 = cyst_cfg.NodeConfig(
+                active_services=[
+                    cyst_cfg.ActiveServiceConfig(
+                        type="scripted_actor",
+                        name="attacker",
+                        owner="attacker",
+                        access_level=cyst_cfg.AccessLevel.LIMITED,
+                        id="attacker_service"
+                    )
+                ],
+                passive_services=[
+                        cyst_cfg.PassiveServiceConfig(
+                            type="can_attack_start_here",
+                            owner="Local system",
+                            version="1",
+                            local=True,
+                            access_level=cyst_cfg.AccessLevel.LIMITED
+                        )
+                ],
+                traffic_processors=[],
+                interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress(nodes_ip), cyst_cfg.IPNetwork(nodes_ip+"/24"))],
+                shell="powershell",
+                id="client_1"
+            )
+        """
+        internet = cyst_cfg.RouterConfig(
+                interfaces=[
+                    cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("198.51.100.100"), cyst_cfg.IPNetwork("198.51.100.100/24"), index=0)
+                ],
+                routing_table=[
+                    RouteConfig(cyst_cfg.IPNetwork("147.32.83.0/24"), 0)
+                ],
+                traffic_processors=[],
+                id="internet"
+            )
+        """
+
+        outside_node = cyst_cfg.NodeConfig(
+                active_services=[],
+                passive_services=[],
+                traffic_processors=[],
+                interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("198.51.100.100"), cyst_cfg.IPNetwork("198.51.100.100/26"))],
+                shell="bash",
+                id="outside_node"
+            ) 
+        # credentials: {'198.51.100.100': {'user': test1234, 'port': '22', 'password': 'testtest'}}
+
+        # Process it as a node
+        objects = []
+        objects.append(client_1)
+        objects.append(outside_node)
+        self._process_cyst_config(objects)
+
 
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
@@ -762,7 +829,7 @@ class NetworkSecurityEnvironment(object):
             logger.info("\t\t\tCan't get data in host. The host is not controlled.")
         return data
 
-    def _execute_action(self, current:components.GameState, action:components.Action, action_type='netsecenv')-> components.GameState:
+    def _execute_action(self, current:components.GameState, action:components.Action)-> components.GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
@@ -778,7 +845,7 @@ class NetworkSecurityEnvironment(object):
         next_known_services = copy.deepcopy(current.known_services)
         next_known_data = copy.deepcopy(current.known_data)
 
-        if action.type == components.ActionType.ScanNetwork and action_type == 'netsecenv':
+        if action.type == components.ActionType.ScanNetwork and self.world_config == 'netsecenv':
             logger.info(f"\t\tScanning {action.parameters['target_network']}")
             new_ips = set()
             for ip in self._ip_to_hostname.keys(): #check if IP exists
@@ -787,7 +854,7 @@ class NetworkSecurityEnvironment(object):
                     logger.info(f"\t\t\tAdding {ip} to new_ips")
                     new_ips.add(ip)
             next_known_hosts = next_known_hosts.union(new_ips)
-        elif action.type == components.ActionType.ScanNetwork and action_type == 'realworld':
+        elif action.type == components.ActionType.ScanNetwork and self.world_config == 'real_world':
             logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
             command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
@@ -820,7 +887,7 @@ class NetworkSecurityEnvironment(object):
                 new_ips.add(ip)
             next_known_hosts = next_known_hosts.union(new_ips)
 
-        elif action.type == components.ActionType.FindServices and action_type=='netsecenv':
+        elif action.type == components.ActionType.FindServices and self.world_config =='netsecenv':
             #get services for current states in target_host
             logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
             found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
@@ -834,7 +901,7 @@ class NetworkSecurityEnvironment(object):
                     next_known_hosts.add(action.parameters["target_host"])
                     next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
 
-        elif action.type == components.ActionType.FindServices and action_type=='realworld':
+        elif action.type == components.ActionType.FindServices and self.world_config =='real_world':
             logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
             command = f"nmap -sT -n {action.parameters['target_host']} -oX {nmap_file_xml}"
@@ -890,7 +957,7 @@ class NetworkSecurityEnvironment(object):
             else:
                 logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         elif action.type == components.ActionType.ExploitService:
-            if action.type == components.ActionType.ExploitService and action_type == 'netsecenv':
+            if action.type == components.ActionType.ExploitService and self.world_config == 'netsecenv':
                 # We don't check if the target is a known_host because it can be a blind attempt to attack
                 logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
                 if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
@@ -919,7 +986,7 @@ class NetworkSecurityEnvironment(object):
                         logger.info("\t\t\tCan not exploit. Target host does not exist.")
                 else:
                     logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-            elif action.type == components.ActionType.ExploitService and action_type=='realworld':
+            elif action.type == components.ActionType.ExploitService and self.world_config =='real_world':
                 logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}' in the real world")
                 if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
                     if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
@@ -1117,7 +1184,7 @@ class NetworkSecurityEnvironment(object):
         # An observation has inside ["state", "reward", "end", "info"]
         return components.Observation(self._current_state, initial_reward, self._end, info)
 
-    def step(self, action:components.Action, action_type='netsecenv')-> components.Observation:
+    def step(self, action:components.Action)-> components.Observation:
         """
         Take a step in the environment given an action
         in: action
@@ -1131,13 +1198,13 @@ class NetworkSecurityEnvironment(object):
 
             # 1. Check if the action was successful or not
             # But ignore the probability if it is played in the real world
-            if random.random() <= action.type.default_success_p or action_type == 'realworld':
+            if random.random() <= action.type.default_success_p or self.world_type == 'real_world':
                 self._actions_played.append(action)
                 # The action was successful
                 logger.info('\tAction sucessful')
 
                 # Get the next state given the action
-                next_state = self._execute_action(self._current_state, action, action_type=action_type)
+                next_state = self._execute_action(self._current_state, action)
                 # Reard for making an action
                 reward = self._step_reward
             else:
