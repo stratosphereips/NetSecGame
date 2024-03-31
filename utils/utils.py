@@ -407,9 +407,18 @@ class ConfigParser():
             cyst_config = smaller_scenario_configuration.configuration_objects
         elif scenario == "scenario1_tiny":
             cyst_config = tiny_scenario_configuration.configuration_objects
+        elif scenario == "real_world":
+            cyst_config = 'real_world'
         else:
             cyst_config = 'scenario1'
         return cyst_config
+
+    def get_type_world(self):
+        """
+        Get the type of world
+        """
+        type_world = self.config['env']['scenario']
+        return type_world
 
     def get_seed(self, whom):
         """
