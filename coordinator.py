@@ -198,11 +198,6 @@ class Coordinator:
         """
         try:
             self.logger.info("Main coordinator started.")
-            # Get which type of world we are playing, real or simulated?
-            with open(args.configfile, 'r') as jfile:
-                confjson = json.load(jfile)
-                self.world_type = confjson.get('world_type', 'netsecgame')
-
             env_observation = self._world.reset()
             self.agents = {}
 
@@ -324,7 +319,7 @@ class Coordinator:
         action_for_env = self._action_processor.process_message_from_agent(
             agent_addr, action
         )
-        new_observation = self._world.step(action_for_env, self.world_type)
+        new_observation = self._world.step(action_for_env)
         agent_observation_str = (
             self._action_processor.generate_observation_msg_for_agent(
                 agent_addr, new_observation
@@ -378,7 +373,7 @@ if __name__ == "__main__":
         help="Task configuration file.",
         action="store",
         required=False,
-        default='./env/netsecenv_conf.yaml',
+        default='./env/netsecenv_conf_realworld.yaml',
         type=str,
     )
 
@@ -393,7 +388,7 @@ if __name__ == "__main__":
         filemode="w",
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.CRITICAL,
+        level=logging.INFO,
     )
     # load config for coordinator
     with open(args.configfile, "r") as jfile:
@@ -402,7 +397,7 @@ if __name__ == "__main__":
     host = confjson.get("host", None)
     port = confjson.get("port", None)
 
-    # prioritize task config from CLI
+    # prioritiee task config from CLI
     if args.task_config:
         task_config_file = args.task_config
     else:
