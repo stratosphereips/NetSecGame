@@ -11,9 +11,10 @@ from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, E
 import numpy as np
 import logging
 from faker import Faker
-from utils.utils import ConfigParser, store_replay_buffer_in_csv
+from utils.utils import ConfigParser, store_replay_buffer_in_csv, brute_force_ssh
 import subprocess
 import xml.etree.ElementTree as ET
+import paramiko
 
 
 # Set the logging
@@ -172,14 +173,13 @@ class NetworkSecurityEnvironment(object):
         self.hosts_to_start = []
         # Read the conf file passed by the agent for the rest of values
         self.task_config = ConfigParser(task_config_file)
-        
+        # Where to store the credentials for the real world
+        self.credentials = {}
+
         # Load CYST configuration
         logger.info("Reading from CYST configuration:")
-        self.world_config = self.task_config.get_scenario()
-        if self.world_config == 'real_world':
-            self._process_real_world_config()
-        else:
-            self._process_cyst_config(self.world_config)
+        self.scenario_type, self.world_config = self.task_config.get_scenario()
+        self._process_cyst_config(self.world_config)
         logger.info("CYST configuration processed successfully")
 
         # Set the seed 
@@ -259,6 +259,8 @@ class NetworkSecurityEnvironment(object):
         # If the episode/action was detected by the defender
         self._detected = None
         logger.info("Environment initialization finished")
+
+
 
     @property
     def seed(self)->int:
@@ -509,70 +511,6 @@ class NetworkSecurityEnvironment(object):
             case _: # Default option - no defender
                 self._defender_type = None
     
-    def _process_real_world_config(self)-> None:
-        """
-        Create the basic objects from a real world configuration 
-        """
-        # Find the ip of the coordinator and network and mask
-        import cyst.api.configuration as cyst_cfg
-        logger.info(f"\tProcessing real world data")
-        nodes_ip = '147.32.83.61'
-
-        # Create a node config for it
-        client_1 = cyst_cfg.NodeConfig(
-                active_services=[
-                    cyst_cfg.ActiveServiceConfig(
-                        type="scripted_actor",
-                        name="attacker",
-                        owner="attacker",
-                        access_level=cyst_cfg.AccessLevel.LIMITED,
-                        id="attacker_service"
-                    )
-                ],
-                passive_services=[
-                        cyst_cfg.PassiveServiceConfig(
-                            type="can_attack_start_here",
-                            owner="Local system",
-                            version="1",
-                            local=True,
-                            access_level=cyst_cfg.AccessLevel.LIMITED
-                        )
-                ],
-                traffic_processors=[],
-                interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress(nodes_ip), cyst_cfg.IPNetwork(nodes_ip+"/24"))],
-                shell="powershell",
-                id="client_1"
-            )
-        """
-        internet = cyst_cfg.RouterConfig(
-                interfaces=[
-                    cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("198.51.100.100"), cyst_cfg.IPNetwork("198.51.100.100/24"), index=0)
-                ],
-                routing_table=[
-                    RouteConfig(cyst_cfg.IPNetwork("147.32.83.0/24"), 0)
-                ],
-                traffic_processors=[],
-                id="internet"
-            )
-        """
-
-        outside_node = cyst_cfg.NodeConfig(
-                active_services=[],
-                passive_services=[],
-                traffic_processors=[],
-                interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("198.51.100.100"), cyst_cfg.IPNetwork("198.51.100.100/26"))],
-                shell="bash",
-                id="outside_node"
-            ) 
-        # credentials: {'198.51.100.100': {'user': test1234, 'port': '22', 'password': 'testtest'}}
-
-        # Process it as a node
-        objects = []
-        objects.append(client_1)
-        objects.append(outside_node)
-        self._process_cyst_config(objects)
-
-
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
         Process the cyst configuration file
@@ -612,7 +550,6 @@ class NetworkSecurityEnvironment(object):
                 self._networks[net].append(ip)
                 logger.info(f'\t\tAdded network {str(interface.net)} to the list of available nets, with node {node_obj.id}.')
 
-
             #services
             logger.info(f"\t\tProcessing services & data in node '{node_obj.id}'")
             for service in node_obj.passive_services:
@@ -621,6 +558,11 @@ class NetworkSecurityEnvironment(object):
                 if service.type == "can_attack_start_here":
                     self.hosts_to_start.append(components.IP(str(interface.ip)))
                     continue
+                if service.type == "credentials":
+                    # This host has some predefined credentials, store them
+                    user = service.owner.split('/')[0]
+                    password = service.owner.split('/')[1]
+                    self.credentials[components.IP(str(interface.ip))] = {'user': user, 'password': password, 'service': 'ssh'}
 
                 if node_obj.id not in self._services:
                     self._services[node_obj.id] = []
@@ -815,6 +757,50 @@ class NetworkSecurityEnvironment(object):
                 networks.add(net)
         return networks
 
+    def execute_command(hostname, port, username, password, command):
+        """
+        Execute a command in a host with ssh
+        """
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        try:
+            ssh.connect(hostname, port=port, username=username, password=password)
+            stdin, stdout, stderr = ssh.exec_command(command)
+            output = stdout.read().decode()
+            error = stderr.read().decode()
+            if error:
+                logger.error(f"Error executing command: {error}")
+            else:
+                logger.info(f"Command executed successfully:\n{output}")
+                ssh.close()
+                return output
+        except paramiko.AuthenticationException:
+            logger.info(f"Authentication failed for {username}@{hostname}")
+        except paramiko.SSHException as e:
+            logger.error(f"SSH error: {e}")
+        except Exception as e:
+            logger.error(f"Error: {e}")
+        finally:
+            ssh.close()
+            return False
+
+    def _get_data_in_host_real_world(self, src_host:str, dst_host:str)->set:
+        """
+        Connects to the host with ssh and searches for data
+        """
+        data = set()
+        username = self.credentials[dst_host]['user']
+        password = self.credentials[dst_host]['password']
+        service = self.credentials[dst_host]['service']
+        if service == 'ssh':
+            port = 22
+
+        command = "find / -name 'crypto.pem'"
+
+        data = self.execute_command(dst_host, port, username, password, command)
+        return data
+
     def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
         """
         Returns set of Data tuples from given host IP
@@ -845,7 +831,7 @@ class NetworkSecurityEnvironment(object):
         next_known_services = copy.deepcopy(current.known_services)
         next_known_data = copy.deepcopy(current.known_data)
 
-        if action.type == components.ActionType.ScanNetwork and self.world_config == 'netsecenv':
+        if action.type == components.ActionType.ScanNetwork and self.scenario_type != 'real_world':
             logger.info(f"\t\tScanning {action.parameters['target_network']}")
             new_ips = set()
             for ip in self._ip_to_hostname.keys(): #check if IP exists
@@ -854,7 +840,7 @@ class NetworkSecurityEnvironment(object):
                     logger.info(f"\t\t\tAdding {ip} to new_ips")
                     new_ips.add(ip)
             next_known_hosts = next_known_hosts.union(new_ips)
-        elif action.type == components.ActionType.ScanNetwork and self.world_config == 'real_world':
+        elif action.type == components.ActionType.ScanNetwork and self.scenario_type == 'real_world':
             logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
             command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
@@ -885,9 +871,11 @@ class NetworkSecurityEnvironment(object):
 
                 logger.info(f"\t\t\tAdding {ip} to new_ips")
                 new_ips.add(ip)
+                # Add it to the mapping of hosts we know. During simulation this is done while reading the scenario configuration, but here we need to do on the fly
+                self._ip_to_hostname[ip] = 'generic_' + str(ip)
             next_known_hosts = next_known_hosts.union(new_ips)
 
-        elif action.type == components.ActionType.FindServices and self.world_config =='netsecenv':
+        elif action.type == components.ActionType.FindServices and self.scenario_type != 'real_world':
             #get services for current states in target_host
             logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
             found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
@@ -901,7 +889,7 @@ class NetworkSecurityEnvironment(object):
                     next_known_hosts.add(action.parameters["target_host"])
                     next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
 
-        elif action.type == components.ActionType.FindServices and self.world_config =='real_world':
+        elif action.type == components.ActionType.FindServices and self.scenario_type =='real_world':
             logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
             command = f"nmap -sT -n {action.parameters['target_host']} -oX {nmap_file_xml}"
@@ -935,6 +923,14 @@ class NetworkSecurityEnvironment(object):
                                 service_fullname = f'{port_id}/{protocol}/{service_name}'
                                 service = components.Service(name=service_fullname, type=service_name, version='', is_local=False)
                                 found_services.add(service)
+                                # All add to the dictionary of services in this scenario
+                                ip_obj = components.IP(ip)
+                                hostname = self._ip_to_hostname[ip_obj]
+                                try:
+                                    self._services[hostname].append(service)
+                                except KeyError:
+                                    self._services[hostname] = []
+                                    self._services[hostname].append(service)
 
                     next_known_services[action.parameters["target_host"]] = found_services
             
@@ -945,19 +941,34 @@ class NetworkSecurityEnvironment(object):
                 next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
 
         elif action.type == components.ActionType.FindData:
-            logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
-            if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-                new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
-                logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
-                if len(new_data) > 0:
-                    if action.parameters["target_host"] not in next_known_data.keys():
-                        next_known_data[action.parameters["target_host"]] = new_data
-                    else:
-                        next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
-            else:
-                logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+            if self.scenario_type != 'real_world':
+                logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
+                if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+                    new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
+                    logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
+                    if len(new_data) > 0:
+                        if action.parameters["target_host"] not in next_known_data.keys():
+                            next_known_data[action.parameters["target_host"]] = new_data
+                        else:
+                            next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
+                else:
+                    logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+            elif self.scenario_type == 'real_world':
+                logger.info(f"\t\tSearching for data in {action.parameters['target_host']} in real world")
+                if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+                    src_host = action.parameters["source_host"]
+                    dst_host = action.parameters["target_host"]
+                    new_data = self._get_data_in_host_real_world(src_host, dst_host)
+                    logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
+                    if len(new_data) > 0:
+                        if action.parameters["target_host"] not in next_known_data.keys():
+                            next_known_data[action.parameters["target_host"]] = new_data
+                        else:
+                            next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
+                else:
+                    logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         elif action.type == components.ActionType.ExploitService:
-            if action.type == components.ActionType.ExploitService and self.world_config == 'netsecenv':
+            if self.scenario_type != 'real_world':
                 # We don't check if the target is a known_host because it can be a blind attempt to attack
                 logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
                 if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
@@ -986,7 +997,7 @@ class NetworkSecurityEnvironment(object):
                         logger.info("\t\t\tCan not exploit. Target host does not exist.")
                 else:
                     logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-            elif action.type == components.ActionType.ExploitService and self.world_config =='real_world':
+            elif self.scenario_type =='real_world':
                 logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}' in the real world")
                 if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
                     if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
@@ -999,38 +1010,17 @@ class NetworkSecurityEnvironment(object):
                                         if action.parameters["target_host"] not in next_controlled_hosts:
                                             # Here do the attack
                                             logger.info(f"\t\tExploiting host {action.parameters['target_host']} {action.parameters['target_service']} in real world.")
-                                            nmap_file_xml = 'nmap-result.xml'
-                                            port = action.parameters['target_host'].split('/')[0]
-                                            command = f"nmap -o PubkeyAuthentication=no -sT -p {port} {action.parameters['target_host']} -v -n --script ssh-brute --script-args userdb=users,passdb=pass,brute.firstonly=true -oX test-nmap.xml"
-                                            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
-                                            # We ignore the result variable for now
-                                            # Parse the XML file
-                                            tree = ET.parse(nmap_file_xml)
-                                            root = tree.getroot()
-                                            new_credentials = set()
-
-                                            # Find the relevant script element
-                                            script = root.find('.//script[@id="ssh-brute"]')
-
-                                            # Extract username and password if they are valid
-                                            if script is not None:
-                                                for table in script.findall('.//table[@key="Accounts"]/table'):
-                                                    username = table.find('.//elem[@key="username"]').text
-                                                    password = table.find('.//elem[@key="password"]').text
-                                                    state = table.find('.//elem[@key="state"]').text
-
-                                                    if state == 'Valid credentials':
-                                                        logger.info(f"\t\t\tValid credentials found:\nUsername: {username}\nPassword: {password}")
-                                                        # Since we got credentials, add to controlled hosts
-                                                        next_controlled_hosts.add(action.parameters["target_host"])
-                                                        logger.info("\t\tAdding to controlled_hosts")
-                                            else:
-                                                logger.info("\t\t\tNo valid credentials found.")
-                                        # This for now it is not implemented, since we didnt connected to obtain the other networks
-                                        # TODO
-                                        #new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                                        #logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
-                                        #next_known_networks = next_known_networks.union(new_networks)
+                                            host = action.parameters['target_host']
+                                            port = int(action.parameters['target_service'].name.split('/')[0])
+                                            user, password = brute_force_ssh(host.ip, port)
+                                            if user and password:
+                                                # A user and password was found
+                                                logger.info(f"\t\t\tPassword found for user {user}: {password}")
+                                                next_controlled_hosts.add(action.parameters["target_host"])
+                                                self.credentials[host] = {'user': user, 'password': password, 'service': 'ssh'}
+                                                logger.info("\t\tAdding to controlled_hosts")
+                                            # TODO: This for now it is not implemented, since we didnt connected to obtain the other networks
+                                            #next_known_networks = next_known_networks.union(new_networks)
                                     else:
                                         logger.info("\t\t\tCan not exploit. Agent does not know about target host selected service")
                                 else:
