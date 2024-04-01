@@ -757,7 +757,7 @@ class NetworkSecurityEnvironment(object):
                 networks.add(net)
         return networks
 
-    def execute_command(hostname, port, username, password, command):
+    def execute_command(self, hostname, port, username, password, command):
         """
         Execute a command in a host with ssh
         """
@@ -769,23 +769,26 @@ class NetworkSecurityEnvironment(object):
             stdin, stdout, stderr = ssh.exec_command(command)
             output = stdout.read().decode()
             error = stderr.read().decode()
-            if error:
-                logger.error(f"Error executing command: {error}")
-            else:
+            if output:
                 logger.info(f"Command executed successfully:\n{output}")
                 ssh.close()
                 return output
+            elif error:
+                logger.error(f"Error executing command: {error}")
+                return False
         except paramiko.AuthenticationException:
             logger.info(f"Authentication failed for {username}@{hostname}")
+            return False
         except paramiko.SSHException as e:
             logger.error(f"SSH error: {e}")
+            return False
         except Exception as e:
             logger.error(f"Error: {e}")
+            return False
         finally:
             ssh.close()
-            return False
 
-    def _get_data_in_host_real_world(self, src_host:str, dst_host:str)->set:
+    def _get_data_in_host_real_world(self, src_host:components.IP, dst_host:components.IP)->set:
         """
         Connects to the host with ssh and searches for data
         """
@@ -798,7 +801,7 @@ class NetworkSecurityEnvironment(object):
 
         command = "find / -name 'crypto.pem'"
 
-        data = self.execute_command(dst_host, port, username, password, command)
+        data = self.execute_command(dst_host.ip, port, username, password, command)
         return data
 
     def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
