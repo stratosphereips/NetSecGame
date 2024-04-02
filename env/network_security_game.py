@@ -771,7 +771,6 @@ class NetworkSecurityEnvironment(object):
             error = stderr.read().decode()
             if output:
                 logger.info(f"Command executed successfully:\n{output}")
-                ssh.close()
                 return output
             elif error:
                 logger.error(f"Error executing command: {error}")
@@ -792,7 +791,6 @@ class NetworkSecurityEnvironment(object):
         """
         Connects to the host with ssh and searches for data
         """
-        data = set()
         username = self.credentials[dst_host]['user']
         password = self.credentials[dst_host]['password']
         service = self.credentials[dst_host]['service']
@@ -801,7 +799,9 @@ class NetworkSecurityEnvironment(object):
 
         command = "find / -name 'crypto.pem'"
 
-        data = self.execute_command(dst_host.ip, port, username, password, command)
+        data_returned = self.execute_command(dst_host.ip, port, username, password, command)
+        data = set()
+        data.add(components.Data('unknown', data_returned))
         return data
 
     def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
@@ -962,8 +962,8 @@ class NetworkSecurityEnvironment(object):
                     src_host = action.parameters["source_host"]
                     dst_host = action.parameters["target_host"]
                     new_data = self._get_data_in_host_real_world(src_host, dst_host)
-                    logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
                     if len(new_data) > 0:
+                        logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
                         if action.parameters["target_host"] not in next_known_data.keys():
                             next_known_data[action.parameters["target_host"]] = new_data
                         else:
