@@ -1,0 +1,64 @@
+version: '3'
+
+services:
+  ubuntu1:
+    image: ubuntu
+    container_name: ubuntu1
+    command: bash -c "echo 'root:1234' | chpasswd && apt update && apt install -y iputils-ping nmap openssh-server less tcpdump net-tools vim && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && service ssh start && tail -f /dev/null"
+    networks:
+      my_network:
+        ipv4_address: 172.28.0.2
+
+  ubuntu2:
+    image: ubuntu
+    container_name: ubuntu2
+    command: >
+      bash -c "echo 'root:1234' | chpasswd && apt update && apt install -y iputils-ping nmap openssh-server less tcpdump net-tools vim && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && service ssh start && mkdir -p /home/test/secret/ && echo 'secret' > /home/test/secret/crypto.pem && tail -f /dev/null"
+    networks:
+      my_network:
+        ipv4_address: 172.28.0.3
+
+  ubuntu3:
+    image: ubuntu
+    container_name: ubuntu3
+    command: bash -c "echo 'root:1234' | chpasswd && apt update && apt install -y iputils-ping nmap openssh-server less tcpdump net-tools vim && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && service ssh start && tail -f /dev/null"
+    networks:
+      my_network:
+        ipv4_address: 172.28.0.4
+
+  ubuntu4:
+    image: ubuntu
+    container_name: ubuntu4
+    command: bash -c "echo 'root:1234' | chpasswd && apt update && apt install -y iputils-ping nmap openssh-server less tcpdump net-tools vim && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && service ssh start && tail -f /dev/null"
+    networks:
+      my_network:
+        ipv4_address: 172.28.0.5
+
+  ubuntu5:
+    image: ubuntu
+    container_name: ubuntu5
+    command: bash -c "echo 'root:1234' | chpasswd && apt update && apt install -y iputils-ping nmap openssh-server less tcpdump net-tools vim && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && service ssh start && tail -f /dev/null"
+    networks:
+      my_network:
+        ipv4_address: 172.28.0.6
+
+  commandcontrol:
+    image: ubuntu
+    container_name: commandcontrol
+    command: bash -c "echo 'root:1234' | chpasswd && apt update && apt install -y iputils-ping nmap openssh-server less tcpdump net-tools vim && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && service ssh start && tail -f /dev/null"
+    networks:
+      internet:
+        ipv4_address: 172.254.254.254
+
+networks:
+  my_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+  internet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.254.254.0/24
+
