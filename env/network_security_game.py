@@ -800,8 +800,9 @@ class NetworkSecurityEnvironment(object):
         command = "find / -name 'crypto.pem'"
 
         data_returned = self.execute_command(dst_host.ip, port, username, password, command)
+        data_returned_filename = data_returned.split('/')[-1].strip()
         data = set()
-        data.add(components.Data('unknown', data_returned))
+        data.add(components.Data('User', data_returned_filename))
         return data
 
     def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
@@ -968,6 +969,9 @@ class NetworkSecurityEnvironment(object):
                             next_known_data[action.parameters["target_host"]] = new_data
                         else:
                             next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
+                        # Also store in data found in this object
+                        hostname = self._ip_to_hostname[action.parameters["target_host"]]
+                        self._data[hostname] = new_data
                 else:
                     logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         elif action.type == components.ActionType.ExploitService:
