@@ -791,18 +791,24 @@ class NetworkSecurityEnvironment(object):
         """
         Connects to the host with ssh and searches for data
         """
-        username = self.credentials[dst_host]['user']
-        password = self.credentials[dst_host]['password']
-        service = self.credentials[dst_host]['service']
+        try:
+            username = self.credentials[dst_host]['user']
+            password = self.credentials[dst_host]['password']
+            service = self.credentials[dst_host]['service']
+        except:
+            return False
+
         if service == 'ssh':
             port = 22
 
         command = "find / -name 'crypto.pem'"
 
         data_returned = self.execute_command(dst_host.ip, port, username, password, command)
-        data_returned_filename = data_returned.split('/')[-1].strip()
-        data = set()
-        data.add(components.Data('User', data_returned_filename))
+        data = False
+        if data_returned:
+            data_returned_filename = data_returned.split('/')[-1].strip()
+            data = set()
+            data.add(components.Data('User', data_returned_filename))
         return data
 
     def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
@@ -945,35 +951,38 @@ class NetworkSecurityEnvironment(object):
                 next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
 
         elif action.type == components.ActionType.FindData:
-            if self.scenario_type != 'real_world':
-                logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
-                if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-                    new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
-                    logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
-                    if len(new_data) > 0:
-                        if action.parameters["target_host"] not in next_known_data.keys():
-                            next_known_data[action.parameters["target_host"]] = new_data
-                        else:
-                            next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
-                else:
-                    logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-            elif self.scenario_type == 'real_world':
-                logger.info(f"\t\tSearching for data in {action.parameters['target_host']} in real world")
-                if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-                    src_host = action.parameters["source_host"]
-                    dst_host = action.parameters["target_host"]
-                    new_data = self._get_data_in_host_real_world(src_host, dst_host)
-                    if len(new_data) > 0:
+            try:
+                if self.scenario_type != 'real_world':
+                    logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
+                    if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+                        new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
                         logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
-                        if action.parameters["target_host"] not in next_known_data.keys():
-                            next_known_data[action.parameters["target_host"]] = new_data
-                        else:
-                            next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
-                        # Also store in data found in this object
-                        hostname = self._ip_to_hostname[action.parameters["target_host"]]
-                        self._data[hostname] = new_data
-                else:
-                    logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+                        if len(new_data) > 0:
+                            if action.parameters["target_host"] not in next_known_data.keys():
+                                next_known_data[action.parameters["target_host"]] = new_data
+                            else:
+                                next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
+                    else:
+                        logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+                elif self.scenario_type == 'real_world':
+                    logger.info(f"\t\tSearching for data in {action.parameters['target_host']} in real world")
+                    if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+                        src_host = action.parameters["source_host"]
+                        dst_host = action.parameters["target_host"]
+                        new_data = self._get_data_in_host_real_world(src_host, dst_host)
+                        if new_data and len(new_data) > 0:
+                            logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
+                            if action.parameters["target_host"] not in next_known_data.keys():
+                                next_known_data[action.parameters["target_host"]] = new_data
+                            else:
+                                next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
+                            # Also store in data found in this object
+                            hostname = self._ip_to_hostname[action.parameters["target_host"]]
+                            self._data[hostname] = new_data
+                    else:
+                        logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+            except Exception as e:
+                logger.error(f'Error in _execute_action, FindData in netsecenv. {e}')
         elif action.type == components.ActionType.ExploitService:
             if self.scenario_type != 'real_world':
                 # We don't check if the target is a known_host because it can be a blind attempt to attack
