@@ -853,7 +853,7 @@ class NetworkSecurityEnvironment(object):
         elif action.type == components.ActionType.ScanNetwork and self.scenario_type == 'real_world':
             logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
-            command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
+            command = f"nmap -T 5 -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
             # We ignore the result variable for now
             tree = ET.parse(nmap_file_xml)
