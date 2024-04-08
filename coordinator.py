@@ -14,7 +14,7 @@ import os
 import signal
 
 class AIDojo:
-    def __init__(self, host: str, port: int, net_sec_config: str) -> None:
+    def __init__(self, host: str, port: int, net_sec_config: str, world_type) -> None:
         self.host = host
         self.port = port
         self.logger = logging.getLogger("AIDojo-main")
@@ -25,6 +25,7 @@ class AIDojo:
             self._answer_queue,
             net_sec_config,
             allowed_roles=["Attacker", "Defender", "Human"],
+            world_type = world_type,
         )
 
     def run(self)->None:
@@ -180,13 +181,14 @@ class ConnectionLimitProtocol(asyncio.Protocol):
 
 
 class Coordinator:
-    def __init__(self, actions_queue, answers_queue, net_sec_config, allowed_roles):
+    def __init__(self, actions_queue, answers_queue, net_sec_config, allowed_roles, world_type="netsecgame"):
         self._actions_queue = actions_queue
         self._answers_queue = answers_queue
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
         self._world = NetworkSecurityEnvironment(net_sec_config)
         self._action_processor = ActionProcessor()
+        self.world_type = world_type
 
     async def run(self):
         """
@@ -198,11 +200,6 @@ class Coordinator:
         """
         try:
             self.logger.info("Main coordinator started.")
-            # Get which type of world we are playing, real or simulated?
-            with open(args.configfile, 'r') as jfile:
-                confjson = json.load(jfile)
-                self.world_type = confjson.get('world_type', 'netsecgame')
-
             env_observation = self._world.reset()
             self.agents = {}
 
@@ -400,6 +397,7 @@ if __name__ == "__main__":
     
     host = confjson.get("host", None)
     port = confjson.get("port", None)
+    world_type = confjson.get('world_type', 'netsecgame')
 
     # prioritize task config from CLI
     if args.task_config:
@@ -410,6 +408,6 @@ if __name__ == "__main__":
     if task_config_file is None:
         raise KeyError("Task configuration must be provided to start the coordinator! Use -h for more details.")
     # Create AI Dojo
-    ai_dojo = AIDojo(host, port, task_config_file)
+    ai_dojo = AIDojo(host, port, task_config_file, world_type)
     # Run it!
     ai_dojo.run()
