@@ -175,7 +175,6 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         finally:
             # Decrement the count of current connections
             self.current_connections -= 1
-
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
 
@@ -389,7 +388,7 @@ if __name__ == "__main__":
         filemode="w",
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.CRITICAL,
+        level=logging.ERROR,
     )
     # load config for coordinator
     with open(args.configfile, "r") as jfile:
