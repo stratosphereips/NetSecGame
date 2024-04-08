@@ -2,12 +2,13 @@
 # THIS VERSION SHOULD BE ONLY USE FOR PYTEST PURPOSES
 
 coordinator:
-  # Attacker agent
+  # Define the conf for all the 'attacker' agents.
   agents:
-    random_seed: 42
     attackers:
       goal:
-        randomize_goal_every_episode: False
+        description: "Exfiltrate DatabaseData to '213.47.23.195'"
+        # Put randomize_goal_every_episode in True if you put any of the goal values in 'random'
+        is_any_part_of_goal_random: False
         known_networks: []
         known_hosts: []
         controlled_hosts: []
@@ -22,27 +23,54 @@ coordinator:
         known_services: {}
         # Same format as before
         known_data: {}
-
-    defender:
+    defenders:
       # types are StochasticDefender and NoDefender
       #type: 'StochasticDefender'
+      #type: 'StochasticWithThreshold'
       type: 'NoDefender'
-
+      tw_size: 5
+      thresholds:
+        scan_network: # if both conditions are true, you are never detected
+          consecutive_actions: 2 # min amount of consecutive actions you can do without detection
+          tw_ratio: 0.25 # min ratio of actions in the tw below which you are not detected
+        find_services:
+          consecutive_actions: 3
+          tw_ratio: 0.3
+        exploit_service:
+          repeated_actions_episode: 2
+          tw_ratio: 0.25
+        find_data:
+          tw_ratio: 0.5
+          repeated_actions_episode: 2
+        exfiltrate_data:
+          consecutive_actions: 2
+          tw_ratio: 0.25
+      action_detetection_prob:
+        scan_network: 0.05
+        find_services: 0.075
+        exploit_service: 0.1
+        find_data: 0.025
+        exfiltrate_data: 0.025
 env:
   # random means to choose the seed in a random way, so it is not fixed
-  # random_seed: 'random'
+  random_seed: 'random'
   # Or you can fix the seed
-  random_seed: 42
+  # random_seed: 42
   scenario: 'scenario1_small'
   max_steps: 15
+  store_replay_buffer: False
+  use_dynamic_addresses: False
+  goal_reward: 100
+  detection_reward: -50
+  step_reward: -1
   actions:
     scan_network:
-      prob_success: 1
+      prob_success: 1.0
     find_services:
-      prob_success: 1
-    exploit_services:
-      prob_success: 1
+      prob_success: 1.0
+    exploit_service:
+      prob_success: 1.0
     find_data:
-      prob_success: 1
+      prob_success: 1.0
     exfiltrate_data:
-      prob_success: 1
+      prob_success: 1.0
