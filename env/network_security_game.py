@@ -778,7 +778,7 @@ class NetworkSecurityEnvironment(object):
         next_known_services = copy.deepcopy(current.known_services)
         next_known_data = copy.deepcopy(current.known_data)
 
-        if action.type == components.ActionType.ScanNetwork and action_type == 'netsecenv':
+        if False and action.type == components.ActionType.ScanNetwork and action_type == 'netsecenv':
             logger.info(f"\t\tScanning {action.parameters['target_network']}")
             if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
                 new_ips = set()
