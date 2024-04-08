@@ -13,7 +13,7 @@ import logging
 from faker import Faker
 from utils.utils import ConfigParser, store_replay_buffer_in_csv
 import subprocess
-import xml.etree.ElementTree as element_tree
+import xml.etree.ElementTree as ElementTree
 
 
 # Set the logging
@@ -794,9 +794,9 @@ class NetworkSecurityEnvironment(object):
             logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
             command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
-            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
+            _ = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
             # We ignore the result variable for now
-            tree = element_tree.parse(nmap_file_xml)
+            tree = ElementTree.parse(nmap_file_xml)
             root = tree.getroot()
             new_ips = set()
             for host in root.findall('.//host'):
@@ -845,7 +845,7 @@ class NetworkSecurityEnvironment(object):
             command = f"nmap -sT -n {action.parameters['target_host']} -oX {nmap_file_xml}"
             _ = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
             # We ignore the result variable for now
-            tree = element_tree.parse(nmap_file_xml)
+            tree = ElementTree.parse(nmap_file_xml)
             root = tree.getroot()
             new_ips = set()
 
