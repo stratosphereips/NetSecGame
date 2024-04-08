@@ -482,29 +482,6 @@ class NetworkSecurityEnvironment(object):
                 updated_win_conditions["known_data"][host] = copy.deepcopy(win_conditions["known_data"][host])
         logger.info(f"\tGoal known_data: {updated_win_conditions['known_data']}")
         return updated_win_conditions
-       
-    # def _place_defences(self)->None:
-        """
-        Place the defender
-        For now only if it is present
-        """
-        logger.info("\tStoring defender placement")
-        defender_type = self.task_config.get_defender_type()
-        match defender_type:
-            case 'StochasticDefender':
-                logger.info(f"\t\tDefender placed as type {defender_type}")
-                # For now there is only one type of defender
-                self._defender_type = "Stochastic"
-            case "NoDefender":
-                logger.info("\t\tNo defender present in the environment")
-                self._defender_type = None
-            case "StochasticWithThreshold":
-                logger.info(f"\t\tDefender placed as type '{defender_type}'")
-                self._defender_type = "StochasticWithThreshold"
-                self._defender_thresholds = self.task_config.get_defender_thresholds()
-                self._defender_thresholds["tw_size"] = self.task_config.get_defender_tw_size()
-            case _: # Default option - no defender
-                self._defender_type = None
 
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
@@ -565,7 +542,6 @@ class NetworkSecurityEnvironment(object):
                         if node_obj.id not in self._data:
                             self._data[node_obj.id] = set()
                         self._data[node_obj.id].add(components.Data(data.owner, data.description))
-
                 except AttributeError:
                     pass
                     #service does not contain any data
