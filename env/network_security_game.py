@@ -780,13 +780,16 @@ class NetworkSecurityEnvironment(object):
 
         if action.type == components.ActionType.ScanNetwork and action_type == 'netsecenv':
             logger.info(f"\t\tScanning {action.parameters['target_network']}")
-            new_ips = set()
-            for ip in self._ip_to_hostname.keys(): #check if IP exists
-                logger.info(f"\t\tChecking if {ip} in {action.parameters['target_network']}")
-                if str(ip) in netaddr.IPNetwork(str(action.parameters["target_network"])):
-                    logger.info(f"\t\t\tAdding {ip} to new_ips")
-                    new_ips.add(ip)
-            next_known_hosts = next_known_hosts.union(new_ips)
+            if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+                new_ips = set()
+                for ip in self._ip_to_hostname.keys(): #check if IP exists
+                    logger.info(f"\t\tChecking if {ip} in {action.parameters['target_network']}")
+                    if str(ip) in netaddr.IPNetwork(str(action.parameters["target_network"])):
+                        logger.info(f"\t\t\tAdding {ip} to new_ips")
+                        new_ips.add(ip)
+                next_known_hosts = next_known_hosts.union(new_ips)
+            else:
+                logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         elif action.type == components.ActionType.ScanNetwork and action_type == 'realworld':
             logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
@@ -823,17 +826,19 @@ class NetworkSecurityEnvironment(object):
         elif action.type == components.ActionType.FindServices and action_type=='netsecenv':
             #get services for current states in target_host
             logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
-            found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
-            logger.info(f"\t\t\tFound {len(found_services)}: {found_services}")
-            if len(found_services) > 0:
-                next_known_services[action.parameters["target_host"]] = found_services
+            if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+                found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
+                logger.info(f"\t\t\tFound {len(found_services)}: {found_services}")
+                if len(found_services) > 0:
+                    next_known_services[action.parameters["target_host"]] = found_services
 
-                #if host was not known, add it to the known_hosts ONLY if there are some found services
-                if action.parameters["target_host"] not in next_known_hosts:
-                    logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
-                    next_known_hosts.add(action.parameters["target_host"])
-                    next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
-
+                    #if host was not known, add it to the known_hosts ONLY if there are some found services
+                    if action.parameters["target_host"] not in next_known_hosts:
+                        logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
+                        next_known_hosts.add(action.parameters["target_host"])
+                        next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+            else:
+                logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         elif action.type == components.ActionType.FindServices and action_type=='realworld':
             logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
