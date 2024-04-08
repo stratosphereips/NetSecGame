@@ -13,7 +13,7 @@ import logging
 from faker import Faker
 from utils.utils import ConfigParser, store_replay_buffer_in_csv
 import subprocess
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as element_tree
 
 
 # Set the logging
@@ -796,7 +796,7 @@ class NetworkSecurityEnvironment(object):
             command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
             # We ignore the result variable for now
-            tree = ET.parse(nmap_file_xml)
+            tree = element_tree.parse(nmap_file_xml)
             root = tree.getroot()
             new_ips = set()
             for host in root.findall('.//host'):
@@ -819,7 +819,7 @@ class NetworkSecurityEnvironment(object):
                     mac_address = ""
                     vendor = ""
 
-                logger.info(f"\t\t\tAdding {ip} to new_ips")
+                logger.info(f"\t\t\tAdding {ip} to new_ips. {status}, {mac_address}, {vendor}")
                 new_ips.add(ip)
             next_known_hosts = next_known_hosts.union(new_ips)
 
@@ -843,9 +843,9 @@ class NetworkSecurityEnvironment(object):
             logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
             nmap_file_xml = 'nmap-result.xml'
             command = f"nmap -sT -n {action.parameters['target_host']} -oX {nmap_file_xml}"
-            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
+            _ = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
             # We ignore the result variable for now
-            tree = ET.parse(nmap_file_xml)
+            tree = element_tree.parse(nmap_file_xml)
             root = tree.getroot()
             new_ips = set()
 
