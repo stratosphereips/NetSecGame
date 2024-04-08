@@ -181,7 +181,7 @@ class ConnectionLimitProtocol(asyncio.Protocol):
 
 
 class Coordinator:
-    def __init__(self, actions_queue, answers_queue, net_sec_config, allowed_roles, world_type="netsecgame"):
+    def __init__(self, actions_queue, answers_queue, net_sec_config, allowed_roles, world_type="netsecenv"):
         self._actions_queue = actions_queue
         self._answers_queue = answers_queue
         self.ALLOWED_ROLES = allowed_roles
