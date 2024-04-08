@@ -14,7 +14,7 @@ import os
 import signal
 
 class AIDojo:
-    def __init__(self, host: str, port: int, net_set_config: str) -> None:
+    def __init__(self, host: str, port: int, net_sec_config: str) -> None:
         self.host = host
         self.port = port
         self.logger = logging.getLogger("AIDojo-main")
@@ -23,7 +23,7 @@ class AIDojo:
         self._coordinator = Coordinator(
             self._action_queue,
             self._answer_queue,
-            net_set_config,
+            net_sec_config,
             allowed_roles=["Attacker", "Defender", "Human"],
         )
 
@@ -180,12 +180,12 @@ class ConnectionLimitProtocol(asyncio.Protocol):
 
 
 class Coordinator:
-    def __init__(self, actions_queue, answers_queue, net_set_config, allowed_roles):
+    def __init__(self, actions_queue, answers_queue, net_sec_config, allowed_roles):
         self._actions_queue = actions_queue
         self._answers_queue = answers_queue
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
-        self._world = NetworkSecurityEnvironment(net_set_config)
+        self._world = NetworkSecurityEnvironment(net_sec_config)
         self._action_processor = ActionProcessor()
 
     async def run(self):
