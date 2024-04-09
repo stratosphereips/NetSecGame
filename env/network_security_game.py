@@ -943,20 +943,14 @@ class NetworkSecurityEnvironment(object):
         # We ignore the result variable for now
         tree = ElementTree.parse(nmap_file_xml)
         root = tree.getroot()
-        new_ips = set()
 
         # service_dict is a dict. Key=IP(), values= set of Service() objects
         found_services = set()
-        ip = ''
         port_id = ''
         protocol = ''
         for host in root.findall('.//host'):
             status_elem = host.find('./status')
             if status_elem is not None and status_elem.get('state') == 'up':
-                ip_elem = host.find('./address[@addrtype="ipv4"]')
-                if ip_elem is not None:
-                    ip = ip_elem.get('addr')
-
                 ports_elem = host.find('./ports')
                 if ports_elem is not None:
                     for port in root.findall('.//port[@protocol="tcp"]'):
