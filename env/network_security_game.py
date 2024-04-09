@@ -270,8 +270,7 @@ class NetworkSecurityEnvironment(object):
     @property
     def detected(self):
         """
-        Property used to for indication that
-        the attacker has been detected.
+        Property used to for indication that the attacker has been detected.
         Only returns value when episode is over
         """
         if self.end: #Only tell if detected when the interaction ends
@@ -1082,6 +1081,8 @@ class NetworkSecurityEnvironment(object):
             logger.info(f'Step taken: {self._step_counter}')
             logger.info(f"Agent's action: {action}")
             self._step_counter += 1
+            # Reward for taking an action
+            reward = self._rewards["step"]
             reason = {}
 
             # 1. Perform the action
@@ -1090,8 +1091,6 @@ class NetworkSecurityEnvironment(object):
             else:
                 logger.info("\tAction NOT sucessful")
                 next_state = self._current_state
-            # Reward for taking an action
-            reward = self._rewards["step"]
 
             # 2. Check if the new state is the goal state
             is_goal = self.is_goal(next_state)
