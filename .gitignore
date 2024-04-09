@@ -155,3 +155,4 @@ aim/
 #ignore
 figures/*
 *trajecories*.json
+.vscode/settings.json
