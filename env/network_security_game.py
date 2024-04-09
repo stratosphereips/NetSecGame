@@ -939,8 +939,6 @@ class NetworkSecurityEnvironment(object):
         """
         Check if the goal was reached for the game
         """
-        # For each part of the state of the game, check if the conditions are met
-        
         def goal_dict_satistfied(goal_dict:dict, known_dict: dict)-> bool:
             """
             Helper function for checking if a goal dictionary condition is satisfied
@@ -958,39 +956,16 @@ class NetworkSecurityEnvironment(object):
                 except KeyError:
                     #some keys are missing in the known_dict
                     return False
-            return False        
-        # Networks
-        # If empty goal, then should be true for this element
-        if set(self._goal_conditions["known_networks"]) <= set(state.known_networks):
-            networks_goal = True
-        else:
-            networks_goal = False
-        # Known hosts
-        # If empty goal, then should be true for this element
-        if set(self._goal_conditions["known_hosts"]) <= set(state.known_hosts):
-            known_hosts_goal = True
-        else:
-            known_hosts_goal = False
-        # Controlled hosts
-        # If empty goal, then should be true for this element
-        if set(self._goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts):
-            controlled_hosts_goal = True
-        else:
-            controlled_hosts_goal = False       
-        # Services
-        # If empty goal, then should be true for this element
-        logger.info('Checking the goal of services')
-        logger.info(f'\tServices needed to win {self._goal_conditions["known_services"]}')
-        services_goal = goal_dict_satistfied(self._goal_conditions["known_services"], state.known_services)
-
-        # Data
-        logger.info('Checking the goal of data')
-        logger.info(f'\tData needed to win {self._goal_conditions["known_data"]}')
-        known_data_goal = goal_dict_satistfied(self._goal_conditions["known_data"], state.known_data)
-
-        logger.info(f"\tnets:{networks_goal}, known_hosts:{known_hosts_goal}, controlled_hosts:{controlled_hosts_goal},services:{services_goal}, data:{known_data_goal}")
-        goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
-        return goal_reached
+            return False
+        # For each part of the state of the game, check if the conditions are met
+        goal_reached = {}    
+        goal_reached["networks"] = set(self._goal_conditions["known_networks"]) <= set(state.known_networks)
+        goal_reached["known_hosts"] = set(self._goal_conditions["known_hosts"]) <= set(state.known_hosts)
+        goal_reached["controlled_hosts"] = set(self._goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
+        goal_reached["services"] = goal_dict_satistfied(self._goal_conditions["known_services"], state.known_services)
+        goal_reached["data"] = goal_dict_satistfied(self._goal_conditions["known_data"], state.known_data)
+        logger.info(f"Checking goal satisfaction: {goal_reached}")
+        return all(goal_reached.values())
 
     def store_trajectories_to_file(self, filename:str)->None:
         if self._trajectories:
@@ -1027,14 +1002,12 @@ class NetworkSecurityEnvironment(object):
         and prepare for a new episode
         """
         # write all steps in the episode replay buffer in the file
-        logger.info("Initiating reset")
+        logger.info('--- Reseting env to its initial state ---')
         if self._episode_replay_buffer is not None:
             # Save trajectories to file
             self.save_trajectories(trajectory_filename)
             # reset the replay buffer
             self._episode_replay_buffer = [] 
-        
-        logger.info('--- Reseting env to its initial state ---')
         self._end = False
         self._end_reason = None
         self._step_counter = 0
