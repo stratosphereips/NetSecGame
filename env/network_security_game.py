@@ -730,198 +730,256 @@ class NetworkSecurityEnvironment(object):
 
         Returns: A new GameState
         """
-        next_known_networks = copy.deepcopy(current.known_networks)
-        next_known_hosts = copy.deepcopy(current.known_hosts)
-        next_controlled_hosts = copy.deepcopy(current.controlled_hosts)
-        next_known_services = copy.deepcopy(current.known_services)
-        next_known_data = copy.deepcopy(current.known_data)
-
-        if action.type == components.ActionType.ScanNetwork and action_type == 'netsecenv':
-            logger.info(f"\t\tScanning {action.parameters['target_network']}")
-            if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-                new_ips = set()
-                for ip in self._ip_to_hostname.keys(): #check if IP exists
-                    logger.info(f"\t\tChecking if {ip} in {action.parameters['target_network']}")
-                    if str(ip) in netaddr.IPNetwork(str(action.parameters["target_network"])):
-                        logger.info(f"\t\t\tAdding {ip} to new_ips")
-                        new_ips.add(ip)
-                next_known_hosts = next_known_hosts.union(new_ips)
-            else:
-                logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        elif action.type == components.ActionType.ScanNetwork and action_type == 'realworld':
-            logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
-            nmap_file_xml = 'nmap-result.xml'
-            command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
-            _ = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
-            # We ignore the result variable for now
-            tree = ElementTree.parse(nmap_file_xml)
-            root = tree.getroot()
-            new_ips = set()
-            for host in root.findall('.//host'):
-                status_elem = host.find('./status')
-                if status_elem is not None:
-                    status = host.find('./status').get('state')
+        next_state = None
+        match action.type:
+            case components.ActionType.ScanNetwork:
+                if action_type == "realworld":
+                    next_state = self._execute_scan_network_action_real_world(current, action)
                 else:
-                    status = ""
+                    next_state = self._execute_scan_network_action(current, action)
+            case components.ActionType.FindServices:
+                if action_type == "realworld":
+                    next_state = self._execute_find_services_real_world(current, action)
+                else:
+                    next_state = self._execute_find_services_action(current, action)
+            case components.ActionType.FindData:
+                next_state = self._execute_find_data_action(current, action)
+            case components.ActionType.ExploitService:
+                next_state = self._execute_exploit_service_action(current, action)
+            case components.ActionType.ExfiltrateData:
+                next_state = self._execute_exfiltrate_data_action(current, action)
+            case _:
+                raise ValueError(f"Unknown Action type or other error: '{action.type}'")
+        return next_state
+        
+    def _state_parts_deep_copy(self, current:components.GameState)->tuple:
+        next_nets = copy.deepcopy(current.known_networks)
+        next_known_h = copy.deepcopy(current.known_hosts)
+        next_controlled_h = copy.deepcopy(current.controlled_hosts)
+        next_services = copy.deepcopy(current.known_services)
+        next_data = copy.deepcopy(current.known_data)
+        return next_nets, next_known_h, next_controlled_h, next_services, next_data
+
+    def _execute_scan_network_action(self, current:components.GameState, action:components.Action)->components.GameState:
+        """
+        Executes the ScanNetwork action in the environment
+        """
+        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        logger.info(f"\t\tScanning {action.parameters['target_network']}")
+        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+            new_ips = set()
+            for ip in self._ip_to_hostname.keys(): #check if IP exists
+                logger.info(f"\t\tChecking if {ip} in {action.parameters['target_network']}")
+                if str(ip) in netaddr.IPNetwork(str(action.parameters["target_network"])):
+                    logger.info(f"\t\t\tAdding {ip} to new_ips")
+                    new_ips.add(ip)
+            next_known_h = next_known_h.union(new_ips)
+        else:
+            logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+
+    def _execute_find_services_action(self, current:components.GameState, action:components.Action)->components.GameState:
+        """
+        Executes the FindServices action in the environment
+        """
+        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
+        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+            found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
+            logger.info(f"\t\t\tFound {len(found_services)}: {found_services}")
+            if len(found_services) > 0:
+                next_services[action.parameters["target_host"]] = found_services
+
+                #if host was not known, add it to the known_hosts ONLY if there are some found services
+                if action.parameters["target_host"] not in next_known_h:
+                    logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
+                    next_known_h.add(action.parameters["target_host"])
+                    next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+        else:
+            logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+    
+    def _execute_find_data_action(self, current:components.GameState, action:components.Action)->components.GameState:
+        """
+        Executes the FindData action in the environment
+        """
+        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
+        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+            new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
+            logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
+            if len(new_data) > 0:
+                if action.parameters["target_host"] not in next_data.keys():
+                    next_data[action.parameters["target_host"]] = new_data
+                else:
+                    next_data[action.parameters["target_host"]] = next_data[action.parameters["target_host"]].union(new_data)
+        else:
+            logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+    
+    def _execute_exfiltrate_data_action(self, current:components.GameState, action:components.Action)->components.GameState:
+        """
+        Executes the ExfiltrateData action in the environment
+        """
+        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
+        # Is the target host controlled?
+        if action.parameters["target_host"] in current.controlled_hosts:
+            logger.info(f"\t\t\t {action.parameters['target_host']} is under-control: {current.controlled_hosts}")
+            # Is the source host controlled?
+            if action.parameters["source_host"] in current.controlled_hosts:
+                logger.info(f"\t\t\t {action.parameters['source_host']} is under-control: {current.controlled_hosts}")
+                # Is the source host in the list of hosts we know data from? (this is to avoid the keyerror later in the if)
+                # Does the current state for THIS source already know about this data?
+                if action.parameters['source_host'] in current.known_data.keys() and action.parameters["data"] in current.known_data[action.parameters["source_host"]]:
+                    # Does the source host have any data?
+                    if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
+                        # Does the source host have this data?
+                        if action.parameters["data"] in self._data[self._ip_to_hostname[action.parameters["source_host"]]]:
+                            logger.info("\t\t\t Data present in the source_host")
+                            if action.parameters["target_host"] not in next_data.keys():
+                                next_data[action.parameters["target_host"]] = {action.parameters["data"]}
+                            else:
+                                next_data[action.parameters["target_host"]].add(action.parameters["data"])
+                            # If the data was exfiltrated to a new host, remember the data in the new nost in the env
+                            if self._ip_to_hostname[action.parameters["target_host"]] not in self._data.keys():
+                                self._data[self._ip_to_hostname[action.parameters["target_host"]]] = {action.parameters["data"]}
+                            else:
+                                self._data[self._ip_to_hostname[action.parameters["target_host"]]].add(action.parameters["data"])
+                        else:
+                            logger.info("\t\t\tCan not exfiltrate. Source host does not have this data.")
+                    else:
+                        logger.info("\t\t\tCan not exfiltrate. Source host does not have any data.")
+                else:
+                    logger.info("\t\t\tCan not exfiltrate. Agent did not find this data yet.")
+            else:
+                logger.info("\t\t\tCan not exfiltrate. Source host is not controlled.")
+        else:
+            logger.info("\t\t\tCan not exfiltrate. Target host is not controlled.")
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+    
+    def _execute_exploit_service_action(self, current:components.GameState, action:components.Action)->components.GameState:
+        """
+        Executes the ExploitService action in the environment
+        """
+        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        # We don't check if the target is a known_host because it can be a blind attempt to attack
+        logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
+        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+            if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
+                logger.info("\t\t\tValid host")
+                if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
+                    if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
+                        if action.parameters["target_host"] in next_services: #does the agent know about any services this host have?
+                            if action.parameters["target_service"] in next_services[action.parameters["target_host"]]:
+                                logger.info("\t\t\tValid service")
+                                if action.parameters["target_host"] not in next_controlled_h:
+                                    next_controlled_h.add(action.parameters["target_host"])
+                                    logger.info("\t\tAdding to controlled_hosts")
+                                new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                                logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
+                                next_nets = next_nets.union(new_networks)
+                            else:
+                                logger.info("\t\t\tCan not exploit. Agent does not know about target host selected service")
+                        else:
+                            logger.info("\t\t\tCan not exploit. Agent does not know about target host having any service")
+                    else:
+                        logger.info("\t\t\tCan not exploit. Target host does not the service that was attempted.")
+                else:
+                    logger.info("\t\t\tCan not exploit. Target host does not have any services.")
+            else:
+                logger.info("\t\t\tCan not exploit. Target host does not exist.")
+        else:
+            logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+    
+    def _execute_scan_network_action_real_world(self, current:components.GameState, action:components.Action)->components.GameState:
+        """
+        Executes the ScanNetwork action in the the real world
+        """
+        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
+        nmap_file_xml = 'nmap-result.xml'
+        command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
+        _ = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
+        # We ignore the result variable for now
+        tree = ElementTree.parse(nmap_file_xml)
+        root = tree.getroot()
+        new_ips = set()
+        for host in root.findall('.//host'):
+            status_elem = host.find('./status')
+            if status_elem is not None:
+                status = host.find('./status').get('state')
+            else:
+                status = ""
+            ip_elem = host.find('./address[@addrtype="ipv4"]')
+            if ip_elem is not None:
+                ip = components.IP(str(ip_elem.get('addr')))
+            else:
+                ip = ""
+            
+            mac_elem = host.find('./address[@addrtype="mac"]')
+            if mac_elem is not None:
+                mac_address = mac_elem.get('addr', '')
+                vendor = mac_elem.get('vendor', '')
+            else:
+                mac_address = ""
+                vendor = ""
+
+            logger.info(f"\t\t\tAdding {ip} to new_ips. {status}, {mac_address}, {vendor}")
+            new_ips.add(ip)
+        next_known_h = next_known_h.union(new_ips)
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+    
+    def _execute_find_services_action_real_world(self, current:components.GameState, action:components.Action)->components.GameState:
+        """
+        Executes the FindServices action in the real world
+        """
+        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
+        nmap_file_xml = 'nmap-result.xml'
+        command = f"nmap -sT -n {action.parameters['target_host']} -oX {nmap_file_xml}"
+        _ = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
+        # We ignore the result variable for now
+        tree = ElementTree.parse(nmap_file_xml)
+        root = tree.getroot()
+        new_ips = set()
+
+        # service_dict is a dict. Key=IP(), values= set of Service() objects
+        found_services = set()
+        ip = ''
+        port_id = ''
+        protocol = ''
+        for host in root.findall('.//host'):
+            status_elem = host.find('./status')
+            if status_elem is not None and status_elem.get('state') == 'up':
                 ip_elem = host.find('./address[@addrtype="ipv4"]')
                 if ip_elem is not None:
-                    ip = components.IP(str(ip_elem.get('addr')))
-                else:
-                    ip = ""
-                
-                mac_elem = host.find('./address[@addrtype="mac"]')
-                if mac_elem is not None:
-                    mac_address = mac_elem.get('addr', '')
-                    vendor = mac_elem.get('vendor', '')
-                else:
-                    mac_address = ""
-                    vendor = ""
+                    ip = ip_elem.get('addr')
 
-                logger.info(f"\t\t\tAdding {ip} to new_ips. {status}, {mac_address}, {vendor}")
-                new_ips.add(ip)
-            next_known_hosts = next_known_hosts.union(new_ips)
+                ports_elem = host.find('./ports')
+                if ports_elem is not None:
+                    for port in root.findall('.//port[@protocol="tcp"]'):
+                        state_elem = port.find('./state[@state="open"]')
+                        if state_elem is not None:
+                            port_id = port.get('portid')
+                            protocol = port.get('protocol')
+                            service_elem = port.find('./service[@name]')
+                            service_name = service_elem.get('name') if service_elem is not None else "Unknown"
+                            service_fullname = f'{port_id}/{protocol}/{service_name}'
+                            service = components.Service(name=service_fullname, type=service_name, version='', is_local=False)
+                            found_services.add(service)
 
-        elif action.type == components.ActionType.FindServices and action_type=='netsecenv':
-            #get services for current states in target_host
-            logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
-            if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-                found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
-                logger.info(f"\t\t\tFound {len(found_services)}: {found_services}")
-                if len(found_services) > 0:
-                    next_known_services[action.parameters["target_host"]] = found_services
-
-                    #if host was not known, add it to the known_hosts ONLY if there are some found services
-                    if action.parameters["target_host"] not in next_known_hosts:
-                        logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
-                        next_known_hosts.add(action.parameters["target_host"])
-                        next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
-            else:
-                logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        elif action.type == components.ActionType.FindServices and action_type=='realworld':
-            logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
-            nmap_file_xml = 'nmap-result.xml'
-            command = f"nmap -sT -n {action.parameters['target_host']} -oX {nmap_file_xml}"
-            _ = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
-            # We ignore the result variable for now
-            tree = ElementTree.parse(nmap_file_xml)
-            root = tree.getroot()
-            new_ips = set()
-
-            # service_dict is a dict. Key=IP(), values= set of Service() objects
-            found_services = set()
-            ip = ''
-            port_id = ''
-            protocol = ''
-            for host in root.findall('.//host'):
-                status_elem = host.find('./status')
-                if status_elem is not None and status_elem.get('state') == 'up':
-                    ip_elem = host.find('./address[@addrtype="ipv4"]')
-                    if ip_elem is not None:
-                        ip = ip_elem.get('addr')
-
-                    ports_elem = host.find('./ports')
-                    if ports_elem is not None:
-                        for port in root.findall('.//port[@protocol="tcp"]'):
-                            state_elem = port.find('./state[@state="open"]')
-                            if state_elem is not None:
-                                port_id = port.get('portid')
-                                protocol = port.get('protocol')
-                                service_elem = port.find('./service[@name]')
-                                service_name = service_elem.get('name') if service_elem is not None else "Unknown"
-                                service_fullname = f'{port_id}/{protocol}/{service_name}'
-                                service = components.Service(name=service_fullname, type=service_name, version='', is_local=False)
-                                found_services.add(service)
-
-                    next_known_services[action.parameters["target_host"]] = found_services
-            
-            # If host was not known, add it to the known_hosts and known_networks ONLY if there are some found services
-            if action.parameters["target_host"] not in next_known_hosts:
-                logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
-                next_known_hosts.add(action.parameters["target_host"])
-                next_known_networks = next_known_networks.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
-
-        elif action.type == components.ActionType.FindData:
-            logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
-            if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-                new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
-                logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
-                if len(new_data) > 0:
-                    if action.parameters["target_host"] not in next_known_data.keys():
-                        next_known_data[action.parameters["target_host"]] = new_data
-                    else:
-                        next_known_data[action.parameters["target_host"]] = next_known_data[action.parameters["target_host"]].union(new_data)
-            else:
-                logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        elif action.type == components.ActionType.ExploitService:
-            # We don't check if the target is a known_host because it can be a blind attempt to attack
-            logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
-            if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-                if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
-                    logger.info("\t\t\tValid host")
-                    if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
-                        if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
-                            if action.parameters["target_host"] in next_known_services: #does the agent know about any services this host have?
-                                if action.parameters["target_service"] in next_known_services[action.parameters["target_host"]]:
-                                    logger.info("\t\t\tValid service")
-                                    if action.parameters["target_host"] not in next_controlled_hosts:
-                                        next_controlled_hosts.add(action.parameters["target_host"])
-                                        logger.info("\t\tAdding to controlled_hosts")
-                                    new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                                    logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
-                                    next_known_networks = next_known_networks.union(new_networks)
-                                else:
-                                    logger.info("\t\t\tCan not exploit. Agent does not know about target host selected service")
-                            else:
-                                logger.info("\t\t\tCan not exploit. Agent does not know about target host having any service")
-                        else:
-                            logger.info("\t\t\tCan not exploit. Target host does not the service that was attempted.")
-                    else:
-                        logger.info("\t\t\tCan not exploit. Target host does not have any services.")
-                else:
-                    logger.info("\t\t\tCan not exploit. Target host does not exist.")
-            else:
-                logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        elif action.type == components.ActionType.ExfiltrateData:
-            logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
-            # Is the target host controlled?
-            if action.parameters["target_host"] in current.controlled_hosts:
-                logger.info(f"\t\t\t {action.parameters['target_host']} is under-control: {current.controlled_hosts}")
-                # Is the source host controlled?
-                if action.parameters["source_host"] in current.controlled_hosts:
-                    logger.info(f"\t\t\t {action.parameters['source_host']} is under-control: {current.controlled_hosts}")
-                    # Is the source host in the list of hosts we know data from? (this is to avoid the keyerror later in the if)
-                    # Does the current state for THIS source already know about this data?
-                    if action.parameters['source_host'] in current.known_data.keys() and action.parameters["data"] in current.known_data[action.parameters["source_host"]]:
-                        # Does the source host have any data?
-                        if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
-                            # Does the source host have this data?
-                            if action.parameters["data"] in self._data[self._ip_to_hostname[action.parameters["source_host"]]]:
-                                logger.info("\t\t\t Data present in the source_host")
-                                if action.parameters["target_host"] not in next_known_data.keys():
-                                    next_known_data[action.parameters["target_host"]] = {action.parameters["data"]}
-                                else:
-                                    next_known_data[action.parameters["target_host"]].add(action.parameters["data"])
-                                # If the data was exfiltrated to a new host, remember the data in the new nost in the env
-                                if self._ip_to_hostname[action.parameters["target_host"]] not in self._data.keys():
-                                    self._data[self._ip_to_hostname[action.parameters["target_host"]]] = {action.parameters["data"]}
-                                else:
-                                    self._data[self._ip_to_hostname[action.parameters["target_host"]]].add(action.parameters["data"])
-                            else:
-                                logger.info("\t\t\tCan not exfiltrate. Source host does not have this data.")
-                        else:
-                            logger.info("\t\t\tCan not exfiltrate. Source host does not have any data.")
-                    else:
-                        logger.info("\t\t\tCan not exfiltrate. Agent did not find this data yet.")
-                else:
-                    logger.info("\t\t\tCan not exfiltrate. Source host is not controlled.")
-            else:
-                logger.info("\t\t\tCan not exfiltrate. Target host is not controlled.")
-
-        else:
-            raise ValueError(f"Unknown Action type or other error: '{action.type}'")
-
-        return components.GameState(next_controlled_hosts, next_known_hosts, next_known_services, next_known_data, next_known_networks)
-
+                next_services[action.parameters["target_host"]] = found_services
+        
+        # If host was not known, add it to the known_hosts and known_networks ONLY if there are some found services
+        if action.parameters["target_host"] not in next_known_h:
+            logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
+            next_known_h.add(action.parameters["target_host"])
+            next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+    
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+    
     def is_goal(self, state:components.GameState)->bool:
         """
         Check if the goal was reached for the game
