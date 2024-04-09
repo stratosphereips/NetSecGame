@@ -144,22 +144,10 @@ class NetworkSecurityEnvironment(object):
     """
     def __init__(self, task_config_file) -> None:
         logger.info("Initializing NetSetGame environment")
-        # Prepare data structures for all environment components (to be filled in _process_cyst_config())
-        
-        # Mapping of IP():host_name (str) of all nodes in the environment
+        # Prepare data structures for all environment components (to be filled in self._process_cyst_config())
         self._ip_to_hostname = {}
-        # A dict of the networks present in the environment. These are NOT the known networks by the agents
-        # Key=Network(), values= set of IP() objects
         self._networks = {}
-        # All the nodes in the environment.
-        # Node are hosts, attackers, etc (but not connections or exploits)
-        # Key = node name, value= CYST config object
-        self._node_objects = {}
-        # Dict of all services in the environment. These are NOT the known services by the agents
-        # Key=IP(), values= set of Service() objects
         self._services = {}
-        # Dict of data in the environment. These are NOT the known data by the agents
-        # Key=IP(), values= set of Data() objects
         self._data = {}
 
         # dictionary of physical connections betnween nodes in the environment.
@@ -174,10 +162,7 @@ class NetworkSecurityEnvironment(object):
         self.task_config = ConfigParser(task_config_file)
         
         # Load CYST configuration
-        logger.info("Reading from CYST configuration:")
-        cyst_config = self.task_config.get_scenario()
-        self._process_cyst_config(cyst_config)
-        logger.info("CYST configuration processed successfully")
+        self._process_cyst_config(self.task_config.get_scenario())
         
         # Set the seed 
         seed = self.task_config.get_seed('env')
@@ -483,6 +468,7 @@ class NetworkSecurityEnvironment(object):
         routers = []
         connections = []
         exploits = []
+        node_objects = {}
         #sort objects into categories (nodes and routers MUST be processed before connections!)
         for o in configuration_objects:
             if isinstance(o, NodeConfig):
@@ -497,7 +483,7 @@ class NetworkSecurityEnvironment(object):
         def process_node_config(node_obj:NodeConfig) -> None:
             logger.info(f"\tProcessing config of node '{node_obj.id}'")
             #save the complete object
-            self._node_objects[node_obj.id] = node_obj
+            node_objects[node_obj.id] = node_obj
             logger.info(f'\t\tAdded {node_obj.id} to the list of available nodes.')
             node_to_id[node_obj.id] = len(node_to_id)
 
@@ -548,7 +534,7 @@ class NetworkSecurityEnvironment(object):
                 logger.info("\t\tSkipping the internet router")
                 return False
 
-            self._node_objects[router_obj.id] = router_obj
+            node_objects[router_obj.id] = router_obj
             node_to_id[router_obj.id] = len(node_to_id)
             logger.info(f"\t\tProcessing interfaces in router '{router_obj.id}'")
             for interface in r.interfaces:
@@ -586,7 +572,8 @@ class NetworkSecurityEnvironment(object):
 
         #exploits
         self._exploits = exploits
-
+        logger.info("CYST configuration processed successfully")
+    
     def _create_new_network_mapping(self):
         """ Method that generates random IP and Network addreses
           while following the topology loaded in the environment.
