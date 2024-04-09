@@ -176,10 +176,12 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"\tSetting max steps to {self._max_steps}")
 
         # Set rewards for goal/detection/step
-        self._goal_reward = self.task_config.get_goal_reward()
-        self._detection_reward = self.task_config.get_detection_reward()
-        self._step_reward = self.task_config.get_step_reward()
-        logger.info(f"\tSetting rewards - goal:{self._goal_reward}, detection:{self._detection_reward}, step:{self._step_reward}")
+        self._rewards = {
+            "goal": self.task_config.get_goal_reward(),
+            "detection": self.task_config.get_detection_reward(),
+            "step": self.task_config.get_step_reward()
+        }
+        logger.info(f"\tSetting rewards - {self._rewards}")
 
         # Set the default parameters of all actionss
         # if the values of the actions were updated in the configuration file
@@ -1082,33 +1084,21 @@ class NetworkSecurityEnvironment(object):
             self._step_counter += 1
             reason = {}
 
-            # 1. Check if the action was successful or not
-            # But ignore the probability if it is played in the real world
+            # 1. Perform the action
             if random.random() <= action.type.default_success_p or action_type == 'realworld':
-                self._actions_played.append(action)
-                # The action was successful
-                logger.info('\tAction sucessful')
-
-                # Get the next state given the action
                 next_state = self._execute_action(self._current_state, action, action_type=action_type)
-                # Reard for making an action
-                reward = self._step_reward
             else:
-                # The action was not successful
                 logger.info("\tAction NOT sucessful")
-
-                # State does not change
                 next_state = self._current_state
-
-                # Reward for taking an action
-                reward = self._step_reward
+            # Reward for taking an action
+            reward = self._rewards["step"]
 
             # 2. Check if the new state is the goal state
             is_goal = self.is_goal(next_state)
             logger.info(f"\tGoal reached?: {is_goal}")
             if is_goal:
                 # Give reward
-                reward +=  self._goal_reward
+                reward +=  self._rewards["goal"]
                 # Game ended
                 self._end = True
                 self._end_reason = 'goal_reached'
@@ -1124,7 +1114,7 @@ class NetworkSecurityEnvironment(object):
             # Report detection, but not if in this same step the agent won
             if not is_goal and detected:
                 # Reward should be negative
-                reward += self._detection_reward
+                reward += self._rewards["detection"]
                 # Mark the environment as detected
                 self._detected = True
                 self._end = True
