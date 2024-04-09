@@ -152,7 +152,7 @@ class NetworkSecurityEnvironment(object):
 
         # dictionary of physical connections betnween nodes in the environment.
         self._connections = {} # TODO
-        # list of firewall rules that modify the connectivity se tby self._connections
+        # list of firewall rules that modify the connectivity se by self._connections
         self._fw_rules = [] # TODO
         # All exploits in the environment
         self._exploits = {}
@@ -691,9 +691,9 @@ class NetworkSecurityEnvironment(object):
                 else:
                     found_services = {s for s in self._services[self._ip_to_hostname[host_ip]] if not s.is_local}
             else:
-                logger.info("\tServices not found because host does have any service.")
+                logger.debug("\tServices not found because host does have any service.")
         else:
-            logger.info("\tServices not found because target IP does not exists.")
+            logger.debug("\tServices not found because target IP does not exists.")
         return found_services
 
     def _get_networks_from_host(self, host_ip)->set:
@@ -717,7 +717,7 @@ class NetworkSecurityEnvironment(object):
                 if self._ip_to_hostname[host_ip] in self._data:
                     data = self._data[self._ip_to_hostname[host_ip]]
         else:
-            logger.info("\t\t\tCan't get data in host. The host is not controlled.")
+            logger.debug("\t\t\tCan't get data in host. The host is not controlled.")
         return data
 
     def _execute_action(self, current:components.GameState, action:components.Action, action_type='netsecenv')-> components.GameState:
@@ -932,12 +932,12 @@ class NetworkSecurityEnvironment(object):
             """
             # check if we have all IPs that should have some values (are keys in goal_dict)
             if goal_dict.keys() <= known_dict.keys():
-                logger.info('\t\tKey comparison OK')
+                logger.debug('\t\tKey comparison OK')
                 try:
                     # Check if values (sets) for EACH key (host) in goal_dict are subsets of known_dict, keep matching_keys
                     matching_keys = [host for host in goal_dict.keys() if goal_dict[host]<= known_dict[host]]
                     # Check we have the amount of mathing keys as in the goal_dict
-                    logger.info(f"\t\tMatching sets: {len(matching_keys)}, required: {len(goal_dict.keys())}")
+                    logger.debug(f"\t\tMatching sets: {len(matching_keys)}, required: {len(goal_dict.keys())}")
                     if len(matching_keys) == len(goal_dict.keys()):
                         return True
                 except KeyError:
