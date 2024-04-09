@@ -163,9 +163,9 @@ class NetworkSecurityEnvironment(object):
         self._data = {}
 
         # dictionary of physical connections betnween nodes in the environment.
-        self._connections = {}
+        self._connections = {} # TODO
         # list of firewall rules that modify the connectivity se tby self._connections
-        self._fw_rules = []
+        self._fw_rules = [] # TODO
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
@@ -361,37 +361,30 @@ class NetworkSecurityEnvironment(object):
     
     def _create_starting_state(self) -> components.GameState:
         """
-        Builds the starting GameState. Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
+        Builds the starting GameState from 'self._attacker_start_position'.
+        If there is a keyword 'random' used, it is replaced by a valid option at random.
+
+        Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
         """
         known_networks = set()
         controlled_hosts = set()
-
-        logger.info('Creating the starting state')
-        # Only for logging
-        random_start_position = False
+        logger.info('Generating starting state')
         for controlled_host in self._attacker_start_position['controlled_hosts']:
-            if controlled_host == 'random':
+            if isinstance(controlled_host, components.IP):
+                controlled_hosts.add(controlled_host)
+                logger.info(f'\tThe attacker has control of host {str(controlled_host)}.')
+            elif controlled_host == 'random':
                 # Random start
-                logger.info('\tStart position of agent is random')
-                logger.info(f'\tChoosing from {self.hosts_to_start}')
+                logger.info('\tAdding random starting position of agent')
+                logger.info(f'\t\tChoosing from {self.hosts_to_start}')
                 controlled_hosts.add(random.choice(self.hosts_to_start))
                 logger.info(f'\t\tMaking agent start in {controlled_hosts}')
-                random_start_position = True
-        if not random_start_position:
-            # Not random start
-            logger.info('\tStart position of agent is not random.')
+            else:
+                logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {controlled_host}")
 
-        # Be careful. These lines must go outside the 'not random' part of the loop. Because it should be possible
-        # to have a random start position, but simultaneously to 'force' a controlled host
-        # for the case of controlling a command and controll server to exfiltrate.
-        for controlled_host in self._attacker_start_position["controlled_hosts"]:
-            if isinstance(controlled_host, components.IP):
-                # This is not a network, so add as controlling host
-                controlled_hosts.add(controlled_host)
-                # Add the controlled hosts to the list of known hosts
-                known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
-                logger.info(f'\tThe attacker has control of host {str(controlled_host)}.')
-
+        # Add all controlled hosts to known_hosts
+        known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
+        
         # Extend the known networks with the neighbouring networks
         # This is to solve in the env (and not in the agent) the problem
         # of not knowing other networks appart from the one the agent is in
@@ -414,10 +407,7 @@ class NetworkSecurityEnvironment(object):
                         known_networks.add(ip)
                     #return value back to the original
                     net_obj.value += 256
-        
-        # Be sure the controlled hosts are also known hosts
-        known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
-        
+       
         game_state = components.GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
 
