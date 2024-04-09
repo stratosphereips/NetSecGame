@@ -223,7 +223,7 @@ class NetworkSecurityEnvironment(object):
         if not self._randomize_goal_every_episode:
             # REPLACE 'random' keyword once
             logger.info("Episodic randomization disabled, generating static goal_conditions")
-            self._goal_conditions = self._generate_win_conditions(self._goal_conditions)
+            self._goal_conditions = self._process_win_conditions(self._goal_conditions)
         else:
             logger.info("Episodic randomization enabled, keeping 'random' keyword in the goal description.")
 
@@ -411,23 +411,23 @@ class NetworkSecurityEnvironment(object):
         game_state = components.GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
 
-    def _generate_win_conditions(self, win_conditions)->dict:
+    def _process_win_conditions(self, win_conditions)->dict:
         """
         Method which analyses win_conditions and randomizes parts if required
         """
-        logger.info("Preparing goal conditions")
+        logger.info("Processing win conditions")
         updated_win_conditions = {}
         
         # networks
         if win_conditions["known_networks"] == "random":
             updated_win_conditions["known_networks"] = {random.choice(list(self._networks.keys()))}
-            logger.info("\tRandomizing networks")
+            logger.info("\t\tRadnomizing known_networks")
         else:
             updated_win_conditions["known_networks"] = copy.deepcopy(win_conditions["known_networks"])
         logger.info(f"\tGoal known_networks: {updated_win_conditions['known_networks']}")
         # known_hosts
         if win_conditions["known_hosts"] == "random":
-            logger.info("\tRandomizing known_host")
+            logger.info("\t\tRandomizing known_host")
             updated_win_conditions["known_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
         else:
             updated_win_conditions["known_hosts"] = copy.deepcopy(win_conditions["known_hosts"])
@@ -992,12 +992,35 @@ class NetworkSecurityEnvironment(object):
         goal_reached = networks_goal and known_hosts_goal and controlled_hosts_goal and services_goal and known_data_goal
         return goal_reached
 
-    def store_trajectories(self, filename:str)->None:
+    def store_trajectories_to_file(self, filename:str)->None:
         if self._trajectories:
             logger.info(f"Saving trajectories to '{filename}'")
             with open(filename, "w") as outfile:
                 json.dump(self._trajectories, outfile)
         
+    def save_trajectories(self, trajectory_filename=None):
+        steps = []
+        for state,action,reward,next_state in self._episode_replay_buffer:
+            steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
+        goal_state = components.GameState(
+            known_hosts=self._goal_conditions["known_hosts"],
+            known_networks=self._goal_conditions["known_networks"],
+            controlled_hosts=self._goal_conditions["controlled_hosts"],
+            known_services=self._goal_conditions["known_services"],
+            known_data=self._goal_conditions["known_data"]
+        )
+        trajectory = {
+            "goal": goal_state.as_dict,
+            "end_reason":self._end_reason,
+            "trajectory":steps
+        }
+        if not trajectory_filename:
+            trajectory_filename = "NSG_trajectories.json"
+        if trajectory["end_reason"]:
+            self._trajectories.append(trajectory)
+            logger.info("Saving trajectories")
+            self.store_trajectories_to_file(trajectory_filename)
+    
     def reset(self, trajectory_filename=None)->components.Observation:
         """
         Function to reset the state of the game
@@ -1006,27 +1029,9 @@ class NetworkSecurityEnvironment(object):
         # write all steps in the episode replay buffer in the file
         logger.info("Initiating reset")
         if self._episode_replay_buffer is not None:
-            steps = []
-            for state,action,reward,next_state in self._episode_replay_buffer:
-                steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
-            goal_state = components.GameState(
-                known_hosts=self._goal_conditions["known_hosts"],
-                known_networks=self._goal_conditions["known_networks"],
-                controlled_hosts=self._goal_conditions["controlled_hosts"],
-                known_services=self._goal_conditions["known_services"],
-                known_data=self._goal_conditions["known_data"]
-            )
-            trajectory = {
-                "goal": goal_state.as_dict,
-                "end_reason":self._end_reason,
-                "trajectory":steps
-            }
-            if not trajectory_filename:
-                trajectory_filename = "NSG_trajectories.json"
-            if trajectory["end_reason"]:
-                self._trajectories.append(trajectory)
-                logger.info("Saving trajectories")
-                self.store_trajectories(trajectory_filename)
+            # Save trajectories to file
+            self.save_trajectories(trajectory_filename)
+            # reset the replay buffer
             self._episode_replay_buffer = [] 
         
         logger.info('--- Reseting env to its initial state ---')
@@ -1047,7 +1052,7 @@ class NetworkSecurityEnvironment(object):
         self._current_state = self._create_starting_state()
         logger.info("New starting state created") 
         #create win conditions for this episode (randomize if needed)
-        self._goal_conditions = copy.deepcopy(self._generate_win_conditions(self._goal_conditions))
+        self._goal_conditions = copy.deepcopy(self._process_win_conditions(self._goal_conditions))
         logger.info(f'Current state: {self._current_state}')
         initial_reward = 0
         info = {}
