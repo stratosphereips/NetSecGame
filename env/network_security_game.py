@@ -1008,6 +1008,19 @@ class NetworkSecurityEnvironment(object):
             self.save_trajectories(trajectory_filename)
             # reset the replay buffer
             self._episode_replay_buffer = [] 
+        # change IPs if needed
+        if self.task_config.get_use_dynamic_addresses():
+            self._create_new_network_mapping()
+        # reset self._data to orignal state
+        self._data = copy.deepcopy(self._data_original)
+        # create starting state (randomized if needed)
+        self._current_state = self._create_starting_state()
+        # create win conditions for this episode (randomize if needed)
+        self._goal_conditions = copy.deepcopy(self._process_win_conditions(self._goal_conditions))
+        logger.info(f'Current state: {self._current_state}')
+        
+        initial_reward = 0
+        info = {}
         self._end = False
         self._end_reason = None
         self._step_counter = 0
@@ -1015,20 +1028,6 @@ class NetworkSecurityEnvironment(object):
         
         self._actions_played = []
         self._defender.reset()
-
-        if self.task_config.get_use_dynamic_addresses():
-            self._create_new_network_mapping()
-            logger.info("IPs changed successfully")
-        #reset self._data to orignal state
-        self._data = copy.deepcopy(self._data_original)
-        #create starting state (randomized if needed)
-        self._current_state = self._create_starting_state()
-        logger.info("New starting state created") 
-        #create win conditions for this episode (randomize if needed)
-        self._goal_conditions = copy.deepcopy(self._process_win_conditions(self._goal_conditions))
-        logger.info(f'Current state: {self._current_state}')
-        initial_reward = 0
-        info = {}
         # An observation has inside ["state", "reward", "end", "info"]
         return components.Observation(self._current_state, initial_reward, self._end, info)
 
