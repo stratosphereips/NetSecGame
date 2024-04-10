@@ -34,7 +34,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 import mlflow
 
 mlflow.set_tracking_uri("http://147.32.83.60")
-mlflow.set_experiment("llm_qa_tuning_lora")
+mlflow.set_experiment("llm_qa_quantized")
 
 config = dotenv_values(".env")
 openai.api_key = config["OPENAI_API_KEY"]
@@ -316,13 +316,15 @@ def summary_prompt(memory_list):
 
 
 @retry(stop=stop_after_attempt(3))
-def openai_query(msg_list, max_tokens=60, model="gpt-3.5-turbo"):
+def openai_query(msg_list, max_tokens=60, model="lorar8-a32-gguf-Q5-K-M"):
     """Send messages to OpenAI API and return the response."""
-    llm_response = openai.ChatCompletion.create(
-        model=model, messages=msg_list, max_tokens=max_tokens, temperature=0.0
+    client = openai.OpenAI(api_key="anything",base_url="http://0.0.0.0:4000")
+    #print(msg_list)
+    llm_response = client.chat.completions.create(
+        model=model, messages=msg_list, max_tokens=max_tokens, temperature=0.1
     )
-    return llm_response["choices"][0]["message"]["content"]
-
+    #print(llm_response)
+    return llm_response.choices[0].message.content
 
 def model_query(model, tokenizer, messages, max_tokens=100):
 
