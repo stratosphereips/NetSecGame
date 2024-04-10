@@ -801,7 +801,7 @@ class NetworkSecurityEnvironment(object):
         if service == 'ssh':
             port = 22
 
-        command = "find / -name 'private.pem'"
+        command = "find / -name 'crypto.pem'"
 
         data_returned = self.execute_command(dst_host.ip, port, username, password, command)
         data = False
