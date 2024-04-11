@@ -575,6 +575,8 @@ class NetworkSecurityEnvironment(object):
                                 for src in ips:
                                     for dst in public_ips:
                                         firewall[src].add(dst)
+                                        #add self loop:
+                                        firewall[dst].add(dst)
                 # FW RULES FROM CONFIG
                 for rule in fw_rules:
                     if rule.policy == FirewallPolicy.ALLOW:
