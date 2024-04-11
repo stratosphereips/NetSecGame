@@ -430,6 +430,17 @@ class ConfigParser():
             # Option is not in the configuration - default to FALSE
             randomize_goal_every_episode = False
         return randomize_goal_every_episode
+    
+    def get_use_firewall(self)->bool:
+        """
+        Retrieves if the firewall functionality is allowed for netsecgame.
+        Default: False
+        """
+        try:
+            use_firewall = self.config['env']['use_firewall']
+        except KeyError:
+            use_firewall = False
+        return use_firewall
 
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
