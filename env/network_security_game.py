@@ -796,6 +796,14 @@ class NetworkSecurityEnvironment(object):
         next_data = copy.deepcopy(current.known_data)
         return next_nets, next_known_h, next_controlled_h, next_services, next_data
 
+    def _firewall_check(self, src_ip:components.IP, dst_ip:components.IP)->bool:
+        """Checks if firewall allows connection from 'src_ip to ''dst_ip'"""
+        try:
+            connection_allowed = dst_ip in self._firewall[src_ip]
+        except KeyError:
+            connection_allowed = False
+        return connection_allowed
+        e
     def _execute_scan_network_action(self, current:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the ScanNetwork action in the environment
