@@ -51,8 +51,11 @@ def state_diff(s1:GameState, s2: GameState) -> float:
     diff += diff_data
     return diff
 
-
-
+def action_diff(a1:Action, a2: Action)->float:
+    action_type_diff = 0 if a1.type is a2.type else 1
+    src_host_diff = 0 if a1.parameters["source_host"] == a2.parameters["source_host"] else 1
+    return action_type_diff+src_host_diff
+    
 def compare_action_type_sequence(game_plays:list, end_reason=None):
     actions_per_step = {}
     for play in game_plays:
@@ -134,6 +137,15 @@ def compare_state_sequence(game_plays:list, end_reason=None)->float:
     for i, states in states_per_step.items():
         print(f"Step {i}, #different states:{len(states)}")
 
+def trajectory_step_distance(step1:dict, step2:dict)->float:
+    s1 = GameState.from_dict(step1["s"])
+    s1_next = GameState.from_dict(step1["s_next"])
+    s2 = GameState.from_dict(step2["s"])
+    s2_next = GameState.from_dict(step2["s_next"])
+    action_similarity = 0
+    reward_diff = abs(step1["r"] - step2["r"])
+    effect_diff = abs(state_diff(s1,s1_next) - state_diff(s2, s2_next))
+    return action_similarity + reward_diff + effect_diff
 
 
 game_plays = read_json(sys.argv[1])
@@ -142,4 +154,4 @@ compare_state_sequence(game_plays)
 print("-------------------------------")
 compare_action_type_sequence(game_plays)
 print("-------------------------------")
-get_action_type_hist_per_step(game_plays)
+#get_action_type_hist_per_step(game_plays)
