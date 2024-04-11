@@ -145,11 +145,11 @@ class NetworkSecurityEnvironment(object):
     def __init__(self, task_config_file) -> None:
         logger.info("Initializing NetSetGame environment")
         # Prepare data structures for all environment components (to be filled in self._process_cyst_config())
-        self._ip_to_hostname = {}
-        self._networks = {}
-        self._services = {}
-        self._data = {}
-        self._firewall = {}
+        self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
+        self._networks = {} # A `dict` of the networks present in the environment. Keys: `Network` objects, values `set` of `IP` objects.
+        self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
+        self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
+        self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
@@ -688,7 +688,7 @@ class NetworkSecurityEnvironment(object):
             for dst_ip in dst_ips:
                 new_self_firewall[mapping_ips[ip]].add(mapping_ips[dst_ip])
         self._firewall = new_self_firewall
-        
+
         #self._ip_to_hostname
         new_self_ip_to_hostname  = {}
         for ip, hostname in self._ip_to_hostname.items():
