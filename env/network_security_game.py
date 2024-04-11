@@ -856,13 +856,16 @@ class NetworkSecurityEnvironment(object):
         next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
         logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-            new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
-            logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
-            if len(new_data) > 0:
-                if action.parameters["target_host"] not in next_data.keys():
-                    next_data[action.parameters["target_host"]] = new_data
-                else:
-                    next_data[action.parameters["target_host"]] = next_data[action.parameters["target_host"]].union(new_data)
+            if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
+                new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
+                logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
+                if len(new_data) > 0:
+                    if action.parameters["target_host"] not in next_data.keys():
+                        next_data[action.parameters["target_host"]] = new_data
+                    else:
+                        next_data[action.parameters["target_host"]] = next_data[action.parameters["target_host"]].union(new_data)
+            else:
+                logger.info(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
