@@ -375,6 +375,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=str,
+        default="env/netsecenv_conf.yaml",
     )
 
     args = parser.parse_args()
