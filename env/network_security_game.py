@@ -923,26 +923,28 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
             if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
-                logger.info("\t\t\tValid host")
-                if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
-                    if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
-                        if action.parameters["target_host"] in next_services: #does the agent know about any services this host have?
-                            if action.parameters["target_service"] in next_services[action.parameters["target_host"]]:
-                                logger.info("\t\t\tValid service")
-                                if action.parameters["target_host"] not in next_controlled_h:
-                                    next_controlled_h.add(action.parameters["target_host"])
-                                    logger.info("\t\tAdding to controlled_hosts")
-                                new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                                logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
-                                next_nets = next_nets.union(new_networks)
+                if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
+                    if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
+                        if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
+                            if action.parameters["target_host"] in next_services: #does the agent know about any services this host have?
+                                if action.parameters["target_service"] in next_services[action.parameters["target_host"]]:
+                                    logger.info("\t\t\tValid service")
+                                    if action.parameters["target_host"] not in next_controlled_h:
+                                        next_controlled_h.add(action.parameters["target_host"])
+                                        logger.info("\t\tAdding to controlled_hosts")
+                                    new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                                    logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
+                                    next_nets = next_nets.union(new_networks)
+                                else:
+                                    logger.info("\t\t\tCan not exploit. Agent does not know about target host selected service")
                             else:
-                                logger.info("\t\t\tCan not exploit. Agent does not know about target host selected service")
+                                logger.info("\t\t\tCan not exploit. Agent does not know about target host having any service")
                         else:
-                            logger.info("\t\t\tCan not exploit. Agent does not know about target host having any service")
+                            logger.info("\t\t\tCan not exploit. Target host does not the service that was attempted.")
                     else:
-                        logger.info("\t\t\tCan not exploit. Target host does not the service that was attempted.")
+                        logger.info("\t\t\tCan not exploit. Target host does not have any services.")
                 else:
-                    logger.info("\t\t\tCan not exploit. Target host does not have any services.")
+                    logger.info(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
             else:
                 logger.info("\t\t\tCan not exploit. Target host does not exist.")
         else:
