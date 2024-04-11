@@ -160,6 +160,9 @@ class NetworkSecurityEnvironment(object):
         self.hosts_to_start = []
         # Read the conf file passed by the agent for the rest of values
         self.task_config = ConfigParser(task_config_file)
+
+        # Read the conf for firewall usage
+        self._use_firewall = self.task_config.get_use_firewall()
         
         # Load CYST configuration
         self._process_cyst_config(self.task_config.get_scenario())
