@@ -803,7 +803,7 @@ class NetworkSecurityEnvironment(object):
         except KeyError:
             connection_allowed = False
         return connection_allowed
-        e
+
     def _execute_scan_network_action(self, current:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the ScanNetwork action in the environment
@@ -815,8 +815,11 @@ class NetworkSecurityEnvironment(object):
             for ip in self._ip_to_hostname.keys(): #check if IP exists
                 logger.info(f"\t\tChecking if {ip} in {action.parameters['target_network']}")
                 if str(ip) in netaddr.IPNetwork(str(action.parameters["target_network"])):
-                    logger.info(f"\t\t\tAdding {ip} to new_ips")
-                    new_ips.add(ip)
+                    if self._firewall_check(action.parameters["source_host"], ip):
+                        logger.info(f"\t\t\tAdding {ip} to new_ips")
+                        new_ips.add(ip)
+                    else:
+                        logger.info(f"\t\t\tConnection {action.parameters['source_host']} -> {ip} blocked by FW. Skipping")
             next_known_h = next_known_h.union(new_ips)
         else:
             logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
