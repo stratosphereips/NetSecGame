@@ -149,21 +149,13 @@ class NetworkSecurityEnvironment(object):
         self._networks = {}
         self._services = {}
         self._data = {}
-
-        # dictionary of physical connections betnween nodes in the environment.
-        self._connections = {} # TODO
-        # list of firewall rules that modify the connectivity se by self._connections
-        self._fw_rules = [] # TODO
+        self._firewall = {}
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
         self.hosts_to_start = []
         # Read the conf file passed by the agent for the rest of values
         self.task_config = ConfigParser(task_config_file)
-
-        # Read the conf for firewall usage
-        self._use_firewall = self.task_config.get_use_firewall()
-        
         # Load CYST configuration
         self._process_cyst_config(self.task_config.get_scenario())
         
@@ -473,6 +465,7 @@ class NetworkSecurityEnvironment(object):
         connections = []
         exploits = []
         node_objects = {}
+        fw_rules = []
         #sort objects into categories (nodes and routers MUST be processed before connections!)
         for o in configuration_objects:
             if isinstance(o, NodeConfig):
@@ -551,12 +544,55 @@ class NetworkSecurityEnvironment(object):
                 self._networks[net].append(ip)
 
             #add Firewall rules
-            logger.info(f"\t\tProcessing FW rules in router '{router_obj.id}'")
+            logger.info(f"\t\tReading FW rules in router '{router_obj.id}'")
             for tp in router_obj.traffic_processors:
                 for chain in tp.chains:
                     for rule in chain.rules:
-                        if rule.policy == FirewallPolicy.ALLOW:
-                            self._fw_rules.append(rule)
+                        fw_rules.append(rule)
+        
+        def process_firewall()->dict:
+            # process firewall rules
+            all_ips = set()
+            for ips in self._networks.values():
+                all_ips.update(ips)
+            firewall = {ip:set() for ip in all_ips}
+            if self.task_config.get_use_firewall():
+                logger.info("Firewall enabled - processing FW rules")
+                # LOCAL NETWORKS
+                for net, ips in self._networks.items():
+                    # IF net is local, allow connection between all nodes in it
+                    if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+                        for src in ips:
+                            for dst in ips:
+                                firewall[src].add(dst)
+                
+                # LOCAL TO INTERNET
+                for net, ips in self._networks.items():
+                    # IF net is local, allow connection between all nodes in it
+                    if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+                        for public_net, public_ips in self._networks.items():
+                            if not netaddr.IPNetwork(str(public_net)).ip.is_ipv4_private_use():
+                                for src in ips:
+                                    for dst in public_ips:
+                                        firewall[src].add(dst)
+                # FW RULES FROM CONFIG
+                for rule in fw_rules:
+                    if rule.policy == FirewallPolicy.ALLOW:
+                        src_net = netaddr.IPNetwork(rule.src_net)
+                        dst_net = netaddr.IPNetwork(rule.dst_net)
+                        logger.info(f"\t{rule}")
+                        for src_ip in all_ips:
+                            if str(src_ip) in src_net:
+                                for dst_ip in all_ips:
+                                    if str(dst_ip) in dst_net:
+                                        firewall[src_ip].add(dst_ip)
+                                        logger.info(f"\t\tAdding {src_ip} -> {dst_ip}")
+            else:
+                logger.info("Firewall disabled, allowing all connections")
+                for src_ip in all_ips:
+                    for dst_ip in all_ips:
+                        firewall[src_ip].add(dst_ip)
+            return firewall
         
         #process Nodes
         for n in nodes:
@@ -565,13 +601,9 @@ class NetworkSecurityEnvironment(object):
         for r in routers:
             process_router_config(r)
 
-        #connections
-        logger.info("\tProcessing connections in the network")
-        self._connections = np.zeros([len(node_to_id),len(node_to_id)])
-        for c in connections:
-            if c.src_id != "internet" and c.dst_id != "internet":
-                self._connections[node_to_id[c.src_id],node_to_id[c.dst_id]] = 1
-                #TODO FIX THE INTERNET Node issue in connections
+        # process firewall rules
+        self._firewall = process_firewall()
+        
         logger.info("\tProcessing available exploits")
 
         #exploits
