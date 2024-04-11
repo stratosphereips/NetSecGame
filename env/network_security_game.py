@@ -1087,6 +1087,7 @@ class NetworkSecurityEnvironment(object):
             self._actions_played.append(action)
 
             # 1. Perform the action
+            self._actions_played.append(action)
             if random.random() <= action.type.default_success_p or action_type == 'realworld':
                 next_state = self._execute_action(self._current_state, action, action_type=action_type)
             else:
