@@ -681,6 +681,14 @@ class NetworkSecurityEnvironment(object):
                 new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
         self._networks = new_self_networks
         
+        #self._firewall
+        new_self_firewall = {}
+        for ip, dst_ips in self._firewall.items():
+            new_self_firewall[mapping_ips[ip]] = set()
+            for dst_ip in dst_ips:
+                new_self_firewall[mapping_ips[ip]].add(mapping_ips[dst_ip])
+        self._firewall = new_self_firewall
+        
         #self._ip_to_hostname
         new_self_ip_to_hostname  = {}
         for ip, hostname in self._ip_to_hostname.items():
