@@ -91,6 +91,7 @@ The environment part defines the properties of the environment for the task (see
 - `max_steps` - sets the maximum number of steps an agent can make before an episode is terminated
 - `store_replay_buffer` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of **EVERY** episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)
+- `  use_firewall` - if `True` firewall rules defined in `scenario` are used when executing actions. When `False`, firewall is ignored and all connections are allowed (Default)
 - `goal_reward` - sets reward which agent gets when it reaches the goal (default 100)
 - `detection_reward` - sets reward which agent gets when it is detected (default -50)
 - `step_reward` - sets reward which agent gets for every step taken (default -1)
@@ -103,6 +104,7 @@ env:
   max_steps: 15
   store_replay_buffer: True
   use_dynamic_addresses: False
+  use_firewall: True
   goal_reward: 100
   detection_reward: -5
   step_reward: -1
