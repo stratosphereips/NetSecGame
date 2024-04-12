@@ -4,6 +4,7 @@ import sys
 import os 
 import utils
 import matplotlib.pyplot as plt
+import umap
 
 
 
@@ -147,6 +148,46 @@ def trajectory_step_distance(step1:dict, step2:dict)->float:
     effect_diff = abs(state_diff(s1,s1_next) - state_diff(s2, s2_next))
     return action_similarity + reward_diff + effect_diff
 
+def state_size(state:GameState)->list:
+    size = []
+    size.append(len(state.known_networks))
+    size.append(len(state.known_hosts))
+    size.append(len(state.controlled_hosts))
+    size.append(sum([len(x) for x in state.known_services.values()]))
+    size.append(sum([len(x) for x in state.known_data.values()]))
+    return size
+
+
+def cluster_trajectory_steps(game_plays:list, filename, end_reason=None):
+    action_conversion = {
+        ActionType.ScanNetwork:0,
+        ActionType.FindServices:1,
+        ActionType.FindData:2,
+        ActionType.ExfiltrateData:3,
+        ActionType.ExploitService:4,
+    }
+
+    trajectory_steps = []
+    for play in game_plays:
+        if end_reason and play["end_reason"] != end_reason:
+            continue
+        for i, step in enumerate(play["trajectory"]):
+            features = []
+            state = GameState.from_dict(step["s"])
+            next_state = GameState.from_dict(step["s_next"])
+            action = Action.from_dict(step["a"])
+            reward = step["r"]
+            features += state_size(state)
+            features.append(reward)
+            features.append(action_conversion[action.type])
+            features += state_size(next_state)
+            trajectory_steps.append((features,i))
+    reducer = umap.UMAP()
+    embedding = reducer.fit_transform([x[0] for x in trajectory_steps])
+    print(embedding.shape)
+    plt.scatter(embedding[:, 0], embedding[:, 1], c=[x[1] for x in trajectory_steps], cmap='hot', s=5)
+    plt.colorbar()
+    plt.savefig(filename, dpi=300)
 
 game_plays = read_json(sys.argv[1])
 print(f"mean episode length:{compute_mean_length(game_plays)}")
@@ -155,3 +196,4 @@ print("-------------------------------")
 compare_action_type_sequence(game_plays)
 print("-------------------------------")
 #get_action_type_hist_per_step(game_plays)
+cluster_trajectory_steps(game_plays, f"figures/trajectory_clustering_{sys.argv[1]}_wins.png", end_reason="goal_reached")
