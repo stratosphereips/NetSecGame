@@ -4,6 +4,8 @@ Authors:  Maria Rigaki - maria.rigaki@aic.fel.cvut.cz
 """
 import sys
 from os import path
+from os import getcwd
+from socket  import gethostname
 
 sys.path.append(
 path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
@@ -34,7 +36,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 import mlflow
 
 mlflow.set_tracking_uri("http://147.32.83.60")
-mlflow.set_experiment("llm_qa_quantized")
+mlflow.set_experiment("llm_qa_tuning_lora")
+#mlflow.set_experiment("llm_qa_quantized")
 
 config = dotenv_values(".env")
 openai.api_key = config["OPENAI_API_KEY"]
@@ -318,7 +321,7 @@ def summary_prompt(memory_list):
 @retry(stop=stop_after_attempt(3))
 def openai_query(msg_list, max_tokens=60, model="lorar8-a32-gguf-Q5-K-M"):
     """Send messages to OpenAI API and return the response."""
-    client = openai.OpenAI(api_key="anything",base_url="http://0.0.0.0:4000")
+    client = openai.OpenAI(api_key="anything",base_url="http://10.16.20.252:4000")
     #print(msg_list)
     llm_response = client.chat.completions.create(
         model=model, messages=msg_list, max_tokens=max_tokens, temperature=0.1
@@ -413,6 +416,8 @@ if __name__ == "__main__":
         "memory_len": args.memory_buffer,
         "episodes": args.test_episodes,
         "env_config_file": args.task_config_file
+        "experiment_dir" : os.getcwd(),
+        "hostname": socket.gethostname()
     }
     mlflow.log_params(params)
 
