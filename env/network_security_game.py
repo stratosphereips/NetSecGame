@@ -1084,6 +1084,7 @@ class NetworkSecurityEnvironment(object):
             # Reward for taking an action
             reward = self._rewards["step"]
             reason = {}
+            self._actions_played.append(action)
 
             # 1. Perform the action
             if random.random() <= action.type.default_success_p or action_type == 'realworld':
