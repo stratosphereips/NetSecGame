@@ -282,7 +282,7 @@ def cluster_trajectory_steps(game_plays:list, filename, end_reason=None, y="time
         colors = [x[1] for x in trajectory_steps]
         scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=colors, cmap=cm, s=5, alpha=0.5)
         handles, _ = scatter.legend_elements()
-        legend1 = plt.legend(handles, [str(action_type).lstrip("ActionType.") for action_type in action_conversion.keys()],
+        plt.legend(handles, [str(action_type).lstrip("ActionType.") for action_type in action_conversion.keys()],
                     loc="best", title="ActionTypes")
     plt.savefig(os.path.join("figures", filename), dpi=300)
     plt.close()
