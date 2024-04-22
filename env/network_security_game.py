@@ -1084,10 +1084,10 @@ class NetworkSecurityEnvironment(object):
             # Reward for taking an action
             reward = self._rewards["step"]
             reason = {}
+            self._actions_played.append(action)
 
             # 1. Perform the action
             if random.random() <= action.type.default_success_p or action_type == 'realworld':
-                self._actions_played.append(action)
                 next_state = self._execute_action(self._current_state, action, action_type=action_type)
             else:
                 logger.info("\tAction NOT sucessful")
