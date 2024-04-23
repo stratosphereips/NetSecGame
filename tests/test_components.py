@@ -400,6 +400,21 @@ class TestAction:
         assert action_dict["type"] == str(action.type)
         assert action_dict["params"]["target_host"] == "172.16.1.22"
         assert action_dict["params"]["source_host"] == "172.16.1.2"
+    
+    def test_action_to_dict_find_data(self):
+        action = Action(
+            action_type=ActionType.FindData,
+            params={
+                "target_host":IP("172.16.1.22"),
+                "source_host": IP("172.16.1.2")
+            }
+        )
+        action_dict = action.as_dict
+        new_action = Action.from_dict(action_dict)
+        assert action == new_action
+        assert action_dict["type"] == str(action.type)
+        assert action_dict["params"]["target_host"] == "172.16.1.22"
+        assert action_dict["params"]["source_host"] == "172.16.1.2"
 
 class TestGameState:
     """
