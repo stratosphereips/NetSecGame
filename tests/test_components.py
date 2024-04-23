@@ -415,6 +415,26 @@ class TestAction:
         assert action_dict["type"] == str(action.type)
         assert action_dict["params"]["target_host"] == "172.16.1.22"
         assert action_dict["params"]["source_host"] == "172.16.1.2"
+    
+    def test_action_to_dict_exploit_service(self):
+        action = Action(
+            action_type=ActionType.ExploitService,
+            params={
+                "source_host": IP("172.16.1.2"),
+                "target_host":IP("172.16.1.24"),
+                "target_service": Service("ssh", "passive", "0.23", False)
+            }
+        )
+        action_dict = action.as_dict
+        new_action = Action.from_dict(action_dict)
+        assert action == new_action
+        assert action_dict["type"] == str(action.type)
+        assert action_dict["params"]["target_host"] == "172.16.1.24"
+        assert action_dict["params"]["source_host"] == "172.16.1.2"
+        assert action_dict["params"]["target_service"]["name"] == "ssh"
+        assert action_dict["params"]["target_service"]["type"] == "passive"
+        assert action_dict["params"]["target_service"]["version"] == "0.23"
+        assert action_dict["params"]["target_service"]["is_local"] is False
 
 class TestGameState:
     """
