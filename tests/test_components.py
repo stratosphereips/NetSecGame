@@ -370,6 +370,37 @@ class TestAction:
         action_json = action.as_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
+    
+    def test_action_exfiltrate_join_game(self):
+        action = Action(
+                action_type=ActionType.JoinGame,
+                params={
+                    "agent_info": AgentInfo(name="TestingAgent", role="attacker"),
+                    }
+            )
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+    
+    def test_action_exfiltrate_reset_game(self):
+        action = Action(
+                action_type=ActionType.ResetGame,
+                params={}
+            )
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+    
+    def test_action_exfiltrate_quit_game(self):
+        action = Action(
+                action_type=ActionType.QuitGame,
+                params={}
+            )
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+    
+
 
     def test_action_to_dict_scan_network(self):
         action = Action(
@@ -479,6 +510,7 @@ class TestAction:
             assert action == new_action
             assert action_dict["type"] == str(action.type)
             assert len(action_dict["params"]) == 0
+    
     def test_action_to_dict_quit_game(self):
             action = Action(
                 action_type=ActionType.QuitGame,
