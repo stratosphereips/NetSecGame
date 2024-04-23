@@ -262,6 +262,27 @@ class TestAction:
         action2 = Action(action_type=ActionType.FindData,
                          params={"source_host":IP("192.168.12.11"),"target_host":IP("172.16.1.22")})
         assert action != action2
+
+    def test_action_hash(self):
+        action = Action(
+            action_type=ActionType.FindServices,
+            params={"target_host":IP("172.16.1.22"),"source_host":IP("192.168.12.11")}
+        )
+        action2 = Action(
+            action_type=ActionType.FindServices,
+            params={"target_host":IP("172.16.1.22"), "source_host":IP("192.168.12.11")}
+        )
+        action3 = Action(
+            action_type=ActionType.FindServices,
+            params={"target_host":IP("172.16.13.48"), "source_host":IP("192.168.12.11")}
+        )
+        action4 = Action(
+            action_type=ActionType.FindData,
+            params={"target_host":IP("172.16.1.25"), "source_host":IP("192.168.12.11")}
+        )
+        assert hash(action) == hash(action2)
+        assert hash(action) != hash(action3)
+        assert hash(action2) != hash(action4)
     
     def test_action_set_member(self):
         action_set = set()
@@ -282,10 +303,10 @@ class TestAction:
         #reverse params order
         assert Action(action_type=ActionType.ExploitService, params={"target_service": Service("ssh", "passive", "0.23", False), "target_host":IP("172.16.1.24"), "source_host":IP("192.168.12.11")})in action_set
         assert Action(action_type=ActionType.ScanNetwork, params={"target_network":Network("172.16.1.12", 24), "source_host":IP("192.168.12.11")}) in action_set
-        assert Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"), "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")}) in action_set
+        assert Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"), "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")}) in action_set  
         #reverse params orders
         assert Action(action_type=ActionType.ExfiltrateData, params={"source_host": IP("172.16.1.2"), "target_host":IP("172.16.1.3"), "data":Data("User2", "PublicKey")}) in action_set
-
+    
     def test_action_as_json(self):
         # Scan Network
         action = Action(action_type=ActionType.ScanNetwork,
@@ -416,8 +437,6 @@ class TestAction:
         new_action = Action.from_json(action_json)
         assert action == new_action
     
-
-
     def test_action_to_dict_scan_network(self):
         action = Action(
             action_type=ActionType.ScanNetwork,
