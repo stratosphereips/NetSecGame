@@ -240,7 +240,9 @@ class Action():
         return False
 
     def __hash__(self) -> int:
-        return hash(self._type) + hash("".join(sorted(self._parameters)))
+        sorted_params  = sorted(self._parameters.items(), key= lambda x: x[0])
+        sorted_params = [f"{x}{str(y)}" for x,y in sorted_params]
+        return hash(self._type) + hash("".join(sorted_params))
 
     def as_json(self)->str:
         ret_dict = {"action_type":str(self.type)}
