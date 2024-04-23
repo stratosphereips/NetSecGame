@@ -198,6 +198,8 @@ class Action():
                 params[k] = vars(v)
             elif isinstance(v, Data):
                 params[k] = vars(v)
+            elif isinstance(v, AgentInfo):
+                params[k] = vars(v)
             else:
                 params[k] = str(v)
         return {"type": str(self.type), "params": params}
@@ -219,6 +221,8 @@ class Action():
                     params[k] = Service(**v)
                 case "data":
                     params[k] = Data(**v)
+                case "agent_info":
+                    params[k] = AgentInfo(**v)
                 case _:
                     raise ValueError(f"Unsupported Value in {k}:{v}")
         action = Action(action_type=action_type, params=params)
