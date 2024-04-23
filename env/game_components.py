@@ -39,7 +39,7 @@ class IP():
         """
         try:
             return ipaddress.IPv4Network(self.ip).is_private
-        except:
+        except ipaddress.AddressValueError:
             # The IP is a string 
             # In the concepts, 'external' is the string used for external hosts.
             if self.ip != 'external':
@@ -83,8 +83,8 @@ class Network():
         Return if a network is private or not
         """
         try:
-            return ipaddress.IPv4Network(f'{self.ip}/{self.mask}').is_private
-        except:
+            return ipaddress.IPv4Network(f'{self.ip}/{self.mask}',strict=False).is_private
+        except ipaddress.AddressValueError:
             # If we are dealing with strings, assume they are local networks
             return True
 
@@ -192,11 +192,40 @@ class Action():
 
     @property
     def as_dict(self)->dict:
-        return {"type": str(self.type), "params": {k:str(v) for k,v in self.parameters.items()} }
+        params = {}
+        for k,v in self.parameters.items():
+            if isinstance(v, Service): 
+                params[k] = vars(v)
+            elif isinstance(v, Data):
+                params[k] = vars(v)
+            elif isinstance(v, AgentInfo):
+                params[k] = vars(v)
+            else:
+                params[k] = str(v)
+        return {"type": str(self.type), "params": params}
     
     @classmethod
     def from_dict(cls, data_dict:dict):
-        action = Action(action_type=ActionType.from_string(data_dict["type"]), params=data_dict["params"])
+        action_type = ActionType.from_string(data_dict["type"])
+        params = {}
+        for k,v in data_dict["params"].items():
+            match k:
+                case "source_host":
+                    params[k] = IP(v)
+                case "target_host":
+                    params[k] = IP(v)
+                case "target_network":
+                    net,mask = v.split("/")
+                    params[k] = Network(net ,int(mask))
+                case "target_service":
+                    params[k] = Service(**v)
+                case "data":
+                    params[k] = Data(**v)
+                case "agent_info":
+                    params[k] = AgentInfo(**v)
+                case _:
+                    raise ValueError(f"Unsupported Value in {k}:{v}")
+        action = Action(action_type=action_type, params=params)
         return action
     
     def __repr__(self) -> str:
@@ -211,7 +240,9 @@ class Action():
         return False
 
     def __hash__(self) -> int:
-        return hash(self._type) + hash("".join(sorted(self._parameters)))
+        sorted_params  = sorted(self._parameters.items(), key= lambda x: x[0])
+        sorted_params = [f"{x}{str(y)}" for x,y in sorted_params]
+        return hash(self._type) + hash("".join(sorted_params))
 
     def as_json(self)->str:
         ret_dict = {"action_type":str(self.type)}

@@ -6,7 +6,7 @@ import sys
 import json
 from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
-from env.game_components import ActionType, Action, IP, Data, Network, Service, GameState
+from env.game_components import ActionType, Action, IP, Data, Network, Service, GameState, AgentInfo
 
 class TestComponentsIP:
     """
@@ -34,6 +34,14 @@ class TestComponentsIP:
         ip_1 = IP("192.168.1.15")
         ip_2 = "192.168.2.15"
         assert ip_1 != ip_2
+
+    def test_ip_is_private(self):
+        ip_1 = IP("192.168.1.15")
+        assert ip_1.is_private() is True
+    
+    def test_ip_is_not_private(self):
+        ip_1 = IP("192.143.1.15")
+        assert ip_1.is_private() is False
 
 class TestServices:
     """
@@ -107,6 +115,14 @@ class TestNetwork:
         net_1 = Network("125.36.21.3", 16)
         net_2 = Network("192.168.1.3", 16)
         assert net_1 != net_2
+
+    def test_net_is_not_private(self):
+        net_1 = Network("125.36.21.3", 16)
+        assert net_1.is_private() is False
+    
+    def test_net_is_private(self):
+        net_1 = Network("192.168.1.0", 16)
+        assert net_1.is_private() is True
 
 class TestData:
     """
@@ -246,6 +262,27 @@ class TestAction:
         action2 = Action(action_type=ActionType.FindData,
                          params={"source_host":IP("192.168.12.11"),"target_host":IP("172.16.1.22")})
         assert action != action2
+
+    def test_action_hash(self):
+        action = Action(
+            action_type=ActionType.FindServices,
+            params={"target_host":IP("172.16.1.22"),"source_host":IP("192.168.12.11")}
+        )
+        action2 = Action(
+            action_type=ActionType.FindServices,
+            params={"target_host":IP("172.16.1.22"), "source_host":IP("192.168.12.11")}
+        )
+        action3 = Action(
+            action_type=ActionType.FindServices,
+            params={"target_host":IP("172.16.13.48"), "source_host":IP("192.168.12.11")}
+        )
+        action4 = Action(
+            action_type=ActionType.FindData,
+            params={"target_host":IP("172.16.1.25"), "source_host":IP("192.168.12.11")}
+        )
+        assert hash(action) == hash(action2)
+        assert hash(action) != hash(action3)
+        assert hash(action2) != hash(action4)
     
     def test_action_set_member(self):
         action_set = set()
@@ -266,10 +303,10 @@ class TestAction:
         #reverse params order
         assert Action(action_type=ActionType.ExploitService, params={"target_service": Service("ssh", "passive", "0.23", False), "target_host":IP("172.16.1.24"), "source_host":IP("192.168.12.11")})in action_set
         assert Action(action_type=ActionType.ScanNetwork, params={"target_network":Network("172.16.1.12", 24), "source_host":IP("192.168.12.11")}) in action_set
-        assert Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"), "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")}) in action_set
+        assert Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"), "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")}) in action_set  
         #reverse params orders
         assert Action(action_type=ActionType.ExfiltrateData, params={"source_host": IP("172.16.1.2"), "target_host":IP("172.16.1.3"), "data":Data("User2", "PublicKey")}) in action_set
-
+    
     def test_action_as_json(self):
         # Scan Network
         action = Action(action_type=ActionType.ScanNetwork,
@@ -370,6 +407,155 @@ class TestAction:
         action_json = action.as_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
+    
+    def test_action_exfiltrate_join_game(self):
+        action = Action(
+                action_type=ActionType.JoinGame,
+                params={
+                    "agent_info": AgentInfo(name="TestingAgent", role="attacker"),
+                    }
+            )
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+    
+    def test_action_exfiltrate_reset_game(self):
+        action = Action(
+                action_type=ActionType.ResetGame,
+                params={}
+            )
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+    
+    def test_action_exfiltrate_quit_game(self):
+        action = Action(
+                action_type=ActionType.QuitGame,
+                params={}
+            )
+        action_json = action.as_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+    
+    def test_action_to_dict_scan_network(self):
+        action = Action(
+            action_type=ActionType.ScanNetwork,
+            params={
+                "target_network":Network("172.16.1.12", 24),
+                "source_host": IP("172.16.1.2")
+                }
+        )
+        action_dict = action.as_dict
+        new_action = Action.from_dict(action_dict)
+        assert action == new_action
+        assert action_dict["type"] == str(action.type)
+        assert action_dict["params"]["target_network"] == "172.16.1.12/24"
+        assert action_dict["params"]["source_host"] == "172.16.1.2"
+
+    def test_action_to_dict_find_services(self):
+        action = Action(
+            action_type=ActionType.FindServices,
+            params={
+                "target_host":IP("172.16.1.22"),
+                "source_host": IP("172.16.1.2")
+                }
+        )
+        action_dict = action.as_dict
+        new_action = Action.from_dict(action_dict)
+        assert action == new_action
+        assert action_dict["type"] == str(action.type)
+        assert action_dict["params"]["target_host"] == "172.16.1.22"
+        assert action_dict["params"]["source_host"] == "172.16.1.2"
+    
+    def test_action_to_dict_find_data(self):
+        action = Action(
+            action_type=ActionType.FindData,
+            params={
+                "target_host":IP("172.16.1.22"),
+                "source_host": IP("172.16.1.2")
+            }
+        )
+        action_dict = action.as_dict
+        new_action = Action.from_dict(action_dict)
+        assert action == new_action
+        assert action_dict["type"] == str(action.type)
+        assert action_dict["params"]["target_host"] == "172.16.1.22"
+        assert action_dict["params"]["source_host"] == "172.16.1.2"
+    
+    def test_action_to_dict_exploit_service(self):
+        action = Action(
+            action_type=ActionType.ExploitService,
+            params={
+                "source_host": IP("172.16.1.2"),
+                "target_host":IP("172.16.1.24"),
+                "target_service": Service("ssh", "passive", "0.23", False)
+            }
+        )
+        action_dict = action.as_dict
+        new_action = Action.from_dict(action_dict)
+        assert action == new_action
+        assert action_dict["type"] == str(action.type)
+        assert action_dict["params"]["target_host"] == "172.16.1.24"
+        assert action_dict["params"]["source_host"] == "172.16.1.2"
+        assert action_dict["params"]["target_service"]["name"] == "ssh"
+        assert action_dict["params"]["target_service"]["type"] == "passive"
+        assert action_dict["params"]["target_service"]["version"] == "0.23"
+        assert action_dict["params"]["target_service"]["is_local"] is False
+    
+    def test_action_to_dict_exfiltrate_data(self):
+        action = Action(
+            action_type=ActionType.ExfiltrateData,
+            params={
+                "target_host":IP("172.16.1.3"),
+                "source_host": IP("172.16.1.2"),
+                "data":Data("User2", "PublicKey")
+            }
+        )
+        action_dict = action.as_dict
+        new_action = Action.from_dict(action_dict)
+        assert action == new_action
+        assert action_dict["type"] == str(action.type)
+        assert action_dict["params"]["target_host"] == "172.16.1.3"
+        assert action_dict["params"]["source_host"] == "172.16.1.2"
+        assert action_dict["params"]["data"]["owner"] == "User2"
+        assert action_dict["params"]["data"]["id"] == "PublicKey"
+
+    def test_action_to_dict_join_game(self):
+            action = Action(
+                action_type=ActionType.JoinGame,
+                params={
+                    "agent_info": AgentInfo(name="TestingAgent", role="attacker"),
+                    "source_host": IP("172.16.1.2")
+                    }
+            )
+            action_dict = action.as_dict
+            new_action = Action.from_dict(action_dict)
+            assert action == new_action
+            assert action_dict["type"] == str(action.type)
+            assert action_dict["params"]["agent_info"]["name"] == "TestingAgent"
+            assert action_dict["params"]["agent_info"]["role"] == "attacker"
+    
+    def test_action_to_dict_reset_game(self):
+            action = Action(
+                action_type=ActionType.ResetGame,
+                params={}
+            )
+            action_dict = action.as_dict
+            new_action = Action.from_dict(action_dict)
+            assert action == new_action
+            assert action_dict["type"] == str(action.type)
+            assert len(action_dict["params"]) == 0
+    
+    def test_action_to_dict_quit_game(self):
+            action = Action(
+                action_type=ActionType.QuitGame,
+                params={}
+            )
+            action_dict = action.as_dict
+            new_action = Action.from_dict(action_dict)
+            assert action == new_action
+            assert action_dict["type"] == str(action.type)
+            assert len(action_dict["params"]) == 0
 
 class TestGameState:
     """
