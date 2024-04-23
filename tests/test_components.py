@@ -468,6 +468,27 @@ class TestAction:
             assert action_dict["type"] == str(action.type)
             assert action_dict["params"]["agent_info"]["name"] == "TestingAgent"
             assert action_dict["params"]["agent_info"]["role"] == "attacker"
+    
+    def test_action_to_dict_reset_game(self):
+            action = Action(
+                action_type=ActionType.ResetGame,
+                params={}
+            )
+            action_dict = action.as_dict
+            new_action = Action.from_dict(action_dict)
+            assert action == new_action
+            assert action_dict["type"] == str(action.type)
+            assert len(action_dict["params"]) == 0
+    def test_action_to_dict_quit_game(self):
+            action = Action(
+                action_type=ActionType.QuitGame,
+                params={}
+            )
+            action_dict = action.as_dict
+            new_action = Action.from_dict(action_dict)
+            assert action == new_action
+            assert action_dict["type"] == str(action.type)
+            assert len(action_dict["params"]) == 0
 
 class TestGameState:
     """
