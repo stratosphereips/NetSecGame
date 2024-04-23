@@ -39,7 +39,7 @@ class IP():
         """
         try:
             return ipaddress.IPv4Network(self.ip).is_private
-        except:
+        except ipaddress.AddressValueError:
             # The IP is a string 
             # In the concepts, 'external' is the string used for external hosts.
             if self.ip != 'external':
@@ -84,7 +84,7 @@ class Network():
         """
         try:
             return ipaddress.IPv4Network(f'{self.ip}/{self.mask}').is_private
-        except:
+        except ipaddress.AddressValueError:
             # If we are dealing with strings, assume they are local networks
             return True
 
