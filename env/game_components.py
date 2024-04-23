@@ -192,7 +192,15 @@ class Action():
 
     @property
     def as_dict(self)->dict:
-        return {"type": str(self.type), "params": {k:str(v) for k,v in self.parameters.items()} }
+        params = {}
+        for k,v in self.parameters.items():
+            if isinstance(v, Service): 
+                params[k] = vars(v)
+            elif isinstance(v, Data):
+                params[k] = vars(v)
+            else:
+                params[k] = str(v)
+        return {"type": str(self.type), "params": params}
     
     @classmethod
     def from_dict(cls, data_dict:dict):
@@ -208,9 +216,9 @@ class Action():
                     net,mask = v.split("/")
                     params[k] = Network(net ,int(mask))
                 case "target_service":
-                    params[k] = Service(v)
+                    params[k] = Service(**v)
                 case "data":
-                    params[k] = Data(v)
+                    params[k] = Data(**v)
                 case _:
                     raise ValueError(f"Unsupported Value in {k}:{v}")
         action = Action(action_type=action_type, params=params)
