@@ -371,6 +371,23 @@ class TestAction:
         new_action = Action.from_json(action_json)
         assert action == new_action
 
+    def test_action_to_dict_scan_network(self):
+        action = Action(
+            action_type=ActionType.ScanNetwork,
+            params={
+                "target_network":Network("172.16.1.12", 24),
+                "source_host": IP("172.16.1.2")
+                }
+        )
+        action_dict = action.as_dict
+        new_action = Action.from_dict(action_dict)
+        print(action)
+        print(new_action)
+        assert action == new_action
+        assert action_dict["type"] == str(action.type)
+        assert action_dict["params"]["target_network"] == "172.16.1.12/24"
+        assert action_dict["params"]["source_host"] == "172.16.1.2"
+
 class TestGameState:
     """
     Test cases related to the GameState class
