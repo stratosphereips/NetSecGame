@@ -35,6 +35,14 @@ class TestComponentsIP:
         ip_2 = "192.168.2.15"
         assert ip_1 != ip_2
 
+    def test_ip_is_private(self):
+        ip_1 = IP("192.168.1.15")
+        assert ip_1.is_private() is True
+    
+    def test_ip_is_not_private(self):
+        ip_1 = IP("192.143.1.15")
+        assert ip_1.is_private() is False
+
 class TestServices:
     """
     Tests related to the Service dataclass
@@ -107,6 +115,14 @@ class TestNetwork:
         net_1 = Network("125.36.21.3", 16)
         net_2 = Network("192.168.1.3", 16)
         assert net_1 != net_2
+
+    def test_net_is_not_private(self):
+        net_1 = Network("125.36.21.3", 16)
+        assert net_1.is_private() is False
+    
+    def test_net_is_private(self):
+        net_1 = Network("192.168.1.0", 16)
+        assert net_1.is_private() is True
 
 class TestData:
     """
