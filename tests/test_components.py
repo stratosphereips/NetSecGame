@@ -6,7 +6,7 @@ import sys
 import json
 from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
-from env.game_components import ActionType, Action, IP, Data, Network, Service, GameState
+from env.game_components import ActionType, Action, IP, Data, Network, Service, GameState, AgentInfo
 
 class TestComponentsIP:
     """
@@ -453,6 +453,21 @@ class TestAction:
         assert action_dict["params"]["source_host"] == "172.16.1.2"
         assert action_dict["params"]["data"]["owner"] == "User2"
         assert action_dict["params"]["data"]["id"] == "PublicKey"
+
+    def test_action_to_dict_join_game(self):
+            action = Action(
+                action_type=ActionType.JoinGame,
+                params={
+                    "agent_info": AgentInfo(name="TestingAgent", role="attacker"),
+                    "source_host": IP("172.16.1.2")
+                    }
+            )
+            action_dict = action.as_dict
+            new_action = Action.from_dict(action_dict)
+            assert action == new_action
+            assert action_dict["type"] == str(action.type)
+            assert action_dict["params"]["agent_info"]["name"] == "TestingAgent"
+            assert action_dict["params"]["agent_info"]["role"] == "attacker"
 
 class TestGameState:
     """
