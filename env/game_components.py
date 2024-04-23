@@ -83,7 +83,7 @@ class Network():
         Return if a network is private or not
         """
         try:
-            return ipaddress.IPv4Network(f'{self.ip}/{self.mask}').is_private
+            return ipaddress.IPv4Network(f'{self.ip}/{self.mask}',strict=False).is_private
         except ipaddress.AddressValueError:
             # If we are dealing with strings, assume they are local networks
             return True
