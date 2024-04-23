@@ -196,7 +196,24 @@ class Action():
     
     @classmethod
     def from_dict(cls, data_dict:dict):
-        action = Action(action_type=ActionType.from_string(data_dict["type"]), params=data_dict["params"])
+        action_type = ActionType.from_string(data_dict["type"])
+        params = {}
+        for k,v in data_dict["params"].items():
+            match k:
+                case "source_host":
+                    params[k] = IP(v)
+                case "target_host":
+                    params[k] = IP(v)
+                case "target_network":
+                    net,mask = v.split("/")
+                    params[k] = Network(net ,int(mask))
+                case "target_service":
+                    params[k] = Service(v)
+                case "data":
+                    params[k] = Data(v)
+                case _:
+                    raise ValueError(f"Unsupported Value in {k}:{v}")
+        action = Action(action_type=action_type, params=params)
         return action
     
     def __repr__(self) -> str:
