@@ -128,29 +128,73 @@ class TestData:
     """
     Test cases for the Data class
     """
-    def test_create_data(self):
+    def test_create_data_minimal(self):
         """
-        Test that the data are created and all elements can be accessed 
+        Test that the data object is created with ONLY required fields (using default for the rest)
         """
-        data = Data("Ondra", "Password")
+        data = Data(owner="Ondra", id="Password")
         assert data.owner == "Ondra"
         assert data.id == "Password"
+        assert data.type == ""
+        assert data.content == ""
+        assert data.size == 0
+    
+    def test_create_data_all(self):
+        """
+        Test that the data object is created with ALL fields (using default for the rest)
+        """
+        data = Data(owner="Ondra", id="Password", content="SecretPassword", type="txt")
+        assert data.owner == "Ondra"
+        assert data.id == "Password"
+        assert data.type == "txt"
+        assert data.content == "SecretPassword"
+        assert data.size == len("SecretPassword")
 
     def test_data_equal(self):
         """
-        Test that two data objects with the same parameters are equal
+        Test that two data objects with the same required parameters are equal
         """
         data = Data("Ondra", "Password")
         data2 = Data("Ondra", "Password")
+        # ONLY fields 'id' and 'owner' should be compared
+        data3 = Data(owner="Ondra", id="Password", content="VERYSecretPassword", type="txt")
+        data4 = Data(owner="Ondra", id="Password", content="DifferentPassword", type="rsa")
         assert data == data2
+        assert data == data3
+        assert data3 == data4
 
     def test_data_not_equal(self):
         """
-        Test that two data objects with different parameters are not equal
+        Test that two data objects with different required parameters are NOT equal
         """
         data = Data("Ondra", "Password")
-        data2 = Data("User2", "WebData")
+        data2 = Data("ChuckNorris", "Password")
+        # ONLY fields 'id' and 'owner' should be compared
+        data3 = Data(owner="Ondra", id="Password", content="VERYSecretPassword", type="txt")
+        data4 = Data(owner="Ondra", id="DifferentPassword", content="DifferentPassword", type="rsa")
         assert data != data2
+        assert data3 != data4
+    
+    def test_data_deep_equal(self):
+        """
+        Test that two data objects with the ALL same parameters are equal
+        """
+        data = Data(owner="Ondra", id="Password", content="SecretPassword", type="txt")
+        data2 = Data(owner="Ondra", id="Password", content="SecretPassword", type="txt")
+        assert data.deep_equal(data2)
+        assert data2.deep_equal(data)
+
+    def test_data_not_deep_equal(self):
+        """
+        Test that two data objects with different non-required parameters are NOT equal
+        """
+        data = Data(owner="Ondra", id="Password", content="SecretPassword", type="txt")
+        data3 = Data(owner="Ondra", id="Password", content="SecretPassword", type="rsa")
+        data2 = Data(owner="Ondra", id="Password", content="VerySecretPassword", type="txt")
+        assert not data.deep_equal(data2)
+        assert not data2.deep_equal(data)
+        assert not data.deep_equal(data3)
+        assert not data3.deep_equal(data)
 
 class TestAction:
     """
