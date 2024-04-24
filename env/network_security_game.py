@@ -15,6 +15,7 @@ import json
 from utils.utils import ConfigParser
 import subprocess
 import xml.etree.ElementTree as ElementTree
+import ipaddress
 
 # Set the logging
 logger = logging.getLogger('Netsecenv')
@@ -818,6 +819,13 @@ class NetworkSecurityEnvironment(object):
         """
         Executes the ScanNetwork action in the environment
         """
+        try:
+            # See if the IPs are actually IPs
+            _ = ipaddress.IPv4Network(action.parameters['target_network'])
+            _ = ipaddress.IPv4Address(action.parameters['source_host'])
+        except ipaddress.AddressValueError:
+            logger.error(f'One or both of the IP addresses/networks sent by the agent, src:{action.parameters['source_host']}, dst:{action.parameters['target_network']}, are not a real IP addresses/networks.')
+            return current
         next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
         logger.info(f"\t\tScanning {action.parameters['target_network']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
@@ -840,6 +848,13 @@ class NetworkSecurityEnvironment(object):
         Executes the FindServices action in the environment
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        try:
+            # See if the IPs are actually IPs
+            _ = ipaddress.IPv4Address(action.parameters['target_host'])
+            _ = ipaddress.IPv4Address(action.parameters['source_host'])
+        except ipaddress.AddressValueError:
+            logger.error(f'One or both of the IP addresses/networks sent by the agent, src:{action.parameters['source_host']}, dst:{action.parameters['target_host']}, are not a real IP addresses/networks.')
+            return current
         logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
@@ -863,6 +878,13 @@ class NetworkSecurityEnvironment(object):
         """
         Executes the FindData action in the environment
         """
+        try:
+            # See if the IPs are actually IPs
+            _ = ipaddress.IPv4Address(action.parameters['target_host'])
+            _ = ipaddress.IPv4Address(action.parameters['source_host'])
+        except ipaddress.AddressValueError:
+            logger.error(f'One or both of the IP addresses/networks sent by the agent, src:{action.parameters['source_host']}, dst:{action.parameters['target_host']}, are not a real IP addresses/networks.')
+            return current
         next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
         logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
@@ -884,6 +906,13 @@ class NetworkSecurityEnvironment(object):
         """
         Executes the ExfiltrateData action in the environment
         """
+        try:
+            # See if the IPs are actually IPs
+            _ = ipaddress.IPv4Address(action.parameters['target_host'])
+            _ = ipaddress.IPv4Address(action.parameters['source_host'])
+        except ipaddress.AddressValueError:
+            logger.error(f'One or both of the IP addresses/networks sent by the agent, src:{action.parameters['source_host']}, dst:{action.parameters['target_host']}, are not a real IP addresses/networks.')
+            return current
         next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
         logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
         # Is the target host controlled?
@@ -928,6 +957,13 @@ class NetworkSecurityEnvironment(object):
         """
         Executes the ExploitService action in the environment
         """
+        try:
+            # See if the IPs are actually IPs
+            _ = ipaddress.IPv4Address(action.parameters['target_host'])
+            _ = ipaddress.IPv4Address(action.parameters['source_host'])
+        except ipaddress.AddressValueError:
+            logger.error(f'One or both of the IP addresses/networks sent by the agent, src:{action.parameters['source_host']}, dst:{action.parameters['target_host']}, are not a real IP addresses/networks.')
+            return current
         next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
         # We don't check if the target is a known_host because it can be a blind attempt to attack
         logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
@@ -965,6 +1001,13 @@ class NetworkSecurityEnvironment(object):
         """
         Executes the ScanNetwork action in the the real world
         """
+        try:
+            # See if the IPs are actually IPs
+            _ = ipaddress.IPv4Network(action.parameters['target_network'])
+            _ = ipaddress.IPv4Address(action.parameters['source_host'])
+        except ipaddress.AddressValueError:
+            logger.error(f'One or both of the IP addresses/networks sent by the agent, src:{action.parameters['source_host']}, dst:{action.parameters['target_network']}, are not a real IP addresses/networks.')
+            return current
         next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
         logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
         nmap_file_xml = 'nmap-result.xml'
@@ -1003,6 +1046,13 @@ class NetworkSecurityEnvironment(object):
         """
         Executes the FindServices action in the real world
         """
+        try:
+            # See if the IPs are actually IPs
+            _ = ipaddress.IPv4Address(action.parameters['target_host'])
+            _ = ipaddress.IPv4Address(action.parameters['source_host'])
+        except ipaddress.AddressValueError:
+            logger.error(f'One or both of the IP addresses/networks sent by the agent, src:{action.parameters['source_host']}, dst:{action.parameters['target_host']}, are not a real IP addresses/networks.')
+            return current
         next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
         logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
         nmap_file_xml = 'nmap-result.xml'
