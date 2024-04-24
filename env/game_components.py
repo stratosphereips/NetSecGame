@@ -107,41 +107,26 @@ class Data():
     owner is the 'user' owner
     id is the string of the data
     """
-    _owner: str
-    _id: str
-    _content: str = ""
-    _type: str = ""
+    owner: str
+    id: str
+    content: str = ""
+    type: str = ""
+    
 
     @property
     def size(self)->int:
         return len(self.content)
     
-    @property
-    def owner(self)->str:
-        return self._owner
-    
-    @property
-    def id(self)->str:
-        return self._id
-    
-    @property
-    def content(self)->str:
-        return self._content
-
-    @property
-    def type(self)->str:
-        return self._type
-    
     def __eq__(self, __o: object) -> bool:
-        # DO NOT COMPARE CONTENT
+        # Only compare id and owner fields
         if isinstance(__o, Data):
-            return self._type == __o.type and self._owner == __o.owner and self._id == __o._id
+            return self.owner == __o.owner and self.id == __o.id
         return False
     
     def deep_equal(self, __o: object) -> bool:
         # compares datapoints WITH content
         if self == __o:
-            return self.content == __o.content
+            return self.content == __o.content and self.type == __o.type and self.size == __o.size
         return False
 
 @enum.unique
@@ -481,7 +466,7 @@ class GameStatus(enum.Enum):
     def __repr__(self) -> str:
         return str(self)
 if __name__ == "__main__":
-    data = Data("test", "test_data", content="content", type="db")
+    data = Data("test", "test_data", content="contdasdent", type="db")
     print(data)
     print(data.size)
-    print(len(data))
+    print(data.content_hash)
