@@ -145,22 +145,17 @@ class NetworkSecurityEnvironment(object):
     def __init__(self, task_config_file) -> None:
         logger.info("Initializing NetSetGame environment")
         # Prepare data structures for all environment components (to be filled in self._process_cyst_config())
-        self._ip_to_hostname = {}
-        self._networks = {}
-        self._services = {}
-        self._data = {}
-
-        # dictionary of physical connections betnween nodes in the environment.
-        self._connections = {} # TODO
-        # list of firewall rules that modify the connectivity se by self._connections
-        self._fw_rules = [] # TODO
+        self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
+        self._networks = {} # A `dict` of the networks present in the environment. Keys: `Network` objects, values `set` of `IP` objects.
+        self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
+        self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
+        self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
         self.hosts_to_start = []
         # Read the conf file passed by the agent for the rest of values
         self.task_config = ConfigParser(task_config_file)
-        
         # Load CYST configuration
         self._process_cyst_config(self.task_config.get_scenario())
         
@@ -470,6 +465,7 @@ class NetworkSecurityEnvironment(object):
         connections = []
         exploits = []
         node_objects = {}
+        fw_rules = []
         #sort objects into categories (nodes and routers MUST be processed before connections!)
         for o in configuration_objects:
             if isinstance(o, NodeConfig):
@@ -548,12 +544,57 @@ class NetworkSecurityEnvironment(object):
                 self._networks[net].append(ip)
 
             #add Firewall rules
-            logger.info(f"\t\tProcessing FW rules in router '{router_obj.id}'")
+            logger.info(f"\t\tReading FW rules in router '{router_obj.id}'")
             for tp in router_obj.traffic_processors:
                 for chain in tp.chains:
                     for rule in chain.rules:
-                        if rule.policy == FirewallPolicy.ALLOW:
-                            self._fw_rules.append(rule)
+                        fw_rules.append(rule)
+        
+        def process_firewall()->dict:
+            # process firewall rules
+            all_ips = set()
+            for ips in self._networks.values():
+                all_ips.update(ips)
+            firewall = {ip:set() for ip in all_ips}
+            if self.task_config.get_use_firewall():
+                logger.info("Firewall enabled - processing FW rules")
+                # LOCAL NETWORKS
+                for net, ips in self._networks.items():
+                    # IF net is local, allow connection between all nodes in it
+                    if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+                        for src in ips:
+                            for dst in ips:
+                                firewall[src].add(dst)
+                
+                # LOCAL TO INTERNET
+                for net, ips in self._networks.items():
+                    # IF net is local, allow connection between all nodes in it
+                    if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+                        for public_net, public_ips in self._networks.items():
+                            if not netaddr.IPNetwork(str(public_net)).ip.is_ipv4_private_use():
+                                for src in ips:
+                                    for dst in public_ips:
+                                        firewall[src].add(dst)
+                                        #add self loop:
+                                        firewall[dst].add(dst)
+                # FW RULES FROM CONFIG
+                for rule in fw_rules:
+                    if rule.policy == FirewallPolicy.ALLOW:
+                        src_net = netaddr.IPNetwork(rule.src_net)
+                        dst_net = netaddr.IPNetwork(rule.dst_net)
+                        logger.info(f"\t{rule}")
+                        for src_ip in all_ips:
+                            if str(src_ip) in src_net:
+                                for dst_ip in all_ips:
+                                    if str(dst_ip) in dst_net:
+                                        firewall[src_ip].add(dst_ip)
+                                        logger.info(f"\t\tAdding {src_ip} -> {dst_ip}")
+            else:
+                logger.info("Firewall disabled, allowing all connections")
+                for src_ip in all_ips:
+                    for dst_ip in all_ips:
+                        firewall[src_ip].add(dst_ip)
+            return firewall
         
         #process Nodes
         for n in nodes:
@@ -562,13 +603,9 @@ class NetworkSecurityEnvironment(object):
         for r in routers:
             process_router_config(r)
 
-        #connections
-        logger.info("\tProcessing connections in the network")
-        self._connections = np.zeros([len(node_to_id),len(node_to_id)])
-        for c in connections:
-            if c.src_id != "internet" and c.dst_id != "internet":
-                self._connections[node_to_id[c.src_id],node_to_id[c.dst_id]] = 1
-                #TODO FIX THE INTERNET Node issue in connections
+        # process firewall rules
+        self._firewall = process_firewall()
+        
         logger.info("\tProcessing available exploits")
 
         #exploits
@@ -644,6 +681,14 @@ class NetworkSecurityEnvironment(object):
                 new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
         self._networks = new_self_networks
         
+        #self._firewall
+        new_self_firewall = {}
+        for ip, dst_ips in self._firewall.items():
+            new_self_firewall[mapping_ips[ip]] = set()
+            for dst_ip in dst_ips:
+                new_self_firewall[mapping_ips[ip]].add(mapping_ips[dst_ip])
+        self._firewall = new_self_firewall
+
         #self._ip_to_hostname
         new_self_ip_to_hostname  = {}
         for ip, hostname in self._ip_to_hostname.items():
@@ -761,6 +806,14 @@ class NetworkSecurityEnvironment(object):
         next_data = copy.deepcopy(current.known_data)
         return next_nets, next_known_h, next_controlled_h, next_services, next_data
 
+    def _firewall_check(self, src_ip:components.IP, dst_ip:components.IP)->bool:
+        """Checks if firewall allows connection from 'src_ip to ''dst_ip'"""
+        try:
+            connection_allowed = dst_ip in self._firewall[src_ip]
+        except KeyError:
+            connection_allowed = False
+        return connection_allowed
+
     def _execute_scan_network_action(self, current:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the ScanNetwork action in the environment
@@ -772,8 +825,11 @@ class NetworkSecurityEnvironment(object):
             for ip in self._ip_to_hostname.keys(): #check if IP exists
                 logger.info(f"\t\tChecking if {ip} in {action.parameters['target_network']}")
                 if str(ip) in netaddr.IPNetwork(str(action.parameters["target_network"])):
-                    logger.info(f"\t\t\tAdding {ip} to new_ips")
-                    new_ips.add(ip)
+                    if self._firewall_check(action.parameters["source_host"], ip):
+                        logger.info(f"\t\t\tAdding {ip} to new_ips")
+                        new_ips.add(ip)
+                    else:
+                        logger.info(f"\t\t\tConnection {action.parameters['source_host']} -> {ip} blocked by FW. Skipping")
             next_known_h = next_known_h.union(new_ips)
         else:
             logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
@@ -786,16 +842,19 @@ class NetworkSecurityEnvironment(object):
         next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
         logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-            found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
-            logger.info(f"\t\t\tFound {len(found_services)}: {found_services}")
-            if len(found_services) > 0:
-                next_services[action.parameters["target_host"]] = found_services
+            if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
+                found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
+                logger.info(f"\t\t\tFound {len(found_services)}: {found_services}")
+                if len(found_services) > 0:
+                    next_services[action.parameters["target_host"]] = found_services
 
-                #if host was not known, add it to the known_hosts ONLY if there are some found services
-                if action.parameters["target_host"] not in next_known_h:
-                    logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
-                    next_known_h.add(action.parameters["target_host"])
-                    next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+                    #if host was not known, add it to the known_hosts ONLY if there are some found services
+                    if action.parameters["target_host"] not in next_known_h:
+                        logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
+                        next_known_h.add(action.parameters["target_host"])
+                        next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+            else:
+                logger.info(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
@@ -807,13 +866,16 @@ class NetworkSecurityEnvironment(object):
         next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
         logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
-            new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
-            logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
-            if len(new_data) > 0:
-                if action.parameters["target_host"] not in next_data.keys():
-                    next_data[action.parameters["target_host"]] = new_data
-                else:
-                    next_data[action.parameters["target_host"]] = next_data[action.parameters["target_host"]].union(new_data)
+            if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
+                new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
+                logger.info(f"\t\t\t Found {len(new_data)}: {new_data}")
+                if len(new_data) > 0:
+                    if action.parameters["target_host"] not in next_data.keys():
+                        next_data[action.parameters["target_host"]] = new_data
+                    else:
+                        next_data[action.parameters["target_host"]] = next_data[action.parameters["target_host"]].union(new_data)
+            else:
+                logger.info(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
@@ -832,27 +894,30 @@ class NetworkSecurityEnvironment(object):
                 logger.info(f"\t\t\t {action.parameters['source_host']} is under-control: {current.controlled_hosts}")
                 # Is the source host in the list of hosts we know data from? (this is to avoid the keyerror later in the if)
                 # Does the current state for THIS source already know about this data?
-                if action.parameters['source_host'] in current.known_data.keys() and action.parameters["data"] in current.known_data[action.parameters["source_host"]]:
-                    # Does the source host have any data?
-                    if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
-                        # Does the source host have this data?
-                        if action.parameters["data"] in self._data[self._ip_to_hostname[action.parameters["source_host"]]]:
-                            logger.info("\t\t\t Data present in the source_host")
-                            if action.parameters["target_host"] not in next_data.keys():
-                                next_data[action.parameters["target_host"]] = {action.parameters["data"]}
+                if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
+                    if action.parameters['source_host'] in current.known_data.keys() and action.parameters["data"] in current.known_data[action.parameters["source_host"]]:
+                        # Does the source host have any data?
+                        if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
+                            # Does the source host have this data?
+                            if action.parameters["data"] in self._data[self._ip_to_hostname[action.parameters["source_host"]]]:
+                                logger.info("\t\t\t Data present in the source_host")
+                                if action.parameters["target_host"] not in next_data.keys():
+                                    next_data[action.parameters["target_host"]] = {action.parameters["data"]}
+                                else:
+                                    next_data[action.parameters["target_host"]].add(action.parameters["data"])
+                                # If the data was exfiltrated to a new host, remember the data in the new nost in the env
+                                if self._ip_to_hostname[action.parameters["target_host"]] not in self._data.keys():
+                                    self._data[self._ip_to_hostname[action.parameters["target_host"]]] = {action.parameters["data"]}
+                                else:
+                                    self._data[self._ip_to_hostname[action.parameters["target_host"]]].add(action.parameters["data"])
                             else:
-                                next_data[action.parameters["target_host"]].add(action.parameters["data"])
-                            # If the data was exfiltrated to a new host, remember the data in the new nost in the env
-                            if self._ip_to_hostname[action.parameters["target_host"]] not in self._data.keys():
-                                self._data[self._ip_to_hostname[action.parameters["target_host"]]] = {action.parameters["data"]}
-                            else:
-                                self._data[self._ip_to_hostname[action.parameters["target_host"]]].add(action.parameters["data"])
+                                logger.info("\t\t\tCan not exfiltrate. Source host does not have this data.")
                         else:
-                            logger.info("\t\t\tCan not exfiltrate. Source host does not have this data.")
+                            logger.info("\t\t\tCan not exfiltrate. Source host does not have any data.")
                     else:
-                        logger.info("\t\t\tCan not exfiltrate. Source host does not have any data.")
+                        logger.info("\t\t\tCan not exfiltrate. Agent did not find this data yet.")
                 else:
-                    logger.info("\t\t\tCan not exfiltrate. Agent did not find this data yet.")
+                    logger.info(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
             else:
                 logger.info("\t\t\tCan not exfiltrate. Source host is not controlled.")
         else:
@@ -868,26 +933,28 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
             if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
-                logger.info("\t\t\tValid host")
-                if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
-                    if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
-                        if action.parameters["target_host"] in next_services: #does the agent know about any services this host have?
-                            if action.parameters["target_service"] in next_services[action.parameters["target_host"]]:
-                                logger.info("\t\t\tValid service")
-                                if action.parameters["target_host"] not in next_controlled_h:
-                                    next_controlled_h.add(action.parameters["target_host"])
-                                    logger.info("\t\tAdding to controlled_hosts")
-                                new_networks = self._get_networks_from_host(action.parameters["target_host"])
-                                logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
-                                next_nets = next_nets.union(new_networks)
+                if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
+                    if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
+                        if action.parameters["target_service"] in self._services[self._ip_to_hostname[action.parameters["target_host"]]]: #does it have the service in question?
+                            if action.parameters["target_host"] in next_services: #does the agent know about any services this host have?
+                                if action.parameters["target_service"] in next_services[action.parameters["target_host"]]:
+                                    logger.info("\t\t\tValid service")
+                                    if action.parameters["target_host"] not in next_controlled_h:
+                                        next_controlled_h.add(action.parameters["target_host"])
+                                        logger.info("\t\tAdding to controlled_hosts")
+                                    new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                                    logger.info(f"\t\t\tFound {len(new_networks)}: {new_networks}")
+                                    next_nets = next_nets.union(new_networks)
+                                else:
+                                    logger.info("\t\t\tCan not exploit. Agent does not know about target host selected service")
                             else:
-                                logger.info("\t\t\tCan not exploit. Agent does not know about target host selected service")
+                                logger.info("\t\t\tCan not exploit. Agent does not know about target host having any service")
                         else:
-                            logger.info("\t\t\tCan not exploit. Agent does not know about target host having any service")
+                            logger.info("\t\t\tCan not exploit. Target host does not the service that was attempted.")
                     else:
-                        logger.info("\t\t\tCan not exploit. Target host does not the service that was attempted.")
+                        logger.info("\t\t\tCan not exploit. Target host does not have any services.")
                 else:
-                    logger.info("\t\t\tCan not exploit. Target host does not have any services.")
+                    logger.info(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
             else:
                 logger.info("\t\t\tCan not exploit. Target host does not exist.")
         else:
@@ -1087,6 +1154,7 @@ class NetworkSecurityEnvironment(object):
             self._actions_played.append(action)
 
             # 1. Perform the action
+            self._actions_played.append(action)
             if random.random() <= action.type.default_success_p or action_type == 'realworld':
                 next_state = self._execute_action(self._current_state, action, action_type=action_type)
             else:
