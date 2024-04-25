@@ -30,6 +30,15 @@ class IP():
     """
     ip: str
 
+    def __post_init__(self):
+        """
+        Check if the provided IP is valid
+        """
+        try:
+            ipaddress.ip_address(self.ip)
+        except ValueError:
+            raise ValueError("Invalid IP address provided")
+
     def __repr__(self):
         return self.ip
 
