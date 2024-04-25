@@ -517,7 +517,7 @@ class NetworkSecurityEnvironment(object):
                     for data in service.private_data:
                         if node_obj.id not in self._data:
                             self._data[node_obj.id] = set()
-                        datapoint = components.Data(data.owner, data.description, size=len(data.description))
+                        datapoint = components.Data(data.owner, data.description)
                         self._data[node_obj.id].add(datapoint)
                         # add content
                         self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
