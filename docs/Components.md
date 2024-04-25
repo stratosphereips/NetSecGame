@@ -26,10 +26,12 @@ Service class holds information about services running in hosts. Each Service ha
 Example: `s = Service('postgresql', 'passive', '14.3.0', False)`
 
 ## Data
-Data class holds information about datapoints (files) present in the NetSecGame.
+Data class holds information about datapoints (files) present in the NetSecGame. Datapoints DO NOT hold the content of files.
 Each data instance has two parameters:
 - `owner`:str - specifying the user who ownes this datapoint
-- `id`: str - unique identifier of the datapoint
+- `id`: str - unique identifier of the datapoint in a host
+- `size`: int - size of the datapoint (optional, default=0)
+- `type`: str - indetification of a type of the file (optional, default="")
 
 Example:`Data("User1", "DatabaseData")`
 
