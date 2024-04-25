@@ -1,6 +1,6 @@
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 # Library of helpful functions and objects to play the net sec game
-from dataclasses import dataclass, field, InitVar
+from dataclasses import dataclass, field
 import dataclasses
 from collections import namedtuple
 import json
