@@ -8,7 +8,7 @@ import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, Observation, ActionType, GameStatus
-from utils.utils import observation_as_dict
+from utils.utils import observation_as_dict, get_logging_level
 from pathlib import Path
 import os
 import signal
@@ -377,6 +377,15 @@ if __name__ == "__main__":
         type=str,
         default="env/netsecenv_conf.yaml",
     )
+    parser.add_argument(
+        "-l",
+        "--debug_level",
+        help="Define the debug level for the logs. DEBUG, INFO, WARNING, ERROR, CRITICAL",
+        action="store",
+        required=False,
+        type=str,
+        default="ERROR",
+    )
 
     args = parser.parse_args()
     print(args)
@@ -384,13 +393,18 @@ if __name__ == "__main__":
     log_filename = Path("coordinator.log")
     if not log_filename.parent.exists():
         os.makedirs(log_filename.parent)
+
+    # Convert the logging level in the args to the level to use
+    pass_level = get_logging_level(args.debug_level)
+
     logging.basicConfig(
         filename=log_filename,
         filemode="w",
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.ERROR,
+        level=pass_level,
     )
+
     # load config for coordinator
     with open(args.configfile, "r") as jfile:
         confjson = json.load(jfile)
