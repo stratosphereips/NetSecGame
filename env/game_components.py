@@ -100,7 +100,7 @@ class Network():
 """
 Data represents the data object in the NetSecGame
 """
-@dataclass(frozen=True, eq=True, order=True)
+@dataclass(frozen=True, eq=True)
 class Data():
     """
     Class to define dta
@@ -112,23 +112,24 @@ class Data():
     content: str = ""
     type: str = ""
     
+    def __init__(self, owner:str, id:str, content:str, type:str):
+        self.owner = owner
+        self.id = id
+        self.content = content
+        self.type = type
+        self._hash = hash((owner, id, content, type))
+        self._content_hash = hash(content)
 
     @property
     def size(self)->int:
         return len(self.content)
     
-    def __eq__(self, __o: object) -> bool:
-        # Only compare id and owner fields
-        if isinstance(__o, Data):
-            return self.owner == __o.owner and self.id == __o.id
-        return False
+    def __hash__(self) -> int:
+        return self._hash
     
-    def deep_equal(self, __o: object) -> bool:
-        # compares datapoints WITH content
-        if self == __o:
-            return self.content == __o.content and self.type == __o.type and self.size == __o.size
-        return False
-
+    @property
+    def content_hash(self)->int:
+        return self._content_hash
 @enum.unique
 class ActionType(enum.Enum):
     """
@@ -466,7 +467,11 @@ class GameStatus(enum.Enum):
     def __repr__(self) -> str:
         return str(self)
 if __name__ == "__main__":
-    data = Data("test", "test_data", content="contdasdent", type="db")
+    data = Data("test", "test_data", content="content", type="db")
     print(data)
     print(data.size)
-    print(data.content_hash)
+
+    s = set()
+    s.add(data)
+    s.add( Data("test", "test_data", content="new_content", type="db"))
+    print(s)
