@@ -15,7 +15,6 @@ import json
 from utils.utils import ConfigParser
 import subprocess
 import xml.etree.ElementTree as ElementTree
-import ipaddress
 
 # Set the logging
 logger = logging.getLogger('Netsecenv')
