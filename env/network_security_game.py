@@ -1125,6 +1125,8 @@ class NetworkSecurityEnvironment(object):
             self._create_new_network_mapping()
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
+        # reset self._data_content to orignal state
+        self._data_content_original = copy.deepcopy(self._data_content_original)
         # create starting state (randomized if needed)
         self._current_state = self._create_starting_state()
         # create win conditions for this episode (randomize if needed)
