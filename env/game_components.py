@@ -1,6 +1,6 @@
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 # Library of helpful functions and objects to play the net sec game
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, InitVar
 import dataclasses
 from collections import namedtuple
 import json
@@ -100,7 +100,7 @@ class Network():
 """
 Data represents the data object in the NetSecGame
 """
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True, eq=True, order=True)
 class Data():
     """
     Class to define dta
@@ -109,27 +109,11 @@ class Data():
     """
     owner: str
     id: str
-    content: str = ""
+    size: int = 0
     type: str = ""
     
-    def __init__(self, owner:str, id:str, content:str, type:str):
-        self.owner = owner
-        self.id = id
-        self.content = content
-        self.type = type
-        self._hash = hash((owner, id, content, type))
-        self._content_hash = hash(content)
-
-    @property
-    def size(self)->int:
-        return len(self.content)
-    
     def __hash__(self) -> int:
-        return self._hash
-    
-    @property
-    def content_hash(self)->int:
-        return self._content_hash
+        return hash((self.owner, self.id, self.size, self.type))
 @enum.unique
 class ActionType(enum.Enum):
     """
@@ -467,11 +451,12 @@ class GameStatus(enum.Enum):
     def __repr__(self) -> str:
         return str(self)
 if __name__ == "__main__":
-    data = Data("test", "test_data", content="content", type="db")
-    print(data)
-    print(data.size)
+    data1 = Data(owner="test", id="test_data", content="content", type="db")
+    data2 = Data(owner="test", id="test_data", content="content", type="db")
+    # print(data)
+    # print(data.size)
 
-    s = set()
-    s.add(data)
-    s.add( Data("test", "test_data", content="new_content", type="db"))
-    print(s)
+    # s = set()
+    # s.add(data)
+    # s.add( Data("test", "test_data", content="new_content", type="db"))
+    # print(s)
