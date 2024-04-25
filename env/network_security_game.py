@@ -520,7 +520,7 @@ class NetworkSecurityEnvironment(object):
                         datapoint = components.Data(data.owner, data.description, size=len(data.description))
                         self._data[node_obj.id].add(datapoint)
                         # add content
-                        self._data_content[node_to_id, datapoint.id] = f"Content of {datapoint.id}"
+                        self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
                 except AttributeError:
                     pass
                     #service does not contain any data
