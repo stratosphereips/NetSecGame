@@ -150,6 +150,7 @@ class NetworkSecurityEnvironment(object):
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
         self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
+        self._data_content = {} #content of each datapoint from self._data
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
@@ -228,6 +229,7 @@ class NetworkSecurityEnvironment(object):
 
         # Make a copy of data placements so it is possible to reset to it when episode ends
         self._data_original = copy.deepcopy(self._data)
+        self._data_content_original = copy.deepcopy(self._data_content)
         
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
@@ -515,7 +517,10 @@ class NetworkSecurityEnvironment(object):
                     for data in service.private_data:
                         if node_obj.id not in self._data:
                             self._data[node_obj.id] = set()
-                        self._data[node_obj.id].add(components.Data(data.owner, data.description))
+                        datapoint = components.Data(data.owner, data.description)
+                        self._data[node_obj.id].add(datapoint)
+                        # add content
+                        self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
                 except AttributeError:
                     pass
                     #service does not contain any data
@@ -732,7 +737,7 @@ class NetworkSecurityEnvironment(object):
         found_services = {}
         if host_ip in self._ip_to_hostname: #is it existing IP?
             if self._ip_to_hostname[host_ip] in self._services: #does it have any services?
-                if host_ip in controlled_hosts: # Shoul  local services be included ?
+                if host_ip in controlled_hosts: # Should  local services be included ?
                     found_services = {s for s in self._services[self._ip_to_hostname[host_ip]]}
                 else:
                     found_services = {s for s in self._services[self._ip_to_hostname[host_ip]] if not s.is_local}
@@ -766,6 +771,21 @@ class NetworkSecurityEnvironment(object):
             logger.debug("\t\t\tCan't get data in host. The host is not controlled.")
         return data
 
+    def _get_data_content(self, host_ip:str, data_id:str)->str:
+        """
+        Returns content of data identified by a host_ip and data_ip.
+        """
+        content = None
+        if host_ip in self._ip_to_hostname: #is it existing IP?
+            hostname = self._ip_to_hostname[host_ip]
+            if (hostname, data_id) in self._data_content:
+                content = self._data_content[hostname,data_id]
+            else:
+                logger.info(f"\tData '{data_id}' not found in host '{hostname}'({host_ip})")
+        else:
+            logger.debug("\Data content not found because target IP does not exists.")
+        return content
+    
     def _execute_action(self, current:components.GameState, action:components.Action, action_type='netsecenv')-> components.GameState:
         """
         Execute the action and update the values in the state
@@ -1120,6 +1140,8 @@ class NetworkSecurityEnvironment(object):
             self._create_new_network_mapping()
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
+        # reset self._data_content to orignal state
+        self._data_content_original = copy.deepcopy(self._data_content_original)
         # create starting state (randomized if needed)
         self._current_state = self._create_starting_state()
         # create win conditions for this episode (randomize if needed)

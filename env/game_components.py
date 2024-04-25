@@ -109,7 +109,11 @@ class Data():
     """
     owner: str
     id: str
-
+    size: int = 0
+    type: str = ""
+    
+    def __hash__(self) -> int:
+        return hash((self.owner, self.id, self.size, self.type))
 @enum.unique
 class ActionType(enum.Enum):
     """
@@ -446,3 +450,13 @@ class GameStatus(enum.Enum):
                 return GameStatus.BAD_REQUEST
     def __repr__(self) -> str:
         return str(self)
+if __name__ == "__main__":
+    data1 = Data(owner="test", id="test_data", content="content", type="db")
+    data2 = Data(owner="test", id="test_data", content="content", type="db")
+    # print(data)
+    # print(data.size)
+
+    # s = set()
+    # s.add(data)
+    # s.add( Data("test", "test_data", content="new_content", type="db"))
+    # print(s)

@@ -128,29 +128,66 @@ class TestData:
     """
     Test cases for the Data class
     """
-    def test_create_data(self):
+    def test_create_data_minimal(self):
         """
-        Test that the data are created and all elements can be accessed 
+        Test that the data object is created with ONLY required fields (using default for the rest)
         """
-        data = Data("Ondra", "Password")
+        data = Data(owner="Ondra", id="Password")
         assert data.owner == "Ondra"
         assert data.id == "Password"
+        assert data.type == ""
+        assert data.size == 0
+    
+    def test_create_data_all(self):
+        """
+        Test that the data object is created with ALL fields (using default for the rest)
+        """
+        data = Data(owner="Ondra", id="Password",size=42, type="txt")
+        assert data.owner == "Ondra"
+        assert data.id == "Password"
+        assert data.type == "txt"
+        assert data.size == 42
 
     def test_data_equal(self):
         """
-        Test that two data objects with the same parameters are equal
+        Test that two data objects with the same required parameters are equal
         """
         data = Data("Ondra", "Password")
         data2 = Data("Ondra", "Password")
+        # test equality with all fields used
+        data3 = Data(owner="Ondra", id="Password",size=42, type="txt")
+        data4 = Data(owner="Ondra", id="Password", size=42, type="txt")
         assert data == data2
+        assert data3 == data4
 
     def test_data_not_equal(self):
         """
-        Test that two data objects with different parameters are not equal
+        Test that two data objects with different required parameters are NOT equal
         """
         data = Data("Ondra", "Password")
-        data2 = Data("User2", "WebData")
+        data2 = Data("ChuckNorris", "Password")
+        data3 = Data(owner="Ondra", id="Password",size=42, type="txt")
+        data4 = Data(owner="Ondra", id="DifferentPassword",size=41, type="rsa")
         assert data != data2
+        assert data3 != data4
+    
+    def test_data_hash_equal(self):
+        data = Data("Ondra", "Password")
+        data2 = Data("Ondra", "Password")
+        # test equality with all fields used
+        data3 = Data(owner="Ondra", id="Password",size=42, type="txt")
+        data4 = Data(owner="Ondra", id="Password",size=42, type="txt")
+        assert hash(data) == hash(data2)
+        assert hash(data3) == hash(data4)
+
+    def test_data_hash_not_equal(self):
+        data = Data("Ondra", "Password")
+        data2 = Data("Ondra", "NewPassword")
+        # test equality with all fields used
+        data3 = Data(owner="Ondra", id="Password",size=42, type="txt")
+        data4 = Data(owner="Ondra", id="Password",size=41, type="rsa")
+        assert hash(data) != hash(data2)
+        assert hash(data3) != hash(data4)
 
 class TestAction:
     """
@@ -359,7 +396,7 @@ class TestAction:
 
         # Exfiltrate Data
         action = Action(action_type=ActionType.ExfiltrateData, params={"target_host":IP("172.16.1.3"),
-                         "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")})
+                         "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey", size=42, type="pub")})
         action_json = action.as_json()
         try:
             data = json.loads(action_json)
@@ -369,7 +406,7 @@ class TestAction:
         assert "ActionType.ExfiltrateData" in data["action_type"]
         assert ("parameters", {"target_host": {"ip": "172.16.1.3"},
                     "source_host" : {"ip": "172.16.1.2"},
-                    "data":{"owner":"User2", "id":"PublicKey"}}) in data.items()
+                    "data":{"owner":"User2", "id":"PublicKey", "size":42 ,"type":"pub"}}) in data.items()
     
     def test_action_scan_network_serialization(self):
         action = Action(action_type=ActionType.ScanNetwork,
@@ -653,7 +690,7 @@ class TestGameState:
                 known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
                 known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
                 known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
-                            IP("192.168.1.2"):{Data("McGiver", "data2")}})
+                            IP("192.168.1.2"):{Data("McGiver", "data2", 42, "txt")}})
         game_json = game_state.as_json()
         try:
             data = json.loads(game_json)
@@ -664,8 +701,9 @@ class TestGameState:
         assert {"ip": "192.168.1.3"} in data["known_hosts"]
         assert {"ip": "192.168.1.2"} in data["controlled_hosts"]
         assert ("192.168.1.3", [{"name": "service1", "type": "public", "version": "1.01", "is_local": True}]) in data["known_services"].items()
-        assert {"owner": "ChuckNorris", "id": "data1"} in  data["known_data"]["192.168.1.3"]
-        assert {"owner": "ChuckNorris", "id": "data2"} in  data["known_data"]["192.168.1.3"]
+        assert {"owner": "ChuckNorris", "id": "data1", "size":0, "type":""} in  data["known_data"]["192.168.1.3"]
+        assert {"owner": "ChuckNorris", "id": "data2", "size":0, "type":""} in  data["known_data"]["192.168.1.3"]
+        assert {"owner": "McGiver", "id": "data2", "size":42, "type":"txt"} in  data["known_data"]["192.168.1.2"]
     
     def test_game_state_json_deserialized(self):
         game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
@@ -690,8 +728,8 @@ class TestGameState:
         assert {"ip": "192.168.1.3"} in game_dict["known_hosts"]
         assert {"ip": "192.168.1.2"} in game_dict["controlled_hosts"]
         assert ("192.168.1.3", [{"name": "service1", "type": "public", "version": "1.01", "is_local": True}]) in game_dict["known_services"].items()
-        assert {"owner": "ChuckNorris", "id": "data1"} in  game_dict["known_data"]["192.168.1.3"]
-        assert {"owner": "ChuckNorris", "id": "data2"} in  game_dict["known_data"]["192.168.1.3"]
+        assert {"owner": "ChuckNorris", "id": "data1", "size":0, "type":""} in  game_dict["known_data"]["192.168.1.3"]
+        assert {"owner": "ChuckNorris", "id": "data2", "size":0, "type":""} in  game_dict["known_data"]["192.168.1.3"]
     
     def test_game_state_from_dict(self):
         game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
