@@ -737,7 +737,7 @@ class NetworkSecurityEnvironment(object):
         found_services = {}
         if host_ip in self._ip_to_hostname: #is it existing IP?
             if self._ip_to_hostname[host_ip] in self._services: #does it have any services?
-                if host_ip in controlled_hosts: # Shoul  local services be included ?
+                if host_ip in controlled_hosts: # Should  local services be included ?
                     found_services = {s for s in self._services[self._ip_to_hostname[host_ip]]}
                 else:
                     found_services = {s for s in self._services[self._ip_to_hostname[host_ip]] if not s.is_local}
@@ -771,6 +771,21 @@ class NetworkSecurityEnvironment(object):
             logger.debug("\t\t\tCan't get data in host. The host is not controlled.")
         return data
 
+    def _get_data_content(self, host_ip:str, data_id:str)->str:
+        """
+        Returns content of data identified by a host_ip and data_ip.
+        """
+        content = None
+        if host_ip in self._ip_to_hostname: #is it existing IP?
+            hostname = self._ip_to_hostname[host_ip]
+            if (hostname, data_id) in self._data_content:
+                content = self._data_content[hostname,data_id]
+            else:
+                logger.info(f"\tData '{data_id}' not found in host '{hostname}'({host_ip})")
+        else:
+            logger.debug("\Data content not found because target IP does not exists.")
+        return content
+    
     def _execute_action(self, current:components.GameState, action:components.Action, action_type='netsecenv')-> components.GameState:
         """
         Execute the action and update the values in the state
