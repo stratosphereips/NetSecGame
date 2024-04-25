@@ -150,6 +150,7 @@ class NetworkSecurityEnvironment(object):
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
         self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
+        self._data_content = {} #content of each datapoint from self._data
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
@@ -228,6 +229,7 @@ class NetworkSecurityEnvironment(object):
 
         # Make a copy of data placements so it is possible to reset to it when episode ends
         self._data_original = copy.deepcopy(self._data)
+        self._data_content_original = copy.deepcopy(self._data_content)
         
         # CURRENT STATE OF THE GAME - all set to None until self.reset()
         self._current_state = None
@@ -515,7 +517,10 @@ class NetworkSecurityEnvironment(object):
                     for data in service.private_data:
                         if node_obj.id not in self._data:
                             self._data[node_obj.id] = set()
-                        self._data[node_obj.id].add(components.Data(data.owner, data.description))
+                        datapoint = components.Data(data.owner, data.description, size=len(data.description))
+                        self._data[node_obj.id].add(datapoint)
+                        # add content
+                        self._data_content[node_to_id, datapoint.id] = f"Content of {datapoint.id}"
                 except AttributeError:
                     pass
                     #service does not contain any data
