@@ -295,7 +295,7 @@ def update_cmap(data, cm, name):
         new_cm = from_list(name, cm(range(0,len(data))), len(data), )
     return new_cm
 
-def cluster_combined_trajectories(game_plays, filename=None, end_reason=None):
+def cluster_combined_trajectories(game_plays, filename=None, end_reason=None, optimal_gamelays=None):
     action_conversion = {
         ActionType.ScanNetwork:0,
         ActionType.FindServices:1,
@@ -303,51 +303,59 @@ def cluster_combined_trajectories(game_plays, filename=None, end_reason=None):
         ActionType.ExploitService:3,
         ActionType.ExfiltrateData:4,
     }
-
-    trajectory_steps = []
-    for play in game_plays:
-        if end_reason and play["end_reason"] not in end_reason:
-            continue
-        for i, step in enumerate(play["trajectory"]):
-            features = []
-            state = GameState.from_dict(step["s"])
-            next_state = GameState.from_dict(step["s_next"])
-            action = Action.from_dict(step["a"])
-            reward = step["r"]
-            features += state_size(state)
-            features += state_size(next_state)
-            features += [state_diff(state, next_state)]
-            features.append(reward)
-            #features += [i]
-            if ["end_reason"] == "goal_reached":
-                final_reward = 100
-            elif ["end_reason"] == "detected":
-                final_reward = -5
-            else:
-                final_reward = -1
-            features += [-1*(len(play)-i)+final_reward]
-            action_type_one_hot = [0 for _ in range(len(action_conversion))]
-            action_type_one_hot[action_conversion[action.type]] = 1
-            features += action_type_one_hot
-            trajectory_steps.append({"features":features,
-             "action_type": action_conversion[action.type],
-             "model":play["model"],
-             "timestamp": i,
-             "end_reason": play["end_reason"]         
-             })
-    scaled_data = StandardScaler().fit_transform([x["features"] for x in trajectory_steps])
+    def extract_features(game_plays, end_reason=None):
+        trajectory_steps = []
+        for play in game_plays:
+            if end_reason and play["end_reason"] not in end_reason:
+                continue
+            for i, step in enumerate(play["trajectory"]):
+                features = []
+                state = GameState.from_dict(step["s"])
+                next_state = GameState.from_dict(step["s_next"])
+                print(step["a"])
+                action =  Action(ActionType.from_string(step["a"]["type"]), {})
+                reward = step["r"]
+                features += state_size(state)
+                features += state_size(next_state)
+                features += [state_diff(state, next_state)]
+                features.append(reward)
+                #features += [i]
+                if ["end_reason"] == "goal_reached":
+                    final_reward = 100
+                elif ["end_reason"] == "detected":
+                    final_reward = -5
+                else:
+                    final_reward = -1
+                features += [-1*(len(play)-i)+final_reward]
+                action_type_one_hot = [0 for _ in range(len(action_conversion))]
+                action_type_one_hot[action_conversion[action.type]] = 1
+                features += action_type_one_hot
+                trajectory_steps.append({"features":features,
+                "action_type": action_conversion[action.type],
+                "model":play["model"],
+                "timestamp": i,
+                "end_reason": play["end_reason"]         
+                })
+        return trajectory_steps
+    trajectory_steps = extract_features(game_plays, end_reason)
+    optimal_steps = extract_features(optimal_gamelays, end_reason)
+    scaler = StandardScaler().fit([x["features"] for x in trajectory_steps])
+    scaled_data = scaler.transform([x["features"] for x in trajectory_steps])
+    scaled_optimal = scaler.transform([x["features"] for x in optimal_steps])
     model_types = sorted(set([x["model"] for x in trajectory_steps]))
     model_type_conversion = {x:i for i,x in enumerate(model_types)}
 
     end_reasons = sorted(set([x["end_reason"] for x in trajectory_steps]))
     end_reason_conversion = {x:i for i,x in enumerate(end_reasons)}
     
-    reducer = umap.UMAP(metric="cosine",n_neighbors=50, min_dist=0.9,transform_seed=42)
-    embedding = reducer.fit_transform(scaled_data)
+    reducer = umap.UMAP(metric="cosine",n_neighbors=50, min_dist=0.9,transform_seed=42).fit(scaled_data)
+    embedding = reducer.transform(scaled_data)
+    embedding_optimal = reducer.transform(scaled_optimal)
     fig, ((ax1, ax2),(ax3,ax4)) = plt.subplots(2, 2, figsize=(12, 8))
     #fig.suptitle('Trajectory step comparison')
     ax1.set_title("Step number")
     im1= ax1.scatter(embedding[:, 0], embedding[:, 1], c=[x["timestamp"] for x in trajectory_steps], cmap='plasma', s=0.2, alpha=0.5)
+    ax1.scatter(embedding_optimal[:, 0], embedding_optimal[:, 1], c="cyan", marker="x")
     divider = make_axes_locatable(ax1)
     cax = divider.append_axes('right', size='5%', pad=0.05)
     fig.colorbar(im1, cax=cax, orientation='vertical')
@@ -393,30 +401,33 @@ def cluster_combined_trajectories(game_plays, filename=None, end_reason=None):
 
 if __name__ == '__main__':
 
-
     #END_REASON = ["goal_reached", "detected"]
     # END_REASON = ["detected", "max_steps
-    END_REASON = None
-    #END_REASON = ["goal_reached"]
+    #END_REASON = None
+    END_REASON = ["goal_reached"]
 
     # combine
     game_plays_q_learning = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
     game_plays_gpt = read_json("NSG_trajectories_GPT3.json")
     game_plays_conceptual = read_json("NSG_trajectories_experiment47-episodes-680000.json")
-    barplot_action_efficiency(
-     [game_plays_q_learning, game_plays_conceptual, game_plays_gpt],
-     ("Q-learning", "Conceptual-learning", "LLM (GPT 3.5)"),
-     end_reason=["goal_reached"],
-    )
-    get_action_type_barplot_per_step(game_plays_q_learning, filename="plot_by_action_q_learning.png", end_reason=END_REASON)
-    get_action_type_barplot_per_step(game_plays_conceptual, filename="plot_by_action_concepts.png", end_reason=END_REASON)
-    get_action_type_barplot_per_step(game_plays_gpt, filename="plot_by_action_gpt.png", end_reason=END_REASON)
+    print("optimal")
+    game_plays_optimal = read_json("NSG_trajectories_optimal.json")
+    # barplot_action_efficiency(
+    #  [game_plays_q_learning, game_plays_conceptual, game_plays_gpt],
+    #  ("Q-learning", "Conceptual-learning", "LLM (GPT 3.5)"),
+    #  end_reason=["goal_reached"],
+    # )
+    # get_action_type_barplot_per_step(game_plays_q_learning, filename="plot_by_action_q_learning.png", end_reason=END_REASON)
+    # get_action_type_barplot_per_step(game_plays_conceptual, filename="plot_by_action_concepts.png", end_reason=END_REASON)
+    # get_action_type_barplot_per_step(game_plays_gpt, filename="plot_by_action_gpt.png", end_reason=END_REASON)
     for play in game_plays_q_learning:
         play["model"] = "Q-learning"
     for play in game_plays_gpt:
         play["model"] = "GPT-3.5"
     for play in game_plays_conceptual:
         play["model"] = "Q-learning-concepts"
+    for play in game_plays_optimal:
+        play["model"] = "Optimal"
 
     game_plays_combined = game_plays_q_learning + game_plays_gpt+game_plays_conceptual
-    cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON)
+    cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_with_optimal_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON,optimal_gamelays=game_plays_optimal)
