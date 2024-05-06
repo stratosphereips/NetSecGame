@@ -415,13 +415,13 @@ if __name__ == "__main__":
         "model": args.llm,
         "memory_len": args.memory_buffer,
         "episodes": args.test_episodes,
-        "env_config_file": args.task_config_file
-        "experiment_dir" : os.getcwd(),
-        "hostname": socket.gethostname()
+        "env_config_file": args.task_config_file,
+        "experiment_dir" : getcwd(),
+        "hostname": gethostname()
     }
     mlflow.log_params(params)
 
-    if 'mistral' in args.llm or 'zephyr' in args.llm:
+    if 'mistral' in args.llm or 'zephyr' in args.llm or "lora" in args.llm:
         model = AutoModelForCausalLM.from_pretrained(args.llm, 
                                                      device_map={"": args.gpu_device_id}
                                                      )
@@ -487,7 +487,7 @@ if __name__ == "__main__":
                 {"role": "user", "content": status_prompt},
                 {"role": "user", "content": Q1},
             ]
-            if 'mistral' in args.llm or 'zephyr' in args.llm:
+            if 'mistral' in args.llm or 'zephyr' in args.llm or "lora" in args.llm:
                 response = model_query(model, tokenizer, messages, max_tokens=1024)
             else:
                 response = openai_query(messages, max_tokens=1024, model=args.llm)
@@ -511,7 +511,7 @@ if __name__ == "__main__":
             #     save_first_prompt = True
 
             # Query the LLM
-            if 'mistral' in args.llm or 'zephyr' in args.llm:
+            if 'mistral' in args.llm or 'zephyr' in args.llm or "lora" in args.llm:
                 response = model_query(model, tokenizer, messages, max_tokens=120)
             else:
                 response = openai_query(messages, max_tokens=80, model=args.llm)
