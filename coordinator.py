@@ -53,7 +53,7 @@ class AIDojo:
             ConnectionLimitProtocol(
                 self._action_queue,
                 self._answer_queue,
-                max_connections=1
+                max_connections=2
             ),
             host,
             port
@@ -85,6 +85,7 @@ class ActionProcessor:
     def __init__(self) -> None:
         self._logger = logging.getLogger("Coordinator-ActionProcessor")
         self._observations = {}
+        self._num_steps = {}
         self._logger.info("Action Processor created")
 
     def process_message_from_agent(self, agent_id: int, action: Action) -> Action:
@@ -197,10 +198,21 @@ class Coordinator:
         - Forwards actions in the game engine
         - Forwards responses to teh answer queue
         """
+        def conver_msg_dict_to_json(msg_dict)->str:
+            try:
+                # Convert message into string representation
+                output_message = json.dumps(msg_dict)
+            except Exception as e:
+                self.logger.error(f"Error when converting msg to Json:{e}")
+                raise e
+                # Send to anwer_queue
+            return output_message
+
         try:
             self.logger.info("Main coordinator started.")
             env_observation = self._world.reset()
             self.agents = {}
+            self._agent_steps = {}
 
             while True:
                 self.logger.debug("Coordinator running.")
@@ -219,24 +231,26 @@ class Coordinator:
                             output_message_dict = self._process_join_game_action(
                                 agent_addr, action, env_observation
                             )
+                            msg_json = conver_msg_dict_to_json(output_message_dict)
+                            # Send to anwer_queue
+                            await self._answers_queue.put(msg_json)
                         case ActionType.QuitGame:
                             raise NotImplementedError
                         case ActionType.ResetGame:
                             output_message_dict = self._process_reset_game_action(
                                 agent_addr
                             )
+                            msg_json = conver_msg_dict_to_json(output_message_dict)
+                            # Send to anwer_queue
+                            await self._answers_queue.put(msg_json)
                         case _:
                             output_message_dict = self._process_generic_action(
                                 agent_addr, action
                             )
-                    try:
-                        # Convert message into string representation
-                        output_message = json.dumps(output_message_dict)
-                    except Exception as e:
-                        self.logger.error(f"Error when converting msg to Json:{e}")
-                        raise e
-                    # Send to anwer_queue
-                    await self._answers_queue.put(output_message)
+                            msg_json = conver_msg_dict_to_json(output_message_dict)
+                            # Send to anwer_queue
+                            await self._answers_queue.put(msg_json)
+
                 await asyncio.sleep(0.0000001)
         except asyncio.CancelledError:
             self.logger.info("\tTerminating by CancelledError")
@@ -255,6 +269,7 @@ class Coordinator:
             if agent_role in self.ALLOWED_ROLES:
                 self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
                 self.agents[agent_addr] = action.parameters
+                self._agent_steps[agent_addr] = 0
                 agent_observation_str = (
                     self._action_processor.generate_observation_msg_for_agent(
                         agent_addr, current_observation
@@ -317,6 +332,9 @@ class Coordinator:
     def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
         self.logger.info(f"Coordinator received from agent {agent_addr}: {action}")
         # Process the message
+        # increase the action counter
+        self._agent_steps[agent_addr] += 1
+        self.logger.error(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
         action_for_env = self._action_processor.process_message_from_agent(
             agent_addr, action
         )
