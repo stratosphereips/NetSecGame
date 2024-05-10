@@ -1219,11 +1219,12 @@ class NetworkSecurityEnvironment(object):
 
             # 4. Check if the max number of steps of the game passed already
             # But if the agent already won in this last step, count the win
-            if not is_goal and self._step_counter >= self._max_steps:
-                self._end = True
-                self._end_reason = 'max_steps'
-                reason = {'end_reason':'max_steps'}
-                logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
+            
+            # if not is_goal and self._step_counter >= self._max_steps:
+            #     self._end = True
+            #     self._end_reason = 'max_steps'
+            #     reason = {'end_reason':'max_steps'}
+            #     logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
 
             # Save the transition to the episode replay buffer if there is any
             if self._episode_replay_buffer is not None:
