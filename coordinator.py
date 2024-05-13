@@ -164,6 +164,11 @@ class ConnectionLimitProtocol(asyncio.Protocol):
                     self.logger.info(
                         f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}"
                     )
+                    quit_message = Action(ActionType.QuitGame, params={}).as_json()
+                    self.logger.info(
+                        f"Inserting quit message {message}"
+                    )
+                    await self.actions_queue.put((addr, quit_message))
                     self.logger.info(
                         f"\tEmpty message, terminating agent on address {addr}"
                     )
@@ -198,7 +203,7 @@ class Coordinator:
         - Forwards actions in the game engine
         - Forwards responses to teh answer queue
         """
-        def conver_msg_dict_to_json(msg_dict)->str:
+        def convert_msg_dict_to_json(msg_dict)->str:
             try:
                 # Convert message into string representation
                 output_message = json.dumps(msg_dict)
@@ -213,6 +218,8 @@ class Coordinator:
             env_observation = self._world.reset()
             self.agents = {}
             self._agent_steps = {}
+            self._reset_requests = {}
+            self.reset_event = asyncio.Event()
 
             while True:
                 self.logger.debug("Coordinator running.")
@@ -224,30 +231,46 @@ class Coordinator:
                         action = Action.from_json(message)
                     except Exception as e:
                         self.logger.error(
-                            f"Error when converting msg to Action using Action.from_json():{e}"
+                            f"Error when converting msg to Action using Action.from_json():{e}, {message}"
                         )
                     match action.type:  # process action based on its type
                         case ActionType.JoinGame:
                             output_message_dict = self._process_join_game_action(
                                 agent_addr, action, env_observation
                             )
-                            msg_json = conver_msg_dict_to_json(output_message_dict)
+                            msg_json = convert_msg_dict_to_json(output_message_dict)
                             # Send to anwer_queue
                             await self._answers_queue.put(msg_json)
                         case ActionType.QuitGame:
-                            raise NotImplementedError
+                            self.logger.info(f"Coordinator received from QUIT message from agent {agent_addr}")
+                            # remove agent address from the reset request dict
+                            self.logger.info(f"Removing {agent_addr} from reset requests")
+                            reset_requested = self._reset_requests.pop(agent_addr, None)
+
                         case ActionType.ResetGame:
-                            output_message_dict = self._process_reset_game_action(
-                                agent_addr
-                            )
-                            msg_json = conver_msg_dict_to_json(output_message_dict)
-                            # Send to anwer_queue
-                            await self._answers_queue.put(msg_json)
+                            self._reset_requests[agent_addr] = True
+                            self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
+                            if all(self._reset_requests.values()):
+                                # should we discard the queue here?
+                                self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q{self._answers_queue.empty()}")
+                                new_env_observation = self._world.reset()
+                                for agent in self._reset_requests:
+                                    self._reset_requests[agent] = False
+                                    self._agent_steps[agent] = 0
+                                    output_message_dict = self._process_reset_game_action(
+                                        agent,
+                                        new_env_observation,
+                                    )
+                                    msg_json = convert_msg_dict_to_json(output_message_dict)
+                                    # Send to anwer_queue
+                                    await self._answers_queue.put(msg_json)
+                            else:
+                                self.logger.info("\t Waiting for other agetns to request reset")
                         case _:
                             output_message_dict = self._process_generic_action(
                                 agent_addr, action
                             )
-                            msg_json = conver_msg_dict_to_json(output_message_dict)
+                            msg_json = convert_msg_dict_to_json(output_message_dict)
                             # Send to anwer_queue
                             await self._answers_queue.put(msg_json)
 
@@ -270,6 +293,7 @@ class Coordinator:
                 self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
                 self.agents[agent_addr] = action.parameters
                 self._agent_steps[agent_addr] = 0
+                self._reset_requests[agent_addr] = False
                 agent_observation_str = (
                     self._action_processor.generate_observation_msg_for_agent(
                         agent_addr, current_observation
@@ -304,14 +328,14 @@ class Coordinator:
             }
         return output_message_dict
 
-    def _process_reset_game_action(self, agent_addr: tuple) -> dict:
+    def _process_reset_game_action(self, agent_addr: tuple , new_env_observation:Observation) -> dict:
         """ "
         Method for processing Action of type ActionType.ResetGame
         """
         self.logger.info(
-            f"Coordinator received from RESET request from agent {agent_addr}"
+            f"Coordinator responding to RESET request from agent {agent_addr}"
         )
-        new_env_observation = self._world.reset()
+        # new_env_observation = self._world.reset()
         agent_observation_str = (
             self._action_processor.generate_observation_msg_for_agent(
                 agent_addr, new_env_observation
@@ -407,7 +431,7 @@ if __name__ == "__main__":
         filemode="w",
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.ERROR,
+        level=logging.INFO,
     )
     # load config for coordinator
     with open(args.configfile, "r") as jfile:
