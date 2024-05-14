@@ -195,15 +195,7 @@ class Coordinator:
         self._action_processor = ActionProcessor()
         self.world_type = world_type
 
-    async def run(self):
-        """
-        Main method to be run for coordinating the agent's interaction with the game engine.
-        - Reads messages from action queue
-        - processes actions based on their type
-        - Forwards actions in the game engine
-        - Forwards responses to teh answer queue
-        """
-        def convert_msg_dict_to_json(msg_dict)->str:
+    def convert_msg_dict_to_json(self, msg_dict)->str:
             try:
                 # Convert message into string representation
                 output_message = json.dumps(msg_dict)
@@ -213,13 +205,23 @@ class Coordinator:
                 # Send to anwer_queue
             return output_message
 
+    async def run(self):
+        """
+        Main method to be run for coordinating the agent's interaction with the game engine.
+        - Reads messages from action queue
+        - processes actions based on their type
+        - Forwards actions in the game engine
+        - Forwards responses to teh answer queue
+        """
+
         try:
             self.logger.info("Main coordinator started.")
             env_observation = self._world.reset()
             self.agents = {}
             self._agent_steps = {}
             self._reset_requests = {}
-            self.reset_event = asyncio.Event()
+            self._starting_positions = {}
+            self._win_conditions = {}
 
             while True:
                 self.logger.debug("Coordinator running.")
@@ -238,7 +240,7 @@ class Coordinator:
                             output_message_dict = self._process_join_game_action(
                                 agent_addr, action, env_observation
                             )
-                            msg_json = convert_msg_dict_to_json(output_message_dict)
+                            msg_json = self.convert_msg_dict_to_json(output_message_dict)
                             # Send to anwer_queue
                             await self._answers_queue.put(msg_json)
                         case ActionType.QuitGame:
@@ -257,11 +259,11 @@ class Coordinator:
                                 for agent in self._reset_requests:
                                     self._reset_requests[agent] = False
                                     self._agent_steps[agent] = 0
-                                    output_message_dict = self._process_reset_game_action(
+                                    output_message_dict = self._respond_to_reset_game_action(
                                         agent,
                                         new_env_observation,
                                     )
-                                    msg_json = convert_msg_dict_to_json(output_message_dict)
+                                    msg_json = self.convert_msg_dict_to_json(output_message_dict)
                                     # Send to anwer_queue
                                     await self._answers_queue.put(msg_json)
                             else:
@@ -270,7 +272,7 @@ class Coordinator:
                             output_message_dict = self._process_generic_action(
                                 agent_addr, action
                             )
-                            msg_json = convert_msg_dict_to_json(output_message_dict)
+                            msg_json = self.convert_msg_dict_to_json(output_message_dict)
                             # Send to anwer_queue
                             await self._answers_queue.put(msg_json)
 
@@ -281,6 +283,20 @@ class Coordinator:
             self.logger.error(f"Exception in main_coordinator(): {e}")
             raise e
 
+    def _initialize_new_player(self, agent_addr, agent_name, agent_role) -> Observation:
+        """
+        Method to initialize new player upon joining the game.
+        """
+        self.agents[agent_addr] = (agent_name, agent_role)
+        self._agent_steps[agent_addr] = 0
+        self._reset_requests[agent_addr] = False
+        self._agent_start_position[agent_addr] = self._get_starting_position(agent_role)
+        self._aget_win_conditions[agent_addr] = self.get_win_condtitions(agent_role)
+        self._agent_current_position[agent_addr] = ...    
+        self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
+        return self._agent_current_position[agent_addr]
+
+
     def _process_join_game_action(self, agent_addr: tuple, action: Action, current_observation: Observation) -> dict:
         """ "
         Method for processing Action of type ActionType.JoinGame
@@ -290,10 +306,13 @@ class Coordinator:
             agent_name = action.parameters["agent_info"].name
             agent_role = action.parameters["agent_info"].role
             if agent_role in self.ALLOWED_ROLES:
+                initial_observation = self._initialize_new_player(agent_addr, agent_name, agent_role)
                 self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
                 self.agents[agent_addr] = action.parameters
                 self._agent_steps[agent_addr] = 0
                 self._reset_requests[agent_addr] = False
+                self._agent_starting_posititions[agent_addr] = self._get_starting_position(agent_role)
+                self._agent_win_conditions[agent_addr] = self.get_win_condtitions(agent_role)
                 agent_observation_str = (
                     self._action_processor.generate_observation_msg_for_agent(
                         agent_addr, current_observation
@@ -328,9 +347,9 @@ class Coordinator:
             }
         return output_message_dict
 
-    def _process_reset_game_action(self, agent_addr: tuple , new_env_observation:Observation) -> dict:
+    def _respond_to_reset_game_action(self, agent_addr: tuple , new_env_observation:Observation) -> dict:
         """ "
-        Method for processing Action of type ActionType.ResetGame
+        Method for generatating answers to Action of type ActionType.ResetGame after all agents requested reset
         """
         self.logger.info(
             f"Coordinator responding to RESET request from agent {agent_addr}"
