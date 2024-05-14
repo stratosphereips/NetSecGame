@@ -220,8 +220,8 @@ class Coordinator:
             self.agents = {}
             self._agent_steps = {}
             self._reset_requests = {}
-            self._starting_positions = {}
-            self._win_conditions = {}
+            self._starting_positions_per_role = self._get_starting_position_per_role()
+            self._win_conditions_per_role = self._get_win_condition_per_role()
 
             while True:
                 self.logger.debug("Coordinator running.")
@@ -286,16 +286,34 @@ class Coordinator:
     def _initialize_new_player(self, agent_addr, agent_name, agent_role) -> Observation:
         """
         Method to initialize new player upon joining the game.
+        Returns initial observation for the agent based on the agent's role
         """
         self.agents[agent_addr] = (agent_name, agent_role)
         self._agent_steps[agent_addr] = 0
         self._reset_requests[agent_addr] = False
-        self._agent_start_position[agent_addr] = self._get_starting_position(agent_role)
-        self._aget_win_conditions[agent_addr] = self.get_win_condtitions(agent_role)
-        self._agent_current_position[agent_addr] = ...    
+        self._agent_start_position[agent_addr] = self._starting_positions_per_role[agent_role]
+        self._agent_win_conditions[agent_addr] = self._win_conditions_per_role[agent_role]
+        self._agent_current_position[agent_addr] = self._world.create_state_from_view(self._agent_start_position[agent_addr])    
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
-        return self._agent_current_position[agent_addr]
+        return Observation(self._agent_current_position[agent_addr], 0, False, {})
 
+    def _get_starting_position_per_role(self)->dict:
+        starting_positions = {}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                starting_positions[agent_role] = self._world.task_config.get_start_position(role=agent_role)
+            except KeyError:
+                self.starting_positions[agent_role] = {}
+        return starting_positions
+    
+    def _get_win_condition_per_role(self)-> dict:
+        win_conditions = {}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                win_conditions[agent_role] = self._world.task_config.get_win_conditions(role=agent_role)
+            except KeyError:
+                self.starting_positions[agent_role] = {}
+        return win_conditions
 
     def _process_join_game_action(self, agent_addr: tuple, action: Action, current_observation: Observation) -> dict:
         """ "
@@ -307,21 +325,10 @@ class Coordinator:
             agent_role = action.parameters["agent_info"].role
             if agent_role in self.ALLOWED_ROLES:
                 initial_observation = self._initialize_new_player(agent_addr, agent_name, agent_role)
-                self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
-                self.agents[agent_addr] = action.parameters
-                self._agent_steps[agent_addr] = 0
-                self._reset_requests[agent_addr] = False
-                self._agent_starting_posititions[agent_addr] = self._get_starting_position(agent_role)
-                self._agent_win_conditions[agent_addr] = self.get_win_condtitions(agent_role)
-                agent_observation_str = (
-                    self._action_processor.generate_observation_msg_for_agent(
-                        agent_addr, current_observation
-                    )
-                )
                 output_message_dict = {
                     "to_agent": agent_addr,
                     "status": str(GameStatus.CREATED),
-                    "observation": agent_observation_str,
+                    "observation": observation_as_dict(initial_observation),
                     "message": {
                         "message": f"Welcome {agent_name}, registred as {agent_role}",
                         "max_steps": self._world._max_steps,
