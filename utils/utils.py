@@ -226,6 +226,7 @@ class ConfigParser():
                     self.logger('Configuration problem with the known hosts')
         return controlled_hosts
 
+    
     def get_attackers_win_conditions(self):
         """
         Get the goal of the attacker 
@@ -282,6 +283,17 @@ class ConfigParser():
 
         return attackers_start_position
 
+    def get_start_position(self, agent_role):
+        match agent_role:
+            case "Attacker":
+                return self.get_attackers_start_position()
+            case "Defender":
+                raise NotImplementedError
+            case "Benign":
+                raise NotImplementedError
+            case _:
+                raise ValueError(f"Unsupported agent role: {agent_role}")
+    
     def get_max_steps(self):
         """
         Get the max steps 

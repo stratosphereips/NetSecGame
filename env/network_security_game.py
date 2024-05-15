@@ -1123,7 +1123,7 @@ class NetworkSecurityEnvironment(object):
             logger.info("Saving trajectories")
             self.store_trajectories_to_file(trajectory_filename)
     
-    def reset(self, trajectory_filename=None)->components.Observation:
+    def reset(self, trajectory_filename=None)->components.Observation: 
         """
         Function to reset the state of the game
         and prepare for a new episode
