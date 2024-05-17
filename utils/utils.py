@@ -288,12 +288,22 @@ class ConfigParser():
             case "Attacker":
                 return self.get_attackers_start_position()
             case "Defender":
-                raise NotImplementedError
+                return {}
             case "Benign":
-                raise NotImplementedError
+                return {}
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
     
+    def get_win_conditions(self, agent_role):
+         match agent_role:
+            case "Attacker":
+                return self.get_attackers_win_conditions()
+            case "Defender":
+                return {}
+            case "Benign":
+                return {}
+            case _:
+                raise ValueError(f"Unsupported agent role: {agent_role}")
     def get_max_steps(self):
         """
         Get the max steps 

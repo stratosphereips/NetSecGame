@@ -24,7 +24,7 @@ class AIDojo:
             self._action_queue,
             self._answer_queue,
             net_sec_config,
-            allowed_roles=["Attacker", "Defender", "Human"],
+            allowed_roles=["Attacker", "Defender", "Benign"],
             world_type = world_type,
         )
 
@@ -194,6 +194,8 @@ class Coordinator:
         self._world = NetworkSecurityEnvironment(net_sec_config)
         self._action_processor = ActionProcessor()
         self.world_type = world_type
+        self._starting_positions_per_role = self._get_starting_position_per_role()
+        self._win_conditions_per_role = self._get_win_condition_per_role()
 
     def convert_msg_dict_to_json(self, msg_dict)->str:
             try:
@@ -220,8 +222,6 @@ class Coordinator:
             self.agents = {}
             self._agent_steps = {}
             self._reset_requests = {}
-            self._starting_positions_per_role = self._get_starting_position_per_role()
-            self._win_conditions_per_role = self._get_win_condition_per_role()
 
             while True:
                 self.logger.debug("Coordinator running.")
@@ -301,18 +301,20 @@ class Coordinator:
         starting_positions = {}
         for agent_role in self.ALLOWED_ROLES:
             try:
-                starting_positions[agent_role] = self._world.task_config.get_start_position(role=agent_role)
+                starting_positions[agent_role] = self._world.task_config.get_start_position(agent_role=agent_role)
+                self.logger.info(f"Starting position for role '{agent_role}': {starting_positions[agent_role]}")
             except KeyError:
-                self.starting_positions[agent_role] = {}
+                starting_positions[agent_role] = {}
         return starting_positions
     
     def _get_win_condition_per_role(self)-> dict:
         win_conditions = {}
         for agent_role in self.ALLOWED_ROLES:
             try:
-                win_conditions[agent_role] = self._world.task_config.get_win_conditions(role=agent_role)
+                win_conditions[agent_role] = self._world.task_config.get_win_conditions(agent_role=agent_role)
             except KeyError:
-                self.starting_positions[agent_role] = {}
+                win_conditions[agent_role] = {}
+            self.logger.info(f"Win condition for role '{agent_role}': {win_conditions[agent_role]}")
         return win_conditions
 
     def _process_join_game_action(self, agent_addr: tuple, action: Action, current_observation: Observation) -> dict:
