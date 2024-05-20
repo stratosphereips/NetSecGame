@@ -7,7 +7,7 @@ import logging
 import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
-from env.game_components import Action, Observation, ActionType, GameStatus
+from env.game_components import Action, Observation, ActionType, GameStatus, GameState
 from utils.utils import observation_as_dict
 from pathlib import Path
 import os
@@ -195,6 +195,7 @@ class Coordinator:
         self._action_processor = ActionProcessor()
         self.world_type = world_type
         self._starting_positions_per_role = self._get_starting_position_per_role()
+        self._agent_starting_position = {}
         self._win_conditions_per_role = self._get_win_condition_per_role()
 
     def convert_msg_dict_to_json(self, msg_dict)->str:
@@ -222,6 +223,8 @@ class Coordinator:
             self.agents = {}
             self._agent_steps = {}
             self._reset_requests = {}
+            self._agent_observations = {}
+            self._agent_states = {}
 
             while True:
                 self.logger.debug("Coordinator running.")
@@ -291,11 +294,10 @@ class Coordinator:
         self.agents[agent_addr] = (agent_name, agent_role)
         self._agent_steps[agent_addr] = 0
         self._reset_requests[agent_addr] = False
-        self._agent_start_position[agent_addr] = self._starting_positions_per_role[agent_role]
-        self._agent_win_conditions[agent_addr] = self._win_conditions_per_role[agent_role]
-        self._agent_current_position[agent_addr] = self._world.create_state_from_view(self._agent_start_position[agent_addr])    
+        self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
+        self._agent_states[agent_addr] = self._world.create_state_from_view(self._agent_starting_position[agent_addr])    
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
-        return Observation(self._agent_current_position[agent_addr], 0, False, {})
+        return Observation(self._agent_states[agent_addr], 0, False, {})
 
     def _get_starting_position_per_role(self)->dict:
         starting_positions = {}
@@ -386,11 +388,12 @@ class Coordinator:
         # Process the message
         # increase the action counter
         self._agent_steps[agent_addr] += 1
-        self.logger.error(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
+        self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
         action_for_env = self._action_processor.process_message_from_agent(
             agent_addr, action
         )
         new_observation = self._world.step(action_for_env, self.world_type)
+        self.logger.info(f"Coordinator goal_check: {self.goal_reached(agent_addr)}")
         agent_observation_str = (
             self._action_processor.generate_observation_msg_for_agent(
                 agent_addr, new_observation
@@ -402,7 +405,44 @@ class Coordinator:
             "status": str(GameStatus.OK),
         }
         return output_message_dict
+    
+    def reset(self)->None:
+        pass
 
+    def goal_reached(self, agent_addr):
+        agents_state = self._agent_observations[agent_addr].state
+        agent_role = self.agents[agent_addr][1]
+        win_condition = self._win_conditions_per_role[agent_role]
+        return self._is_goal(agents_state, win_condition)
+    
+    def is_goal(self, state:GameState, goal_conditions:dict)->bool:
+        """
+        Check if the goal conditons were satisfied in a given game state
+        """
+        def goal_dict_satistfied(goal_dict:dict, known_dict: dict)-> bool:
+            """
+            Helper function for checking if a goal dictionary condition is satisfied
+            """
+            # check if we have all IPs that should have some values (are keys in goal_dict)
+            if goal_dict.keys() <= known_dict.keys():
+                try:
+                    # Check if values (sets) for EACH key (host) in goal_dict are subsets of known_dict, keep matching_keys
+                    matching_keys = [host for host in goal_dict.keys() if goal_dict[host]<= known_dict[host]]
+                    # Check we have the amount of mathing keys as in the goal_dict
+                    if len(matching_keys) == len(goal_dict.keys()):
+                        return True
+                except KeyError:
+                    #some keys are missing in the known_dict
+                    return False
+            return False
+        # For each part of the state of the game, check if the conditions are met
+        goal_reached = {}    
+        goal_reached["networks"] = set(self._goal_conditions["known_networks"]) <= set(state.known_networks)
+        goal_reached["known_hosts"] = set(self._goal_conditions["known_hosts"]) <= set(state.known_hosts)
+        goal_reached["controlled_hosts"] = set(self._goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
+        goal_reached["services"] = goal_dict_satistfied(self._goal_conditions["known_services"], state.known_services)
+        goal_reached["data"] = goal_dict_satistfied(self._goal_conditions["known_data"], state.known_data)
+        return all(goal_reached.values())
 
 __version__ = "v0.2.1"
 

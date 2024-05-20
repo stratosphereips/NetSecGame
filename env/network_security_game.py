@@ -1094,6 +1094,60 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"Checking goal satisfaction: {goal_reached}")
         return all(goal_reached.values())
 
+    def create_state_from_view(self, view:dict, add_neighboring_nets=True)->components.GameState:
+        """
+        Builds a GameState from given view.
+        If there is a keyword 'random' used, it is replaced by a valid option at random.
+
+        Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
+        """
+        known_networks = view["known_networks"]
+        controlled_hosts = set()
+        logger.info(f'Generating state from view:{view}')
+        
+        # controlled_hosts
+        for controlled_host in view['controlled_hosts']:
+            if isinstance(controlled_host, components.IP):
+                controlled_hosts.add(controlled_host)
+                logger.info(f'\tThe attacker has control of host {str(controlled_host)}.')
+            elif controlled_host == 'random':
+                # Random start
+                logger.info('\tAdding random starting position of agent')
+                logger.info(f'\t\tChoosing from {self.hosts_to_start}')
+                controlled_hosts.add(random.choice(self.hosts_to_start))
+                logger.info(f'\t\tMaking agent start in {controlled_hosts}')
+            else:
+                logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {controlled_host}")
+
+        # Add all controlled hosts to known_hosts
+        known_hosts = view["known_hosts"].union(controlled_hosts)
+        if add_neighboring_nets:
+            # Extend the known networks with the neighbouring networks
+            # This is to solve in the env (and not in the agent) the problem
+            # of not knowing other networks appart from the one the agent is in
+            # This is wrong and should be done by the agent, not here
+            # TODO remove this!
+            for controlled_host in controlled_hosts:
+                for net in self._get_networks_from_host(controlled_host): #TODO
+                    net_obj = netaddr.IPNetwork(str(net))
+                    if net_obj.ip.is_ipv4_private_use(): #TODO
+                        known_networks.add(net)
+                        net_obj.value += 256
+                        if net_obj.ip.is_ipv4_private_use():
+                            ip = components.Network(str(net_obj.ip), net_obj.prefixlen)
+                            logger.info(f'\tAdding {ip} to agent')
+                            known_networks.add(ip)
+                        net_obj.value -= 2*256
+                        if net_obj.ip.is_ipv4_private_use():
+                            ip = components.Network(str(net_obj.ip), net_obj.prefixlen)
+                            logger.info(f'\tAdding {ip} to agent')
+                            known_networks.add(ip)
+                        #return value back to the original
+                        net_obj.value += 256
+       
+        game_state = components.GameState(controlled_hosts, known_hosts, view["known_services"], view["known_data"], known_networks)
+        return game_state
+
     def store_trajectories_to_file(self, filename:str)->None:
         if self._trajectories:
             logger.info(f"Saving trajectories to '{filename}'")
