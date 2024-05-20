@@ -1214,7 +1214,7 @@ class NetworkSecurityEnvironment(object):
         # An observation has inside ["state", "reward", "end", "info"]
         return components.Observation(self._current_state, initial_reward, self._end, info)
 
-    def step(self, action:components.Action, action_type='netsecenv')-> components.Observation:
+    def step(self, state:components.GameState, action:components.Action, action_type='netsecenv')-> components.Observation:
         """
         Take a step in the environment given an action
         in: action
@@ -1232,10 +1232,10 @@ class NetworkSecurityEnvironment(object):
             # 1. Perform the action
             self._actions_played.append(action)
             if random.random() <= action.type.default_success_p or action_type == 'realworld':
-                next_state = self._execute_action(self._current_state, action, action_type=action_type)
+                next_state = self._execute_action(state, action, action_type=action_type)
             else:
                 logger.info("\tAction NOT sucessful")
-                next_state = self._current_state
+                next_state = state
 
             # 2. Check if the new state is the goal state
             is_goal = self.is_goal(next_state)
@@ -1254,7 +1254,8 @@ class NetworkSecurityEnvironment(object):
             # correct penalty, even if the action was successfully executed.
             # This means defender wins if both defender and attacker are successful
             # simuntaneously in the same step
-            detected = self._defender.detect(self._current_state, action, self._actions_played)
+            #detected = self._defender.detect(self._current_state, action, self._actions_played)
+            detected = False
             # Report detection, but not if in this same step the agent won
             if not is_goal and detected:
                 # Reward should be negative
