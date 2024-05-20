@@ -225,6 +225,8 @@ class Coordinator:
             self._reset_requests = {}
             self._agent_observations = {}
             self._agent_states = {}
+            self._agent_goal_reached = {}
+            self._episode_end = False
 
             while True:
                 self.logger.debug("Coordinator running.")
@@ -295,7 +297,8 @@ class Coordinator:
         self._agent_steps[agent_addr] = 0
         self._reset_requests[agent_addr] = False
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
-        self._agent_states[agent_addr] = self._world.create_state_from_view(self._agent_starting_position[agent_addr])    
+        self._agent_states[agent_addr] = self._world.create_state_from_view(self._agent_starting_position[agent_addr])
+        self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
@@ -385,34 +388,58 @@ class Coordinator:
 
     def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
         self.logger.info(f"Coordinator received from agent {agent_addr}: {action}")
-        # Process the message
-        # increase the action counter
-        self._agent_steps[agent_addr] += 1
-        self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
-        action_for_env = self._action_processor.process_message_from_agent(
-            agent_addr, action
-        )
-        new_observation = self._world.step(action_for_env, self.world_type)
-        self._agent_states[agent_addr] = new_observation.state
-        self._agent_observations[agent_addr] = new_observation
-        self.logger.info(f"Coordinator goal_check: {self._goal_reached(agent_addr)}")
-        agent_observation_str = (
-            self._action_processor.generate_observation_msg_for_agent(
-                agent_addr, new_observation
+        if not self._episode_end:
+            # Process the message
+            # increase the action counter
+            self._agent_steps[agent_addr] += 1
+            self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
+            action_for_env = self._action_processor.process_message_from_agent(
+                agent_addr, action
             )
-        )
-        output_message_dict = {
-            "to_agent": agent_addr,
-            "observation": agent_observation_str,
-            "status": str(GameStatus.OK),
-        }
+            # Build new Observation for the agent
+            next_state = self._world.step(action_for_env, self.world_type).state
+            self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
+
+            reward = self._world._rewards["step"]
+            if self._agent_goal_reached[agent_addr]:
+                reward += self._world._rewards["goal"]
+            
+            new_observation = Observation(next_state, reward, )
+            new_observation = self._world.step(action_for_env, self.world_type)
+            self._agent_states[agent_addr] = new_observation.state
+            self._agent_observations[agent_addr] = new_observation
+            self.logger.info(f"Coordinator goal_check: {self._goal_reached(agent_addr)}")
+            agent_observation_str = (
+                self._action_processor.generate_observation_msg_for_agent(
+                    agent_addr, new_observation
+                )
+            )
+            output_message_dict = {
+                "to_agent": agent_addr,
+                "observation": agent_observation_str,
+                "status": str(GameStatus.OK),
+            }
+        else:
+            # Episode ended tell agent to request reset
+            current_observation = self._agent_observations[agent_addr]
+            reward = 0 # TODO 
+            new_observation = Observation(
+                current_observation.state,
+                reward=reward,
+                end=True,
+                info={"Episode ended. Request reset for starting new episode."})
+            output_message_dict = {
+                "to_agent": agent_addr,
+                "observation": agent_observation_str,
+                "status": str(GameStatus.BAD_REQUEST),
+            }
         return output_message_dict
     
     def reset(self)->None:
         pass
 
     def _goal_reached(self, agent_addr):
-        self.logger.info("Coordinator checking goal")
+        self.logger.info(f"Coordinator checking goal for {agent_addr}({self.agents[agent_addr][1]})")
         agents_state = self._agent_observations[agent_addr].state
         agent_role = self.agents[agent_addr][1]
         win_condition = self._win_conditions_per_role[agent_role]
