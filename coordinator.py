@@ -393,7 +393,9 @@ class Coordinator:
             agent_addr, action
         )
         new_observation = self._world.step(action_for_env, self.world_type)
-        self.logger.info(f"Coordinator goal_check: {self.goal_reached(agent_addr)}")
+        self._agent_states[agent_addr] = new_observation.state
+        self._agent_observations[agent_addr] = new_observation
+        self.logger.info(f"Coordinator goal_check: {self._goal_reached(agent_addr)}")
         agent_observation_str = (
             self._action_processor.generate_observation_msg_for_agent(
                 agent_addr, new_observation
@@ -409,13 +411,14 @@ class Coordinator:
     def reset(self)->None:
         pass
 
-    def goal_reached(self, agent_addr):
+    def _goal_reached(self, agent_addr):
+        self.logger.info("Coordinator checking goal")
         agents_state = self._agent_observations[agent_addr].state
         agent_role = self.agents[agent_addr][1]
         win_condition = self._win_conditions_per_role[agent_role]
-        return self._is_goal(agents_state, win_condition)
+        return self._check_goal(agents_state, win_condition)
     
-    def is_goal(self, state:GameState, goal_conditions:dict)->bool:
+    def _check_goal(self, state:GameState, goal_conditions:dict)->bool:
         """
         Check if the goal conditons were satisfied in a given game state
         """
@@ -437,11 +440,12 @@ class Coordinator:
             return False
         # For each part of the state of the game, check if the conditions are met
         goal_reached = {}    
-        goal_reached["networks"] = set(self._goal_conditions["known_networks"]) <= set(state.known_networks)
-        goal_reached["known_hosts"] = set(self._goal_conditions["known_hosts"]) <= set(state.known_hosts)
-        goal_reached["controlled_hosts"] = set(self._goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
-        goal_reached["services"] = goal_dict_satistfied(self._goal_conditions["known_services"], state.known_services)
-        goal_reached["data"] = goal_dict_satistfied(self._goal_conditions["known_data"], state.known_data)
+        goal_reached["networks"] = set(goal_conditions["known_networks"]) <= set(state.known_networks)
+        goal_reached["known_hosts"] = set(goal_conditions["known_hosts"]) <= set(state.known_hosts)
+        goal_reached["controlled_hosts"] = set(goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
+        goal_reached["services"] = goal_dict_satistfied(goal_conditions["known_services"], state.known_services)
+        goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
+        self.logger.info(f"\t{goal_reached}")
         return all(goal_reached.values())
 
 __version__ = "v0.2.1"
