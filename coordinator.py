@@ -137,12 +137,9 @@ class ConnectionLimitProtocol(asyncio.Protocol):
                     )
                     quit_message = Action(ActionType.QuitGame, params={}).as_json()
                     self.logger.info(
-                        f"Inserting quit message {message}"
+                        f"\tEmpty message, replacing with QUIT message {message}"
                     )
                     await self.actions_queue.put((addr, quit_message))
-                    self.logger.info(
-                        f"\tEmpty message, terminating agent on address {addr}"
-                    )
                     break
         except KeyboardInterrupt:
             self.logger.debug("Terminating by KeyboardInterrupt")
@@ -179,8 +176,7 @@ class Coordinator:
     
     @property
     def episode_end(self)->bool:
-        self.logger.info(f"Episode end?: {len(self._agent_episode_ends)} AND {self._agent_episode_ends}")
-        return len(self._agent_episode_ends) > 0 and all(self._agent_episode_ends.values())
+        return all(self._agent_episode_ends.values())
     
     def convert_msg_dict_to_json(self, msg_dict)->str:
             try:
