@@ -307,6 +307,9 @@ class Coordinator:
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
     def _get_starting_position_per_role(self)->dict:
+        """
+        Method for finding starting position for each agent role in the game.
+        """
         starting_positions = {}
         for agent_role in self.ALLOWED_ROLES:
             try:
@@ -317,6 +320,9 @@ class Coordinator:
         return starting_positions
     
     def _get_win_condition_per_role(self)-> dict:
+        """
+        Method for finding wininng conditions for each agent role in the game.
+        """
         win_conditions = {}
         for agent_role in self.ALLOWED_ROLES:
             try:
