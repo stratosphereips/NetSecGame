@@ -163,12 +163,25 @@ class Coordinator:
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
         self._world = NetworkSecurityEnvironment(net_sec_config)
-        # self._action_processor = ActionProcessor()
         self.world_type = world_type
         self._starting_positions_per_role = self._get_starting_position_per_role()
-        self._agent_starting_position = {}
         self._win_conditions_per_role = self._get_win_condition_per_role()
 
+        # player information
+        self.agents = {}
+        self._agent_steps = {}
+        self._reset_requests = {}
+        self._agent_observations = {}
+        self._agent_starting_position = {}
+        self._agent_states = {}
+        self._agent_goal_reached = {}
+        self._agent_episode_ends = {}
+    
+    @property
+    def episode_end(self)->bool:
+        self.logger.info(f"Episode end?: {len(self._agent_episode_ends)} AND {self._agent_episode_ends}")
+        return len(self._agent_episode_ends) > 0 and all(self._agent_episode_ends.values())
+    
     def convert_msg_dict_to_json(self, msg_dict)->str:
             try:
                 # Convert message into string representation
@@ -191,16 +204,7 @@ class Coordinator:
         try:
             self.logger.info("Main coordinator started.")
             env_observation = self._world.reset()
-            self.agents = {}
-            self._agent_steps = {}
-            self._reset_requests = {}
-            self._agent_observations = {}
-            self._agent_states = {}
-            self._agent_goal_reached = {}
-            self._episode_end = False
-
             while True:
-                self.logger.debug("Coordinator running.")
                 # Read message from the queue
                 agent_addr, message = await self._actions_queue.get()
                 if message is not None:
@@ -230,12 +234,12 @@ class Coordinator:
                                 # should we discard the queue here?
                                 self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q{self._answers_queue.empty()}")
                                 new_env_observation = self._world.reset()
-                                self._episode_end = False
                                 for agent in self._reset_requests:
                                     self._reset_requests[agent] = False
                                     self._agent_steps[agent] = 0
                                     self._agent_states[agent] = self._world.create_state_from_view(self._agent_starting_position[agent])
-                                    self._agent_goal_reached[agent] = self._goal_reached(agent) 
+                                    self._agent_goal_reached[agent] = self._goal_reached(agent)
+                                    self._agent_episode_ends[agent] = False
                                     output_message_dict = self._respond_to_reset_game_action(
                                         agent,
                                         new_env_observation,
@@ -272,6 +276,7 @@ class Coordinator:
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = self._world.create_state_from_view(self._agent_starting_position[agent_addr])
         self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
+        self._agent_episode_ends[agent_addr] = False
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
@@ -282,6 +287,7 @@ class Coordinator:
         agent_info["goal_reached"] = self._agent_goal_reached.pop(agent_addr)
         agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
         agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
+        agent_info["episode_end"] = self._agent_episode_ends.pop(agent_addr)
         agent_info["agent_info"] = self.agents.pop(agent_addr)
         self.logger.debug(f"\t{agent_info}")
         return agent_info
@@ -311,7 +317,7 @@ class Coordinator:
                 win_conditions[agent_role] = {}
             self.logger.info(f"Win condition for role '{agent_role}': {win_conditions[agent_role]}")
         return win_conditions
-
+    
     def _process_join_game_action(self, agent_addr: tuple, action: Action, current_observation: Observation) -> dict:
         """ "
         Method for processing Action of type ActionType.JoinGame
@@ -358,7 +364,7 @@ class Coordinator:
         self.logger.info(
             f"Coordinator responding to RESET request from agent {agent_addr}"
         )
-        new_observation = Observation(self._agent_states[agent_addr], 0, self._episode_end, {})
+        new_observation = Observation(self._agent_states[agent_addr], 0, self.episode_end, {})
         output_message_dict = {
             "to_agent": agent_addr,
             "status": str(GameStatus.OK),
@@ -372,8 +378,8 @@ class Coordinator:
         return output_message_dict
 
     def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
-        self.logger.info(f"Coordinator received from agent {agent_addr}: {action}")
-        if not self._episode_end:
+        self.logger.info(f"Processing {action} from {agent_addr}")
+        if not self.episode_end:
             # Process the message
             # increase the action counter
             self._agent_steps[agent_addr] += 1
@@ -387,9 +393,9 @@ class Coordinator:
             obs_info = {}
             if self._agent_goal_reached[agent_addr]:
                 reward += self._world._rewards["goal"]
-                self._episode_end = True
+                self._agent_episode_ends[agent_addr] = True
                 obs_info = {'end_reason': "goal_reached"}
-            new_observation = Observation(self._agent_states[agent_addr], reward, self._episode_end, info=obs_info)
+            new_observation = Observation(self._agent_states[agent_addr], reward, self.episode_end, info=obs_info)
             self._agent_observations[agent_addr] = new_observation
 
             output_message_dict = {
@@ -402,6 +408,7 @@ class Coordinator:
         return output_message_dict
     
     def _generate_timeout_message(self, agent_addr:tuple)->dict:
+        self.logger.warning(f"Agent {agent_addr} attempting to play after episode ended!")
         current_observation = self._agent_observations[agent_addr]
         reward = 0 # TODO
         end_reason = ""

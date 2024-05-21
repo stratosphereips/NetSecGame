@@ -1244,7 +1244,7 @@ class NetworkSecurityEnvironment(object):
                 # Give reward
                 reward +=  self._rewards["goal"]
                 # Game ended
-                self._end = True
+                #self._end = True
                 self._end_reason = 'goal_reached'
                 reason = {'end_reason': self._end_reason}
                 logger.info(f'Episode ended. Reason: {reason}')
@@ -1262,7 +1262,7 @@ class NetworkSecurityEnvironment(object):
                 reward += self._rewards["detection"]
                 # Mark the environment as detected
                 self._detected = True
-                self._end = True
+                #self._end = True
                 self._end_reason = 'detected'
                 reason = {'end_reason':'detected'}
                 logger.info(f'Episode ended. Reason: {reason}')
