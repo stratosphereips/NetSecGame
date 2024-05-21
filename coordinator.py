@@ -222,9 +222,7 @@ class Coordinator:
                         case ActionType.QuitGame:
                             self.logger.info(f"Coordinator received from QUIT message from agent {agent_addr}")
                             # remove agent address from the reset request dict
-                            self.logger.info(f"Removing {agent_addr} from reset requests")
-                            reset_requested = self._reset_requests.pop(agent_addr, None)
-
+                            self._remove_player(agent_addr)
                         case ActionType.ResetGame:
                             self._reset_requests[agent_addr] = True
                             self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
@@ -262,7 +260,7 @@ class Coordinator:
             self.logger.error(f"Exception in main_coordinator(): {e}")
             raise e
 
-    def _initialize_new_player(self, agent_addr, agent_name, agent_role) -> Observation:
+    def _initialize_new_player(self, agent_addr:tuple, agent_name:str, agent_role:str) -> Observation:
         """
         Method to initialize new player upon joining the game.
         Returns initial observation for the agent based on the agent's role
@@ -276,6 +274,17 @@ class Coordinator:
         self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
+
+    def _remove_player(self, agent_addr:tuple)->dict:
+        self.logger.info(f"Removing player {agent_addr}")
+        agent_info = {}
+        agent_info["state"] = self._agent_states.pop(agent_addr)
+        agent_info["goal_reached"] = self._agent_goal_reached.pop(agent_addr)
+        agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
+        agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
+        agent_info["agent_info"] = self.agents.pop(agent_addr)
+        self.logger.debug(f"\t{agent_info}")
+        return agent_info
 
     def _get_starting_position_per_role(self)->dict:
         """
@@ -392,7 +401,7 @@ class Coordinator:
            output_message_dict = self._generate_timeout_message(agent_addr)
         return output_message_dict
     
-    def _generate_timeout_message(self, agent_addr)->dict:
+    def _generate_timeout_message(self, agent_addr:tuple)->dict:
         current_observation = self._agent_observations[agent_addr]
         reward = 0 # TODO
         end_reason = ""
@@ -414,7 +423,7 @@ class Coordinator:
         }
         return output_message_dict
 
-    def _goal_reached(self, agent_addr):
+    def _goal_reached(self, agent_addr:tuple)->bool:
         self.logger.info(f"Goal check for {agent_addr}({self.agents[agent_addr][1]})")
         agents_state = self._agent_states[agent_addr]
         agent_role = self.agents[agent_addr][1]
