@@ -115,7 +115,7 @@ class ConnectionLimitProtocol(asyncio.Protocol):
                 data = await reader.read(500)
                 raw_message = data.decode().strip()
                 if len(raw_message):
-                    self.logger.info(
+                    self.logger.debug(
                         f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}"
                     )
 
@@ -204,7 +204,7 @@ class Coordinator:
                 # Read message from the queue
                 agent_addr, message = await self._actions_queue.get()
                 if message is not None:
-                    self.logger.info(f"Coordinator received: {message}.")
+                    self.logger.debug(f"Coordinator received: {message}.")
                     try:  # Convert message to Action
                         action = Action.from_json(message)
                     except Exception as e:
@@ -375,7 +375,7 @@ class Coordinator:
 
     def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
         self.logger.info(f"Processing {action} from {agent_addr}")
-        if not self.episode_end:
+        if not self.episode_end and not self._agent_episode_ends[agent_addr]:
             # Process the message
             # increase the action counter
             self._agent_steps[agent_addr] += 1
