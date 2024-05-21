@@ -81,35 +81,6 @@ class AIDojo:
         # Everything stopped correctly, terminate
         self.logger.info("AIDojo terminating")
 
-# class ActionProcessor:
-#     def __init__(self) -> None:
-#         self._logger = logging.getLogger("Coordinator-ActionProcessor")
-#         self._observations = {}
-#         self._num_steps = {}
-#         self._logger.info("Action Processor created")
-
-#     def process_message_from_agent(self, agent_id: int, action: Action) -> Action:
-#         """
-#         Method for processing message coming from the agent for the game engine.
-#         input str JSON
-#         output Action
-#         """
-#         self._logger.debug(f"Processing message from agent {agent_id}: {Action}")
-#         a = action
-#         return a
-
-#     def generate_observation_msg_for_agent(self, agent_id: int, new_observation: Observation) -> str:
-#         """
-#         Method for processing a NetSecGame gamestate into an partial observation for an agent
-
-#         Action.from
-#         """
-#         self._logger.debug(f"Processing message to agent {agent_id}: {new_observation}")
-#         self._observations[agent_id] = new_observation
-#         msg_for_agent = observation_as_dict(new_observation)
-#         return msg_for_agent
-
-
 class ConnectionLimitProtocol(asyncio.Protocol):
     def __init__(self, actions_queue, answers_queue, max_connections):
         self.actions_queue = actions_queue
