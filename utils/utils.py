@@ -290,7 +290,13 @@ class ConfigParser():
             case "Defender":
                 return {}
             case "Benign":
-                return {}
+                return {
+                    'known_networks': set(),
+                    'controlled_hosts': ["random", "random", "random"],
+                    'known_hosts': set(),
+                    'known_data': {},
+                    'known_services': {}
+                }
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
     
@@ -301,7 +307,14 @@ class ConfigParser():
             case "Defender":
                 return {}
             case "Benign":
-                return {}
+                # create goal that is unreachable so we have infinite play by the benign agent
+                return {
+                    'known_networks': set(),
+                    'controlled_hosts': set(),
+                    'known_hosts': set(),
+                    'known_data': {IP("1.1.1.1"): {Data(owner='User1', id='DataFromInternet', size=0, type='')}},
+                    'known_services': {}
+                }
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
     def get_max_steps(self):
