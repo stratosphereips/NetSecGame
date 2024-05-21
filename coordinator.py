@@ -412,27 +412,40 @@ class Coordinator:
                 "status": str(GameStatus.OK),
             }
         else:
-            # Episode ended tell agent to request reset
-            current_observation = self._agent_observations[agent_addr]
-            reward = 0 # TODO 
-            new_observation = Observation(
-                current_observation.state,
-                reward=reward,
-                end=True,
-                info={'end_reason': "game_lost", "info":"Episode ended. Request reset for starting new episode."})
-            output_message_dict = {
-                "to_agent": agent_addr,
-                "observation": observation_as_dict(new_observation),
-                "status": str(GameStatus.BAD_REQUEST),
-            }
+           output_message_dict = self._generate_timeout_message(agent_addr)
+        return output_message_dict
+    
+    def _generate_timeout_message(self, agent_addr)->dict:
+        current_observation = self._agent_observations[agent_addr]
+        reward = 0 # TODO
+        end_reason = ""
+        if self._agent_goal_reached[agent_addr]:
+            end_reason = "goal_reached"
+        elif self._agent_steps[agent_addr] >= self._world.timeout:
+            end_reason = "max_steps"
+        else:
+            end_reason = "game_lost"
+        new_observation = Observation(
+            current_observation.state,
+            reward=reward,
+            end=True,
+            info={'end_reason': end_reason, "info":"Episode ended. Request reset for starting new episode."})
+        output_message_dict = {
+            "to_agent": agent_addr,
+            "observation": observation_as_dict(new_observation),
+            "status": str(GameStatus.FORBIDDEN),
+        }
         return output_message_dict
 
     def _goal_reached(self, agent_addr):
-        self.logger.info(f"Coordinator checking if {agent_addr}({self.agents[agent_addr][1]}) reached the goal:")
+        self.logger.info(f"Goal check for {agent_addr}({self.agents[agent_addr][1]})")
         agents_state = self._agent_states[agent_addr]
         agent_role = self.agents[agent_addr][1]
         win_condition = self._win_conditions_per_role[agent_role]
-        return self._check_goal(agents_state, win_condition)
+        goal_check = self._check_goal(agents_state, win_condition)
+        if goal_check:
+            self.logger.info("\tGoal reached!")
+        return goal_check
     
     def _check_goal(self, state:GameState, goal_conditions:dict)->bool:
         """
@@ -462,7 +475,7 @@ class Coordinator:
         goal_reached["controlled_hosts"] = set(goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
         goal_reached["services"] = goal_dict_satistfied(goal_conditions["known_services"], state.known_services)
         goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
-        self.logger.info(f"\t{all(goal_reached.values())} - {goal_reached}")
+        self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
 __version__ = "v0.2.1"
