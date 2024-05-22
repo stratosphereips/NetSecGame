@@ -163,6 +163,7 @@ class Coordinator:
         self.world_type = world_type
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
+        self._steps_limit = self._world.task_config.get_max_steps()
 
         # player information
         self.agents = {}
@@ -375,8 +376,10 @@ class Coordinator:
 
     def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
         self.logger.info(f"Processing {action} from {agent_addr}")
-        if not self.episode_end and not self._agent_episode_ends[agent_addr]:
-            # Process the message
+        if any([self.episode_end, self._agent_episode_ends[agent_addr], self._agent_steps[agent_addr] >= self._steps_limit]):
+            output_message_dict = self._generate_timeout_message(agent_addr)
+        else:
+           # Process the message
             # increase the action counter
             self._agent_steps[agent_addr] += 1
             self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
@@ -399,8 +402,6 @@ class Coordinator:
                 "observation": observation_as_dict(new_observation),
                 "status": str(GameStatus.OK),
             }
-        else:
-           output_message_dict = self._generate_timeout_message(agent_addr)
         return output_message_dict
     
     def _generate_timeout_message(self, agent_addr:tuple)->dict:
