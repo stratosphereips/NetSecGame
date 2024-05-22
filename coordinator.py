@@ -177,7 +177,8 @@ class Coordinator:
     
     @property
     def episode_end(self)->bool:
-        return all(self._agent_episode_ends.values())
+        # Terminate episode if at least one player wins or reaches the timeout
+        return any(self._agent_episode_ends.values())
     
     def convert_msg_dict_to_json(self, msg_dict)->str:
             try:
@@ -376,7 +377,7 @@ class Coordinator:
 
     def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
         self.logger.info(f"Processing {action} from {agent_addr}")
-        if not self.episode_end and not self._agent_episode_ends[agent_addr]:
+        if not self.episode_end:
             # Process the message
             # increase the action counter
             self._agent_steps[agent_addr] += 1
@@ -418,6 +419,7 @@ class Coordinator:
             end_reason = "max_steps"
         else:
             end_reason = "game_lost"
+            reward += self._world._rewards["detection"]
         new_observation = Observation(
             current_observation.state,
             reward=reward,
