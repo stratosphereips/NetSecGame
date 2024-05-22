@@ -376,10 +376,8 @@ class Coordinator:
 
     def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
         self.logger.info(f"Processing {action} from {agent_addr}")
-        if any([self.episode_end, self._agent_episode_ends[agent_addr], self._agent_steps[agent_addr] >= self._steps_limit]):
-            output_message_dict = self._generate_timeout_message(agent_addr)
-        else:
-           # Process the message
+        if not self.episode_end and not self._agent_episode_ends[agent_addr]:
+            # Process the message
             # increase the action counter
             self._agent_steps[agent_addr] += 1
             self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
@@ -394,6 +392,9 @@ class Coordinator:
                 reward += self._world._rewards["goal"]
                 self._agent_episode_ends[agent_addr] = True
                 obs_info = {'end_reason': "goal_reached"}
+            elif self._agent_steps[agent_addr] >= self._steps_limit:
+                self._agent_episode_ends[agent_addr] = True
+                obs_info = {"end_reason": "max_steps"}
             new_observation = Observation(self._agent_states[agent_addr], reward, self.episode_end, info=obs_info)
             self._agent_observations[agent_addr] = new_observation
 
@@ -402,10 +403,12 @@ class Coordinator:
                 "observation": observation_as_dict(new_observation),
                 "status": str(GameStatus.OK),
             }
+        else:
+            self.logger.error(f"{self.episode_end}, {self._agent_episode_ends}")
+            output_message_dict = self._generate_timeout_message(agent_addr)
         return output_message_dict
     
     def _generate_timeout_message(self, agent_addr:tuple)->dict:
-        self.logger.warning(f"Agent {agent_addr} attempting to play after episode ended!")
         current_observation = self._agent_observations[agent_addr]
         reward = 0 # TODO
         end_reason = ""
