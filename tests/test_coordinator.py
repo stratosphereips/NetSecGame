@@ -3,7 +3,7 @@ import pytest
 import queue
 
 CONFIG_FILE = "tests/netsecenv-task-for-testing.yaml"
-ALLOWED_ROLES = ["Attacker", "Defender", "Human"]
+ALLOWED_ROLES = ["Attacker", "Defender", "Benign"]
 
 import sys
 from os import path
@@ -19,7 +19,6 @@ def coordinator_init():
     answers = queue.Queue()
 
     coord = Coordinator(actions, answers, CONFIG_FILE, ALLOWED_ROLES)
-    coord.agents = {}
     return coord
 
 
@@ -31,10 +30,17 @@ class TestCoordinator:
         coord = Coordinator(actions, answers, CONFIG_FILE, ALLOWED_ROLES)
 
         assert coord.ALLOWED_ROLES == ALLOWED_ROLES
-        assert coord._action_processor._observations == {}
+        assert coord.agents == {}
+        assert coord._agent_steps == {}
+        assert coord._reset_requests == {}
+        assert coord._agent_starting_position == {}
+        assert coord._agent_observations == {}
+        assert coord._agent_states == {}
+        assert coord._agent_goal_reached == {}
+        assert coord._agent_episode_ends == {}
         assert type(coord._actions_queue) == queue.Queue
         assert type(coord._answers_queue) == queue.Queue
-
+    
     def test_join(self, coordinator_init):
         coord = coordinator_init
 
