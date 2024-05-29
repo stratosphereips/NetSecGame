@@ -1163,15 +1163,10 @@ class NetworkSecurityEnvironment(object):
         
         initial_reward = 0
         info = {}
-        self._end = False
-        self._end_reason = None
-        self._step_counter = 0
-        self._detected = False
-        
         self._actions_played = []
         self._defender.reset()
         # An observation has inside ["state", "reward", "end", "info"]
-        return components.Observation(self._current_state, initial_reward, self._end, info)
+        return components.Observation(self._current_state, initial_reward, False, info)
 
     def step(self, state:components.GameState, action:components.Action, action_type='netsecenv')-> components.Observation:
         """
@@ -1179,9 +1174,7 @@ class NetworkSecurityEnvironment(object):
         in: action
         out: observation of the state of the env
         """
-        logger.debug(f'Step taken: {self._step_counter}')
         logger.info(f"Agent's action: {action}")
-        self._step_counter += 1
         # Reward for taking an action
         reward = self._rewards["step"]
         reason = {}
