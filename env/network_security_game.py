@@ -583,19 +583,19 @@ class NetworkSecurityEnvironment(object):
                             for dst in ips:
                                 firewall[src].add(dst)
 
-                # # LOCAL TO INTERNET
-                # for net, ips in self._networks.items():
-                #     # IF net is local, allow connection between all nodes in it
-                #     if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
-                #         for public_net, public_ips in self._networks.items():
-                #             if not netaddr.IPNetwork(
-                #                 str(public_net)
-                #             ).ip.is_ipv4_private_use():
-                #                 for src in ips:
-                #                     for dst in public_ips:
-                #                         firewall[src].add(dst)
-                #                         # add self loop:
-                #                         firewall[dst].add(dst)
+                # LOCAL TO INTERNET
+                for net, ips in self._networks.items():
+                    # IF net is local, allow connection between all nodes in it
+                    if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+                        for public_net, public_ips in self._networks.items():
+                            if not netaddr.IPNetwork(
+                                str(public_net)
+                            ).ip.is_ipv4_private_use():
+                                for src in ips:
+                                    for dst in public_ips:
+                                        firewall[src].add(dst)
+                                        # add self loop:
+                                        firewall[dst].add(dst)
                 # FW RULES FROM CONFIG
                 for rule in fw_rules:
                     if rule.policy == FirewallPolicy.ALLOW:
