@@ -94,12 +94,9 @@ class TestCoordinator:
         assert "max_steps" in result["message"].keys()
         assert "goal_description" in result["message"].keys()
         assert not result["observation"]["end"]
-    #   assert result["observation"]["state"] == obs.state.as_dict
-    #   assert result["observation"]["info"] == obs.info
-    #   assert result["observation"]["reward"] == coord._world.num_actions
-
-    # def test_reset(self, coordinator_init):
-    #     coord = coordinator_init
+    
+    # def test_reset(self, coordinator_registered_player):
+    #     coord, _ = coordinator_registered_player
     #     result = coord._process_reset_game_action(("192.168.1.1", "3300"))
 
     #     assert result["to_agent"] == ("192.168.1.1", "3300")
@@ -107,6 +104,11 @@ class TestCoordinator:
     #     assert "max_steps" in result["message"].keys()
     #     assert "goal_description" in result["message"].keys()
     #     assert result["status"] == "GameStatus.OK"
+
+    #     assert coord._agent_steps[("192.168.1.1", "3300")] == 0
+    #     assert coord._agent_goal_reached[("192.168.1.1", "3300")] is False
+    #     assert coord._agent_episode_ends[("192.168.1.1", "3300")] is False
+    #     assert coord._reset_requests[("192.168.1.1", "3300")] is False
 
     def test_generic_action(self, coordinator_registered_player):
         coord, init_result = coordinator_registered_player
