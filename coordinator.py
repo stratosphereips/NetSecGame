@@ -279,15 +279,21 @@ class Coordinator:
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
     def _remove_player(self, agent_addr:tuple)->dict:
+        """
+        Removes player from the game.
+        """
         self.logger.info(f"Removing player {agent_addr}")
         agent_info = {}
-        agent_info["state"] = self._agent_states.pop(agent_addr)
-        agent_info["goal_reached"] = self._agent_goal_reached.pop(agent_addr)
-        agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
-        agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
-        agent_info["episode_end"] = self._agent_episode_ends.pop(agent_addr)
-        agent_info["agent_info"] = self.agents.pop(agent_addr)
-        self.logger.debug(f"\t{agent_info}")
+        if agent_addr in self.agents:
+            agent_info["state"] = self._agent_states.pop(agent_addr)
+            agent_info["goal_reached"] = self._agent_goal_reached.pop(agent_addr)
+            agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
+            agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
+            agent_info["episode_end"] = self._agent_episode_ends.pop(agent_addr)
+            agent_info["agent_info"] = self.agents.pop(agent_addr)
+            self.logger.debug(f"\t{agent_info}")
+        else:
+            self.logger.warning(f"\t Player {agent_addr} not present in the game!")
         return agent_info
 
     def _get_starting_position_per_role(self)->dict:
@@ -376,6 +382,9 @@ class Coordinator:
         return output_message_dict
 
     def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
+        """
+        Method processing the Actions relevant to the environment
+        """
         self.logger.info(f"Processing {action} from {agent_addr}")
         if not self.episode_end:
             # Process the message
@@ -397,6 +406,7 @@ class Coordinator:
                 self._agent_episode_ends[agent_addr] = True
                 obs_info = {"end_reason": "max_steps"}
             new_observation = Observation(self._agent_states[agent_addr], reward, self.episode_end, info=obs_info)
+
             self._agent_observations[agent_addr] = new_observation
 
             output_message_dict = {
@@ -410,6 +420,9 @@ class Coordinator:
         return output_message_dict
     
     def _generate_timeout_message(self, agent_addr:tuple)->dict:
+        """
+        Method for generating response when agent attemps to make a step after episode ended.
+        """
         current_observation = self._agent_observations[agent_addr]
         reward = 0 # TODO
         end_reason = ""
@@ -433,6 +446,9 @@ class Coordinator:
         return output_message_dict
 
     def _goal_reached(self, agent_addr:tuple)->bool:
+        """
+        Determines if and agent reached a goal state
+        """
         self.logger.info(f"Goal check for {agent_addr}({self.agents[agent_addr][1]})")
         agents_state = self._agent_states[agent_addr]
         agent_role = self.agents[agent_addr][1]
@@ -480,22 +496,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=f"NetSecGame Coordinator Server version {__version__}. Author: Sebastian Garcia, sebastian.garcia@agents.fel.cvut.cz",
         usage="%(prog)s [options]",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        help="Verbosity level. This shows more info about the results.",
-        action="store",
-        required=False,
-        type=int,
-    )
-    parser.add_argument(
-        "-d",
-        "--debug",
-        help="Debugging level. This shows inner information about the flows.",
-        action="store",
-        required=False,
-        type=int,
     )
     parser.add_argument(
         "-c",
