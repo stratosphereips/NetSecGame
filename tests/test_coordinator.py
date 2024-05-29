@@ -9,7 +9,7 @@ import sys
 from os import path
 
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-from env.game_components import Action, ActionType, AgentInfo, Network, IP
+from env.game_components import Action, ActionType, AgentInfo, Network, IP, GameState, Service, Data
 
 
 @pytest.fixture
@@ -94,9 +94,9 @@ class TestCoordinator:
         assert "max_steps" in result["message"].keys()
         assert "goal_description" in result["message"].keys()
         assert not result["observation"]["end"]
-    #     assert result["observation"]["state"] == obs.state.as_dict
-    #     assert result["observation"]["info"] == obs.info
-    #     assert result["observation"]["reward"] == coord._world.num_actions
+    #   assert result["observation"]["state"] == obs.state.as_dict
+    #   assert result["observation"]["info"] == obs.info
+    #   assert result["observation"]["reward"] == coord._world.num_actions
 
     # def test_reset(self, coordinator_init):
     #     coord = coordinator_init
@@ -122,3 +122,76 @@ class TestCoordinator:
         assert result["to_agent"] == ("192.168.1.1", "3300")
         assert result["status"] == "GameStatus.OK"
         assert init_result["observation"]["state"] != result["observation"]["state"]
+
+    def test_check_goal_valid(self, coordinator_init):
+        game_state = GameState(
+            controlled_hosts=[IP("1.1.1.1"), IP("1.1.1.2")],
+            known_hosts=[IP("1.1.1.1"), IP("1.1.1.2"), IP("1.1.1.3"), IP("1.1.1.4")],
+            known_services={
+                IP("1.1.1.1"):[Service("test_service1", "passive", "1.01", is_local=False)]
+            },
+            known_data={
+                IP("1.1.1.1"):[Data("Joe Doe", "password", 10, "txt")]
+            },
+            known_networks=[Network("1.1.1.1","24")]
+        )
+        win_conditions = {
+            "known_networks":[],
+            "known_hosts":[IP("1.1.1.2")],
+            "controlled_hosts":[IP("1.1.1.1")],
+            "known_services":{
+                 IP("1.1.1.1"):[Service("test_service1", "passive", "1.01", is_local=False)],
+            },
+            "known_data":{
+                
+            }
+        }
+
+        assert coordinator_init._check_goal(game_state, win_conditions) is True
+
+    def test_check_goal_invalid(self, coordinator_init):
+            game_state = GameState(
+                controlled_hosts=[IP("1.1.1.1"), IP("1.1.1.2")],
+                known_hosts=[IP("1.1.1.1"), IP("1.1.1.2"), IP("1.1.1.3"), IP("1.1.1.4")],
+                known_services={
+                    IP("1.1.1.1"):[Service("test_service1", "passive", "1.01", is_local=False)]
+                },
+                known_data={
+                    IP("1.1.1.1"):[Data("Joe Doe", "password", 10, "txt")]
+                },
+                known_networks=[Network("1.1.1.1","24")]
+            )
+            win_conditions = {
+                "known_networks":[],
+                "known_hosts":[IP("1.1.1.5")],
+                "controlled_hosts":[IP("1.1.1.1")],
+                "known_services":{
+                    IP("1.1.1.1"):[Service("test_service1", "passive", "1.01", is_local=False)],
+                },
+                "known_data":{
+                    
+                }
+            }
+
+            assert coordinator_init._check_goal(game_state, win_conditions) is False
+    
+    def test_check_goal_empty(self, coordinator_init):
+        game_state = GameState(
+        controlled_hosts=[IP("1.1.1.1"), IP("1.1.1.2")],
+        known_hosts=[IP("1.1.1.1"), IP("1.1.1.2"), IP("1.1.1.3"), IP("1.1.1.4")],
+        known_services={
+            IP("1.1.1.1"):[Service("test_service1", "passive", "1.01", is_local=False)]
+        },
+        known_data={
+            IP("1.1.1.1"):[Data("Joe Doe", "password", 10, "txt")]
+        },
+        known_networks=[Network("1.1.1.1","24")]
+        )
+        win_conditions = {
+            "known_networks":[],
+            "known_hosts":[],
+            "controlled_hosts":[],
+            "known_services":{},
+            "known_data":{}
+        }
+        assert coordinator_init._check_goal(game_state, win_conditions) is True
