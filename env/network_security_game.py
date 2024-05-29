@@ -235,8 +235,7 @@ class NetworkSecurityEnvironment(object):
         self._current_state = None
         self._current_goal = None
         self._actions_played = []
-        # If the game finished. Start with False
-        self._end = False
+
         self._end_reason = None
         # If the episode/action was detected by the defender
         self._detected = None
@@ -255,14 +254,6 @@ class NetworkSecurityEnvironment(object):
         Property used to show an interface to agents about what timestamp it is
         """
         return self._step_counter
-
-    @property
-    def end(self):
-        """
-        Property used to for indication that
-        no more interaction can be done in te currect episode
-        """
-        return self._end
 
     @property
     def detected(self):
@@ -1061,38 +1052,6 @@ class NetworkSecurityEnvironment(object):
             next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
     
         return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
-    
-    def is_goal(self, state:components.GameState)->bool:
-        """
-        Check if the goal was reached for the game
-        """
-        def goal_dict_satistfied(goal_dict:dict, known_dict: dict)-> bool:
-            """
-            Helper function for checking if a goal dictionary condition is satisfied
-            """
-            # check if we have all IPs that should have some values (are keys in goal_dict)
-            if goal_dict.keys() <= known_dict.keys():
-                logger.debug('\t\tKey comparison OK')
-                try:
-                    # Check if values (sets) for EACH key (host) in goal_dict are subsets of known_dict, keep matching_keys
-                    matching_keys = [host for host in goal_dict.keys() if goal_dict[host]<= known_dict[host]]
-                    # Check we have the amount of mathing keys as in the goal_dict
-                    logger.debug(f"\t\tMatching sets: {len(matching_keys)}, required: {len(goal_dict.keys())}")
-                    if len(matching_keys) == len(goal_dict.keys()):
-                        return True
-                except KeyError:
-                    #some keys are missing in the known_dict
-                    return False
-            return False
-        # For each part of the state of the game, check if the conditions are met
-        goal_reached = {}    
-        goal_reached["networks"] = set(self._goal_conditions["known_networks"]) <= set(state.known_networks)
-        goal_reached["known_hosts"] = set(self._goal_conditions["known_hosts"]) <= set(state.known_hosts)
-        goal_reached["controlled_hosts"] = set(self._goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
-        goal_reached["services"] = goal_dict_satistfied(self._goal_conditions["known_services"], state.known_services)
-        goal_reached["data"] = goal_dict_satistfied(self._goal_conditions["known_data"], state.known_data)
-        logger.debug(f"Checking goal satisfaction: {goal_reached}")
-        return all(goal_reached.values())
 
     def create_state_from_view(self, view:dict, add_neighboring_nets=True)->components.GameState:
         """
@@ -1220,72 +1179,32 @@ class NetworkSecurityEnvironment(object):
         in: action
         out: observation of the state of the env
         """
-        if not self._end:
-            logger.debug(f'Step taken: {self._step_counter}')
-            logger.info(f"Agent's action: {action}")
-            self._step_counter += 1
-            # Reward for taking an action
-            reward = self._rewards["step"]
-            reason = {}
-            self._actions_played.append(action)
+        logger.debug(f'Step taken: {self._step_counter}')
+        logger.info(f"Agent's action: {action}")
+        self._step_counter += 1
+        # Reward for taking an action
+        reward = self._rewards["step"]
+        reason = {}
+        self._actions_played.append(action)
 
-            # 1. Perform the action
-            self._actions_played.append(action)
-            if random.random() <= action.type.default_success_p or action_type == 'realworld':
-                next_state = self._execute_action(state, action, action_type=action_type)
-            else:
-                logger.info("\tAction NOT sucessful")
-                next_state = state
-
-            # # 2. Check if the new state is the goal state
-            # is_goal = self.is_goal(next_state)
-            # logger.info(f"\tGoal reached?: {is_goal}")
-            # if is_goal:
-            #     # Give reward
-            #     reward +=  self._rewards["goal"]
-            #     # Game ended
-            #     #self._end = True
-            #     self._end_reason = 'goal_reached'
-            #     reason = {'end_reason': self._end_reason}
-            #     #logger.info(f'Episode ended. Reason: {reason}')
-
-            # 3. Check if the action was detected
-            # Be sure that if the action was detected the game ends with the
-            # correct penalty, even if the action was successfully executed.
-            # This means defender wins if both defender and attacker are successful
-            # simuntaneously in the same step
-            #detected = self._defender.detect(self._current_state, action, self._actions_played)
-            # detected = False
-            # # Report detection, but not if in this same step the agent won
-            # if not is_goal and detected:
-            #     # Reward should be negative
-            #     reward += self._rewards["detection"]
-            #     # Mark the environment as detected
-            #     self._detected = True
-            #     #self._end = True
-            #     self._end_reason = 'detected'
-            #     reason = {'end_reason':'detected'}
-            #     logger.info(f'Episode ended. Reason: {reason}')
-
-            # Make the state we just got into, our current state
-            current_state = self._current_state
-            self._current_state = next_state
-            logger.info(f'Current state: {self._current_state} ')
-
-            # 4. Check if the max number of steps of the game passed already
-            # But if the agent already won in this last step, count the win
-            
-            # if not is_goal and self._step_counter >= self._max_steps:
-            #     self._end = True
-            #     self._end_reason = 'max_steps'
-            #     reason = {'end_reason':'max_steps'}
-            #     logger.info(f'Episode ended: Exceeded max number of steps ({self._max_steps})')
-
-            # Save the transition to the episode replay buffer if there is any
-            if self._episode_replay_buffer is not None:
-                self._episode_replay_buffer.append((current_state, action, reward, next_state))
-            # Return an observation
-            return components.Observation(self._current_state, reward, self._end, reason)
+        # 1. Perform the action
+        self._actions_played.append(action)
+        if random.random() <= action.type.default_success_p or action_type == 'realworld':
+            next_state = self._execute_action(state, action, action_type=action_type)
         else:
-            logger.warning("Interaction over! No more steps can be made in the environment")
-            raise ValueError("Interaction over! No more steps can be made in the environment")
+            logger.info("\tAction NOT sucessful")
+            next_state = state
+
+        
+        # Make the state we just got into, our current state
+        current_state = self._current_state
+        self._current_state = next_state
+        logger.info(f'Current state: {self._current_state} ')
+
+
+        # Save the transition to the episode replay buffer if there is any
+        if self._episode_replay_buffer is not None:
+            self._episode_replay_buffer.append((current_state, action, reward, next_state))
+        # Return an observation
+        return components.Observation(self._current_state, reward, False, reason)
+        
