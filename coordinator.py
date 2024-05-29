@@ -477,7 +477,6 @@ __version__ = "v0.2.1"
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
     parser = argparse.ArgumentParser(
         description=f"NetSecGame Coordinator Server version {__version__}. Author: Sebastian Garcia, sebastian.garcia@agents.fel.cvut.cz",
         usage="%(prog)s [options]",
