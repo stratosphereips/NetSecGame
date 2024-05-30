@@ -564,31 +564,6 @@ class NetworkSecurityEnvironment(object):
         for ip, mapping in self._ip_mapping.items():
             self._ip_mapping[ip] = mapping_ips[mapping]
         logger.debug(f"self._ip_mapping: {self._ip_mapping}")
-        # # attacker starting position
-        # new_attacker_start = {}
-        # new_attacker_start["known_networks"] = {mapping_nets[net] for net in self._attacker_start_position["known_networks"]}
-        # new_attacker_start["known_hosts"] = {mapping_ips[ip] for ip in self._attacker_start_position["known_hosts"]}
-        # new_attacker_start["controlled_hosts"] = {mapping_ips[ip] for ip in self._attacker_start_position["controlled_hosts"]}
-        # new_attacker_start["known_services"] = {mapping_ips[ip]:service for ip,service in self._attacker_start_position["known_services"].items()}
-        # new_attacker_start["known_data"] = {mapping_ips[ip]:data for ip,data in self._attacker_start_position["known_data"].items()}
-        # self._attacker_start_position = new_attacker_start
-        # logger.info(f"Starting position mapping: {new_attacker_start}")
-        
-        # # goal definition
-        # new_goal = {}
-        # new_goal["known_networks"] = {mapping_nets[net] for net in self._goal_conditions["known_networks"]}
-        # new_goal["known_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["known_hosts"]}
-        # new_goal["controlled_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["controlled_hosts"]}
-        # new_goal["known_services"] = {mapping_ips[ip]:service for ip,service in self._goal_conditions["known_services"].items()}
-        # new_goal["known_data"] = {mapping_ips[ip]:data for ip,data in self._goal_conditions["known_data"].items()}
-        # logger.info(f"Goal mapping: {new_goal}")
-        
-        # # update goal mapping
-        # for old_ip in mapping_ips.keys():
-        #     if str(old_ip) in self._goal_description:
-        #         self._goal_description = self._goal_description.replace(str(old_ip), str(mapping_ips[old_ip]))
-        #         logger.info(f"New goal desc: {self.goal_description}| {old_ip}-> {mapping_ips[old_ip]}")
-        # self._goal_conditions = new_goal
     
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
         """
@@ -988,6 +963,10 @@ class NetworkSecurityEnvironment(object):
         return game_state
 
     def re_map_goal_dict(self, goal_dict)->dict:
+        """
+        Updates goal dict based on the current values
+        in self._network_mapping and self._ip_mapping.
+        """
         new_dict = {
             "known_networks":set(),
             "known_hosts":set(),
@@ -1062,7 +1041,7 @@ class NetworkSecurityEnvironment(object):
             logger.info("Saving trajectories")
             self.store_trajectories_to_file(trajectory_filename)
     
-    def reset(self, trajectory_filename=None)->components.Observation: 
+    def reset(self, trajectory_filename=None)->None: 
         """
         Function to reset the state of the game
         and prepare for a new episode
@@ -1082,14 +1061,11 @@ class NetworkSecurityEnvironment(object):
         # reset self._data_content to orignal state
         self._data_content_original = copy.deepcopy(self._data_content_original)
       
-        initial_reward = 0
-        info = {}
+
         self._actions_played = []
         self._defender.reset()
-        # An observation has inside ["state", "reward", "end", "info"]
-        return components.Observation(None, initial_reward, False, info)
 
-    def step(self, state:components.GameState, action:components.Action, action_type='netsecenv')-> components.Observation:
+    def step(self, state:components.GameState, action:components.Action, action_type='netsecenv')-> components.GameState:
         """
         Take a step in the environment given an action
         in: action
@@ -1098,7 +1074,6 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"Agent's action: {action}")
         # Reward for taking an action
         reward = self._rewards["step"]
-        reason = {}
         self._actions_played.append(action)
 
         # 1. Perform the action
@@ -1119,5 +1094,4 @@ class NetworkSecurityEnvironment(object):
         if self._episode_replay_buffer is not None:
             self._episode_replay_buffer.append((current_state, action, reward, next_state))
         # Return an observation
-        return components.Observation(next_state, reward, False, reason)
-        
+        return next_state

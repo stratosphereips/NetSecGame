@@ -202,7 +202,7 @@ class Coordinator:
 
         try:
             self.logger.info("Main coordinator started.")
-            env_observation = None#self._world.reset()
+            env_observation = None
             while True:
                 # Read message from the queue
                 agent_addr, message = await self._actions_queue.get()
@@ -413,7 +413,7 @@ class Coordinator:
             self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
             
             # Build new Observation for the agent
-            self._agent_states[agent_addr] = self._world.step(self._agent_states[agent_addr], action, self.world_type).state
+            self._agent_states[agent_addr] = self._world.step(self._agent_states[agent_addr], action, self.world_type)
             self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
 
             reward = self._world._rewards["step"]
