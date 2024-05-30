@@ -168,11 +168,11 @@ class NetworkSecurityEnvironment(object):
         random.seed(seed)
         self._seed = seed
         logger.info(f'Setting env seed to {seed}')
-        
+
         # Set maximum number of steps in one episode
         self._max_steps = self.task_config.get_max_steps()
         logger.info(f"\tSetting max steps to {self._max_steps}")
-
+        
         # Set rewards for goal/detection/step
         self._rewards = {
             "goal": self.task_config.get_goal_reward(),
@@ -198,11 +198,6 @@ class NetworkSecurityEnvironment(object):
         # should be randomized once or every episode?
         self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
         
-        # store goal definition
-        self._goal_conditions = self.task_config.get_attackers_win_conditions()
-
-        # store goal description
-        self._goal_description = self.task_config.get_goal_description()
 
         # # Process episodic randomization of goal position
         # if not self._randomize_goal_every_episode:
@@ -231,14 +226,7 @@ class NetworkSecurityEnvironment(object):
         self._data_original = copy.deepcopy(self._data)
         self._data_content_original = copy.deepcopy(self._data_content)
         
-        # CURRENT STATE OF THE GAME - all set to None until self.reset()
-        self._current_state = None
-        self._current_goal = None
         self._actions_played = []
-
-        self._end_reason = None
-        # If the episode/action was detected by the defender
-        self._detected = None
         logger.info("Environment initialization finished")
 
     @property
@@ -248,27 +236,6 @@ class NetworkSecurityEnvironment(object):
         """
         return self._seed
     
-    @property
-    def timestamp(self)->int:
-        """
-        Property used to show an interface to agents about what timestamp it is
-        """
-        return self._step_counter
-
-    @property
-    def detected(self):
-        """
-        Property used to for indication that the attacker has been detected.
-        Only returns value when episode is over
-        """
-        if self.end: #Only tell if detected when the interaction ends
-            return self._detected
-        else: 
-            return None
-
-    @property
-    def timeout(self):
-        return self._max_steps
     @property
     def num_actions(self):
         return len(self.get_all_actions())
@@ -333,58 +300,6 @@ class NetworkSecurityEnvironment(object):
                             actions.add(components.Action(components.ActionType.ExploitService, {"target_host":ip, "target_service":service, "source_host":src_ip}))
         return {k:v for k,v in enumerate(actions)}
     
-    # def _create_starting_state(self) -> components.GameState:
-    #     """
-    #     Builds the starting GameState from 'self._attacker_start_position'.
-    #     If there is a keyword 'random' used, it is replaced by a valid option at random.
-
-    #     Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
-    #     """
-    #     known_networks = set()
-    #     controlled_hosts = set()
-    #     logger.info('Generating starting state')
-    #     for controlled_host in self._attacker_start_position['controlled_hosts']:
-    #         if isinstance(controlled_host, components.IP):
-    #             controlled_hosts.add(controlled_host)
-    #             logger.info(f'\tThe attacker has control of host {str(controlled_host)}.')
-    #         elif controlled_host == 'random':
-    #             # Random start
-    #             logger.info('\tAdding random starting position of agent')
-    #             logger.info(f'\t\tChoosing from {self.hosts_to_start}')
-    #             controlled_hosts.add(random.choice(self.hosts_to_start))
-    #             logger.info(f'\t\tMaking agent start in {controlled_hosts}')
-    #         else:
-    #             logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {controlled_host}")
-
-    #     # Add all controlled hosts to known_hosts
-    #     known_hosts = self._attacker_start_position["known_hosts"].union(controlled_hosts)
-        
-    #     # Extend the known networks with the neighbouring networks
-    #     # This is to solve in the env (and not in the agent) the problem
-    #     # of not knowing other networks appart from the one the agent is in
-    #     # This is wrong and should be done by the agent, not here
-    #     # TODO remove this!
-    #     for controlled_host in controlled_hosts:
-    #         for net in self._get_networks_from_host(controlled_host): #TODO
-    #             net_obj = netaddr.IPNetwork(str(net))
-    #             if net_obj.ip.is_ipv4_private_use(): #TODO
-    #                 known_networks.add(net)
-    #                 net_obj.value += 256
-    #                 if net_obj.ip.is_ipv4_private_use():
-    #                     ip = components.Network(str(net_obj.ip), net_obj.prefixlen)
-    #                     logger.info(f'\tAdding {ip} to agent')
-    #                     known_networks.add(ip)
-    #                 net_obj.value -= 2*256
-    #                 if net_obj.ip.is_ipv4_private_use():
-    #                     ip = components.Network(str(net_obj.ip), net_obj.prefixlen)
-    #                     logger.info(f'\tAdding {ip} to agent')
-    #                     known_networks.add(ip)
-    #                 #return value back to the original
-    #                 net_obj.value += 256
-       
-    #     game_state = components.GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
-    #     return game_state
-
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
         Process the cyst configuration file
@@ -1160,18 +1075,13 @@ class NetworkSecurityEnvironment(object):
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
         self._data_content_original = copy.deepcopy(self._data_content_original)
-        # create starting state (randomized if needed)
-        #self._current_state = self._create_starting_state()
-        # create win conditions for this episode (randomize if needed)
-        #self._goal_conditions = copy.deepcopy(self._process_win_conditions(self._goal_conditions))
-        #logger.info(f'Current state: {self._current_state}')
-        
+      
         initial_reward = 0
         info = {}
         self._actions_played = []
         self._defender.reset()
         # An observation has inside ["state", "reward", "end", "info"]
-        return components.Observation(self._current_state, initial_reward, False, info)
+        return components.Observation(None, initial_reward, False, info)
 
     def step(self, state:components.GameState, action:components.Action, action_type='netsecenv')-> components.Observation:
         """
@@ -1195,14 +1105,13 @@ class NetworkSecurityEnvironment(object):
 
         
         # Make the state we just got into, our current state
-        current_state = self._current_state
-        self._current_state = next_state
-        logger.info(f'Current state: {self._current_state} ')
+        current_state = state
+        logger.info(f'New state: {next_state} ')
 
 
         # Save the transition to the episode replay buffer if there is any
         if self._episode_replay_buffer is not None:
             self._episode_replay_buffer.append((current_state, action, reward, next_state))
         # Return an observation
-        return components.Observation(self._current_state, reward, False, reason)
+        return components.Observation(next_state, reward, False, reason)
         
