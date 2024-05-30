@@ -202,7 +202,7 @@ class Coordinator:
 
         try:
             self.logger.info("Main coordinator started.")
-            env_observation = self._world.reset()
+            env_observation = None#self._world.reset()
             while True:
                 # Read message from the queue
                 agent_addr, message = await self._actions_queue.get()
@@ -233,6 +233,8 @@ class Coordinator:
                                 # should we discard the queue here?
                                 self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q{self._answers_queue.empty()}")
                                 new_env_observation = self._world.reset()
+                                self._get_goal_description_per_role()
+                                self._get_win_condition_per_role()
                                 for agent in self._reset_requests:
                                     self._reset_requests[agent] = False
                                     self._agent_steps[agent] = 0
@@ -317,7 +319,9 @@ class Coordinator:
         win_conditions = {}
         for agent_role in self.ALLOWED_ROLES:
             try:
-                win_conditions[agent_role] = self._world.task_config.get_win_conditions(agent_role=agent_role)
+                win_conditions[agent_role] = self._world.re_map_goal_dict(
+                    self._world.task_config.get_win_conditions(agent_role=agent_role)
+                )
             except KeyError:
                 win_conditions[agent_role] = {}
             self.logger.info(f"Win condition for role '{agent_role}': {win_conditions[agent_role]}")
@@ -330,7 +334,9 @@ class Coordinator:
         goal_descriptions ={}
         for agent_role in self.ALLOWED_ROLES:
             try:
-                goal_descriptions[agent_role] = self._world.task_config.get_goal_description(agent_role=agent_role)
+                goal_descriptions[agent_role] = self._world.update_goal_descriptions(
+                    self._world.task_config.get_goal_description(agent_role=agent_role)
+                )
             except KeyError:
                 goal_descriptions[agent_role] = ""
             self.logger.info(f"Goal desription for role '{agent_role}': {goal_descriptions[agent_role]}")

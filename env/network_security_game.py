@@ -1027,6 +1027,12 @@ class NetworkSecurityEnvironment(object):
                 new_dict["known_data"][host] = items
         return new_dict    
 
+    def update_goal_descriptions(self, goal_description):
+        new_description = goal_description
+        for ip in self._ip_mapping:
+            new_description = new_description.replace(str(ip), str(self._ip_mapping[ip]))
+        return new_description
+    
     def store_trajectories_to_file(self, filename:str)->None:
         if self._trajectories:
             logger.info(f"Saving trajectories to '{filename}'")
