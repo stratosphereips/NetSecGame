@@ -163,6 +163,7 @@ class Coordinator:
         self.world_type = world_type
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
+        self._goal_description_per_role = self._get_goal_description_per_role()
         self._steps_limit = self._world.task_config.get_max_steps()
 
         # player information
@@ -322,6 +323,19 @@ class Coordinator:
             self.logger.info(f"Win condition for role '{agent_role}': {win_conditions[agent_role]}")
         return win_conditions
     
+    def _get_goal_description_per_role(self)->dict:
+        """
+        Method for finding goal description for each agent role in the game.
+        """
+        goal_descriptions ={}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                goal_descriptions[agent_role] = self._world.task_config.get_goal_description(agent_role=agent_role)
+            except KeyError:
+                goal_descriptions[agent_role] = ""
+            self.logger.info(f"Goal desription for role '{agent_role}': {goal_descriptions[agent_role]}")
+        return goal_descriptions
+    
     def _process_join_game_action(self, agent_addr: tuple, action: Action, current_observation: Observation) -> dict:
         """ "
         Method for processing Action of type ActionType.JoinGame
@@ -339,7 +353,7 @@ class Coordinator:
                     "message": {
                         "message": f"Welcome {agent_name}, registred as {agent_role}",
                         "max_steps": self._world._max_steps,
-                        "goal_description": self._world.goal_description,
+                        "goal_description": self._goal_description_per_role[agent_role],
                         "num_actions": self._world.num_actions
                         },
                 }
@@ -376,7 +390,7 @@ class Coordinator:
             "message": {
                         "message": "Resetting Game and starting again.",
                         "max_steps": self._world._max_steps,
-                        "goal_description": self._world.goal_description
+                        "goal_description": self._goal_description_per_role[self.agents[agent_addr][1]]
                         },
         }
         return output_message_dict
@@ -452,7 +466,7 @@ class Coordinator:
         self.logger.info(f"Goal check for {agent_addr}({self.agents[agent_addr][1]})")
         agents_state = self._agent_states[agent_addr]
         agent_role = self.agents[agent_addr][1]
-        win_condition = self._win_conditions_per_role[agent_role]
+        win_condition = self._world.re_map_goal_dict(self._win_conditions_per_role[agent_role])
         goal_check = self._check_goal(agents_state, win_condition)
         if goal_check:
             self.logger.info("\tGoal reached!")
