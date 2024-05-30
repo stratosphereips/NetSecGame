@@ -324,15 +324,25 @@ class ConfigParser():
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
 
-    def get_goal_description(self)->str:
+
+    def get_goal_description(self, agent_role)->dict:
         """
-        Get goal description
+        Get goal description per role
         """
-        try:
-            description = self.config['coordinator']['agents']["attackers"]["goal"]["description"]
-        except KeyError:
-            description = ""
+        match agent_role:
+            case "Attacker":
+                try:
+                    description = self.config['coordinator']['agents']["attackers"]["goal"]["description"]
+                except KeyError:
+                    description = ""
+            case "Defender":
+                description = ""
+            case "Benign":
+                description = ""
+            case _:
+                raise ValueError(f"Unsupported agent role: {agent_role}")
         return description
+       
 
     def get_goal_reward(self)->float:
         """
