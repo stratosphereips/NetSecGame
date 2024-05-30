@@ -157,6 +157,8 @@ class NetworkSecurityEnvironment(object):
         self.hosts_to_start = []
         # Read the conf file passed by the agent for the rest of values
         self.task_config = ConfigParser(task_config_file)
+        self._network_mapping = {}
+        self._ip_mapping = {}
         # Load CYST configuration
         self._process_cyst_config(self.task_config.get_scenario())
         
@@ -202,13 +204,13 @@ class NetworkSecurityEnvironment(object):
         # store goal description
         self._goal_description = self.task_config.get_goal_description()
 
-        # Process episodic randomization of goal position
-        if not self._randomize_goal_every_episode:
-            # REPLACE 'random' keyword once
-            logger.info("Episodic randomization disabled, generating static goal_conditions")
-            self._goal_conditions = self._process_win_conditions(self._goal_conditions)
-        else:
-            logger.info("Episodic randomization enabled, keeping 'random' keyword in the goal description.")
+        # # Process episodic randomization of goal position
+        # if not self._randomize_goal_every_episode:
+        #     # REPLACE 'random' keyword once
+        #     logger.info("Episodic randomization disabled, generating static goal_conditions")
+        #     self._goal_conditions = self._process_win_conditions(self._goal_conditions)
+        # else:
+        #     logger.info("Episodic randomization enabled, keeping 'random' keyword in the goal description.")
 
         # At this point all 'random' values should be assigned to something
         # Check if dynamic network and ip adddresses are required
@@ -385,69 +387,6 @@ class NetworkSecurityEnvironment(object):
         game_state = components.GameState(controlled_hosts, known_hosts, self._attacker_start_position["known_services"], self._attacker_start_position["known_data"], known_networks)
         return game_state
 
-    def _process_win_conditions(self, win_conditions)->dict:
-        """
-        Method which analyses win_conditions and randomizes parts if required
-        """
-        logger.info("Processing win conditions")
-        updated_win_conditions = {}
-        
-        # networks
-        if win_conditions["known_networks"] == "random":
-            updated_win_conditions["known_networks"] = {random.choice(list(self._networks.keys()))}
-            logger.info("\t\tRadnomizing known_networks")
-        else:
-            updated_win_conditions["known_networks"] = copy.deepcopy(win_conditions["known_networks"])
-        logger.info(f"\tGoal known_networks: {updated_win_conditions['known_networks']}")
-        # known_hosts
-        if win_conditions["known_hosts"] == "random":
-            logger.info("\t\tRandomizing known_host")
-            updated_win_conditions["known_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
-        else:
-            updated_win_conditions["known_hosts"] = copy.deepcopy(win_conditions["known_hosts"])
-        logger.info(f"\tGoal known_hosts: {updated_win_conditions['known_hosts']}")
-        
-        # controlled_hosts
-        if win_conditions["controlled_hosts"] == "random":
-            logger.info("\tRandomizing controlled_hots")
-            updated_win_conditions["controlled_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
-        else:
-            updated_win_conditions["controlled_hosts"] = copy.deepcopy(win_conditions["controlled_hosts"])
-        logger.info(f"\tGoal controlled_hosts: {updated_win_conditions['controlled_hosts']}")
-        
-        # services
-        updated_win_conditions["known_services"] = {}
-        for host, service_list in win_conditions["known_services"].items():
-            # Was the position defined as random?
-            if isinstance(service_list, str) and service_list.lower() == "random":
-                available_services = []
-                for service in self._services[self._ip_to_hostname[host]]:
-                    available_services.append(components.Service(service.name, service.type, service.version, service.is_local))
-                logger.info(f"\tRandomizing known_services in {host}")
-                updated_win_conditions["known_services"][host] = random.choice(available_services)
-            else:
-                updated_win_conditions["known_services"][host] = copy.deepcopy(win_conditions["known_services"][host])
-        logger.info(f"\tGoal known_services: {updated_win_conditions['known_services']}")
-        
-        # data
-        # prepare all available data if randomization is needed
-        available_data = set()
-        for data in self._data.values():
-            for datapoint in data:
-                available_data.add(components.Data(datapoint.owner, datapoint.id))
-        
-        updated_win_conditions["known_data"] = {}
-        for host, data_set in win_conditions["known_data"].items():
-            # Was random data required in this host?
-            if isinstance(data_set, str) and data_set.lower() == "random":
-                # From all available data, randomly pick the one that is going to be requested in this host
-                updated_win_conditions["known_data"][host] = {random.choice(list(available_data))}
-                logger.info(f"\tRandomizing known_data in {host}")
-            else:
-                updated_win_conditions["known_data"][host] = copy.deepcopy(win_conditions["known_data"][host])
-        logger.info(f"\tGoal known_data: {updated_win_conditions['known_data']}")
-        return updated_win_conditions
-
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
         Process the cyst configuration file
@@ -606,9 +545,17 @@ class NetworkSecurityEnvironment(object):
 
         #exploits
         self._exploits = exploits
+        #create initial mapping
+        logger.info("\tCreating initial mapping of IPs and Networks")
+        for net in self._networks.keys():
+            self._network_mapping[net] = net
+        logger.info(f"\tintitial self._network_mapping: {self._network_mapping}")
+        for ip in self._ip_to_hostname.keys():
+            self._ip_mapping[ip] = ip
+        logger.info(f"\tintitial self._ip_mapping: {self._ip_mapping}")
         logger.info("CYST configuration processed successfully")
-    
-    def _create_new_network_mapping(self):
+
+    def _create_new_network_mapping(self)->tuple:
         """ Method that generates random IP and Network addreses
           while following the topology loaded in the environment.
          All internal data structures are updated with the newly generated addresses."""
@@ -673,6 +620,7 @@ class NetworkSecurityEnvironment(object):
         new_self_networks = {}
         for net, ips in self._networks.items():
             new_self_networks[mapping_nets[net]] = set()
+            
             for ip in ips:
                 new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
         self._networks = new_self_networks
@@ -697,29 +645,38 @@ class NetworkSecurityEnvironment(object):
             new_self_host_to_start.append(mapping_ips[ip])
         self.hosts_to_start = new_self_host_to_start
         
-        # attacker starting position
-        new_attacker_start = {}
-        new_attacker_start["known_networks"] = {mapping_nets[net] for net in self._attacker_start_position["known_networks"]}
-        new_attacker_start["known_hosts"] = {mapping_ips[ip] for ip in self._attacker_start_position["known_hosts"]}
-        new_attacker_start["controlled_hosts"] = {mapping_ips[ip] for ip in self._attacker_start_position["controlled_hosts"]}
-        new_attacker_start["known_services"] = {mapping_ips[ip]:service for ip,service in self._attacker_start_position["known_services"].items()}
-        new_attacker_start["known_data"] = {mapping_ips[ip]:data for ip,data in self._attacker_start_position["known_data"].items()}
-        self._attacker_start_position = new_attacker_start
-        logger.info(f"Starting position mapping: {new_attacker_start}")
-        # goal definition
-        new_goal = {}
-        new_goal["known_networks"] = {mapping_nets[net] for net in self._goal_conditions["known_networks"]}
-        new_goal["known_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["known_hosts"]}
-        new_goal["controlled_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["controlled_hosts"]}
-        new_goal["known_services"] = {mapping_ips[ip]:service for ip,service in self._goal_conditions["known_services"].items()}
-        new_goal["known_data"] = {mapping_ips[ip]:data for ip,data in self._goal_conditions["known_data"].items()}
-        logger.info(f"Goal mapping: {new_goal}")
-        # update goal mapping
-        for old_ip in mapping_ips.keys():
-            if str(old_ip) in self._goal_description:
-                self._goal_description = self._goal_description.replace(str(old_ip), str(mapping_ips[old_ip]))
-                logger.info(f"New goal desc: {self.goal_description}| {old_ip}-> {mapping_ips[old_ip]}")
-        self._goal_conditions = new_goal
+        #update mappings stored in the environment
+        for net, mapping in self._network_mapping.items():
+            self._network_mapping[net] = mapping_nets[mapping]
+        logger.info(f"self._network_mapping: {self._network_mapping}")
+        for ip, mapping in self._ip_mapping.items():
+            self._ip_mapping[ip] = mapping_ips[mapping]
+        logger.info(f"self._ip_mapping: {self._ip_mapping}")
+        # # attacker starting position
+        # new_attacker_start = {}
+        # new_attacker_start["known_networks"] = {mapping_nets[net] for net in self._attacker_start_position["known_networks"]}
+        # new_attacker_start["known_hosts"] = {mapping_ips[ip] for ip in self._attacker_start_position["known_hosts"]}
+        # new_attacker_start["controlled_hosts"] = {mapping_ips[ip] for ip in self._attacker_start_position["controlled_hosts"]}
+        # new_attacker_start["known_services"] = {mapping_ips[ip]:service for ip,service in self._attacker_start_position["known_services"].items()}
+        # new_attacker_start["known_data"] = {mapping_ips[ip]:data for ip,data in self._attacker_start_position["known_data"].items()}
+        # self._attacker_start_position = new_attacker_start
+        # logger.info(f"Starting position mapping: {new_attacker_start}")
+        
+        # # goal definition
+        # new_goal = {}
+        # new_goal["known_networks"] = {mapping_nets[net] for net in self._goal_conditions["known_networks"]}
+        # new_goal["known_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["known_hosts"]}
+        # new_goal["controlled_hosts"] = {mapping_ips[ip] for ip in self._goal_conditions["controlled_hosts"]}
+        # new_goal["known_services"] = {mapping_ips[ip]:service for ip,service in self._goal_conditions["known_services"].items()}
+        # new_goal["known_data"] = {mapping_ips[ip]:data for ip,data in self._goal_conditions["known_data"].items()}
+        # logger.info(f"Goal mapping: {new_goal}")
+        
+        # # update goal mapping
+        # for old_ip in mapping_ips.keys():
+        #     if str(old_ip) in self._goal_description:
+        #         self._goal_description = self._goal_description.replace(str(old_ip), str(mapping_ips[old_ip]))
+        #         logger.info(f"New goal desc: {self.goal_description}| {old_ip}-> {mapping_ips[old_ip]}")
+        # self._goal_conditions = new_goal
     
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
         """
@@ -1158,7 +1115,7 @@ class NetworkSecurityEnvironment(object):
         # create starting state (randomized if needed)
         self._current_state = self._create_starting_state()
         # create win conditions for this episode (randomize if needed)
-        self._goal_conditions = copy.deepcopy(self._process_win_conditions(self._goal_conditions))
+        #self._goal_conditions = copy.deepcopy(self._process_win_conditions(self._goal_conditions))
         logger.info(f'Current state: {self._current_state}')
         
         initial_reward = 0
