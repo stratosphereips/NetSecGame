@@ -436,10 +436,10 @@ class Coordinator:
             }
         else:
             self.logger.error(f"{self.episode_end}, {self._agent_episode_ends}")
-            output_message_dict = self._generate_timeout_message(agent_addr)
+            output_message_dict = self._generate_episode_end_message(agent_addr)
         return output_message_dict
     
-    def _generate_timeout_message(self, agent_addr:tuple)->dict:
+    def _generate_episode_end_message(self, agent_addr:tuple)->dict:
         """
         Method for generating response when agent attemps to make a step after episode ended.
         """
