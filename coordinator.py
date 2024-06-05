@@ -168,11 +168,16 @@ class Coordinator:
 
         # player information
         self.agents = {}
+        # step counter per agent_addr (int)
         self._agent_steps = {}
+        # reset request per agent_addr (bool)
         self._reset_requests = {}
         self._agent_observations = {}
+        # starting per agent_addr (dict)
         self._agent_starting_position = {}
+        # current state per agent_addr (GameState)
         self._agent_states = {}
+        # goal reach status per agent_addr (bool)
         self._agent_goal_reached = {}
         self._agent_episode_ends = {}
     
