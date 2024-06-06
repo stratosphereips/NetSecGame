@@ -180,6 +180,8 @@ class Coordinator:
         # goal reach status per agent_addr (bool)
         self._agent_goal_reached = {}
         self._agent_episode_ends = {}
+        # trajectories per agent_addr
+        self._agent_trajectories = {}
     
     @property
     def episode_end(self)->bool:
@@ -237,7 +239,7 @@ class Coordinator:
                             if all(self._reset_requests.values()):
                                 # should we discard the queue here?
                                 self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q{self._answers_queue.empty()}")
-                                new_env_observation = self._world.reset()
+                                _ = self._world.reset()
                                 self._get_goal_description_per_role()
                                 self._get_win_condition_per_role()
                                 for agent in self._reset_requests:
@@ -246,10 +248,7 @@ class Coordinator:
                                     self._agent_states[agent] = self._world.create_state_from_view(self._agent_starting_position[agent])
                                     self._agent_goal_reached[agent] = self._goal_reached(agent)
                                     self._agent_episode_ends[agent] = False
-                                    output_message_dict = self._respond_to_reset_game_action(
-                                        agent,
-                                        new_env_observation,
-                                    )
+                                    output_message_dict = self._create_response_to_reset_game_action(agent)
                                     msg_json = self.convert_msg_dict_to_json(output_message_dict)
                                     # Send to anwer_queue
                                     await self._answers_queue.put(msg_json)
@@ -386,7 +385,7 @@ class Coordinator:
             }
         return output_message_dict
 
-    def _respond_to_reset_game_action(self, agent_addr: tuple , new_env_observation:Observation) -> dict:
+    def _create_response_to_reset_game_action(self, agent_addr: tuple) -> dict:
         """ "
         Method for generatating answers to Action of type ActionType.ResetGame after all agents requested reset
         """
@@ -513,6 +512,7 @@ class Coordinator:
         goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
+
 
 __version__ = "v0.2.1"
 
