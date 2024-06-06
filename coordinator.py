@@ -209,7 +209,6 @@ class Coordinator:
 
         try:
             self.logger.info("Main coordinator started.")
-            env_observation = None
             while True:
                 # Read message from the queue
                 agent_addr, message = await self._actions_queue.get()
@@ -223,9 +222,7 @@ class Coordinator:
                         )
                     match action.type:  # process action based on its type
                         case ActionType.JoinGame:
-                            output_message_dict = self._process_join_game_action(
-                                agent_addr, action, env_observation
-                            )
+                            output_message_dict = self._process_join_game_action(agent_addr, action)
                             msg_json = self.convert_msg_dict_to_json(output_message_dict)
                             # Send to anwer_queue
                             await self._answers_queue.put(msg_json)
@@ -346,7 +343,7 @@ class Coordinator:
             self.logger.info(f"Goal desription for role '{agent_role}': {goal_descriptions[agent_role]}")
         return goal_descriptions
     
-    def _process_join_game_action(self, agent_addr: tuple, action: Action, current_observation: Observation) -> dict:
+    def _process_join_game_action(self, agent_addr: tuple, action: Action) -> dict:
         """ "
         Method for processing Action of type ActionType.JoinGame
         """
