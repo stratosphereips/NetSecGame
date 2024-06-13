@@ -236,7 +236,7 @@ class Coordinator:
                             if all(self._reset_requests.values()):
                                 # should we discard the queue here?
                                 self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q{self._answers_queue.empty()}")
-                                _ = self._world.reset()
+                                self._world.reset()
                                 self._get_goal_description_per_role()
                                 self._get_win_condition_per_role()
                                 for agent in self._reset_requests:
