@@ -30,12 +30,11 @@ def coordinator_registered_player(coordinator_init):
             params={"agent_info": AgentInfo(name="mari", role="Attacker")},
         )
 
-        obs = coord._world.reset()
+        coord._world.reset()
 
         result = coord._process_join_game_action(
             agent_addr=("192.168.1.1", "3300"),
             action=registration,
-            current_observation=obs,
         )
         return coord, result
 
@@ -87,7 +86,6 @@ class TestCoordinator:
         result = coord._process_join_game_action(
             agent_addr=("192.168.1.1", "3300"),
             action=registration,
-            current_observation=None,
         )
         assert result["to_agent"] == ("192.168.1.1", "3300")
         assert result["status"] == "GameStatus.CREATED"
