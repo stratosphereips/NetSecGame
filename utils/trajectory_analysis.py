@@ -397,14 +397,75 @@ def cluster_combined_trajectories(game_plays, filename=None, end_reason=None, op
     fig.savefig(os.path.join("figures", filename),bbox_inches='tight',  dpi=600)
     plt.close()
 
+def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=None)->dict:
+    idx_mapping = {
+        "Start":0,
+        ActionType.ScanNetwork:1,
+        ActionType.FindServices:2,
+        ActionType.FindData:3,
+        ActionType.ExploitService:4,
+        ActionType.ExfiltrateData:5,
+    }
+    counts = {
+        "Start":0,
+        ActionType.ScanNetwork:0,
+        ActionType.FindServices:0,
+        ActionType.FindData:0,
+        ActionType.ExploitService:0,
+        ActionType.ExfiltrateData:0,
+    }
+    transitions = np.zeros([len(counts), len(counts)])
+    unique_actions = set()
+    for play in game_plays:
+        if end_reason and play["end_reason"] not in end_reason:
+            continue
+        previous_action = "Start"
+        for i, step in enumerate(play["trajectory"]):
+            counts[previous_action] += 1
+            action =  Action(ActionType.from_string(step["a"]["type"]), {}).type
+            params_string = [f"{k}:{v}" for k,v in step["a"]["params"].items()]
+            unique_actions.add((step["a"]["type"],",".join(params_string)))
+            transitions[idx_mapping[previous_action], idx_mapping[action]] += 1
+            previous_action = action
+    # make transitions probabilities
+    for action_type, count in counts.items():
+        transitions[idx_mapping[action_type]] = transitions[idx_mapping[action_type]]/count
+    transitions = np.round(transitions, 2)
+    print(transitions)
+    print(len(unique_actions))
 
+    fig, ax = plt.subplots()
+    im = ax.imshow(transitions)
+    ax.set_xticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())
+    ax.set_yticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+         rotation_mode="anchor")
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(idx_mapping)):
+        for j in range(len(idx_mapping)):
+            text = ax.text(j, i, transitions[i, j],
+                        ha="center", va="center", color="w")
 
+    ax.set_title(f"Visualization of MDP for {play['model']}")
+    fig.tight_layout()
+    fig.savefig(os.path.join("figures", f"{filename}_{END_REASON if end_reason else ''}"),  dpi=600)
+    
+
+def gameplay_graph(trajectory)->tuple:
+    states = {}
+    actions = {}
+    edges = {}
+
+    for step in trajectory:
+        
+
+    pass
 if __name__ == '__main__':
 
     #END_REASON = ["goal_reached", "detected"]
     # END_REASON = ["detected", "max_steps
-    #END_REASON = None
-    END_REASON = ["goal_reached"]
+    END_REASON = None
+    #END_REASON = ["goal_reached"]
 
     # combine
     game_plays_q_learning = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
@@ -429,5 +490,9 @@ if __name__ == '__main__':
     for play in game_plays_optimal:
         play["model"] = "Optimal"
 
-    game_plays_combined = game_plays_q_learning + game_plays_gpt+game_plays_conceptual
-    cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_with_optimal_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON,optimal_gamelays=game_plays_optimal)
+    #game_plays_combined = game_plays_q_learning + game_plays_gpt+game_plays_conceptual
+    #cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_with_optimal_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON,optimal_gamelays=game_plays_optimal)
+    generate_mdp_from_trajecotries(game_plays_q_learning,filename="MDP_visualization_q_learning", end_reason=END_REASON)
+    generate_mdp_from_trajecotries(game_plays_gpt,filename="MDP_visualization_gpt", end_reason=END_REASON)
+    generate_mdp_from_trajecotries(game_plays_conceptual,filename="MDP_visualization_conceptual", end_reason=END_REASON)
+    generate_mdp_from_trajecotries(game_plays_optimal,filename="MDP_visualization_optimal", end_reason=END_REASON)
