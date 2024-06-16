@@ -16,8 +16,13 @@ from faker import Faker
 from utils.utils import ConfigParser, store_replay_buffer_in_csv
 
 
+
 # Set the logging
-log_filename=Path('env/logs/netsecenv.log')
+# Get the current process ID
+pid = os.getpid()
+
+# Create the filename based on the process PID
+log_filename = Path(f'env/logs/netsecenv_{pid}.log')
 if not log_filename.parent.exists():
     os.makedirs(log_filename.parent)
 logging.basicConfig(filename=log_filename, filemode='w', format='%(asctime)s %(name)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S',level=logging.INFO)

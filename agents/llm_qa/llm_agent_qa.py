@@ -15,6 +15,7 @@ path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 ##sys.exit()
 import mlflow
 from env.network_security_game import NetworkSecurityEnvironment
+from env.network_security_game import log_filename
 from env.game_components import ActionType, Action, IP, Data, Network, Service
 
 import openai
@@ -36,7 +37,7 @@ import numpy as np
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
 
 mlflow.set_tracking_uri("http://147.32.83.60")
-mlflow.set_experiment("netsec-llm-agents-paper")
+mlflow.set_experiment("netsec-llm-agents-paper-r4-a32-small-def")
 #mlflow.set_experiment("llm_qa_quantized")
 
 config = dotenv_values(".env")
@@ -417,7 +418,8 @@ if __name__ == "__main__":
         "episodes": args.test_episodes,
         "env_config_file": args.task_config_file,
         "experiment_dir" : getcwd(),
-        "hostname": gethostname()
+        "hostname": gethostname(),
+        "log_filename": log_filename
     }
     mlflow.log_params(params)
 
