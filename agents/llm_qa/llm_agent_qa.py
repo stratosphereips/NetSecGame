@@ -13,6 +13,7 @@ path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
 
 ##print(sys.path)
 ##sys.exit()
+import mlflow
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import ActionType, Action, IP, Data, Network, Service
 
@@ -33,10 +34,9 @@ import time
 import numpy as np
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
-import mlflow
 
 mlflow.set_tracking_uri("http://147.32.83.60")
-mlflow.set_experiment("llm_qa_tuning_lora")
+mlflow.set_experiment("netsec-llm-agents-paper")
 #mlflow.set_experiment("llm_qa_quantized")
 
 config = dotenv_values(".env")
