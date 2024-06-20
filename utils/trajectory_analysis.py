@@ -451,15 +451,32 @@ def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=Non
     fig.savefig(os.path.join("figures", f"{filename}_{END_REASON if end_reason else ''}"),  dpi=600)
     
 
-def gameplay_graph(trajectory)->tuple:
-    states = {}
-    actions = {}
+def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
+    # states = {}
+    # actions = {}
     edges = {}
 
-    for step in trajectory:
-        
+    for play in game_plays:
+        if end_reason and play["end_reason"] not in end_reason:
+            continue
+        for step in play["trajectory"]:
+            state = json.dumps(step["s"])
+            next_state = json.dumps(step["s_next"])
+            action = json.dumps(step["a"])
+            if state not in states:
+                states[state] = len(states)
+            if next_state not in states:
+                states[next_state] = len(states)
+            if action not in actions:
+                actions[action] = len(actions)
+            if (states[state],states[next_state]) not in edges:
+                edges[states[state], states[next_state]] = set()
+            edges[states[state], states[next_state]].add(actions[action])
 
-    pass
+    lengths = [len(x) for x in edges.values()]
+    from collections import Counter
+    print(Counter(lengths))
+    #print(len([x for x in edges if len(edges[x]) > 2]))
 if __name__ == '__main__':
 
     #END_REASON = ["goal_reached", "detected"]
@@ -492,7 +509,10 @@ if __name__ == '__main__':
 
     #game_plays_combined = game_plays_q_learning + game_plays_gpt+game_plays_conceptual
     #cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_with_optimal_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON,optimal_gamelays=game_plays_optimal)
-    generate_mdp_from_trajecotries(game_plays_q_learning,filename="MDP_visualization_q_learning", end_reason=END_REASON)
-    generate_mdp_from_trajecotries(game_plays_gpt,filename="MDP_visualization_gpt", end_reason=END_REASON)
-    generate_mdp_from_trajecotries(game_plays_conceptual,filename="MDP_visualization_conceptual", end_reason=END_REASON)
-    generate_mdp_from_trajecotries(game_plays_optimal,filename="MDP_visualization_optimal", end_reason=END_REASON)
+    # generate_mdp_from_trajecotries(game_plays_q_learning,filename="MDP_visualization_q_learning", end_reason=END_REASON)
+    # generate_mdp_from_trajecotries(game_plays_gpt,filename="MDP_visualization_gpt", end_reason=END_REASON)
+    # generate_mdp_from_trajecotries(game_plays_conceptual,filename="MDP_visualization_conceptual", end_reason=END_REASON)
+    # generate_mdp_from_trajecotries(game_plays_optimal,filename="MDP_visualization_optimal", end_reason=END_REASON)
+    gameplay_graph(game_plays_optimal, end_reason=None)
+    gameplay_graph(game_plays_q_learning, end_reason=None)
+    gameplay_graph(game_plays_gpt, end_reason=None)
