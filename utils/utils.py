@@ -487,6 +487,21 @@ class ConfigParser():
             use_firewall = False
         return use_firewall
 
+def get_logging_level(debug_level):
+    """
+    Configure logging level based on the provided debug_level string.
+    """
+    log_levels = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL
+    }
+    
+    level = log_levels.get(debug_level.upper(), logging.ERROR)
+    return level
+
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
             known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
