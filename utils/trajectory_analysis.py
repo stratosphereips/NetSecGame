@@ -470,13 +470,48 @@ def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
             if action not in actions:
                 actions[action] = len(actions)
             if (states[state],states[next_state]) not in edges:
-                edges[states[state], states[next_state]] = set()
-            edges[states[state], states[next_state]].add(actions[action])
+                edges[states[state], states[next_state]] = {}
+            if actions[action] not in edges[states[state], states[next_state]]:
+                edges[states[state], states[next_state]][actions[action]] = 0
+            edges[states[state], states[next_state]][actions[action]] += 1
 
-    lengths = [len(x) for x in edges.values()]
-    from collections import Counter
-    print(Counter(lengths))
-    #print(len([x for x in edges if len(edges[x]) > 2]))
+    return edges
+
+def get_graph_stats(edge_list, states, actions)->tuple:
+    visited_states = set()
+    played_actions = set()
+    outgoing_edges = {}
+    incoming_edges = {}
+    for (src,dst), edges in edge_list.items():
+        visited_states.add(src)
+        visited_states.add(dst)
+        if src not in outgoing_edges:
+            outgoing_edges[src] = 0
+        outgoing_edges[src] += 1
+        if dst not in incoming_edges:
+            incoming_edges[dst] = 0
+        incoming_edges[dst] += 1
+        for a in edges.keys():
+            played_actions.add(a)
+    print(f"Visited unique states: {len(visited_states)}/{len(states)}")
+    print(f"Played unique actions: {len(played_actions)}/{len(actions)}")
+    print(f"Mean out branching: {np.mean(list(outgoing_edges.values()))}")
+    print(f"State w max incoming edges ID:{max(incoming_edges, key=incoming_edges.get)}, #edges:{max(incoming_edges.values())}")
+    print(f"State w max outgoing edges ID:{max(outgoing_edges, key=outgoing_edges.get)}, #edges: {max(outgoing_edges.values())}")
+
+def get_change_in_graph(edge_list1, edge_list2):
+    removed_edges = {}
+    for (src,dst), actions in edge_list1.items():
+        if (src, dst) not in edge_list2:
+            removed_edges[src,dst] = actions
+        else:
+            removed = set()
+            for a in actions:
+                if a not in edge_list2[(src, dst)]:
+                    removed.add(a)
+            removed_edges[src,dst] = removed
+    return removed_edges
+
 if __name__ == '__main__':
 
     #END_REASON = ["goal_reached", "detected"]
@@ -488,7 +523,6 @@ if __name__ == '__main__':
     game_plays_q_learning = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
     game_plays_gpt = read_json("NSG_trajectories_GPT3.json")
     game_plays_conceptual = read_json("NSG_trajectories_experiment47-episodes-680000.json")
-    print("optimal")
     game_plays_optimal = read_json("NSG_trajectories_optimal.json")
     # barplot_action_efficiency(
     #  [game_plays_q_learning, game_plays_conceptual, game_plays_gpt],
@@ -513,6 +547,60 @@ if __name__ == '__main__':
     # generate_mdp_from_trajecotries(game_plays_gpt,filename="MDP_visualization_gpt", end_reason=END_REASON)
     # generate_mdp_from_trajecotries(game_plays_conceptual,filename="MDP_visualization_conceptual", end_reason=END_REASON)
     # generate_mdp_from_trajecotries(game_plays_optimal,filename="MDP_visualization_optimal", end_reason=END_REASON)
-    gameplay_graph(game_plays_optimal, end_reason=None)
-    gameplay_graph(game_plays_q_learning, end_reason=None)
-    gameplay_graph(game_plays_gpt, end_reason=None)
+    states = {}
+    actions = {}
+    
+    # MODEL COMPARISON
+
+    # edges_optimal = gameplay_graph(game_plays_optimal, states, actions,end_reason=END_REASON)
+    # edges_q_learning = gameplay_graph(game_plays_q_learning,states, actions, end_reason=END_REASON)
+    # edges_gpt = gameplay_graph(game_plays_gpt,states, actions, end_reason=END_REASON)
+
+    # state_to_id = {v:k for k,v in states.items()}
+    # action_to_id = {v:k for k,v in states.items()}
+    # print("optimal:")
+    # get_graph_stats(edges_optimal, state_to_id, action_to_id)
+    # print("Q-learing:")
+    # get_graph_stats(edges_q_learning, state_to_id, action_to_id)
+    # print("GPT:")
+    # get_graph_stats(edges_gpt, state_to_id, action_to_id)
+
+    # MODEL PROGRESS
+    gameplays_5K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-5000.json")
+    gameplays_15K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-15000.json")
+    gameplays_25K  = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-25000.json")
+
+    edges_5k = gameplay_graph(gameplays_5K, states, actions,end_reason=END_REASON)
+    edges_15k = gameplay_graph(gameplays_15K, states, actions,end_reason=END_REASON)
+    edges_25k = gameplay_graph(gameplays_25K, states, actions,end_reason=END_REASON)
+    state_to_id = {v:k for k,v in states.items()}
+    action_to_id = {v:k for k,v in actions.items()}
+
+    print("5K:")
+    get_graph_stats(edges_5k, state_to_id, action_to_id)
+    print("15K:")
+    get_graph_stats(edges_15k, state_to_id, action_to_id)
+    print("change from 5k->15k")
+    print(f"removed edges:{len(get_change_in_graph(edges_5k, edges_15k))}")
+    per_type = {}
+    for e, action_set in get_change_in_graph(edges_5k, edges_15k).items():
+        for a in action_set:
+            action_type = json.loads(action_to_id[a])["type"]
+            if action_type not in per_type:
+                per_type[action_type] = 0
+            per_type[action_type] +=1 
+    print(per_type)
+    print(f"added edges:{len(get_change_in_graph(edges_15k, edges_5k))}")
+    print("25K:")
+    get_graph_stats(edges_25k, state_to_id, action_to_id)
+    print("change from 15k->25k")
+    print(f"removed edges:{len(get_change_in_graph(edges_15k, edges_25k))}")
+    per_type = {}
+    for e, action_set in get_change_in_graph(edges_15k, edges_25k).items():
+        for a in action_set:
+            action_type = json.loads(action_to_id[a])["type"]
+            if action_type not in per_type:
+                per_type[action_type] = 0
+            per_type[action_type] +=1 
+    print(per_type)
+    print(f"added edges:{sum(get_change_in_graph(edges_25k, edges_15k))}")
