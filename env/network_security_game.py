@@ -783,7 +783,7 @@ class NetworkSecurityEnvironment(object):
             else:
                 logger.info(f"\tData '{data_id}' not found in host '{hostname}'({host_ip})")
         else:
-            logger.debug("\Data content not found because target IP does not exists.")
+            logger.debug("Data content not found because target IP does not exists.")
         return content
     
     def _execute_action(self, current:components.GameState, action:components.Action, action_type='netsecenv')-> components.GameState:
