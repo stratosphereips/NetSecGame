@@ -226,6 +226,7 @@ class ConfigParser():
                     self.logger('Configuration problem with the known hosts')
         return controlled_hosts
 
+    
     def get_attackers_win_conditions(self):
         """
         Get the goal of the attacker 
@@ -282,6 +283,40 @@ class ConfigParser():
 
         return attackers_start_position
 
+    def get_start_position(self, agent_role):
+        match agent_role:
+            case "Attacker":
+                return self.get_attackers_start_position()
+            case "Defender":
+                return {}
+            case "Benign":
+                return {
+                    'known_networks': set(),
+                    'controlled_hosts': ["random", "random", "random"],
+                    'known_hosts': set(),
+                    'known_data': {},
+                    'known_services': {}
+                }
+            case _:
+                raise ValueError(f"Unsupported agent role: {agent_role}")
+    
+    def get_win_conditions(self, agent_role):
+         match agent_role:
+            case "Attacker":
+                return self.get_attackers_win_conditions()
+            case "Defender":
+                return {}
+            case "Benign":
+                # create goal that is unreachable so we have infinite play by the benign agent
+                return {
+                    'known_networks': set(),
+                    'controlled_hosts': set(),
+                    'known_hosts': set(),
+                    'known_data': {IP("1.1.1.1"): {Data(owner='User1', id='DataFromInternet', size=0, type='')}},
+                    'known_services': {}
+                }
+            case _:
+                raise ValueError(f"Unsupported agent role: {agent_role}")
     def get_max_steps(self):
         """
         Get the max steps 
@@ -289,15 +324,25 @@ class ConfigParser():
         max_steps = self.config['env']['max_steps']
         return int(max_steps)
 
-    def get_goal_description(self)->str:
+
+    def get_goal_description(self, agent_role)->dict:
         """
-        Get goal description
+        Get goal description per role
         """
-        try:
-            description = self.config['coordinator']['agents']["attackers"]["goal"]["description"]
-        except KeyError:
-            description = ""
+        match agent_role:
+            case "Attacker":
+                try:
+                    description = self.config['coordinator']['agents']["attackers"]["goal"]["description"]
+                except KeyError:
+                    description = ""
+            case "Defender":
+                description = ""
+            case "Benign":
+                description = ""
+            case _:
+                raise ValueError(f"Unsupported agent role: {agent_role}")
         return description
+       
 
     def get_goal_reward(self)->float:
         """

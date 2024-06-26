@@ -24,7 +24,7 @@ class AIDojo:
             self._action_queue,
             self._answer_queue,
             net_sec_config,
-            allowed_roles=["Attacker", "Defender", "Human"],
+            allowed_roles=["Attacker", "Defender", "Benign"],
             world_type = world_type,
         )
 
@@ -53,7 +53,7 @@ class AIDojo:
             ConnectionLimitProtocol(
                 self._action_queue,
                 self._answer_queue,
-                max_connections=1
+                max_connections=2
             ),
             host,
             port
@@ -80,34 +80,6 @@ class AIDojo:
         self.logger.info("\tCoordinator stopped")
         # Everything stopped correctly, terminate
         self.logger.info("AIDojo terminating")
-
-class ActionProcessor:
-    def __init__(self) -> None:
-        self._logger = logging.getLogger("Coordinator-ActionProcessor")
-        self._observations = {}
-        self._logger.info("Action Processor created")
-
-    def process_message_from_agent(self, agent_id: int, action: Action) -> Action:
-        """
-        Method for processing message coming from the agent for the game engine.
-        input str JSON
-        output Action
-        """
-        self._logger.debug(f"Processing message from agent {agent_id}: {Action}")
-        a = action
-        return a
-
-    def generate_observation_msg_for_agent(self, agent_id: int, new_observation: Observation) -> str:
-        """
-        Method for processing a NetSecGame gamestate into an partial observation for an agent
-
-        Action.from
-        """
-        self._logger.debug(f"Processing message to agent {agent_id}: {new_observation}")
-        self._observations[agent_id] = new_observation
-        msg_for_agent = observation_as_dict(new_observation)
-        return msg_for_agent
-
 
 class ConnectionLimitProtocol(asyncio.Protocol):
     def __init__(self, actions_queue, answers_queue, max_connections):
@@ -143,7 +115,7 @@ class ConnectionLimitProtocol(asyncio.Protocol):
                 data = await reader.read(500)
                 raw_message = data.decode().strip()
                 if len(raw_message):
-                    self.logger.info(
+                    self.logger.debug(
                         f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}"
                     )
 
@@ -163,9 +135,11 @@ class ConnectionLimitProtocol(asyncio.Protocol):
                     self.logger.info(
                         f"Handler received from {addr}: {raw_message!r}, len={len(raw_message)}"
                     )
+                    quit_message = Action(ActionType.QuitGame, params={}).as_json()
                     self.logger.info(
-                        f"\tEmpty message, terminating agent on address {addr}"
+                        f"\tEmpty message, replacing with QUIT message {message}"
                     )
+                    await self.actions_queue.put((addr, quit_message))
                     break
         except KeyboardInterrupt:
             self.logger.debug("Terminating by KeyboardInterrupt")
@@ -186,8 +160,43 @@ class Coordinator:
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
         self._world = NetworkSecurityEnvironment(net_sec_config)
-        self._action_processor = ActionProcessor()
         self.world_type = world_type
+        self._starting_positions_per_role = self._get_starting_position_per_role()
+        self._win_conditions_per_role = self._get_win_condition_per_role()
+        self._goal_description_per_role = self._get_goal_description_per_role()
+        self._steps_limit = self._world.task_config.get_max_steps()
+
+        # player information
+        self.agents = {}
+        # step counter per agent_addr (int)
+        self._agent_steps = {}
+        # reset request per agent_addr (bool)
+        self._reset_requests = {}
+        self._agent_observations = {}
+        # starting per agent_addr (dict)
+        self._agent_starting_position = {}
+        # current state per agent_addr (GameState)
+        self._agent_states = {}
+        # goal reach status per agent_addr (bool)
+        self._agent_goal_reached = {}
+        self._agent_episode_ends = {}
+        # trajectories per agent_addr
+        self._agent_trajectories = {}
+    
+    @property
+    def episode_end(self)->bool:
+        # Terminate episode if at least one player wins or reaches the timeout
+        return any(self._agent_episode_ends.values())
+    
+    def convert_msg_dict_to_json(self, msg_dict)->str:
+            try:
+                # Convert message into string representation
+                output_message = json.dumps(msg_dict)
+            except Exception as e:
+                self.logger.error(f"Error when converting msg to Json:{e}")
+                raise e
+                # Send to anwer_queue
+            return output_message
 
     async def run(self):
         """
@@ -197,46 +206,59 @@ class Coordinator:
         - Forwards actions in the game engine
         - Forwards responses to teh answer queue
         """
+
         try:
             self.logger.info("Main coordinator started.")
-            env_observation = self._world.reset()
-            self.agents = {}
-
             while True:
-                self.logger.debug("Coordinator running.")
                 # Read message from the queue
                 agent_addr, message = await self._actions_queue.get()
                 if message is not None:
-                    self.logger.info(f"Coordinator received: {message}.")
+                    self.logger.debug(f"Coordinator received: {message}.")
                     try:  # Convert message to Action
                         action = Action.from_json(message)
                     except Exception as e:
                         self.logger.error(
-                            f"Error when converting msg to Action using Action.from_json():{e}"
+                            f"Error when converting msg to Action using Action.from_json():{e}, {message}"
                         )
                     match action.type:  # process action based on its type
                         case ActionType.JoinGame:
-                            output_message_dict = self._process_join_game_action(
-                                agent_addr, action, env_observation
-                            )
+                            output_message_dict = self._process_join_game_action(agent_addr, action)
+                            msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                            # Send to anwer_queue
+                            await self._answers_queue.put(msg_json)
                         case ActionType.QuitGame:
-                            raise NotImplementedError
+                            self.logger.info(f"Coordinator received from QUIT message from agent {agent_addr}")
+                            # remove agent address from the reset request dict
+                            self._remove_player(agent_addr)
                         case ActionType.ResetGame:
-                            output_message_dict = self._process_reset_game_action(
-                                agent_addr
-                            )
+                            self._reset_requests[agent_addr] = True
+                            self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
+                            if all(self._reset_requests.values()):
+                                # should we discard the queue here?
+                                self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q{self._answers_queue.empty()}")
+                                self._world.reset()
+                                self._get_goal_description_per_role()
+                                self._get_win_condition_per_role()
+                                for agent in self._reset_requests:
+                                    self._reset_requests[agent] = False
+                                    self._agent_steps[agent] = 0
+                                    self._agent_states[agent] = self._world.create_state_from_view(self._agent_starting_position[agent])
+                                    self._agent_goal_reached[agent] = self._goal_reached(agent)
+                                    self._agent_episode_ends[agent] = False
+                                    output_message_dict = self._create_response_to_reset_game_action(agent)
+                                    msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                                    # Send to anwer_queue
+                                    await self._answers_queue.put(msg_json)
+                            else:
+                                self.logger.info("\t Waiting for other agents to request reset")
                         case _:
                             output_message_dict = self._process_generic_action(
                                 agent_addr, action
                             )
-                    try:
-                        # Convert message into string representation
-                        output_message = json.dumps(output_message_dict)
-                    except Exception as e:
-                        self.logger.error(f"Error when converting msg to Json:{e}")
-                        raise e
-                    # Send to anwer_queue
-                    await self._answers_queue.put(output_message)
+                            msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                            # Send to anwer_queue
+                            await self._answers_queue.put(msg_json)
+
                 await asyncio.sleep(0.0000001)
         except asyncio.CancelledError:
             self.logger.info("\tTerminating by CancelledError")
@@ -244,7 +266,84 @@ class Coordinator:
             self.logger.error(f"Exception in main_coordinator(): {e}")
             raise e
 
-    def _process_join_game_action(self, agent_addr: tuple, action: Action, current_observation: Observation) -> dict:
+    def _initialize_new_player(self, agent_addr:tuple, agent_name:str, agent_role:str) -> Observation:
+        """
+        Method to initialize new player upon joining the game.
+        Returns initial observation for the agent based on the agent's role
+        """
+        self.logger.info(f"\tInitializing new player{agent_addr}")
+        self.agents[agent_addr] = (agent_name, agent_role)
+        self._agent_steps[agent_addr] = 0
+        self._reset_requests[agent_addr] = False
+        self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
+        self._agent_states[agent_addr] = self._world.create_state_from_view(self._agent_starting_position[agent_addr])
+        self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
+        self._agent_episode_ends[agent_addr] = False
+        self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
+        return Observation(self._agent_states[agent_addr], 0, False, {})
+
+    def _remove_player(self, agent_addr:tuple)->dict:
+        """
+        Removes player from the game.
+        """
+        self.logger.info(f"Removing player {agent_addr}")
+        agent_info = {}
+        if agent_addr in self.agents:
+            agent_info["state"] = self._agent_states.pop(agent_addr)
+            agent_info["goal_reached"] = self._agent_goal_reached.pop(agent_addr)
+            agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
+            agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
+            agent_info["episode_end"] = self._agent_episode_ends.pop(agent_addr)
+            agent_info["agent_info"] = self.agents.pop(agent_addr)
+            self.logger.debug(f"\t{agent_info}")
+        else:
+            self.logger.warning(f"\t Player {agent_addr} not present in the game!")
+        return agent_info
+
+    def _get_starting_position_per_role(self)->dict:
+        """
+        Method for finding starting position for each agent role in the game.
+        """
+        starting_positions = {}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                starting_positions[agent_role] = self._world.task_config.get_start_position(agent_role=agent_role)
+                self.logger.info(f"Starting position for role '{agent_role}': {starting_positions[agent_role]}")
+            except KeyError:
+                starting_positions[agent_role] = {}
+        return starting_positions
+    
+    def _get_win_condition_per_role(self)-> dict:
+        """
+        Method for finding wininng conditions for each agent role in the game.
+        """
+        win_conditions = {}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                win_conditions[agent_role] = self._world.re_map_goal_dict(
+                    self._world.task_config.get_win_conditions(agent_role=agent_role)
+                )
+            except KeyError:
+                win_conditions[agent_role] = {}
+            self.logger.info(f"Win condition for role '{agent_role}': {win_conditions[agent_role]}")
+        return win_conditions
+    
+    def _get_goal_description_per_role(self)->dict:
+        """
+        Method for finding goal description for each agent role in the game.
+        """
+        goal_descriptions ={}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                goal_descriptions[agent_role] = self._world.update_goal_descriptions(
+                    self._world.task_config.get_goal_description(agent_role=agent_role)
+                )
+            except KeyError:
+                goal_descriptions[agent_role] = ""
+            self.logger.info(f"Goal description for role '{agent_role}': {goal_descriptions[agent_role]}")
+        return goal_descriptions
+    
+    def _process_join_game_action(self, agent_addr: tuple, action: Action) -> dict:
         """ "
         Method for processing Action of type ActionType.JoinGame
         """
@@ -253,27 +352,21 @@ class Coordinator:
             agent_name = action.parameters["agent_info"].name
             agent_role = action.parameters["agent_info"].role
             if agent_role in self.ALLOWED_ROLES:
-                self.logger.info(f"\tAgent {agent_name}, registred as {agent_role}")
-                self.agents[agent_addr] = action.parameters
-                agent_observation_str = (
-                    self._action_processor.generate_observation_msg_for_agent(
-                        agent_addr, current_observation
-                    )
-                )
+                initial_observation = self._initialize_new_player(agent_addr, agent_name, agent_role)
                 output_message_dict = {
                     "to_agent": agent_addr,
                     "status": str(GameStatus.CREATED),
-                    "observation": agent_observation_str,
+                    "observation": observation_as_dict(initial_observation),
                     "message": {
                         "message": f"Welcome {agent_name}, registred as {agent_role}",
                         "max_steps": self._world._max_steps,
-                        "goal_description": self._world.goal_description,
+                        "goal_description": self._goal_description_per_role[agent_role],
                         "num_actions": self._world.num_actions
                         },
                 }
             else:
                 self.logger.info(
-                    f"\tError in regitration, unknown agent role: {agent_role}!"
+                    f"\tError in registration, unknown agent role: {agent_role}!"
                 )
                 output_message_dict = {
                     "to_agent": agent_addr,
@@ -281,7 +374,7 @@ class Coordinator:
                     "message": f"Incorrect agent_role {agent_role}",
                 }
         else:
-            self.logger.info("\tError in regitration, unknown agent already exists!")
+            self.logger.info("\tError in registration, unknown agent already exists!")
             output_message_dict = {
                 "to_agent": {agent_addr},
                 "status": str(GameStatus.BAD_REQUEST),
@@ -289,56 +382,139 @@ class Coordinator:
             }
         return output_message_dict
 
-    def _process_reset_game_action(self, agent_addr: tuple) -> dict:
+    def _create_response_to_reset_game_action(self, agent_addr: tuple) -> dict:
         """ "
-        Method for processing Action of type ActionType.ResetGame
+        Method for generatating answers to Action of type ActionType.ResetGame after all agents requested reset
         """
         self.logger.info(
-            f"Coordinator received from RESET request from agent {agent_addr}"
+            f"Coordinator responding to RESET request from agent {agent_addr}"
         )
-        new_env_observation = self._world.reset()
-        agent_observation_str = (
-            self._action_processor.generate_observation_msg_for_agent(
-                agent_addr, new_env_observation
-            )
-        )
+        new_observation = Observation(self._agent_states[agent_addr], 0, self.episode_end, {})
         output_message_dict = {
             "to_agent": agent_addr,
             "status": str(GameStatus.OK),
-            "observation": agent_observation_str,
+            "observation": observation_as_dict(new_observation),
             "message": {
                         "message": "Resetting Game and starting again.",
                         "max_steps": self._world._max_steps,
-                        "goal_description": self._world.goal_description
+                        "goal_description": self._goal_description_per_role[self.agents[agent_addr][1]]
                         },
         }
         return output_message_dict
 
     def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
-        self.logger.info(f"Coordinator received from agent {agent_addr}: {action}")
-        # Process the message
-        action_for_env = self._action_processor.process_message_from_agent(
-            agent_addr, action
-        )
-        new_observation = self._world.step(action_for_env, self.world_type)
-        agent_observation_str = (
-            self._action_processor.generate_observation_msg_for_agent(
-                agent_addr, new_observation
-            )
-        )
+        """
+        Method processing the Actions relevant to the environment
+        """
+        self.logger.info(f"Processing {action} from {agent_addr}")
+        if not self.episode_end:
+            # Process the message
+            # increase the action counter
+            self._agent_steps[agent_addr] += 1
+            self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
+            
+            # Build new Observation for the agent
+            self._agent_states[agent_addr] = self._world.step(self._agent_states[agent_addr], action, agent_addr, self.world_type)
+            self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
+
+            reward = self._world._rewards["step"]
+            obs_info = {}
+            if self._agent_goal_reached[agent_addr]:
+                reward += self._world._rewards["goal"]
+                self._agent_episode_ends[agent_addr] = True
+                obs_info = {'end_reason': "goal_reached"}
+            elif self._agent_steps[agent_addr] >= self._steps_limit:
+                self._agent_episode_ends[agent_addr] = True
+                obs_info = {"end_reason": "max_steps"}
+            new_observation = Observation(self._agent_states[agent_addr], reward, self.episode_end, info=obs_info)
+
+            self._agent_observations[agent_addr] = new_observation
+
+            output_message_dict = {
+                "to_agent": agent_addr,
+                "observation": observation_as_dict(new_observation),
+                "status": str(GameStatus.OK),
+            }
+        else:
+            self.logger.error(f"{self.episode_end}, {self._agent_episode_ends}")
+            output_message_dict = self._generate_episode_end_message(agent_addr)
+        return output_message_dict
+    
+    def _generate_episode_end_message(self, agent_addr:tuple)->dict:
+        """
+        Method for generating response when agent attemps to make a step after episode ended.
+        """
+        current_observation = self._agent_observations[agent_addr]
+        reward = 0 # TODO
+        end_reason = ""
+        if self._agent_goal_reached[agent_addr]:
+            end_reason = "goal_reached"
+        elif self._agent_steps[agent_addr] >= self._world.timeout:
+            end_reason = "max_steps"
+        else:
+            end_reason = "game_lost"
+            reward += self._world._rewards["detection"]
+        new_observation = Observation(
+            current_observation.state,
+            reward=reward,
+            end=True,
+            info={'end_reason': end_reason, "info":"Episode ended. Request reset for starting new episode."})
         output_message_dict = {
             "to_agent": agent_addr,
-            "observation": agent_observation_str,
-            "status": str(GameStatus.OK),
+            "observation": observation_as_dict(new_observation),
+            "status": str(GameStatus.FORBIDDEN),
         }
         return output_message_dict
+
+    def _goal_reached(self, agent_addr:tuple)->bool:
+        """
+        Determines if and agent reached a goal state
+        """
+        self.logger.info(f"Goal check for {agent_addr}({self.agents[agent_addr][1]})")
+        agents_state = self._agent_states[agent_addr]
+        agent_role = self.agents[agent_addr][1]
+        win_condition = self._world.re_map_goal_dict(self._win_conditions_per_role[agent_role])
+        goal_check = self._check_goal(agents_state, win_condition)
+        if goal_check:
+            self.logger.info("\tGoal reached!")
+        return goal_check
+    
+    def _check_goal(self, state:GameState, goal_conditions:dict)->bool:
+        """
+        Check if the goal conditons were satisfied in a given game state
+        """
+        def goal_dict_satistfied(goal_dict:dict, known_dict: dict)-> bool:
+            """
+            Helper function for checking if a goal dictionary condition is satisfied
+            """
+            # check if we have all IPs that should have some values (are keys in goal_dict)
+            if goal_dict.keys() <= known_dict.keys():
+                try:
+                    # Check if values (sets) for EACH key (host) in goal_dict are subsets of known_dict, keep matching_keys
+                    matching_keys = [host for host in goal_dict.keys() if goal_dict[host]<= known_dict[host]]
+                    # Check we have the amount of mathing keys as in the goal_dict
+                    if len(matching_keys) == len(goal_dict.keys()):
+                        return True
+                except KeyError:
+                    #some keys are missing in the known_dict
+                    return False
+            return False
+        
+        # For each part of the state of the game, check if the conditions are met
+        goal_reached = {}    
+        goal_reached["networks"] = set(goal_conditions["known_networks"]) <= set(state.known_networks)
+        goal_reached["known_hosts"] = set(goal_conditions["known_hosts"]) <= set(state.known_hosts)
+        goal_reached["controlled_hosts"] = set(goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
+        goal_reached["services"] = goal_dict_satistfied(goal_conditions["known_services"], state.known_services)
+        goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
+        self.logger.debug(f"\t{goal_reached}")
+        return all(goal_reached.values())
 
 
 __version__ = "v0.2.1"
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
     parser = argparse.ArgumentParser(
         description=f"NetSecGame Coordinator Server version {__version__}. Author: Sebastian Garcia, sebastian.garcia@agents.fel.cvut.cz",
         usage="%(prog)s [options]",
