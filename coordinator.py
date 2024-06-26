@@ -7,7 +7,7 @@ import logging
 import json
 import asyncio
 from env.network_security_game import NetworkSecurityEnvironment
-from env.game_components import Action, Observation, ActionType, GameStatus
+from env.game_components import Action, Observation, ActionType, GameStatus, GameState
 from utils.utils import observation_as_dict, get_logging_level
 from pathlib import Path
 import os
