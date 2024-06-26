@@ -62,7 +62,17 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
 
 ### Actions for the defender
-In this version of the environment, the defender does not have actions, and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks, the admins have tools that consume logs from all computers simultaneously, and they can detect actions from a central position (such as a SIEM). There are several modes of the defender (see [Task Configuration - Defender](#defender-configuration) for details.
+The defender does have the action to block an IP address in a target host. 
+
+In this version, there is no global defender as there was before, because now it is a multi-agent system.
+
+The actions are:
+
+- BlockIP(). That takes as parameters:
+  - "target_host": IP object where the block will be applied.
+  - "source_host": IP object where this actions is executed from.
+  - "blocked_host": IP object to block in ANY direction as seen in the target_host.
+
 
 ### Starting the game
 The environment should be created prior strating the agents. The properties of the environment can be defined in a YAML file. The game server can be started by running:
