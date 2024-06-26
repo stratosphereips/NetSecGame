@@ -340,7 +340,7 @@ class Coordinator:
                 )
             except KeyError:
                 goal_descriptions[agent_role] = ""
-            self.logger.info(f"Goal desription for role '{agent_role}': {goal_descriptions[agent_role]}")
+            self.logger.info(f"Goal description for role '{agent_role}': {goal_descriptions[agent_role]}")
         return goal_descriptions
     
     def _process_join_game_action(self, agent_addr: tuple, action: Action) -> dict:
