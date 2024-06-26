@@ -125,6 +125,7 @@ class ActionType(enum.Enum):
     - FindData
     - ExploitService
     - ExfiltrateData
+    - BlockIP
     - JoinGame
     - QuitGame
     """
@@ -152,6 +153,8 @@ class ActionType(enum.Enum):
                 return ActionType.FindData
             case "ActionType.ExfiltrateData":
                 return ActionType.ExfiltrateData
+            case "ActionType.BlockIP":
+                return ActionType.BlockIP
             case "ActionType.JoinGame":
                 return ActionType.JoinGame
             case "ActionType.ResetGame":
@@ -167,6 +170,7 @@ class ActionType(enum.Enum):
     FindData = 0.8
     ExploitService = 0.7
     ExfiltrateData = 0.8
+    BlockIP = 1
     JoinGame = 1
     QuitGame = 1
     ResetGame = 1
@@ -191,6 +195,7 @@ class Action():
     - FindData {"target_host": IP object, "source_host": IP object}
     - ExploitService {"target_host": IP object, "target_service": Service object, "source_host": IP object}
     - ExfiltrateData {"target_host": IP object, "source_host": IP object, "data": Data object}
+    - BlockIP("target_host": IP object, "source_host": IP object, "blocked_host": IP object)
     """
     def __init__(self, action_type: ActionType, params: dict={}) -> None:
         self._type = action_type
@@ -226,6 +231,8 @@ class Action():
                 case "source_host":
                     params[k] = IP(v)
                 case "target_host":
+                    params[k] = IP(v)
+                case "blocked_host":
                     params[k] = IP(v)
                 case "target_network":
                     net,mask = v.split("/")
@@ -291,6 +298,10 @@ class Action():
                 parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
                                 "source_host": IP(parameters_dict["source_host"]["ip"]),
                               "data": Data(parameters_dict["data"]["owner"],parameters_dict["data"]["id"])}
+            case ActionType.BlockIP:
+                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
+                              "source_host": IP(parameters_dict["source_host"]["ip"]),
+                              "blocked_host": IP(parameters_dict["blocked_host"]["ip"])}
             case ActionType.JoinGame:
                 parameters = {"agent_info":AgentInfo(parameters_dict["agent_info"]["name"], parameters_dict["agent_info"]["role"])}
             case ActionType.QuitGame:
