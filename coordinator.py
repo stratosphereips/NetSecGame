@@ -352,14 +352,6 @@ if __name__ == "__main__":
         type=int,
     )
     parser.add_argument(
-        "-d",
-        "--debug",
-        help="Debugging level. This shows inner information about the flows.",
-        action="store",
-        required=False,
-        type=int,
-    )
-    parser.add_argument(
         "-c",
         "--configfile",
         help="Configuration file.",
