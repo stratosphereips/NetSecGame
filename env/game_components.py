@@ -438,6 +438,7 @@ class GameStatus(enum.Enum):
     OK = 200
     CREATED = 201
     BAD_REQUEST = 400
+    FORBIDDEN = 403
     
     @classmethod
     def from_string(cls, string:str):
@@ -448,6 +449,8 @@ class GameStatus(enum.Enum):
                 return GameStatus.CREATED
             case "GameStatus.BAD_REQUEST":
                 return GameStatus.BAD_REQUEST
+            case "GameStatus.FORBIDDEN":
+                return GameStatus.FORBIDDEN
     def __repr__(self) -> str:
         return str(self)
 if __name__ == "__main__":

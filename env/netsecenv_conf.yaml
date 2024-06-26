@@ -44,8 +44,8 @@ coordinator:
     defenders:
       # types are StochasticDefender and NoDefender
       #type: 'StochasticDefender'
-      type: 'StochasticWithThreshold'
-      # type: 'NoDefender'
+      #type: 'StochasticWithThreshold'
+      type: 'NoDefender'
       tw_size: 5
       thresholds:
         scan_network: # if both conditions are true, you are never detected
