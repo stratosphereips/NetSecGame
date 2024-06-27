@@ -112,13 +112,6 @@ class ConfigParser():
             self.logger.error(f'Error loading the configuration file{e}')
             pass
     
-    def read_defender_detection_prob(self, action_name: str) -> dict:
-        if self.config["coordinator"]["agents"]["defenders"]["type"] in ["StochasticWithThreshold", "StochasticDefender"]:
-            action_detect_p = self.config["coordinator"]["agents"]["defenders"]["action_detetection_prob"][action_name]
-        else:
-            action_detect_p = 0
-        return action_detect_p  
-
     def read_env_action_data(self, action_name: str) -> dict:
         """
         Generic function to read the known data for any agent and goal of position
@@ -226,62 +219,63 @@ class ConfigParser():
                     self.logger('Configuration problem with the known hosts')
         return controlled_hosts
 
-    
-    def get_attackers_win_conditions(self):
+    def get_player_win_conditions(self, type_of_player):
         """
-        Get the goal of the attacker 
+        Get the goal of the player
+        type_of_player: Can be 'attackers' or 'defenders' 
         """
         # Read known nets
-        known_networks = self.read_agents_known_networks('attackers', 'goal')
+        known_networks = self.read_agents_known_networks(type_of_player, 'goal')
 
         # Read known hosts
-        known_hosts = self.read_agents_known_hosts('attackers', 'goal')
+        known_hosts = self.read_agents_known_hosts(type_of_player, 'goal')
 
         # Read controlled hosts
-        controlled_hosts = self.read_agents_controlled_hosts('attackers', 'goal')
+        controlled_hosts = self.read_agents_controlled_hosts(type_of_player, 'goal')
 
         # Goal services
-        known_services = self.read_agents_known_services('attackers', 'goal')
+        known_services = self.read_agents_known_services(type_of_player, 'goal')
 
         # Goal data
-        known_data = self.read_agents_known_data('attackers', 'goal')
+        known_data = self.read_agents_known_data(type_of_player, 'goal')
 
-        attackers_goal = {}
-        attackers_goal['known_networks'] = known_networks
-        attackers_goal['controlled_hosts'] = controlled_hosts
-        attackers_goal['known_hosts'] = known_hosts
-        attackers_goal['known_data'] = known_data
-        attackers_goal['known_services'] = known_services
+        player_goal = {}
+        player_goal['known_networks'] = known_networks
+        player_goal['controlled_hosts'] = controlled_hosts
+        player_goal['known_hosts'] = known_hosts
+        player_goal['known_data'] = known_data
+        player_goal['known_services'] = known_services
 
-        return attackers_goal
+        return player_goal
     
-    def get_attackers_start_position(self):
+    def get_player_start_position(self, type_of_player):
         """
         Generate the starting position of an attacking agent
+        type_of_player: Can be 'attackers' or 'defenders' 
         """
         # Read known nets
-        known_networks = self.read_agents_known_networks('attackers', 'start_position')
+        known_networks = self.read_agents_known_networks(type_of_player, 'start_position')
 
         # Read known hosts
-        known_hosts = self.read_agents_known_hosts('attackers', 'start_position')
+        known_hosts = self.read_agents_known_hosts(type_of_player, 'start_position')
 
         # Read controlled hosts
-        controlled_hosts = self.read_agents_controlled_hosts('attackers', 'start_position')
+        controlled_hosts = self.read_agents_controlled_hosts(type_of_player, 'start_position')
 
         # Start services
-        known_services = self.read_agents_known_services('attackers', 'start_position')
+        known_services = self.read_agents_known_services(type_of_player, 'start_position')
 
         # Start data
-        known_data = self.read_agents_known_data('attackers', 'start_position')
+        known_data = self.read_agents_known_data(type_of_player, 'start_position')
 
-        attackers_start_position = {}
-        attackers_start_position['known_networks'] = known_networks
-        attackers_start_position['controlled_hosts'] = controlled_hosts
-        attackers_start_position['known_hosts'] = known_hosts
-        attackers_start_position['known_data'] = known_data
-        attackers_start_position['known_services'] = known_services
+        player_start_position = {}
+        player_start_position['known_networks'] = known_networks
+        player_start_position['controlled_hosts'] = controlled_hosts
+        player_start_position['known_hosts'] = known_hosts
+        player_start_position['known_data'] = known_data
+        player_start_position['known_services'] = known_services
 
-        return attackers_start_position
+        return player_start_position
 
     def get_start_position(self, agent_role):
         match agent_role:
@@ -404,42 +398,6 @@ class ConfigParser():
             store_rb = False
         return store_rb
     
-    def get_defender_type(self):
-        """
-        Get the type of the defender
-        """
-        try:
-            defender_placements = self.config["coordinator"]['agents']['defenders']['type']
-        except KeyError:
-            # Option is not in the configuration - default to no defender present
-            defender_placements = "NoDefender"
-        return defender_placements
-    
-    def get_defender_tw_size(self):
-        tw_size = self.config["coordinator"]['agents']['defenders']['tw_size']
-        return tw_size
-    
-    def get_defender_thresholds(self):
-        """Function to read thresholds for stochastic defender with thresholds"""
-        thresholds = {}
-        config_thresholds = self.config["coordinator"]['agents']['defenders']["thresholds"]
-        # ScanNetwork
-        thresholds[ActionType.ScanNetwork] = {"consecutive_actions": config_thresholds["scan_network"]["consecutive_actions"]}
-        thresholds[ActionType.ScanNetwork]["tw_ratio"] = config_thresholds["scan_network"]["tw_ratio"]
-        # FindServices
-        thresholds[ActionType.FindServices] = {"consecutive_actions": config_thresholds["find_services"]["consecutive_actions"]}
-        thresholds[ActionType.FindServices]["tw_ratio"] = config_thresholds["find_services"]["tw_ratio"]
-        # FindData
-        thresholds[ActionType.FindData] = {"repeated_actions_episode": config_thresholds["find_data"]["repeated_actions_episode"]}
-        thresholds[ActionType.FindData]["tw_ratio"] = config_thresholds["find_data"]["tw_ratio"]
-        # ExploitService
-        thresholds[ActionType.ExploitService] = {"repeated_actions_episode": config_thresholds["exploit_service"]["repeated_actions_episode"]}
-        thresholds[ActionType.ExploitService]["tw_ratio"] = config_thresholds["exploit_service"]["tw_ratio"]
-        # ExfiltrateData
-        thresholds[ActionType.ExfiltrateData] = {"consecutive_actions": config_thresholds["exfiltrate_data"]["consecutive_actions"]}
-        thresholds[ActionType.ExfiltrateData]["tw_ratio"] = config_thresholds["exfiltrate_data"]["tw_ratio"]
-        return thresholds
-
     def get_scenario(self):
         """
         Get the scenario config object
