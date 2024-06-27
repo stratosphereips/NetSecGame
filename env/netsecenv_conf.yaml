@@ -109,3 +109,5 @@ env:
       prob_success: 1.0
     exfiltrate_data:
       prob_success: 1.0
+    block_ip:
+      prob_success: 1.0
