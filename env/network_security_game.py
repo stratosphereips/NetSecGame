@@ -19,123 +19,6 @@ import xml.etree.ElementTree as ElementTree
 # Set the logging
 logger = logging.getLogger('Netsecenv')
 
-class SimplisticDefender:
-    def __init__(self, config_file) -> None:
-        self.task_config = ConfigParser(config_file)
-        self.logger = logging.getLogger('Netsecenv-Defender')
-        defender_type = self.task_config.get_defender_type()
-        self.logger.info(f"Defender set to be of type '{defender_type}'")
-        match defender_type:
-            case "NoDefender":
-                self._defender_type = None
-            case 'StochasticDefender':
-                # For now there is only one type of defender
-                self._defender_type = "Stochastic"
-                self.detection_probability = self._read_detection_probabilities()
-            case "StochasticWithThreshold":
-                self._defender_type = "StochasticWithThreshold"
-                self.detection_probability = self._read_detection_probabilities()
-                self._defender_thresholds = self.task_config.get_defender_thresholds()
-                self._defender_thresholds["tw_size"] = self.task_config.get_defender_tw_size()
-                self._actions_played = []
-            case _: # Default option - no defender
-                self._defender_type = None
-    
-    def _read_detection_probabilities(self)->dict:
-        """
-        Method to read detection probabilities from the task config task.
-        """
-        detection_probability = {}
-        detection_probability[components.ActionType.ScanNetwork] = self.task_config.read_defender_detection_prob('scan_network')
-        detection_probability[components.ActionType.FindServices] = self.task_config.read_defender_detection_prob('find_services')
-        detection_probability[components.ActionType.ExploitService] = self.task_config.read_defender_detection_prob('exploit_service')
-        detection_probability[components.ActionType.FindData] = self.task_config.read_defender_detection_prob('find_data')
-        detection_probability[components.ActionType.ExfiltrateData] = self.task_config.read_defender_detection_prob('exfiltrate_data')
-        self.logger.info(f"Detection probabilities:{detection_probability}")
-        return detection_probability
-
-    def detect(self, state:components.GameState, action:components.Action, actions_played):
-        """
-        Checks if current action was detected based on the defendr type:
-        """
-        if self._defender_type is not None: # There is a defender present
-            match self._defender_type:
-                case "Stochastic":
-                    detection = self._stochastic_detection(action)
-                    self.logger.info(f"\tAction detected?: {detection}")
-                    return detection
-                case "StochasticWithThreshold":
-                    self.logger.info(f"Checking detection based on rules: {action}")
-                    detection = self._stochastic_detection_with_thresholds(action, actions_played)
-                    self.logger.info(f"\tAction detected?: {detection}")
-                    return detection
-        else: # No defender in the environment
-            logger.info("\tNo defender present")
-            return False
-    
-    def _stochastic_detection_with_thresholds(self, action:components.Action, actions_played)->bool:        
-        """ Method used for detection with stochastic defender with minimal thresholds"""
-        if len(actions_played) > self._defender_thresholds["tw_size"]: # single action is never detected:
-            last_n_actions = actions_played[-self._defender_thresholds["tw_size"]:]
-            last_n_action_types = [action.type for action in last_n_actions]
-            repeated_action_episode = actions_played.count(action)
-            self.logger.info('\tThreshold check')
-            # update threh
-            match action.type: # thresholds are based on action type
-                case components.ActionType.ScanNetwork:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ScanNetwork)/self._defender_thresholds["tw_size"]
-                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
-                                                for _,grouped in itertools.groupby(last_n_action_types))
-                    if tw_ratio < self._defender_thresholds[components.ActionType.ScanNetwork]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ScanNetwork]["consecutive_actions"]:
-                        return False
-                    else:
-                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ScanNetwork]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ScanNetwork]['consecutive_actions']})")
-                        return self._stochastic_detection(action)
-                case components.ActionType.FindServices:
-                    tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/self._defender_thresholds["tw_size"]
-                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.FindServices)
-                                                for _,grouped in itertools.groupby(last_n_action_types))
-                    if tw_ratio < self._defender_thresholds[components.ActionType.FindServices]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.FindServices]["consecutive_actions"]:
-                        return False
-                    else:
-                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindServices]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.FindServices]['consecutive_actions']})")
-                        return self._stochastic_detection(action)
-                case components.ActionType.FindData:
-                    tw_ratio = last_n_action_types.count(components.ActionType.FindData)/self._defender_thresholds["tw_size"]
-                    if tw_ratio < self._defender_thresholds[components.ActionType.FindData]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.FindData]["repeated_actions_episode"]:
-                        return False
-                    else:
-                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindData]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
-                        return self._stochastic_detection(action)
-                case components.ActionType.ExploitService:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ExploitService)/self._defender_thresholds["tw_size"]
-                    if tw_ratio < self._defender_thresholds[components.ActionType.ExploitService]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.ExploitService]["repeated_actions_episode"]:
-                        return False
-                    else:
-                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExploitService]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
-                        return self._stochastic_detection(action)
-                case components.ActionType.ExfiltrateData:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ExfiltrateData)/self._defender_thresholds["tw_size"]
-                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ExfiltrateData)
-                                                for _,grouped in itertools.groupby(last_n_action_types))
-                    if tw_ratio < self._defender_thresholds[components.ActionType.ExfiltrateData]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ExfiltrateData]["consecutive_actions"]:
-                        return False
-                    else:
-                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExfiltrateData]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ExfiltrateData]['consecutive_actions']})")
-                        return self._stochastic_detection(action)
-                case _: # default case - No detection
-                    return False
-        return False
-    
-    def _stochastic_detection(self, action: components.Action)->bool:
-        """ Method stochastic detection based on action default probability"""
-        roll = random.random()
-        self.logger.info(f"\tRunning stochastic detection. {roll} < {self.detection_probability[action.type]}")
-        return roll < self.detection_probability[action.type]
-    
-    def reset(self)->None:
-        self.logger.info("Defender resetted")
-
 class NetworkSecurityEnvironment(object):
     """
     Class to manage the whole network security game
@@ -188,24 +71,27 @@ class NetworkSecurityEnvironment(object):
         components.ActionType.ExploitService.default_success_p = self.task_config.read_env_action_data('exploit_service')
         components.ActionType.FindData.default_success_p = self.task_config.read_env_action_data('find_data')
         components.ActionType.ExfiltrateData.default_success_p = self.task_config.read_env_action_data('exfiltrate_data')
+        components.ActionType.BlockIP.default_success_p = self.task_config.read_env_action_data('block_ip')
 
-        # Place the defender
-        self._defender = SimplisticDefender(task_config_file)
-        
         # Get attacker start
-        self._attacker_start_position = self.task_config.get_attackers_start_position()
+        self._attackers_start_position = self.task_config.get_player_start_position('attackers')
 
         # should be randomized once or every episode?
-        self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
+        self._randomize_attacker_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
         
+        # store goal definition
+        self._attacker_goal_conditions = self.task_config.get_player_win_conditions('attackers')
 
-        # # Process episodic randomization of goal position
-        # if not self._randomize_goal_every_episode:
-        #     # REPLACE 'random' keyword once
-        #     logger.info("Episodic randomization disabled, generating static goal_conditions")
-        #     self._goal_conditions = self._process_win_conditions(self._goal_conditions)
+        # store goal description
+        self._goal_description = self.task_config.get_goal_description()
+
+        # Process episodic randomization of goal position
+        # if not self._randomize_attacker_goal_every_episode:
+            # # REPLACE 'random' keyword once
+            # logger.info("Episodic randomization disabled, generating static goal_conditions")
+            # self._attacker_goal_conditions = self._process_win_conditions(self._attacker_goal_conditions)
         # else:
-        #     logger.info("Episodic randomization enabled, keeping 'random' keyword in the goal description.")
+            # logger.info("Episodic randomization enabled, keeping 'random' keyword in the goal description.")
 
         # At this point all 'random' values should be assigned to something
         # Check if dynamic network and ip adddresses are required
@@ -300,6 +186,121 @@ class NetworkSecurityEnvironment(object):
                             actions.add(components.Action(components.ActionType.ExploitService, {"target_host":ip, "target_service":service, "source_host":src_ip}))
         return {k:v for k,v in enumerate(actions)}
     
+    def _create_starting_state(self) -> components.GameState:
+        """
+        Builds the starting GameState from 'self._attacker_start_position'.
+        If there is a keyword 'random' used, it is replaced by a valid option at random.
+
+        Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
+        """
+        known_networks = set()
+        controlled_hosts = set()
+        logger.info('Generating starting state')
+        for controlled_host in self._attackers_start_position['controlled_hosts']:
+            if isinstance(controlled_host, components.IP):
+                controlled_hosts.add(controlled_host)
+                logger.info(f'\tThe attacker has control of host {str(controlled_host)}.')
+            elif controlled_host == 'random':
+                # Random start
+                logger.info('\tAdding random starting position of agent')
+                logger.info(f'\t\tChoosing from {self.hosts_to_start}')
+                controlled_hosts.add(random.choice(self.hosts_to_start))
+                logger.info(f'\t\tMaking agent start in {controlled_hosts}')
+            else:
+                logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {controlled_host}")
+
+        # Add all controlled hosts to known_hosts
+        known_hosts = self._attackers_start_position["known_hosts"].union(controlled_hosts)
+        
+        # Extend the known networks with the neighbouring networks
+        # This is to solve in the env (and not in the agent) the problem
+        # of not knowing other networks appart from the one the agent is in
+        # This is wrong and should be done by the agent, not here
+        # TODO remove this!
+        for controlled_host in controlled_hosts:
+            for net in self._get_networks_from_host(controlled_host): #TODO
+                net_obj = netaddr.IPNetwork(str(net))
+                if net_obj.ip.is_ipv4_private_use(): #TODO
+                    known_networks.add(net)
+                    net_obj.value += 256
+                    if net_obj.ip.is_ipv4_private_use():
+                        ip = components.Network(str(net_obj.ip), net_obj.prefixlen)
+                        logger.info(f'\tAdding {ip} to agent')
+                        known_networks.add(ip)
+                    net_obj.value -= 2*256
+                    if net_obj.ip.is_ipv4_private_use():
+                        ip = components.Network(str(net_obj.ip), net_obj.prefixlen)
+                        logger.info(f'\tAdding {ip} to agent')
+                        known_networks.add(ip)
+                    #return value back to the original
+                    net_obj.value += 256
+       
+        game_state = components.GameState(controlled_hosts, known_hosts, self._attackers_start_position["known_services"], self._attackers_start_position["known_data"], known_networks)
+        return game_state
+
+    def _process_win_conditions(self, win_conditions)->dict:
+        """
+        Method which analyses win_conditions and randomizes parts if required
+        """
+        logger.info("Processing win conditions")
+        updated_win_conditions = {}
+        
+        # networks
+        if win_conditions["known_networks"] == "random":
+            updated_win_conditions["known_networks"] = {random.choice(list(self._networks.keys()))}
+            logger.info("\t\tRadnomizing known_networks")
+        else:
+            updated_win_conditions["known_networks"] = copy.deepcopy(win_conditions["known_networks"])
+        logger.info(f"\tGoal known_networks: {updated_win_conditions['known_networks']}")
+        # known_hosts
+        if win_conditions["known_hosts"] == "random":
+            logger.info("\t\tRandomizing known_host")
+            updated_win_conditions["known_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
+        else:
+            updated_win_conditions["known_hosts"] = copy.deepcopy(win_conditions["known_hosts"])
+        logger.info(f"\tGoal known_hosts: {updated_win_conditions['known_hosts']}")
+        
+        # controlled_hosts
+        if win_conditions["controlled_hosts"] == "random":
+            logger.info("\tRandomizing controlled_hots")
+            updated_win_conditions["controlled_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
+        else:
+            updated_win_conditions["controlled_hosts"] = copy.deepcopy(win_conditions["controlled_hosts"])
+        logger.info(f"\tGoal controlled_hosts: {updated_win_conditions['controlled_hosts']}")
+        
+        # services
+        updated_win_conditions["known_services"] = {}
+        for host, service_list in win_conditions["known_services"].items():
+            # Was the position defined as random?
+            if isinstance(service_list, str) and service_list.lower() == "random":
+                available_services = []
+                for service in self._services[self._ip_to_hostname[host]]:
+                    available_services.append(components.Service(service.name, service.type, service.version, service.is_local))
+                logger.info(f"\tRandomizing known_services in {host}")
+                updated_win_conditions["known_services"][host] = random.choice(available_services)
+            else:
+                updated_win_conditions["known_services"][host] = copy.deepcopy(win_conditions["known_services"][host])
+        logger.info(f"\tGoal known_services: {updated_win_conditions['known_services']}")
+        
+        # data
+        # prepare all available data if randomization is needed
+        available_data = set()
+        for data in self._data.values():
+            for datapoint in data:
+                available_data.add(components.Data(datapoint.owner, datapoint.id))
+        
+        updated_win_conditions["known_data"] = {}
+        for host, data_set in win_conditions["known_data"].items():
+            # Was random data required in this host?
+            if isinstance(data_set, str) and data_set.lower() == "random":
+                # From all available data, randomly pick the one that is going to be requested in this host
+                updated_win_conditions["known_data"][host] = {random.choice(list(available_data))}
+                logger.info(f"\tRandomizing known_data in {host}")
+            else:
+                updated_win_conditions["known_data"][host] = copy.deepcopy(win_conditions["known_data"][host])
+        logger.info(f"\tGoal known_data: {updated_win_conditions['known_data']}")
+        return updated_win_conditions
+
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
         Process the cyst configuration file
@@ -1023,11 +1024,11 @@ class NetworkSecurityEnvironment(object):
         for state,action,reward,next_state in self._episode_replay_buffer:
             steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
         goal_state = components.GameState(
-            known_hosts=self._goal_conditions["known_hosts"],
-            known_networks=self._goal_conditions["known_networks"],
-            controlled_hosts=self._goal_conditions["controlled_hosts"],
-            known_services=self._goal_conditions["known_services"],
-            known_data=self._goal_conditions["known_data"]
+            known_hosts=self._attcker_goal_conditions["known_hosts"],
+            known_networks=self._attcker_goal_conditions["known_networks"],
+            controlled_hosts=self._attcker_goal_conditions["controlled_hosts"],
+            known_services=self._attcker_goal_conditions["known_services"],
+            known_data=self._attcker_goal_conditions["known_data"]
         )
         trajectory = {
             "goal": goal_state.as_dict,
