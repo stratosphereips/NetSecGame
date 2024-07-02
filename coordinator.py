@@ -301,7 +301,7 @@ class Coordinator:
             agent_info["agent_info"] = self.agents.pop(agent_addr)
             self.logger.debug(f"\t{agent_info}")
         else:
-            self.logger.warning(f"\t Player {agent_addr} not present in the game!")
+            self.logger.info(f"\t Player {agent_addr} not present in the game!")
         return agent_info
 
     def _get_starting_position_per_role(self)->dict:
@@ -415,7 +415,7 @@ class Coordinator:
         Method for adding one step to the agent trajectory.
         """
         if agent_addr in self._agent_trajectories:
-            self.logger.warning(f"Adding step to trajectory of {agent_addr}")
+            self.logger.debug(f"Adding step to trajectory of {agent_addr}")
             self._agent_trajectories[agent_addr]["play"].append(action.as_dict)
             self._agent_trajectories[agent_addr]["play"].append(reward)
             self._agent_trajectories[agent_addr]["play"].append(next_state.as_dict)
@@ -423,17 +423,17 @@ class Coordinator:
                 self._agent_trajectories["end_reason"] = end_reason
     
     def _store_trajectory_to_file(self, agent_addr, location="./trajectories"):
-        self.logger.warning(f"Storing Trajectory of {agent_addr}in file")
+        self.logger.debug(f"Storing Trajectory of {agent_addr}in file")
         if agent_addr in self._agent_trajectories:
             agent_name, agent_role = self.agents[agent_addr] 
             filename = os.path.join(location, f"{datetime.now():%Y-%m-%d}_{agent_name}_{agent_role}.jsonl")
             with jsonlines.open(filename, "a") as writer:
                 writer.write(self._agent_trajectories[agent_addr])
-            self.logger.warning(f"Trajectory of {agent_addr} strored in {filename}")
+            self.logger.info(f"Trajectory of {agent_addr} strored in {filename}")
     
     def _reset_trajectory(self,agent_addr)->dict:
         agent_name, agent_role = self.agents[agent_addr]
-        self.logger.warning(f"Resetting trajectory of {agent_addr}")
+        self.logger.debug(f"Resetting trajectory of {agent_addr}")
         return {
                 "play":[self._agent_states[agent_addr].as_dict],
                 "end_reason":None,
