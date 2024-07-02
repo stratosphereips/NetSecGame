@@ -79,6 +79,7 @@ env:
   store_replay_buffer: False
   use_dynamic_addresses: False
   use_firewall: True
+  save_trajectories: True
   goal_reward: 100
   detection_reward: -5
   step_reward: -1
