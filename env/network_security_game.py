@@ -213,14 +213,14 @@ class NetworkSecurityEnvironment(object):
             logger.info("Dynamic change of the IP and network addresses enabled")
             self._faker_object = Faker()
             Faker.seed(seed)
-        # read if replay buffer should be store on disc
-        if self.task_config.get_store_replay_buffer():
-            logger.info("Storing of replay buffer enabled")
-            self._episode_replay_buffer = []
-            self._trajectories = []
-        else:
-            logger.info("Storing of replay buffer disabled")
-            self._episode_replay_buffer = None
+        # # read if replay buffer should be store on disc
+        # if self.task_config.get_store_replay_buffer():
+        #     logger.info("Storing of replay buffer enabled")
+        #     self._episode_replay_buffer = []
+        #     self._trajectories = []
+        # else:
+        #     logger.info("Storing of replay buffer disabled")
+        self._episode_replay_buffer = None
 
         # Make a copy of data placements so it is possible to reset to it when episode ends
         self._data_original = copy.deepcopy(self._data)
@@ -1012,34 +1012,34 @@ class NetworkSecurityEnvironment(object):
             new_description = new_description.replace(str(ip), str(self._ip_mapping[ip]))
         return new_description
     
-    def store_trajectories_to_file(self, filename:str)->None:
-        if self._trajectories:
-            logger.info(f"Saving trajectories to '{filename}'")
-            with open(filename, "w") as outfile:
-                json.dump(self._trajectories, outfile)
+    # def store_trajectories_to_file(self, filename:str)->None:
+    #     if self._trajectories:
+    #         logger.info(f"Saving trajectories to '{filename}'")
+    #         with open(filename, "w") as outfile:
+    #             json.dump(self._trajectories, outfile)
         
-    def save_trajectories(self, trajectory_filename=None):
-        steps = []
-        for state,action,reward,next_state in self._episode_replay_buffer:
-            steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
-        goal_state = components.GameState(
-            known_hosts=self._goal_conditions["known_hosts"],
-            known_networks=self._goal_conditions["known_networks"],
-            controlled_hosts=self._goal_conditions["controlled_hosts"],
-            known_services=self._goal_conditions["known_services"],
-            known_data=self._goal_conditions["known_data"]
-        )
-        trajectory = {
-            "goal": goal_state.as_dict,
-            "end_reason":self._end_reason,
-            "trajectory":steps
-        }
-        if not trajectory_filename:
-            trajectory_filename = "NSG_trajectories.json"
-        if trajectory["end_reason"]:
-            self._trajectories.append(trajectory)
-            logger.info("Saving trajectories")
-            self.store_trajectories_to_file(trajectory_filename)
+    # def save_trajectories(self, trajectory_filename=None):
+    #     steps = []
+    #     for state,action,reward,next_state in self._episode_replay_buffer:
+    #         steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
+    #     goal_state = components.GameState(
+    #         known_hosts=self._goal_conditions["known_hosts"],
+    #         known_networks=self._goal_conditions["known_networks"],
+    #         controlled_hosts=self._goal_conditions["controlled_hosts"],
+    #         known_services=self._goal_conditions["known_services"],
+    #         known_data=self._goal_conditions["known_data"]
+    #     )
+    #     trajectory = {
+    #         "goal": goal_state.as_dict,
+    #         "end_reason":self._end_reason,
+    #         "trajectory":steps
+    #     }
+    #     if not trajectory_filename:
+    #         trajectory_filename = "NSG_trajectories.json"
+    #     if trajectory["end_reason"]:
+    #         self._trajectories.append(trajectory)
+    #         logger.info("Saving trajectories")
+    #         self.store_trajectories_to_file(trajectory_filename)
     
     def reset(self, trajectory_filename=None)->None: 
         """
