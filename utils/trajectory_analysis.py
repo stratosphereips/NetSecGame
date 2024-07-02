@@ -1,4 +1,5 @@
 import json
+import jsonlines
 import numpy as np
 import sys
 import os 
@@ -22,16 +23,23 @@ def combine_trajecories(filenames, output_filename):
     with open(output_filename, "w") as outfile:
         json.dump(data, outfile)
 
-def read_json(filename):
+def read_json_old(filename):
     with open(filename, "r") as infile:
         data = json.load(infile)
     return data
+
+def read_json(filename)->list:
+    trajectories = []
+    with jsonlines.open(filename) as reader:
+        for obj in reader:
+            trajectories.append(obj)
+    return trajectories
 
 def compute_mean_length(game_plays:list)->float:
     lengths = []
     for play in game_plays:
         if play["end_reason"]:
-            lengths.append(len(play["trajectory"]))
+            lengths.append(len(play["trajectory"]["actions"]))
     return np.mean(lengths)
 
 def state_diff(s1:GameState, s2: GameState) -> float:
@@ -84,13 +92,13 @@ def compare_action_type_sequence(game_plays:list, end_reason=None):
     for i, actions in actions_per_step.items():
         print(f"Step {i}, #different action_types:{len(actions)}")
 
-def plot_barplot(data:dict, fileneme, ignore_types = [ActionType.JoinGame, ActionType.QuitGame, ActionType.ResetGame]):
+def plot_barplot(data:dict, fileneme, title="ActionType distribution per step"):
     fig, ax = plt.subplots()
     bottom = np.zeros(len(data))
     action_counts = {}
     names = []
     for action_type in ActionType:
-        if action_type not in ignore_types:
+        if action_type not in [ActionType.JoinGame, ActionType.QuitGame, ActionType.ResetGame]:
             tmp = np.zeros(len(data))
             names.append(str(action_type))
             for i in range(len(data)):
@@ -101,7 +109,7 @@ def plot_barplot(data:dict, fileneme, ignore_types = [ActionType.JoinGame, Actio
         ax.bar(data.keys(), values, label=str(action_type).lstrip("ActionType."),bottom=bottom)
         #ax.plot(data.keys(), values, label=str(action_type).lstrip("ActionType."))
         bottom += values
-    ax.set_title("ActionType distribution per step - Q-learning")
+    ax.set_title(title)
     ax.minorticks_on()
     #plt.xticks(np.arange(0, len(data), step=1), labels=[i+1 for i in range(0,len(data))])
     plt.xlabel("Step number")
@@ -137,8 +145,8 @@ def get_action_type_histogram_per_step(game_plays:list, end_reason=None, filenam
     for play in game_plays:
         if end_reason and play["end_reason"] != end_reason:
             continue
-        for i,step in enumerate(play["trajectory"]):
-            action = Action.from_dict(step["a"])
+        for i in range(len(play["trajectory"]["actions"])):
+            action = Action.from_dict(play["trajectory"]["actions"][i])
             if action.type not in actions_step_usage:
                 actions_step_usage[action.type] = []
             actions_step_usage[action.type].append(i)
@@ -154,22 +162,17 @@ def get_action_type_barplot_per_step(game_plays:list, end_reason=None, filename=
     for play in game_plays:
         if end_reason and play["end_reason"] not in end_reason:
             continue
-        for i,step in enumerate(play["trajectory"]):
+        for i in range(len(play["trajectory"]["actions"])):
             if i not in actions_per_step.keys():
                 actions_per_step[i] = {action_type:0 for action_type in ActionType}
-            #state = GameState.from_dict(step["s"])
-            action = Action.from_dict(step["a"])
-            # reward = step["r"]
-            # next_state = step["s_next"] 
+            action = Action.from_dict(play["trajectory"]["actions"][i])
             actions_per_step[i][action.type] += 1
-
     to_plot = {}
     for i, actions in actions_per_step.items():
         per_step = {}
         for a in actions:
             per_step[a] = actions[a]
         to_plot[i] = per_step
-        #print(f"Step {i} ({total_actions}), #different action_types:{list(actions.values())[:-3]}")
     if not os.path.exists("figures"):
         os.makedirs("figures")
     plot_barplot(to_plot , os.path.join("figures", filename))
@@ -543,105 +546,109 @@ if __name__ == '__main__':
     # filter trajectories based on their ending
     END_REASON = None
     #END_REASON = ["goal_reached"]
-
-    # load trajectories from files
-    game_plays_q_learning = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
-    for play in game_plays_q_learning:
-        play["model"] = "Q-learning"
-    game_plays_gpt = read_json("NSG_trajectories_GPT3.json")
-    for play in game_plays_gpt:
-        play["model"] = "GPT-3.5"
-    game_plays_conceptual = read_json("NSG_trajectories_experiment47-episodes-680000.json")
-    for play in game_plays_conceptual:
-        play["model"] = "Q-learning-concepts"
-    game_plays_optimal = read_json("NSG_trajectories_optimal.json")
-    for play in game_plays_optimal:
-        play["model"] = "Optimal"
+    game_plays = read_json("./trajectories/2024-07-02_BaseAgent_Attacker.jsonl")
+    print(game_plays)
+    print(compute_mean_length(game_plays))
+    get_action_type_barplot_per_step(game_plays, end_reason=END_REASON)
+    get_action_type_histogram_per_step(game_plays, end_reason=END_REASON)
+    # # load trajectories from files
+    # game_plays_q_learning = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
+    # for play in game_plays_q_learning:
+    #     play["model"] = "Q-learning"
+    # game_plays_gpt = read_json("NSG_trajectories_GPT3.json")
+    # for play in game_plays_gpt:
+    #     play["model"] = "GPT-3.5"
+    # game_plays_conceptual = read_json("NSG_trajectories_experiment47-episodes-680000.json")
+    # for play in game_plays_conceptual:
+    #     play["model"] = "Q-learning-concepts"
+    # game_plays_optimal = read_json("NSG_trajectories_optimal.json")
+    # for play in game_plays_optimal:
+    #     play["model"] = "Optimal"
     
 
-    # barplot_action_efficiency(
-    #  [game_plays_q_learning, game_plays_conceptual, game_plays_gpt],
-    #  ("Q-learning", "Conceptual-learning", "LLM (GPT 3.5)"),
-    #  end_reason=["goal_reached"],
-    # )
-    # get_action_type_barplot_per_step(game_plays_q_learning, filename="plot_by_action_q_learning.png", end_reason=END_REASON)
-    # get_action_type_barplot_per_step(game_plays_conceptual, filename="plot_by_action_concepts.png", end_reason=END_REASON)
-    # get_action_type_barplot_per_step(game_plays_gpt, filename="plot_by_action_gpt.png", end_reason=END_REASON)
+    # # barplot_action_efficiency(
+    # #  [game_plays_q_learning, game_plays_conceptual, game_plays_gpt],
+    # #  ("Q-learning", "Conceptual-learning", "LLM (GPT 3.5)"),
+    # #  end_reason=["goal_reached"],
+    # # )
+    # # get_action_type_barplot_per_step(game_plays_q_learning, filename="plot_by_action_q_learning.png", end_reason=END_REASON)
+    # # get_action_type_barplot_per_step(game_plays_conceptual, filename="plot_by_action_concepts.png", end_reason=END_REASON)
+    # # get_action_type_barplot_per_step(game_plays_gpt, filename="plot_by_action_gpt.png", end_reason=END_REASON)
     
     
 
-    game_plays_combined = game_plays_q_learning + game_plays_gpt+game_plays_conceptual
-    cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_with_optimal_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON,optimal_gamelays=game_plays_optimal)
-    # generate_mdp_from_trajecotries(game_plays_q_learning,filename="MDP_visualization_q_learning", end_reason=END_REASON)
-    # generate_mdp_from_trajecotries(game_plays_gpt,filename="MDP_visualization_gpt", end_reason=END_REASON)
-    # generate_mdp_from_trajecotries(game_plays_conceptual,filename="MDP_visualization_conceptual", end_reason=END_REASON)
-    # generate_mdp_from_trajecotries(game_plays_optimal,filename="MDP_visualization_optimal", end_reason=END_REASON)
+    # game_plays_combined = game_plays_q_learning + game_plays_gpt+game_plays_conceptual
+    # cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_with_optimal_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON,optimal_gamelays=game_plays_optimal)
+    # # generate_mdp_from_trajecotries(game_plays_q_learning,filename="MDP_visualization_q_learning", end_reason=END_REASON)
+    # # generate_mdp_from_trajecotries(game_plays_gpt,filename="MDP_visualization_gpt", end_reason=END_REASON)
+    # # generate_mdp_from_trajecotries(game_plays_conceptual,filename="MDP_visualization_conceptual", end_reason=END_REASON)
+    # # generate_mdp_from_trajecotries(game_plays_optimal,filename="MDP_visualization_optimal", end_reason=END_REASON)
     
-    # MODEL COMPARISON
-    states = {}
-    actions = {}
+    # # MODEL COMPARISON
+    # states = {}
+    # actions = {}
 
-    edges_optimal = gameplay_graph(game_plays_optimal, states, actions,end_reason=END_REASON)
-    edges_q_learning = gameplay_graph(game_plays_q_learning,states, actions, end_reason=END_REASON)
-    edges_gpt = gameplay_graph(game_plays_gpt,states, actions, end_reason=END_REASON)
+    # edges_optimal = gameplay_graph(game_plays_optimal, states, actions,end_reason=END_REASON)
+    # edges_q_learning = gameplay_graph(game_plays_q_learning,states, actions, end_reason=END_REASON)
+    # edges_gpt = gameplay_graph(game_plays_gpt,states, actions, end_reason=END_REASON)
 
-    state_to_id = {v:k for k,v in states.items()}
-    action_to_id = {v:k for k,v in states.items()}
-    print("optimal:")
-    get_graph_stats(edges_optimal, state_to_id, action_to_id)
-    print("Q-learing:")
-    get_graph_stats(edges_q_learning, state_to_id, action_to_id)
-    print("GPT:")
-    get_graph_stats(edges_gpt, state_to_id, action_to_id)
+    # state_to_id = {v:k for k,v in states.items()}
+    # action_to_id = {v:k for k,v in states.items()}
+    # print("optimal:")
+    # get_graph_stats(edges_optimal, state_to_id, action_to_id)
+    # print("Q-learing:")
+    # get_graph_stats(edges_q_learning, state_to_id, action_to_id)
+    # print("GPT:")
+    # get_graph_stats(edges_gpt, state_to_id, action_to_id)
 
-    # MODEL PROGRESS
-    states = {}
-    actions = {}
-    gameplays_5K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-5000.json")
-    gameplays_10K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-10000.json")
-    gameplays_15K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-15000.json")
-    gameplays_20K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
-    gameplays_25K  = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-25000.json")
+    # # MODEL PROGRESS
+    # states = {}
+    # actions = {}
+    # gameplays_5K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-5000.json")
+    # gameplays_10K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-10000.json")
+    # gameplays_15K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-15000.json")
+    # gameplays_20K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
+    # gameplays_25K  = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-25000.json")
 
-    edges_5k = gameplay_graph(gameplays_5K, states, actions,end_reason=END_REASON)
-    edges_10k = gameplay_graph(gameplays_10K, states, actions,end_reason=END_REASON)
-    edges_15k = gameplay_graph(gameplays_15K, states, actions,end_reason=END_REASON)
-    edges_20k = gameplay_graph(gameplays_20K, states, actions,end_reason=END_REASON)
-    edges_25k = gameplay_graph(gameplays_25K, states, actions,end_reason=END_REASON)
-    state_to_id = {v:k for k,v in states.items()}
-    action_to_id = {v:k for k,v in actions.items()}
+    # edges_5k = gameplay_graph(gameplays_5K, states, actions,end_reason=END_REASON)
+    # edges_10k = gameplay_graph(gameplays_10K, states, actions,end_reason=END_REASON)
+    # edges_15k = gameplay_graph(gameplays_15K, states, actions,end_reason=END_REASON)
+    # edges_20k = gameplay_graph(gameplays_20K, states, actions,end_reason=END_REASON)
+    # edges_25k = gameplay_graph(gameplays_25K, states, actions,end_reason=END_REASON)
+    # state_to_id = {v:k for k,v in states.items()}
+    # action_to_id = {v:k for k,v in actions.items()}
 
-    print("5K:")
-    get_graph_stats(edges_5k, state_to_id, action_to_id)
-    print("10K:")
-    get_graph_stats(edges_10k, state_to_id, action_to_id)
-    print("15K:")
-    get_graph_stats(edges_15k, state_to_id, action_to_id)
-    print("20K:")
-    get_graph_stats(edges_20k, state_to_id, action_to_id)
-    print("25K:")
-    get_graph_stats(edges_20k, state_to_id, action_to_id)
+    # print("5K:")
+    # get_graph_stats(edges_5k, state_to_id, action_to_id)
+    # print("10K:")
+    # get_graph_stats(edges_10k, state_to_id, action_to_id)
+    # print("15K:")
+    # get_graph_stats(edges_15k, state_to_id, action_to_id)
+    # print("20K:")
+    # get_graph_stats(edges_20k, state_to_id, action_to_id)
+    # print("25K:")
+    # get_graph_stats(edges_20k, state_to_id, action_to_id)
         
-    print("change from 5k->10k")
-    nodes_added, nodes_removed = get_change_in_nodes(edges_5k, edges_10k)
-    edges_added, edges_removed = get_change_in_edges(edges_5k, edges_10k)
-    print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
-    print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
-    print("----------------------------------------")
-    print("change from 10k->15k")
-    nodes_added, nodes_removed = get_change_in_nodes(edges_10k, edges_15k)
-    edges_added, edges_removed = get_change_in_edges(edges_10k, edges_15k)
-    print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
-    print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
-    print("----------------------------------------")
-    print("change from 15k->20k")
-    nodes_added, nodes_removed = get_change_in_nodes(edges_15k, edges_20k)
-    edges_added, edges_removed = get_change_in_edges(edges_15k, edges_20k)
-    print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
-    print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
-    print("----------------------------------------")
-    print("change from 20k->25k")
-    nodes_added, nodes_removed = get_change_in_nodes(edges_20k, edges_25k)
-    edges_added, edges_removed = get_change_in_edges(edges_20k, edges_25k)
-    print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
-    print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
+    # print("change from 5k->10k")
+    # nodes_added, nodes_removed = get_change_in_nodes(edges_5k, edges_10k)
+    # edges_added, edges_removed = get_change_in_edges(edges_5k, edges_10k)
+    # print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
+    # print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
+    # print("----------------------------------------")
+    # print("change from 10k->15k")
+    # nodes_added, nodes_removed = get_change_in_nodes(edges_10k, edges_15k)
+    # edges_added, edges_removed = get_change_in_edges(edges_10k, edges_15k)
+    # print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
+    # print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
+    # print("----------------------------------------")
+    # print("change from 15k->20k")
+    # nodes_added, nodes_removed = get_change_in_nodes(edges_15k, edges_20k)
+    # edges_added, edges_removed = get_change_in_edges(edges_15k, edges_20k)
+    # print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
+    # print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
+    # print("----------------------------------------")
+    # print("change from 20k->25k")
+    # nodes_added, nodes_removed = get_change_in_nodes(edges_20k, edges_25k)
+    # edges_added, edges_removed = get_change_in_edges(edges_20k, edges_25k)
+    # print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
+    # print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
