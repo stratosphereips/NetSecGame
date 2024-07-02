@@ -597,7 +597,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=str,
-        default="INFO",
+        default="WARNING",
     )
 
     args = parser.parse_args()
