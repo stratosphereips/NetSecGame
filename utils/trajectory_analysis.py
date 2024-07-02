@@ -459,7 +459,6 @@ def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
             action = Action.from_dict((play["trajectory"]["actions"][i-1]))
             if state not in states:
                 states[state] = len(states)
-                print(state)
             if next_state not in states:
                 states[next_state] = len(states)
             if action not in actions:
@@ -469,7 +468,6 @@ def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
             if actions[action] not in edges[states[state], states[next_state]]:
                 edges[states[state], states[next_state]][actions[action]] = 0
             edges[states[state], states[next_state]][actions[action]] += 1
-        print("------------------------------")
     return edges
 
 def get_graph_stats(edge_list, states, actions)->tuple:
