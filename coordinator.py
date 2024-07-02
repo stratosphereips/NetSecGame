@@ -416,9 +416,9 @@ class Coordinator:
         """
         if agent_addr in self._agent_trajectories:
             self.logger.debug(f"Adding step to trajectory of {agent_addr}")
-            self._agent_trajectories[agent_addr]["trajectory"].append(action.as_dict)
-            self._agent_trajectories[agent_addr]["trajectory"].append(reward)
-            self._agent_trajectories[agent_addr]["trajectory"].append(next_state.as_dict)
+            self._agent_trajectories[agent_addr]["trajectory"]["actions"].append(action.as_dict)
+            self._agent_trajectories[agent_addr]["trajectory"]["rewards"].append(reward)
+            self._agent_trajectories[agent_addr]["trajectory"]["states"].append(next_state.as_dict)
             if end_reason:
                 self._agent_trajectories[agent_addr]["end_reason"] = end_reason
     
@@ -435,7 +435,11 @@ class Coordinator:
         agent_name, agent_role = self.agents[agent_addr]
         self.logger.debug(f"Resetting trajectory of {agent_addr}")
         return {
-                "trajectory":[self._agent_states[agent_addr].as_dict],
+                "trajectory":{
+                    "states":[self._agent_states[agent_addr].as_dict],
+                    "actions":[],
+                    "rewards":[],
+                },
                 "end_reason":None,
                 "agent_role":agent_role,
                 "agent_name":agent_name
