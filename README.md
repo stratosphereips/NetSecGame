@@ -243,7 +243,7 @@ For the data exfiltration we support 3 variants. The full scenario contains 5 cl
 </table>
 
 ## Trajectory storing and analysis
-Trajectory is a sequence of GameStates, Actions and rewards in one run of a game. It contains the complete information of the actions played by the agent, the rewards observed and their effect on the state of the environment. Trajectory visualization and analysis tools are described in [Trajectory analysis tools](./docs/trajectory_analysis.md)
+Trajectory is a sequence of GameStates, Actions and rewards in one run of a game. It contains the complete information of the actions played by the agent, the rewards observed and their effect on the state of the environment. Trajectory visualization and analysis tools are described in [Trajectory analysis tools](./docs/Trajectory_analysis.md)
 
 Trajectories performed by the agents can be stored in a file using following configuration:
 ```YAML
