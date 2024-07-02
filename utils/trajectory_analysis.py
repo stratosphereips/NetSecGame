@@ -1,4 +1,3 @@
-import json
 import jsonlines
 import numpy as np
 import sys
@@ -14,19 +13,6 @@ from sklearn.preprocessing import StandardScaler
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
 from env.game_components import GameState, Action, ActionType
-
-def combine_trajecories(filenames, output_filename):
-    "Merges trajectory files"
-    data =[]
-    for file in filenames:
-        data += read_json(file)
-    with open(output_filename, "w") as outfile:
-        json.dump(data, outfile)
-
-def read_json_old(filename):
-    with open(filename, "r") as infile:
-        data = json.load(infile)
-    return data
 
 def read_json(filename)->list:
     trajectories = []
