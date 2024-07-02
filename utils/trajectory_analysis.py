@@ -193,8 +193,8 @@ def barplot_action_efficiency(data:list, model_names:list, filename="action_effi
         for t in trajectories:
             if t["end_reason"] in end_reason:
                 num_trajectories += 1
-                for step in t["trajectory"]:
-                    action = Action.from_dict(step["a"])
+                for action_dict in t["trajectory"]["actions"]:
+                    action = Action.from_dict(action_dict)
                     action_data[action.type][i] += 1
         for action_type in action_data:
             action_data[action_type][i] = np.round(num_trajectories/action_data[action_type][i], decimals=2)
@@ -213,7 +213,6 @@ def barplot_action_efficiency(data:list, model_names:list, filename="action_effi
     plt.savefig(os.path.join("figures", filename))
     plt.close()
 
-def compare_state_sequence(game_plays:list, end_reason=None)->float:
     states_per_step = {}
     for play in game_plays:
         if end_reason and play["end_reason"] != end_reason:
@@ -418,24 +417,19 @@ def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=Non
         ActionType.ExfiltrateData:0,
     }
     transitions = np.zeros([len(counts), len(counts)])
-    unique_actions = set()
     for play in game_plays:
         if end_reason and play["end_reason"] not in end_reason:
             continue
         previous_action = "Start"
-        for i, step in enumerate(play["trajectory"]):
+        for action_dict in play["trajectory"]["actions"]:
             counts[previous_action] += 1
-            action =  Action(ActionType.from_string(step["a"]["type"]), {}).type
-            params_string = [f"{k}:{v}" for k,v in step["a"]["params"].items()]
-            unique_actions.add((step["a"]["type"],",".join(params_string)))
+            action =  Action.from_dict(action_dict).type
             transitions[idx_mapping[previous_action], idx_mapping[action]] += 1
             previous_action = action
     # make transitions probabilities
     for action_type, count in counts.items():
         transitions[idx_mapping[action_type]] = transitions[idx_mapping[action_type]]/count
     transitions = np.round(transitions, 2)
-    print(transitions)
-    print(len(unique_actions))
 
     fig, ax = plt.subplots()
     im = ax.imshow(transitions)
@@ -451,23 +445,21 @@ def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=Non
 
     ax.set_title(f"Visualization of MDP for {play['model']}")
     fig.tight_layout()
-    fig.savefig(os.path.join("figures", f"{filename}_{END_REASON if end_reason else ''}"),  dpi=600)
-    
+    fig.savefig(os.path.join("figures", f"{filename}_{END_REASON if end_reason else ''}.png"),  dpi=600)
 
 def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
-    # states = {}
-    # actions = {}
     edges = {}
-
     for play in game_plays:
         if end_reason and play["end_reason"] not in end_reason:
             continue
-        for step in play["trajectory"]:
-            state = json.dumps(step["s"])
-            next_state = json.dumps(step["s_next"])
-            action = json.dumps(step["a"])
+
+        for i in range(1, len(play["trajectory"]["actions"])):
+            state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i-1]))
+            next_state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i-1]))
+            action = Action.from_dict((play["trajectory"]["actions"][i-1]))
             if state not in states:
                 states[state] = len(states)
+                print(state)
             if next_state not in states:
                 states[next_state] = len(states)
             if action not in actions:
@@ -477,7 +469,7 @@ def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
             if actions[action] not in edges[states[state], states[next_state]]:
                 edges[states[state], states[next_state]][actions[action]] = 0
             edges[states[state], states[next_state]][actions[action]] += 1
-
+        print("------------------------------")
     return edges
 
 def get_graph_stats(edge_list, states, actions)->tuple:
@@ -547,10 +539,18 @@ if __name__ == '__main__':
     END_REASON = None
     #END_REASON = ["goal_reached"]
     game_plays = read_json("./trajectories/2024-07-02_BaseAgent_Attacker.jsonl")
-    print(game_plays)
+    for play in game_plays:
+        play["model"] = "Optimal"
     print(compute_mean_length(game_plays))
     get_action_type_barplot_per_step(game_plays, end_reason=END_REASON)
     get_action_type_histogram_per_step(game_plays, end_reason=END_REASON)
+    generate_mdp_from_trajecotries(game_plays,filename="MDP_visualization_optimal", end_reason=END_REASON)
+    states = {}
+    actions = {}
+    edges_optimal = gameplay_graph(game_plays, states, actions,end_reason=END_REASON)
+    state_to_id = {v:k for k,v in states.items()}
+    action_to_id = {v:k for k,v in states.items()}
+    get_graph_stats(edges_optimal, state_to_id, action_to_id)
     # # load trajectories from files
     # game_plays_q_learning = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
     # for play in game_plays_q_learning:
