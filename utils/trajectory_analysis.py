@@ -539,22 +539,26 @@ def get_change_in_nodes(edge_list1, edge_list2):
         new.add(dst)
     return {n for n in new if n not in original}, {n for n in original if n not in new}
 
-
-def compare_graphs(edge_list1, edge_list2):
-    pass
-
 if __name__ == '__main__':
-
-    #END_REASON = ["goal_reached", "detected"]
-    # END_REASON = ["detected", "max_steps
+    # filter trajectories based on their ending
     END_REASON = None
     #END_REASON = ["goal_reached"]
 
-    # combine
+    # load trajectories from files
     game_plays_q_learning = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
+    for play in game_plays_q_learning:
+        play["model"] = "Q-learning"
     game_plays_gpt = read_json("NSG_trajectories_GPT3.json")
+    for play in game_plays_gpt:
+        play["model"] = "GPT-3.5"
     game_plays_conceptual = read_json("NSG_trajectories_experiment47-episodes-680000.json")
+    for play in game_plays_conceptual:
+        play["model"] = "Q-learning-concepts"
     game_plays_optimal = read_json("NSG_trajectories_optimal.json")
+    for play in game_plays_optimal:
+        play["model"] = "Optimal"
+    
+
     # barplot_action_efficiency(
     #  [game_plays_q_learning, game_plays_conceptual, game_plays_gpt],
     #  ("Q-learning", "Conceptual-learning", "LLM (GPT 3.5)"),
@@ -563,40 +567,36 @@ if __name__ == '__main__':
     # get_action_type_barplot_per_step(game_plays_q_learning, filename="plot_by_action_q_learning.png", end_reason=END_REASON)
     # get_action_type_barplot_per_step(game_plays_conceptual, filename="plot_by_action_concepts.png", end_reason=END_REASON)
     # get_action_type_barplot_per_step(game_plays_gpt, filename="plot_by_action_gpt.png", end_reason=END_REASON)
-    for play in game_plays_q_learning:
-        play["model"] = "Q-learning"
-    for play in game_plays_gpt:
-        play["model"] = "GPT-3.5"
-    for play in game_plays_conceptual:
-        play["model"] = "Q-learning-concepts"
-    for play in game_plays_optimal:
-        play["model"] = "Optimal"
+    
+    
 
-    #game_plays_combined = game_plays_q_learning + game_plays_gpt+game_plays_conceptual
-    #cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_with_optimal_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON,optimal_gamelays=game_plays_optimal)
+    game_plays_combined = game_plays_q_learning + game_plays_gpt+game_plays_conceptual
+    cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_with_optimal_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON,optimal_gamelays=game_plays_optimal)
     # generate_mdp_from_trajecotries(game_plays_q_learning,filename="MDP_visualization_q_learning", end_reason=END_REASON)
     # generate_mdp_from_trajecotries(game_plays_gpt,filename="MDP_visualization_gpt", end_reason=END_REASON)
     # generate_mdp_from_trajecotries(game_plays_conceptual,filename="MDP_visualization_conceptual", end_reason=END_REASON)
     # generate_mdp_from_trajecotries(game_plays_optimal,filename="MDP_visualization_optimal", end_reason=END_REASON)
-    states = {}
-    actions = {}
     
     # MODEL COMPARISON
+    states = {}
+    actions = {}
 
-    # edges_optimal = gameplay_graph(game_plays_optimal, states, actions,end_reason=END_REASON)
-    # edges_q_learning = gameplay_graph(game_plays_q_learning,states, actions, end_reason=END_REASON)
-    # edges_gpt = gameplay_graph(game_plays_gpt,states, actions, end_reason=END_REASON)
+    edges_optimal = gameplay_graph(game_plays_optimal, states, actions,end_reason=END_REASON)
+    edges_q_learning = gameplay_graph(game_plays_q_learning,states, actions, end_reason=END_REASON)
+    edges_gpt = gameplay_graph(game_plays_gpt,states, actions, end_reason=END_REASON)
 
-    # state_to_id = {v:k for k,v in states.items()}
-    # action_to_id = {v:k for k,v in states.items()}
-    # print("optimal:")
-    # get_graph_stats(edges_optimal, state_to_id, action_to_id)
-    # print("Q-learing:")
-    # get_graph_stats(edges_q_learning, state_to_id, action_to_id)
-    # print("GPT:")
-    # get_graph_stats(edges_gpt, state_to_id, action_to_id)
+    state_to_id = {v:k for k,v in states.items()}
+    action_to_id = {v:k for k,v in states.items()}
+    print("optimal:")
+    get_graph_stats(edges_optimal, state_to_id, action_to_id)
+    print("Q-learing:")
+    get_graph_stats(edges_q_learning, state_to_id, action_to_id)
+    print("GPT:")
+    get_graph_stats(edges_gpt, state_to_id, action_to_id)
 
     # MODEL PROGRESS
+    states = {}
+    actions = {}
     gameplays_5K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-5000.json")
     gameplays_10K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-10000.json")
     gameplays_15K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-15000.json")
