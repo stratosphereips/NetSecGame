@@ -416,11 +416,11 @@ class Coordinator:
         """
         if agent_addr in self._agent_trajectories:
             self.logger.debug(f"Adding step to trajectory of {agent_addr}")
-            self._agent_trajectories[agent_addr]["play"].append(action.as_dict)
-            self._agent_trajectories[agent_addr]["play"].append(reward)
-            self._agent_trajectories[agent_addr]["play"].append(next_state.as_dict)
+            self._agent_trajectories[agent_addr]["trajectory"].append(action.as_dict)
+            self._agent_trajectories[agent_addr]["trajectory"].append(reward)
+            self._agent_trajectories[agent_addr]["trajectory"].append(next_state.as_dict)
             if end_reason:
-                self._agent_trajectories["end_reason"] = end_reason
+                self._agent_trajectories[agent_addr]["end_reason"] = end_reason
     
     def _store_trajectory_to_file(self, agent_addr, location="./trajectories"):
         self.logger.debug(f"Storing Trajectory of {agent_addr}in file")
@@ -435,7 +435,7 @@ class Coordinator:
         agent_name, agent_role = self.agents[agent_addr]
         self.logger.debug(f"Resetting trajectory of {agent_addr}")
         return {
-                "play":[self._agent_states[agent_addr].as_dict],
+                "trajectory":[self._agent_states[agent_addr].as_dict],
                 "end_reason":None,
                 "agent_role":agent_role,
                 "agent_name":agent_name
