@@ -2,10 +2,12 @@
 # Server for the Aidojo project, coordinator
 # Author: sebastian garcia, sebastian.garcia@agents.fel.cvut.cz
 # Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
+import jsonlines
 import argparse
 import logging
 import json
 import asyncio
+from datetime import datetime
 from env.network_security_game import NetworkSecurityEnvironment
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState
 from utils.utils import observation_as_dict, get_logging_level
@@ -279,6 +281,8 @@ class Coordinator:
         self._agent_states[agent_addr] = self._world.create_state_from_view(self._agent_starting_position[agent_addr])
         self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
         self._agent_episode_ends[agent_addr] = False
+        if self._world.task_config.get_store_trajectories():
+            self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
@@ -389,7 +393,11 @@ class Coordinator:
         self.logger.info(
             f"Coordinator responding to RESET request from agent {agent_addr}"
         )
+        # store trajectory in file if needed
+        self._store_trajectory_to_file(agent_addr)
         new_observation = Observation(self._agent_states[agent_addr], 0, self.episode_end, {})
+        # reset trajectory
+        self._reset_trajectory(agent_addr)
         output_message_dict = {
             "to_agent": agent_addr,
             "status": str(GameStatus.OK),
@@ -402,6 +410,37 @@ class Coordinator:
         }
         return output_message_dict
 
+    def _add_step_to_trajectory(self, agent_addr:tuple, action:Action, reward:float, next_state:GameState, end_reason:str)->None:
+        """
+        Method for adding one step to the agent trajectory.
+        """
+        if agent_addr in self._agent_trajectories:
+            self.logger.warning(f"Adding step to trajectory of {agent_addr}")
+            self._agent_trajectories[agent_addr]["play"].append(action.as_dict)
+            self._agent_trajectories[agent_addr]["play"].append(reward)
+            self._agent_trajectories[agent_addr]["play"].append(next_state.as_dict)
+            if end_reason:
+                self._agent_trajectories["end_reason"] = end_reason
+    
+    def _store_trajectory_to_file(self, agent_addr, location="./trajectories"):
+        self.logger.warning(f"Storing Trajectory of {agent_addr}in file")
+        if agent_addr in self._agent_trajectories:
+            agent_name, agent_role = self.agents[agent_addr] 
+            filename = os.path.join(location, f"{datetime.now():%Y-%m-%d}_{agent_name}_{agent_role}.jsonl")
+            with jsonlines.open(filename, "a") as writer:
+                writer.write(self._agent_trajectories[agent_addr])
+            self.logger.warning(f"Trajectory of {agent_addr} strored in {filename}")
+    
+    def _reset_trajectory(self,agent_addr)->dict:
+        agent_name, agent_role = self.agents[agent_addr]
+        self.logger.warning(f"Resetting trajectory of {agent_addr}")
+        return {
+                "play":[self._agent_states[agent_addr].as_dict],
+                "end_reason":None,
+                "agent_role":agent_role,
+                "agent_name":agent_name
+            }
+    
     def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
         """
         Method processing the Actions relevant to the environment
@@ -413,19 +452,25 @@ class Coordinator:
             self._agent_steps[agent_addr] += 1
             self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
             
+            current_state = self._agent_states[agent_addr]
             # Build new Observation for the agent
-            self._agent_states[agent_addr] = self._world.step(self._agent_states[agent_addr], action, agent_addr, self.world_type)
+            self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr, self.world_type)
             self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
 
             reward = self._world._rewards["step"]
             obs_info = {}
+            end_reason = None
             if self._agent_goal_reached[agent_addr]:
                 reward += self._world._rewards["goal"]
                 self._agent_episode_ends[agent_addr] = True
+                end_reason = "goal_reached"
                 obs_info = {'end_reason': "goal_reached"}
             elif self._agent_steps[agent_addr] >= self._steps_limit:
                 self._agent_episode_ends[agent_addr] = True
                 obs_info = {"end_reason": "max_steps"}
+                end_reason = "max_steps"
+            # record step in trajecory
+            self._add_step_to_trajectory(agent_addr, action, reward,self._agent_states[agent_addr], end_reason)
             new_observation = Observation(self._agent_states[agent_addr], reward, self.episode_end, info=obs_info)
 
             self._agent_observations[agent_addr] = new_observation
@@ -552,7 +597,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=str,
-        default="ERROR",
+        default="INFO",
     )
 
     args = parser.parse_args()
