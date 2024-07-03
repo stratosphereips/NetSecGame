@@ -7,7 +7,7 @@ coordinator:
       goal:
         description: "Exfiltrate data to '213.47.23.195'"
         # Put randomize_goal_every_episode in True if you put any of the goal values in 'random'
-        is_any_part_of_goal_random: True
+        is_any_part_of_goal_random: False
         known_networks: []
         #known_networks: [192.168.1.0/24, 192.168.3.0/24]
         known_hosts: []
@@ -44,8 +44,8 @@ coordinator:
     defenders:
       # types are StochasticDefender and NoDefender
       #type: 'StochasticDefender'
-      #type: 'StochasticWithThreshold'
-      type: 'NoDefender'
+      type: 'StochasticWithThreshold'
+      # type: 'NoDefender'
       tw_size: 5
       thresholds:
         scan_network: # if both conditions are true, you are never detected
@@ -76,10 +76,8 @@ env:
   # random_seed: 42
   scenario: 'scenario1'
   max_steps: 100
-  store_replay_buffer: False
+  store_replay_buffer: True
   use_dynamic_addresses: False
-  use_firewall: True
-  save_trajectories: False
   goal_reward: 100
   detection_reward: -5
   step_reward: -1

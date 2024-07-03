@@ -102,7 +102,6 @@ env:
   random_seed: 42
   scenario: 'scenario1'
   max_steps: 15
-  store_replay_buffer: True
   use_dynamic_addresses: False
   use_firewall: True
   goal_reward: 100
@@ -243,6 +242,16 @@ For the data exfiltration we support 3 variants. The full scenario contains 5 cl
   <tr><td><img src="readme_images/scenario_1.png" alt="Scenario 1 - Data exfiltration" width="300"></td><td><img src="readme_images/scenario 1_small.png" alt="Scenario 1 - small" width="300"</td><td><img src="readme_images/scenario_1_tiny.png" alt="Scenario 1 - tiny" width="300"></td></tr>
 </table>
 
+## Trajectory storing and analysis
+Trajectory is a sequence of GameStates, Actions and rewards in one run of a game. It contains the complete information of the actions played by the agent, the rewards observed and their effect on the state of the environment. Trajectory visualization and analysis tools are described in [Trajectory analysis tools](./docs/Trajectory_analysis.md)
+
+Trajectories performed by the agents can be stored in a file using following configuration:
+```YAML
+env:
+  save_trajectories: True
+```
+> [!CAUTION]
+> Trajectory file can grow large very fast. It is recommended to use this feature on evaluation/testing runs only. By default this feature is not enabled.
 ## Testing the environment
 
 It is advised after every change you test if the env is running correctly by doing

@@ -1,4 +1,4 @@
-import json
+import jsonlines
 import numpy as np
 import sys
 import os 
@@ -14,24 +14,18 @@ from sklearn.preprocessing import StandardScaler
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
 from env.game_components import GameState, Action, ActionType
 
-def combine_trajecories(filenames, output_filename):
-    "Merges trajectory files"
-    data =[]
-    for file in filenames:
-        data += read_json(file)
-    with open(output_filename, "w") as outfile:
-        json.dump(data, outfile)
-
-def read_json(filename):
-    with open(filename, "r") as infile:
-        data = json.load(infile)
-    return data
+def read_json(filename)->list:
+    trajectories = []
+    with jsonlines.open(filename) as reader:
+        for obj in reader:
+            trajectories.append(obj)
+    return trajectories
 
 def compute_mean_length(game_plays:list)->float:
     lengths = []
     for play in game_plays:
         if play["end_reason"]:
-            lengths.append(len(play["trajectory"]))
+            lengths.append(len(play["trajectory"]["actions"]))
     return np.mean(lengths)
 
 def state_diff(s1:GameState, s2: GameState) -> float:
@@ -84,13 +78,13 @@ def compare_action_type_sequence(game_plays:list, end_reason=None):
     for i, actions in actions_per_step.items():
         print(f"Step {i}, #different action_types:{len(actions)}")
 
-def plot_barplot(data:dict, fileneme, ignore_types = [ActionType.JoinGame, ActionType.QuitGame, ActionType.ResetGame]):
+def plot_barplot(data:dict, fileneme, title="ActionType distribution per step"):
     fig, ax = plt.subplots()
     bottom = np.zeros(len(data))
     action_counts = {}
     names = []
     for action_type in ActionType:
-        if action_type not in ignore_types:
+        if action_type not in [ActionType.JoinGame, ActionType.QuitGame, ActionType.ResetGame]:
             tmp = np.zeros(len(data))
             names.append(str(action_type))
             for i in range(len(data)):
@@ -101,7 +95,7 @@ def plot_barplot(data:dict, fileneme, ignore_types = [ActionType.JoinGame, Actio
         ax.bar(data.keys(), values, label=str(action_type).lstrip("ActionType."),bottom=bottom)
         #ax.plot(data.keys(), values, label=str(action_type).lstrip("ActionType."))
         bottom += values
-    ax.set_title("ActionType distribution per step - Q-learning")
+    ax.set_title(title)
     ax.minorticks_on()
     #plt.xticks(np.arange(0, len(data), step=1), labels=[i+1 for i in range(0,len(data))])
     plt.xlabel("Step number")
@@ -137,8 +131,8 @@ def get_action_type_histogram_per_step(game_plays:list, end_reason=None, filenam
     for play in game_plays:
         if end_reason and play["end_reason"] != end_reason:
             continue
-        for i,step in enumerate(play["trajectory"]):
-            action = Action.from_dict(step["a"])
+        for i in range(len(play["trajectory"]["actions"])):
+            action = Action.from_dict(play["trajectory"]["actions"][i])
             if action.type not in actions_step_usage:
                 actions_step_usage[action.type] = []
             actions_step_usage[action.type].append(i)
@@ -154,22 +148,17 @@ def get_action_type_barplot_per_step(game_plays:list, end_reason=None, filename=
     for play in game_plays:
         if end_reason and play["end_reason"] not in end_reason:
             continue
-        for i,step in enumerate(play["trajectory"]):
+        for i in range(len(play["trajectory"]["actions"])):
             if i not in actions_per_step.keys():
                 actions_per_step[i] = {action_type:0 for action_type in ActionType}
-            #state = GameState.from_dict(step["s"])
-            action = Action.from_dict(step["a"])
-            # reward = step["r"]
-            # next_state = step["s_next"] 
+            action = Action.from_dict(play["trajectory"]["actions"][i])
             actions_per_step[i][action.type] += 1
-
     to_plot = {}
     for i, actions in actions_per_step.items():
         per_step = {}
         for a in actions:
             per_step[a] = actions[a]
         to_plot[i] = per_step
-        #print(f"Step {i} ({total_actions}), #different action_types:{list(actions.values())[:-3]}")
     if not os.path.exists("figures"):
         os.makedirs("figures")
     plot_barplot(to_plot , os.path.join("figures", filename))
@@ -190,8 +179,8 @@ def barplot_action_efficiency(data:list, model_names:list, filename="action_effi
         for t in trajectories:
             if t["end_reason"] in end_reason:
                 num_trajectories += 1
-                for step in t["trajectory"]:
-                    action = Action.from_dict(step["a"])
+                for action_dict in t["trajectory"]["actions"]:
+                    action = Action.from_dict(action_dict)
                     action_data[action.type][i] += 1
         for action_type in action_data:
             action_data[action_type][i] = np.round(num_trajectories/action_data[action_type][i], decimals=2)
@@ -210,7 +199,6 @@ def barplot_action_efficiency(data:list, model_names:list, filename="action_effi
     plt.savefig(os.path.join("figures", filename))
     plt.close()
 
-def compare_state_sequence(game_plays:list, end_reason=None)->float:
     states_per_step = {}
     for play in game_plays:
         if end_reason and play["end_reason"] != end_reason:
@@ -295,7 +283,7 @@ def update_cmap(data, cm, name):
         new_cm = from_list(name, cm(range(0,len(data))), len(data), )
     return new_cm
 
-def cluster_combined_trajectories(game_plays, filename=None, end_reason=None):
+def cluster_combined_trajectories(game_plays, filename=None, end_reason=None, optimal_gamelays=None):
     action_conversion = {
         ActionType.ScanNetwork:0,
         ActionType.FindServices:1,
@@ -303,51 +291,59 @@ def cluster_combined_trajectories(game_plays, filename=None, end_reason=None):
         ActionType.ExploitService:3,
         ActionType.ExfiltrateData:4,
     }
-
-    trajectory_steps = []
-    for play in game_plays:
-        if end_reason and play["end_reason"] not in end_reason:
-            continue
-        for i, step in enumerate(play["trajectory"]):
-            features = []
-            state = GameState.from_dict(step["s"])
-            next_state = GameState.from_dict(step["s_next"])
-            action = Action.from_dict(step["a"])
-            reward = step["r"]
-            features += state_size(state)
-            features += state_size(next_state)
-            features += [state_diff(state, next_state)]
-            features.append(reward)
-            #features += [i]
-            if ["end_reason"] == "goal_reached":
-                final_reward = 100
-            elif ["end_reason"] == "detected":
-                final_reward = -5
-            else:
-                final_reward = -1
-            features += [-1*(len(play)-i)+final_reward]
-            action_type_one_hot = [0 for _ in range(len(action_conversion))]
-            action_type_one_hot[action_conversion[action.type]] = 1
-            features += action_type_one_hot
-            trajectory_steps.append({"features":features,
-             "action_type": action_conversion[action.type],
-             "model":play["model"],
-             "timestamp": i,
-             "end_reason": play["end_reason"]         
-             })
-    scaled_data = StandardScaler().fit_transform([x["features"] for x in trajectory_steps])
+    def extract_features(game_plays, end_reason=None):
+        trajectory_steps = []
+        for play in game_plays:
+            if end_reason and play["end_reason"] not in end_reason:
+                continue
+            for i, step in enumerate(play["trajectory"]):
+                features = []
+                state = GameState.from_dict(step["s"])
+                next_state = GameState.from_dict(step["s_next"])
+                print(step["a"])
+                action =  Action(ActionType.from_string(step["a"]["type"]), {})
+                reward = step["r"]
+                features += state_size(state)
+                features += state_size(next_state)
+                features += [state_diff(state, next_state)]
+                features.append(reward)
+                #features += [i]
+                if ["end_reason"] == "goal_reached":
+                    final_reward = 100
+                elif ["end_reason"] == "detected":
+                    final_reward = -5
+                else:
+                    final_reward = -1
+                features += [-1*(len(play)-i)+final_reward]
+                action_type_one_hot = [0 for _ in range(len(action_conversion))]
+                action_type_one_hot[action_conversion[action.type]] = 1
+                features += action_type_one_hot
+                trajectory_steps.append({"features":features,
+                "action_type": action_conversion[action.type],
+                "model":play["model"],
+                "timestamp": i,
+                "end_reason": play["end_reason"]         
+                })
+        return trajectory_steps
+    trajectory_steps = extract_features(game_plays, end_reason)
+    optimal_steps = extract_features(optimal_gamelays, end_reason)
+    scaler = StandardScaler().fit([x["features"] for x in trajectory_steps])
+    scaled_data = scaler.transform([x["features"] for x in trajectory_steps])
+    scaled_optimal = scaler.transform([x["features"] for x in optimal_steps])
     model_types = sorted(set([x["model"] for x in trajectory_steps]))
     model_type_conversion = {x:i for i,x in enumerate(model_types)}
 
     end_reasons = sorted(set([x["end_reason"] for x in trajectory_steps]))
     end_reason_conversion = {x:i for i,x in enumerate(end_reasons)}
     
-    reducer = umap.UMAP(metric="cosine",n_neighbors=50, min_dist=0.9,transform_seed=42)
-    embedding = reducer.fit_transform(scaled_data)
+    reducer = umap.UMAP(metric="cosine",n_neighbors=50, min_dist=0.9,transform_seed=42).fit(scaled_data)
+    embedding = reducer.transform(scaled_data)
+    embedding_optimal = reducer.transform(scaled_optimal)
     fig, ((ax1, ax2),(ax3,ax4)) = plt.subplots(2, 2, figsize=(12, 8))
     #fig.suptitle('Trajectory step comparison')
     ax1.set_title("Step number")
     im1= ax1.scatter(embedding[:, 0], embedding[:, 1], c=[x["timestamp"] for x in trajectory_steps], cmap='plasma', s=0.2, alpha=0.5)
+    ax1.scatter(embedding_optimal[:, 0], embedding_optimal[:, 1], c="cyan", marker="x")
     divider = make_axes_locatable(ax1)
     cax = divider.append_axes('right', size='5%', pad=0.05)
     fig.colorbar(im1, cax=cax, orientation='vertical')
@@ -389,34 +385,254 @@ def cluster_combined_trajectories(game_plays, filename=None, end_reason=None):
     fig.savefig(os.path.join("figures", filename),bbox_inches='tight',  dpi=600)
     plt.close()
 
+def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=None)->dict:
+    idx_mapping = {
+        "Start":0,
+        ActionType.ScanNetwork:1,
+        ActionType.FindServices:2,
+        ActionType.FindData:3,
+        ActionType.ExploitService:4,
+        ActionType.ExfiltrateData:5,
+    }
+    counts = {
+        "Start":0,
+        ActionType.ScanNetwork:0,
+        ActionType.FindServices:0,
+        ActionType.FindData:0,
+        ActionType.ExploitService:0,
+        ActionType.ExfiltrateData:0,
+    }
+    transitions = np.zeros([len(counts), len(counts)])
+    for play in game_plays:
+        if end_reason and play["end_reason"] not in end_reason:
+            continue
+        previous_action = "Start"
+        for action_dict in play["trajectory"]["actions"]:
+            counts[previous_action] += 1
+            action =  Action.from_dict(action_dict).type
+            transitions[idx_mapping[previous_action], idx_mapping[action]] += 1
+            previous_action = action
+    # make transitions probabilities
+    for action_type, count in counts.items():
+        transitions[idx_mapping[action_type]] = transitions[idx_mapping[action_type]]/count
+    transitions = np.round(transitions, 2)
 
+    fig, ax = plt.subplots()
+    _ = ax.imshow(transitions)
+    ax.set_xticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())
+    ax.set_yticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+         rotation_mode="anchor")
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(idx_mapping)):
+        for j in range(len(idx_mapping)):
+            _ = ax.text(j, i, transitions[i, j],
+                        ha="center", va="center", color="w")
+
+    ax.set_title(f"Visualization of MDP for {play['model']}")
+    fig.tight_layout()
+    fig.savefig(os.path.join("figures", f"{filename}_{END_REASON if end_reason else ''}.png"),  dpi=600)
+
+def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
+    edges = {}
+    for play in game_plays:
+        if end_reason and play["end_reason"] not in end_reason:
+            continue
+
+        for i in range(1, len(play["trajectory"]["actions"])):
+            state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i-1]))
+            next_state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i-1]))
+            action = Action.from_dict((play["trajectory"]["actions"][i-1]))
+            if state not in states:
+                states[state] = len(states)
+            if next_state not in states:
+                states[next_state] = len(states)
+            if action not in actions:
+                actions[action] = len(actions)
+            if (states[state],states[next_state]) not in edges:
+                edges[states[state], states[next_state]] = {}
+            if actions[action] not in edges[states[state], states[next_state]]:
+                edges[states[state], states[next_state]][actions[action]] = 0
+            edges[states[state], states[next_state]][actions[action]] += 1
+    return edges
+
+def get_graph_stats(edge_list, states, actions)->tuple:
+    visited_states = set()
+    played_actions = []
+    outgoing_edges = {}
+    incoming_edges = {}
+    loops = {}
+    for (src,dst), edges in edge_list.items():
+        visited_states.add(src)
+        visited_states.add(dst)
+        if src not in outgoing_edges:
+            outgoing_edges[src] = 0
+        outgoing_edges[src] += 1
+        if dst not in incoming_edges:
+            incoming_edges[dst] = 0
+        incoming_edges[dst] += 1
+        for a in edges.keys():
+            played_actions.append(a)
+        if src == dst:
+            loops[(src,dst)] = len(edges)
+    
+    print(f"Total visited states: {len(visited_states)}")
+    print(f"Total played actions: {len(played_actions)}")
+    print(f"Unique played actions: {len(set(played_actions))}")
+    print(f"Total State transformation edges: {len(edge_list)}")
+    print(f"Node in-degree - min:{np.min(list(incoming_edges.values()))}, max:{np.max(list(incoming_edges.values()))}, mean:{np.mean(list(incoming_edges.values()))}, std:{np.std(list(incoming_edges.values()))}")
+    print(f"Node out-degree - min:{np.min(list(outgoing_edges.values()))}, max:{np.max(list(outgoing_edges.values()))}, mean:{np.mean(list(outgoing_edges.values()))}, std:{np.std(list(outgoing_edges.values()))}")
+    print(f"Loops - min:{np.min(list(loops.values()))}, max:{np.max(list(loops.values()))}, mean:{np.mean(list(loops.values()))}, std:{np.std(list(loops.values()))}")
+
+def get_change_in_edges(edge_list1, edge_list2):
+    removed_edges = {}
+    added_edges = {}
+    for (src,dst), actions in edge_list1.items():
+        if (src, dst) not in edge_list2:
+            removed_edges[src,dst] = actions
+        else:
+            removed = set()
+            for a in actions:
+                if a not in edge_list2[(src, dst)]:
+                    removed.add(a)
+            removed_edges[src,dst] = removed
+    for (src,dst), actions in edge_list2.items():
+        if (src, dst) not in edge_list1:
+            added_edges[src,dst] = actions
+        else:
+            added = set()
+            for a in actions:
+                if a not in edge_list1[(src, dst)]:
+                    added.add(a)
+            added_edges[src,dst] = added
+    return added_edges, removed_edges
+
+def get_change_in_nodes(edge_list1, edge_list2):
+    original = set()
+    new = set()
+    for (src, dst) in edge_list1.keys():
+        original.add(src)
+        original.add(dst)
+    for (src, dst) in edge_list2.keys():
+        new.add(src)
+        new.add(dst)
+    return {n for n in new if n not in original}, {n for n in original if n not in new}
 
 if __name__ == '__main__':
-
-
-    #END_REASON = ["goal_reached", "detected"]
-    # END_REASON = ["detected", "max_steps
+    # filter trajectories based on their ending
     END_REASON = None
     #END_REASON = ["goal_reached"]
+    game_plays = read_json("./trajectories/2024-07-02_BaseAgent_Attacker.jsonl")
+    for play in game_plays:
+        play["model"] = "Optimal"
+    print(compute_mean_length(game_plays))
+    get_action_type_barplot_per_step(game_plays, end_reason=END_REASON)
+    get_action_type_histogram_per_step(game_plays, end_reason=END_REASON)
+    generate_mdp_from_trajecotries(game_plays,filename="MDP_visualization_optimal", end_reason=END_REASON)
+    states = {}
+    actions = {}
+    edges_optimal = gameplay_graph(game_plays, states, actions,end_reason=END_REASON)
+    state_to_id = {v:k for k,v in states.items()}
+    action_to_id = {v:k for k,v in states.items()}
+    get_graph_stats(edges_optimal, state_to_id, action_to_id)
+    # # load trajectories from files
+    # game_plays_q_learning = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
+    # for play in game_plays_q_learning:
+    #     play["model"] = "Q-learning"
+    # game_plays_gpt = read_json("NSG_trajectories_GPT3.json")
+    # for play in game_plays_gpt:
+    #     play["model"] = "GPT-3.5"
+    # game_plays_conceptual = read_json("NSG_trajectories_experiment47-episodes-680000.json")
+    # for play in game_plays_conceptual:
+    #     play["model"] = "Q-learning-concepts"
+    # game_plays_optimal = read_json("NSG_trajectories_optimal.json")
+    # for play in game_plays_optimal:
+    #     play["model"] = "Optimal"
+    
 
-    # combine
-    game_plays_q_learning = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
-    game_plays_gpt = read_json("NSG_trajectories_GPT3.json")
-    game_plays_conceptual = read_json("NSG_trajectories_experiment47-episodes-680000.json")
-    barplot_action_efficiency(
-     [game_plays_q_learning, game_plays_conceptual, game_plays_gpt],
-     ("Q-learning", "Conceptual-learning", "LLM (GPT 3.5)"),
-     end_reason=["goal_reached"],
-    )
-    get_action_type_barplot_per_step(game_plays_q_learning, filename="plot_by_action_q_learning.png", end_reason=END_REASON)
-    get_action_type_barplot_per_step(game_plays_conceptual, filename="plot_by_action_concepts.png", end_reason=END_REASON)
-    get_action_type_barplot_per_step(game_plays_gpt, filename="plot_by_action_gpt.png", end_reason=END_REASON)
-    for play in game_plays_q_learning:
-        play["model"] = "Q-learning"
-    for play in game_plays_gpt:
-        play["model"] = "GPT-3.5"
-    for play in game_plays_conceptual:
-        play["model"] = "Q-learning-concepts"
+    # # barplot_action_efficiency(
+    # #  [game_plays_q_learning, game_plays_conceptual, game_plays_gpt],
+    # #  ("Q-learning", "Conceptual-learning", "LLM (GPT 3.5)"),
+    # #  end_reason=["goal_reached"],
+    # # )
+    # # get_action_type_barplot_per_step(game_plays_q_learning, filename="plot_by_action_q_learning.png", end_reason=END_REASON)
+    # # get_action_type_barplot_per_step(game_plays_conceptual, filename="plot_by_action_concepts.png", end_reason=END_REASON)
+    # # get_action_type_barplot_per_step(game_plays_gpt, filename="plot_by_action_gpt.png", end_reason=END_REASON)
+    
+    
 
-    game_plays_combined = game_plays_q_learning + game_plays_gpt+game_plays_conceptual
-    cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON)
+    # game_plays_combined = game_plays_q_learning + game_plays_gpt+game_plays_conceptual
+    # cluster_combined_trajectories(game_plays_combined, filename=f"trajectory_step_with_optimal_comparison_scaled{'_'.join(END_REASON if END_REASON else '')}.png", end_reason=END_REASON,optimal_gamelays=game_plays_optimal)
+    # # generate_mdp_from_trajecotries(game_plays_q_learning,filename="MDP_visualization_q_learning", end_reason=END_REASON)
+    # # generate_mdp_from_trajecotries(game_plays_gpt,filename="MDP_visualization_gpt", end_reason=END_REASON)
+    # # generate_mdp_from_trajecotries(game_plays_conceptual,filename="MDP_visualization_conceptual", end_reason=END_REASON)
+    # # generate_mdp_from_trajecotries(game_plays_optimal,filename="MDP_visualization_optimal", end_reason=END_REASON)
+    
+    # # MODEL COMPARISON
+    # states = {}
+    # actions = {}
+
+    # edges_optimal = gameplay_graph(game_plays_optimal, states, actions,end_reason=END_REASON)
+    # edges_q_learning = gameplay_graph(game_plays_q_learning,states, actions, end_reason=END_REASON)
+    # edges_gpt = gameplay_graph(game_plays_gpt,states, actions, end_reason=END_REASON)
+
+    # state_to_id = {v:k for k,v in states.items()}
+    # action_to_id = {v:k for k,v in states.items()}
+    # print("optimal:")
+    # get_graph_stats(edges_optimal, state_to_id, action_to_id)
+    # print("Q-learing:")
+    # get_graph_stats(edges_q_learning, state_to_id, action_to_id)
+    # print("GPT:")
+    # get_graph_stats(edges_gpt, state_to_id, action_to_id)
+
+    # # MODEL PROGRESS
+    # states = {}
+    # actions = {}
+    # gameplays_5K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-5000.json")
+    # gameplays_10K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-10000.json")
+    # gameplays_15K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-15000.json")
+    # gameplays_20K = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
+    # gameplays_25K  = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-25000.json")
+
+    # edges_5k = gameplay_graph(gameplays_5K, states, actions,end_reason=END_REASON)
+    # edges_10k = gameplay_graph(gameplays_10K, states, actions,end_reason=END_REASON)
+    # edges_15k = gameplay_graph(gameplays_15K, states, actions,end_reason=END_REASON)
+    # edges_20k = gameplay_graph(gameplays_20K, states, actions,end_reason=END_REASON)
+    # edges_25k = gameplay_graph(gameplays_25K, states, actions,end_reason=END_REASON)
+    # state_to_id = {v:k for k,v in states.items()}
+    # action_to_id = {v:k for k,v in actions.items()}
+
+    # print("5K:")
+    # get_graph_stats(edges_5k, state_to_id, action_to_id)
+    # print("10K:")
+    # get_graph_stats(edges_10k, state_to_id, action_to_id)
+    # print("15K:")
+    # get_graph_stats(edges_15k, state_to_id, action_to_id)
+    # print("20K:")
+    # get_graph_stats(edges_20k, state_to_id, action_to_id)
+    # print("25K:")
+    # get_graph_stats(edges_20k, state_to_id, action_to_id)
+        
+    # print("change from 5k->10k")
+    # nodes_added, nodes_removed = get_change_in_nodes(edges_5k, edges_10k)
+    # edges_added, edges_removed = get_change_in_edges(edges_5k, edges_10k)
+    # print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
+    # print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
+    # print("----------------------------------------")
+    # print("change from 10k->15k")
+    # nodes_added, nodes_removed = get_change_in_nodes(edges_10k, edges_15k)
+    # edges_added, edges_removed = get_change_in_edges(edges_10k, edges_15k)
+    # print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
+    # print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
+    # print("----------------------------------------")
+    # print("change from 15k->20k")
+    # nodes_added, nodes_removed = get_change_in_nodes(edges_15k, edges_20k)
+    # edges_added, edges_removed = get_change_in_edges(edges_15k, edges_20k)
+    # print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
+    # print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
+    # print("----------------------------------------")
+    # print("change from 20k->25k")
+    # nodes_added, nodes_removed = get_change_in_nodes(edges_20k, edges_25k)
+    # edges_added, edges_removed = get_change_in_edges(edges_20k, edges_25k)
+    # print(f"Nodes added: {len(nodes_added)}, removed: {len(nodes_removed)}")
+    # print(f"Edgees added: {sum([len(x) for x in edges_added.values()])}, removed: {sum([len(x) for x in edges_removed.values()])}")
