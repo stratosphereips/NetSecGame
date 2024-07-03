@@ -418,7 +418,7 @@ def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=Non
     transitions = np.round(transitions, 2)
 
     fig, ax = plt.subplots()
-    im = ax.imshow(transitions)
+    _ = ax.imshow(transitions)
     ax.set_xticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())
     ax.set_yticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
@@ -426,7 +426,7 @@ def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=Non
     # Loop over data dimensions and create text annotations.
     for i in range(len(idx_mapping)):
         for j in range(len(idx_mapping)):
-            text = ax.text(j, i, transitions[i, j],
+            _ = ax.text(j, i, transitions[i, j],
                         ha="center", va="center", color="w")
 
     ax.set_title(f"Visualization of MDP for {play['model']}")

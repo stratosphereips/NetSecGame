@@ -11,7 +11,6 @@ from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, E
 import numpy as np
 import logging
 from faker import Faker
-import json
 from utils.utils import ConfigParser
 import subprocess
 import xml.etree.ElementTree as ElementTree
