@@ -82,7 +82,7 @@ def parse_action(log_line: str, model_type) -> dict:
     pattern = r"(\{.*\})"
     match = re.search(pattern, log_line)
     if not match:
-        return {"action": "invalid"}
+        return {}
     else:
         json_string = match.group(1)
         # print(json_string)
@@ -92,13 +92,15 @@ def parse_action(log_line: str, model_type) -> dict:
             try:
                 action_dict = eval(json_string)
             except:
-                return {"action": "invalid"}
+                return {}
 
         try:
             action_dict["type"] = action_type_map[action_dict["action"]]
             action_dict["params"] = action_dict["parameters"]
+            action_dict.pop("action", None)
+            action_dict.pop("parameters", None)
         except:
-            return {"action": "invalid"}
+            return {}
 
         if action_dict["type"] == "ActionType.ExploitService":
             service_name = action_dict["params"]["target_service"]
@@ -155,7 +157,14 @@ def parse_file(filename: str, model_type: str) -> list:
             states.append(state_str)
         elif ("LLM (step 3)" in line) or (("LLM (step 2)" in line)):
             action_str = parse_action(line, model_type)
-            actions.append(action_str)
+            # print(action_str)
+            if action_str != {}:
+                actions.append(action_str)
+        elif "Iteration" in line:
+            result = parse_iteration(line)
+            if not result["valid"]:
+                print(result["valid"], actions[-1])
+                actions[-1] = {}
         elif "game ended after" in line:
             print("[*] Episode ended!")
             end_json = parse_end(line)
@@ -175,6 +184,8 @@ def parse_file(filename: str, model_type: str) -> list:
                     "rewards": rewards,
                 },
             }
+            # print("len of actions:", len(actions))
+            # print("len of rewards", len(rewards))
             # Append trajectory to the trajectories
             trajectories.append(trajectory)
 

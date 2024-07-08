@@ -95,6 +95,7 @@ def compare_action_type_sequence(game_plays: list, end_reason=None):
 
 
 def plot_barplot(data: dict, fileneme, title="ActionType distribution per step"):
+    # print(data)
     fig, ax = plt.subplots()
     bottom = np.zeros(len(data))
     action_counts = {}
@@ -110,6 +111,11 @@ def plot_barplot(data: dict, fileneme, title="ActionType distribution per step")
             for i in range(len(data)):
                 tmp[i] = data[i][action_type]
             action_counts[action_type] = tmp
+
+    tmp = np.zeros(len(data))
+    for i in range(len(data)):
+        tmp[i] = data[i]["Invalid"]
+    action_counts["Invalid"] = tmp
 
     for action_type, values in action_counts.items():
         ax.bar(
@@ -176,7 +182,11 @@ def get_action_type_histogram_per_step(
                     actions_step_usage[action.type] = []
                 actions_step_usage[action.type].append(i)
             except:
-                pass
+                action = "Invalid"
+                if action not in actions_step_usage:
+                    actions_step_usage[action] = []
+                actions_step_usage[action].append(i)
+
     if not os.path.exists("figures"):
         os.makedirs("figures")
     plot_histogram(actions_step_usage, os.path.join("figures", filename))
@@ -195,11 +205,15 @@ def get_action_type_barplot_per_step(
         for i in range(len(play["trajectory"]["actions"])):
             if i not in actions_per_step.keys():
                 actions_per_step[i] = {action_type: 0 for action_type in ActionType}
+                actions_per_step[i]["Invalid"] = 0
+
             try:
                 action = Action.from_dict(play["trajectory"]["actions"][i])
                 actions_per_step[i][action.type] += 1
             except:
-                pass
+                print("Invalid action", i, play["trajectory"]["actions"][i])
+                actions_per_step[i]["Invalid"] += 1
+
     to_plot = {}
     for i, actions in actions_per_step.items():
         per_step = {}
@@ -546,6 +560,7 @@ def generate_mdp_from_trajecotries(
         ActionType.FindData: 3,
         ActionType.ExploitService: 4,
         ActionType.ExfiltrateData: 5,
+        "Invalid": 6,
     }
     counts = {
         "Start": 0,
@@ -554,6 +569,7 @@ def generate_mdp_from_trajecotries(
         ActionType.FindData: 0,
         ActionType.ExploitService: 0,
         ActionType.ExfiltrateData: 0,
+        "Invalid": 0,
     }
     transitions = np.zeros([len(counts), len(counts)])
     for play in game_plays:
@@ -563,11 +579,11 @@ def generate_mdp_from_trajecotries(
         for action_dict in play["trajectory"]["actions"]:
             try:
                 action = Action.from_dict(action_dict).type
+            except:
+                action = "Invalid"
                 transitions[idx_mapping[previous_action], idx_mapping[action]] += 1
                 counts[previous_action] += 1
                 previous_action = action
-            except:
-                pass
     # make transitions probabilities
     for action_type, count in counts.items():
         transitions[idx_mapping[action_type]] = (
@@ -705,12 +721,12 @@ if __name__ == "__main__":
     generate_mdp_from_trajecotries(
         game_plays, filename="MDP_visualization_optimal", end_reason=END_REASON
     )
-    states = {}
-    actions = {}
-    edges_optimal = gameplay_graph(game_plays, states, actions, end_reason=END_REASON)
-    state_to_id = {v: k for k, v in states.items()}
-    action_to_id = {v: k for k, v in states.items()}
-    get_graph_stats(edges_optimal, state_to_id, action_to_id)
+    # states = {}
+    # actions = {}
+    # edges_optimal = gameplay_graph(game_plays, states, actions, end_reason=END_REASON)
+    # state_to_id = {v: k for k, v in states.items()}
+    # action_to_id = {v: k for k, v in states.items()}
+    # get_graph_stats(edges_optimal, state_to_id, action_to_id)
 
     # # load trajectories from files
     # game_plays_q_learning = read_json("./NSG_trajectories_q_agent_marl.experiment0004-episodes-20000.json")
