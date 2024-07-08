@@ -144,6 +144,7 @@ def plot_histogram(
     fileneme,
     ignore_types=[ActionType.JoinGame, ActionType.QuitGame, ActionType.ResetGame],
 ):
+    print(data.keys())
     fig, ax = plt.subplots()
     for action_type in ActionType:
         if action_type not in ignore_types:
@@ -156,6 +157,13 @@ def plot_histogram(
                 label=name,
                 alpha=0.5,
             )
+    ax.hist(
+        data["Invalid"],
+        bins=max([max(x) for x in data.values()]),
+        label="Invalid",
+        alpha=0.5,
+    )
+
     ax.set_title("ActionType distribution per step")
     # plt.xticks(np.arange(0, len(data), step=1), labels=[i+1 for i in range(0,len(data))])
     plt.xlabel("Step number")
@@ -182,10 +190,13 @@ def get_action_type_histogram_per_step(
                     actions_step_usage[action.type] = []
                 actions_step_usage[action.type].append(i)
             except:
+                print("Invalid action (hist)", i, play["trajectory"]["actions"][i])
                 action = "Invalid"
-                if action not in actions_step_usage:
-                    actions_step_usage[action] = []
-                actions_step_usage[action].append(i)
+
+                try:
+                    actions_step_usage[action].append(i)
+                except:
+                    actions_step_usage[action] = [i]
 
     if not os.path.exists("figures"):
         os.makedirs("figures")
@@ -211,7 +222,7 @@ def get_action_type_barplot_per_step(
                 action = Action.from_dict(play["trajectory"]["actions"][i])
                 actions_per_step[i][action.type] += 1
             except:
-                print("Invalid action", i, play["trajectory"]["actions"][i])
+                # print("Invalid action", i, play["trajectory"]["actions"][i])
                 actions_per_step[i]["Invalid"] += 1
 
     to_plot = {}
