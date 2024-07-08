@@ -95,7 +95,6 @@ def compare_action_type_sequence(game_plays: list, end_reason=None):
 
 
 def plot_barplot(data: dict, fileneme, title="ActionType distribution per step"):
-    # print(data)
     fig, ax = plt.subplots()
     bottom = np.zeros(len(data))
     action_counts = {}
@@ -144,7 +143,6 @@ def plot_histogram(
     fileneme,
     ignore_types=[ActionType.JoinGame, ActionType.QuitGame, ActionType.ResetGame],
 ):
-    print(data.keys())
     fig, ax = plt.subplots()
     for action_type in ActionType:
         if action_type not in ignore_types:
@@ -190,7 +188,7 @@ def get_action_type_histogram_per_step(
                     actions_step_usage[action.type] = []
                 actions_step_usage[action.type].append(i)
             except:
-                print("Invalid action (hist)", i, play["trajectory"]["actions"][i])
+                # print("Invalid action (hist)", i, play["trajectory"]["actions"][i])
                 action = "Invalid"
 
                 try:
@@ -591,10 +589,11 @@ def generate_mdp_from_trajecotries(
             try:
                 action = Action.from_dict(action_dict).type
             except:
+                print("Invalid action (mdp)", action_dict)
                 action = "Invalid"
-                transitions[idx_mapping[previous_action], idx_mapping[action]] += 1
-                counts[previous_action] += 1
-                previous_action = action
+            transitions[idx_mapping[previous_action], idx_mapping[action]] += 1
+            counts[previous_action] += 1
+            previous_action = action
     # make transitions probabilities
     for action_type, count in counts.items():
         transitions[idx_mapping[action_type]] = (
