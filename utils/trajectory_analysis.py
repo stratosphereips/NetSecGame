@@ -420,7 +420,7 @@ def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=Non
     fig, ax = plt.subplots()
     _ = ax.imshow(transitions)
     ax.set_xticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())
-    ax.set_yticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())
+    ax.set_yticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())   
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
          rotation_mode="anchor")
     # Loop over data dimensions and create text annotations.
@@ -432,6 +432,100 @@ def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=Non
     ax.set_title(f"Visualization of MDP for {play['model']}")
     fig.tight_layout()
     fig.savefig(os.path.join("figures", f"{filename}_{END_REASON if end_reason else ''}.png"),  dpi=600)
+
+def generate_sankey_from_trajecotries(game_plays:list, filename:str, end_reason=None)->dict:
+    idx_mapping = {
+        "Start":0,
+        ActionType.ScanNetwork:1,
+        ActionType.FindServices:2,
+        ActionType.FindData:3,
+        ActionType.ExploitService:4,
+        ActionType.ExfiltrateData:5,
+    }
+    counts = {
+        "Start":0,
+        ActionType.ScanNetwork:0,
+        ActionType.FindServices:0,
+        ActionType.FindData:0,
+        ActionType.ExploitService:0,
+        ActionType.ExfiltrateData:0,
+    }
+    transitions = np.zeros([len(counts), len(counts)])
+    for play in game_plays:
+        if end_reason and play["end_reason"] not in end_reason:
+            continue
+        previous_action = "Start"
+        for action_dict in play["trajectory"]["actions"]:
+            counts[previous_action] += 1
+            action =  Action.from_dict(action_dict).type
+            transitions[idx_mapping[previous_action], idx_mapping[action]] += 1
+            previous_action = action
+    # Create a list of unique labels
+    labels = list(idx_mapping.keys())
+
+    # Define colors for each node
+    node_colors = ['rgba(31, 119, 180, 0.8)', 'rgba(255, 127, 14, 0.8)', 'rgba(44, 160, 44, 0.8)', 
+                'rgba(214, 39, 40, 0.8)', 'rgba(148, 103, 189, 0.8)', 'rgba(170, 103, 189, 0.8)', 'rgba(255,221,51,0.8)']
+
+    # Convert the source and target lists to indices
+    source_indices = [labels.index(s) for s in idx_mapping.keys()]
+    target_indices = [labels.index(t) for t in idx_mapping.keys()]
+
+    # Normalize the values to use for opacity
+    max_value = max(values)
+    opacities = [value / max_value for value in values]
+
+    # Generate link colors based on source node colors and opacity
+    link_colors = []
+    for s, opacity in zip(source_indices, opacities):
+    color = node_colors[s]
+    # Adjust the color's alpha value based on opacity
+    rgba_color = color[:-4] + f'{opacity})'
+    link_colors.append(rgba_color)
+
+    # Create the Sankey diagram
+    fig = go.Figure(data=[go.Sankey(
+    node=dict(
+        pad=15,
+        thickness=20,
+        line=dict(color="black", width=0.5),
+        label=labels,
+        color=node_colors
+    ),
+    link=dict(
+        source=source_indices,
+        target=target_indices,
+        value=values,
+        color=link_colors
+    )
+    )])
+
+    fig.update_layout(title_text="Sankey Diagram with Node and Link Colors", font_size=10)
+    fig.show()
+
+
+
+    # make transitions probabilities
+    # for action_type, count in counts.items():
+    #     transitions[idx_mapping[action_type]] = transitions[idx_mapping[action_type]]/count
+    # transitions = np.round(transitions, 2)
+
+    # fig, ax = plt.subplots()
+    # _ = ax.imshow(transitions)
+    # ax.set_xticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())
+    # ax.set_yticks(np.arange(len(idx_mapping)), labels=idx_mapping.keys())
+    # plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+    #      rotation_mode="anchor")
+    # # Loop over data dimensions and create text annotations.
+    # for i in range(len(idx_mapping)):
+    #     for j in range(len(idx_mapping)):
+    #         _ = ax.text(j, i, transitions[i, j],
+    #                     ha="center", va="center", color="w")
+
+    # ax.set_title(f"Visualization of MDP for {play['model']}")
+    # fig.tight_layout()
+    # fig.savefig(os.path.join("figures", f"{filename}_{END_REASON if end_reason else ''}.png"),  dpi=600)
+    
 
 def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
     edges = {}
