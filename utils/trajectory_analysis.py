@@ -130,7 +130,7 @@ def plot_barplot(data: dict, fileneme, title="ActionType distribution per step")
     # plt.xticks(np.arange(0, len(data), step=1), labels=[i+1 for i in range(0,len(data))])
     plt.xlabel("Step number")
     plt.ylim()
-    plt.xlim(right=100)
+    plt.xlim(right=150)
 
     plt.ylabel("ActionType usage")
     ax.legend(loc="best", ncol=1)
@@ -595,11 +595,13 @@ def generate_mdp_from_trajecotries(
             counts[previous_action] += 1
             previous_action = action
     # make transitions probabilities
+    # print(counts)
     for action_type, count in counts.items():
         transitions[idx_mapping[action_type]] = (
             transitions[idx_mapping[action_type]] / count
         )
     transitions = np.round(transitions, 2)
+    print(transitions)
 
     fig, ax = plt.subplots()
     _ = ax.imshow(transitions)
