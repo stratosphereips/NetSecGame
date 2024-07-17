@@ -265,7 +265,7 @@ class Coordinator:
         except asyncio.CancelledError:
             self.logger.info("\tTerminating by CancelledError")
         except Exception as e:
-            self.logger.error(f"Exception in main_coordinator(): {e}")
+            self.logger.error(f"Exception in Class coordinator(): {e}")
             raise e
 
     def _initialize_new_player(self, agent_addr:tuple, agent_name:str, agent_role:str) -> Observation:
