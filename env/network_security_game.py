@@ -106,10 +106,6 @@ class NetworkSecurityEnvironment(object):
     def num_actions(self):
         return len(self.get_all_actions())
     
-    @property
-    def goal_description(self):
-       return self._goal_description
-        
     def get_all_states(self):
         import itertools
         def all_combs(data):
