@@ -988,7 +988,6 @@ class NetworkSecurityEnvironment(object):
       
 
         self._actions_played = []
-        self._defender.reset()
 
     def step(self, state:components.GameState, action:components.Action, agent_id:tuple,action_type='netsecenv')-> components.GameState:
         """
