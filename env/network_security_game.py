@@ -884,7 +884,7 @@ class NetworkSecurityEnvironment(object):
         for ip, data_list in view["known_data"]:
             known_data[self._ip_mapping[ip]] = data_list
         game_state = components.GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
-        logger.info(f"Generated GS:{game_state}")
+        logger.info(f"Generated GameState:{game_state}")
         return game_state
 
     def re_map_goal_dict(self, goal_dict)->dict:
