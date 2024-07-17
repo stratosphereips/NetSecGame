@@ -72,26 +72,6 @@ class NetworkSecurityEnvironment(object):
         components.ActionType.ExfiltrateData.default_success_p = self.task_config.read_env_action_data('exfiltrate_data')
         components.ActionType.BlockIP.default_success_p = self.task_config.read_env_action_data('block_ip')
 
-        # Get attacker start
-        self._attackers_start_position = self.task_config.get_player_start_position('attackers')
-
-        # should be randomized once or every episode?
-        self._randomize_attacker_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
-        
-        # store goal definition
-        self._attacker_goal_conditions = self.task_config.get_player_win_conditions('attackers')
-
-        # store goal description
-        self._goal_description = self.task_config.get_goal_description()
-
-        # Process episodic randomization of goal position
-        # if not self._randomize_attacker_goal_every_episode:
-            # # REPLACE 'random' keyword once
-            # logger.info("Episodic randomization disabled, generating static goal_conditions")
-            # self._attacker_goal_conditions = self._process_win_conditions(self._attacker_goal_conditions)
-        # else:
-            # logger.info("Episodic randomization enabled, keeping 'random' keyword in the goal description.")
-
         # At this point all 'random' values should be assigned to something
         # Check if dynamic network and ip adddresses are required
         if self.task_config.get_use_dynamic_addresses():
