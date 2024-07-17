@@ -96,7 +96,7 @@ coordinator:
         # Example of known blocks to start with. In the host 192.168.2.2, block all connections coming or going to 192.168.1.3
         # known_blocks: {192.168.2.2: {192.168.1.3}}
 
-    defenders:
+    Defender:
       goal:
             description: "Block all attackers"
             is_any_part_of_goal_random: False
@@ -124,7 +124,7 @@ coordinator:
             # known_data: {213.47.23.195: [random]}
             blocked_ips: {all_attackers}
 
-          start_position:
+      start_position:
             known_networks: [all_local]
             known_hosts: [all_local]
             # The attacker must always at least control the CC if the goal is to exfiltrate there
