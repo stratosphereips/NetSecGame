@@ -3,7 +3,7 @@
 coordinator:
   # Define the conf for all the 'attacker' agents.
   agents:
-    attackers:
+    Attacker:
       goal:
         description: "Exfiltrate data to '213.47.23.195'"
         is_any_part_of_goal_random: True
@@ -40,7 +40,7 @@ coordinator:
         # Same format as before
         known_data: {}
 
-    defenders:
+    Defender:
       goal:
             description: "Block all attackers"
             is_any_part_of_goal_random: False
@@ -68,7 +68,7 @@ coordinator:
             # known_data: {213.47.23.195: [random]}
             blocked_ips: {all_attackers}
 
-          start_position:
+      start_position:
             known_networks: [all_local]
             known_hosts: [all_local]
             # The attacker must always at least control the CC if the goal is to exfiltrate there
