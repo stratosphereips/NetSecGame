@@ -280,7 +280,7 @@ class ConfigParser():
     def get_start_position(self, agent_role):
         match agent_role:
             case "Attacker":
-                return self.get_attackers_start_position()
+                return self.get_player_start_position(agent_role)
             case "Defender":
                 return {}
             case "Benign":
@@ -297,7 +297,7 @@ class ConfigParser():
     def get_win_conditions(self, agent_role):
          match agent_role:
             case "Attacker":
-                return self.get_attackers_win_conditions()
+                return self.get_player_win_conditions(agent_role)
             case "Defender":
                 return {}
             case "Benign":
@@ -326,7 +326,7 @@ class ConfigParser():
         match agent_role:
             case "Attacker":
                 try:
-                    description = self.config['coordinator']['agents']["attackers"]["goal"]["description"]
+                    description = self.config['coordinator']['agents'][agent_role]["goal"]["description"]
                 except KeyError:
                     description = ""
             case "Defender":
