@@ -998,7 +998,6 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"Agent's action: {action}")
         # Reward for taking an action
         reward = self._rewards["step"]
-        self._actions_played.append(action)
 
         # 1. Perform the action
         self._actions_played.append(action)
