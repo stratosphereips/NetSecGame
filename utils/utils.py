@@ -146,6 +146,27 @@ class ConfigParser():
             except (ValueError, netaddr.AddrFormatError):
                 known_data = {}
         return known_data
+
+    def read_agents_known_blocks(self, type_agent: str, type_data: str) -> dict:
+        """
+        Generic function to read the known blocks for any agent and goal of position
+        """
+        known_blocks_conf = self.config["coordinator"]['agents'][type_agent][type_data]['known_blocks']
+        known_blocks = {}
+        for target_host, dict_blocked_hosts in known_blocks_conf.items():
+            try:
+                # Check the host is a good ip
+                _ = netaddr.IPAddress(target_host)
+                target_host_IP = IP(target_host)
+                for known_blocked_host in dict_blocked_hosts.values():
+                    known_blocked_host_IP = IP(known_blocked_host)
+                    known_blocks[target_host_IP].append(known_blocked_host_IP)
+            except (ValueError, netaddr.AddrFormatError):
+                if target_host.lower() == "all_routers":
+                    known_blocks["all_routers"] = dict_blocked_hosts
+            except (ValueError):
+                known_blocks = {}
+        return known_blocks
     
     def read_agents_known_services(self, type_agent: str, type_data: str) -> dict:
         """
@@ -236,6 +257,9 @@ class ConfigParser():
         # Goal services
         known_services = self.read_agents_known_services(type_of_player, 'goal')
 
+        # Read known blocks 
+        known_blocks = self.read_agents_known_blocks(type_of_player, 'goal')
+
         # Goal data
         known_data = self.read_agents_known_data(type_of_player, 'goal')
 
@@ -245,6 +269,7 @@ class ConfigParser():
         player_goal['known_hosts'] = known_hosts
         player_goal['known_data'] = known_data
         player_goal['known_services'] = known_services
+        player_goal['known_blocks'] = known_blocks
 
         return player_goal
     
@@ -299,7 +324,7 @@ class ConfigParser():
             case "Attacker":
                 return self.get_player_win_conditions(agent_role)
             case "Defender":
-                return {}
+                return self.get_player_win_conditions(agent_role)
             case "Benign":
                 # create goal that is unreachable so we have infinite play by the benign agent
                 return {
@@ -307,7 +332,8 @@ class ConfigParser():
                     'controlled_hosts': set(),
                     'known_hosts': set(),
                     'known_data': {IP("1.1.1.1"): {Data(owner='User1', id='DataFromInternet', size=0, type='')}},
-                    'known_services': {}
+                    'known_services': {},
+                    'known_blocks': {}
                 }
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
