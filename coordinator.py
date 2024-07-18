@@ -235,7 +235,7 @@ class Coordinator:
                             self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
                             if all(self._reset_requests.values()):
                                 # should we discard the queue here?
-                                self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q{self._answers_queue.empty()}")
+                                self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q:{self._answers_queue.empty()}")
                                 self._world.reset()
                                 self._get_goal_description_per_role()
                                 self._get_win_condition_per_role()
@@ -477,6 +477,8 @@ class Coordinator:
         goal_check = self._check_goal(agents_state, win_condition)
         if goal_check:
             self.logger.info("\tGoal reached!")
+        else:
+            self.logger.info("\tGoal not reached!")
         return goal_check
     
     def _check_goal(self, state:GameState, goal_conditions:dict)->bool:
