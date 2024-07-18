@@ -947,7 +947,8 @@ class NetworkSecurityEnvironment(object):
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services": {},
-            "known_data": {}
+            "known_data": {},
+            "known_blocks": {}
         }
         for net in goal_dict["known_networks"]:
             if net in self._network_mapping:
@@ -979,6 +980,12 @@ class NetworkSecurityEnvironment(object):
             else:
                 # Unknown IP, do not map
                 new_dict["known_data"][host] = items
+        for host, items in goal_dict["known_blocks"].items():
+            if host in self._ip_mapping:
+                new_dict["known_blocks"][self._ip_mapping[host]] = items
+            else:
+                # Unknown IP, do not map
+                new_dict["known_blocks"][host] = items
         return new_dict    
 
     def update_goal_descriptions(self, goal_description):
