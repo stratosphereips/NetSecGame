@@ -37,7 +37,7 @@ class IP():
         try:
             ipaddress.ip_address(self.ip)
         except ValueError:
-            raise ValueError("Invalid IP address provided")
+            raise ValueError(f"Invalid IP address provided: {self.ip}")
 
     def __repr__(self):
         return self.ip
