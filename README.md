@@ -47,9 +47,8 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 
 ### Assumptions of the NetSecGame
 1. NetSecGame works with the closed-world assumption. Only the defined entities exist in the simulation.
-2. Actions have no `Delete` effect. No entity is removed from the environment, agents do not forget discovered assets.
-3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
-
+2. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
+(From commit d6d4ac9, July 18th, 2024, the new action BlockIP removes controlled hosts from the state of others. So the state can get smaller)
 
 - The action FindServices finds the new services in a host. If in a subsequent call to FindServices there are less services, they completely replace the list of previous services found. That is, each list of services is the final one and no memory is retained of previous open services.
 
@@ -60,14 +59,14 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
 5. Playing `Find Services` can be used to discover hosts (if those have any active services)
 6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
+7. The `BlockIP` action needs its three parameters (Source host, Target host and Blocked host) to be in the controlled list of the Agent. 
 
 ### Actions for the defender
 The defender does have the action to block an IP address in a target host. 
 
-In this version, there is no global defender as there was before, because now it is a multi-agent system.
+There is no global defender anymore as there was before, because now it is a multi-agent system.
 
 The actions are:
-
 - BlockIP(). That takes as parameters:
   - "target_host": IP object where the block will be applied.
   - "source_host": IP object where this actions is executed from.
