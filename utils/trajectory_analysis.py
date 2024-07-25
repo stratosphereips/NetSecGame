@@ -559,11 +559,10 @@ def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
     for play in game_plays:
         if end_reason and play["end_reason"] not in end_reason:
             continue
-
+        state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][0]))
         for i in range(1, len(play["trajectory"]["actions"])):
-            state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i-1]))
-            next_state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i-1]))
-            action = Action.from_dict((play["trajectory"]["actions"][i-1]))
+            next_state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i]))
+            action = Action.from_dict((play["trajectory"]["actions"][i]))
             if state not in states:
                 states[state] = len(states)
             if next_state not in states:
@@ -575,6 +574,8 @@ def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
             if actions[action] not in edges[states[state], states[next_state]]:
                 edges[states[state], states[next_state]][actions[action]] = 0
             edges[states[state], states[next_state]][actions[action]] += 1
+            print(states[state], states[next_state], actions[action])
+            state = next_state
     return edges
 
 def get_graph_stats(edge_list, states, actions)->tuple:
@@ -639,16 +640,38 @@ def get_change_in_nodes(edge_list1, edge_list2):
         new.add(dst)
     return {n for n in new if n not in original}, {n for n in original if n not in new}
 
+def get_graph_modificiation(edge_list1, edege_list2):
+    """
+    Produces the addition and deletion graphs
+    """
+
 if __name__ == '__main__':
     # filter trajectories based on their ending
     END_REASON = None
     #END_REASON = ["goal_reached"]
     #game_plays = read_json("./trajectories/2024-07-03_QAgent_Attacker.jsonl")
-    game_plays = read_json("trajectories/2024-07-02_BaseAgent_Attacker.jsonl")
-    for play in game_plays:
+    game_plays_optimal= read_json("trajectories/2024-07-02_BaseAgent_Attacker.jsonl")
+    for play in game_plays_optimal:
         play["model"] = "Optimal"
-    generate_mdp_from_trajecotries(game_plays, filename="mdp_test", end_reason=END_REASON)
-    generate_sankey_from_trajecotries(game_plays, filename="sankey_test", end_reason=END_REASON, threshold=0.1)
+
+    game_plays_extra_steps = read_json("trajectories/2024-07-25_BaseAgent_Attacker.jsonl")
+    for play in game_plays_optimal:
+        play["model"] = "Not-optimal"
+    states = {}
+    actions = {}
+    edges_optimal = gameplay_graph(game_plays_optimal, states, actions,end_reason=END_REASON)
+    print("---------------------------")
+    edges_not_optimal = gameplay_graph(game_plays_extra_steps, states, actions,end_reason=END_REASON)
+    print(edges_optimal)
+    state_to_id = {v:k for k,v in states.items()}
+    action_to_id = {v:k for k,v in states.items()}
+    # print("optimal")
+    # get_graph_stats(edges_optimal, state_to_id, action_to_id)
+    # print("sub-optimal")
+    # get_graph_stats(edges_not_optimal, state_to_id, action_to_id)
+
+
+
     # print(compute_mean_length(game_plays))
     # get_action_type_barplot_per_step(game_plays, end_reason=END_REASON)
     # get_action_type_histogram_per_step(game_plays, end_reason=END_REASON)
