@@ -69,7 +69,12 @@ class AIDojo:
         stop = loop.create_future()
         
         # register the signal handler to the stopping event
-        loop.add_signal_handler(signal.SIGINT, stop.set_result, None)
+         # register the signal handler to the stopping event
+        def shutdown():
+            self.logger.info("Received exit signal, shutting down.")
+            stop.set_result(None)
+        loop.add_signal_handler(signal.SIGINT, shutdown)
+        loop.add_signal_handler(signal.SIGTERM, shutdown)
 
         await stop # Event that triggers stopping the AIDojo
         # Stop the server
