@@ -419,7 +419,7 @@ class Coordinator:
         self._store_trajectory_to_file(agent_addr)
         new_observation = Observation(self._agent_states[agent_addr], 0, self.episode_end, {})
         # reset trajectory
-        self._reset_trajectory(agent_addr)
+        self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         output_message_dict = {
             "to_agent": agent_addr,
             "status": str(GameStatus.OK),
@@ -453,7 +453,7 @@ class Coordinator:
                 writer.write(self._agent_trajectories[agent_addr])
             self.logger.info(f"Trajectory of {agent_addr} strored in {filename}")
     
-    def _reset_trajectory(self,agent_addr)->dict:
+    def _reset_trajectory(self, agent_addr)->dict:
         agent_name, agent_role = self.agents[agent_addr]
         self.logger.debug(f"Resetting trajectory of {agent_addr}")
         return {
