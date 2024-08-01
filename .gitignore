@@ -156,3 +156,4 @@ aim*/
 figures/*
 *trajectories*.json
 .vscode/settings.json
+trajectories/*
