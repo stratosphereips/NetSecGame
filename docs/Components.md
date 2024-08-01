@@ -43,6 +43,7 @@ GameState is an object that represents a view of the NetSecGame environment in a
 - `known_services`: Dictionary of services that the agent is aware of.
 The dictionary format: {`IP`: {`Service`}} where [IP](#ip) object is a key and the value is a set of [Service](#service) objects located in the `IP`.
 - `known_data`: Dictionary of data instances that the agent is aware of. The dictionary format: {`IP`: {`Data`}} where [IP](#ip) object is a key and the value is a set of [Data](#data) objects located in the `IP`.
+- `known_blocks`: Dictionary of firewall blocks the agent is aware of. It is a dictionary with format: {`target_IP`: {`blocked_IP`, `blocked_IP`}}. Where `target_IP` is the [IP](#ip) where the FW rule was applied (usually a router) and `blocked_IP` is the IP address that is blocked. For now the blocks happen in both input and output direction simultaneously.
 
 
 ## Actions

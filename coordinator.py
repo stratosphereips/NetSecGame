@@ -237,7 +237,7 @@ class Coordinator:
                             self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
                             if all(self._reset_requests.values()):
                                 # should we discard the queue here?
-                                self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q{self._answers_queue.empty()}")
+                                self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q:{self._answers_queue.empty()}")
                                 self._world.reset()
                                 self._get_goal_description_per_role()
                                 self._get_win_condition_per_role()
@@ -265,7 +265,7 @@ class Coordinator:
         except asyncio.CancelledError:
             self.logger.info("\tTerminating by CancelledError")
         except Exception as e:
-            self.logger.error(f"Exception in main_coordinator(): {e}")
+            self.logger.error(f"Exception in Class coordinator(): {e}")
             raise e
 
     def _initialize_new_player(self, agent_addr:tuple, agent_name:str, agent_role:str) -> Observation:
@@ -526,6 +526,8 @@ class Coordinator:
         goal_check = self._check_goal(agents_state, win_condition)
         if goal_check:
             self.logger.info("\tGoal reached!")
+        else:
+            self.logger.info("\tGoal not reached!")
         return goal_check
     
     def _check_goal(self, state:GameState, goal_conditions:dict)->bool:
@@ -556,6 +558,7 @@ class Coordinator:
         goal_reached["controlled_hosts"] = set(goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
         goal_reached["services"] = goal_dict_satistfied(goal_conditions["known_services"], state.known_services)
         goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
+        goal_reached["known_blocks"] = goal_dict_satistfied(goal_conditions["known_blocks"], state.known_blocks)
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 

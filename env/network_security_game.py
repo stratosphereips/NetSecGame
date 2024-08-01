@@ -18,123 +18,6 @@ import xml.etree.ElementTree as ElementTree
 # Set the logging
 logger = logging.getLogger('Netsecenv')
 
-class SimplisticDefender:
-    def __init__(self, config_file) -> None:
-        self.task_config = ConfigParser(config_file)
-        self.logger = logging.getLogger('Netsecenv-Defender')
-        defender_type = self.task_config.get_defender_type()
-        self.logger.info(f"Defender set to be of type '{defender_type}'")
-        match defender_type:
-            case "NoDefender":
-                self._defender_type = None
-            case 'StochasticDefender':
-                # For now there is only one type of defender
-                self._defender_type = "Stochastic"
-                self.detection_probability = self._read_detection_probabilities()
-            case "StochasticWithThreshold":
-                self._defender_type = "StochasticWithThreshold"
-                self.detection_probability = self._read_detection_probabilities()
-                self._defender_thresholds = self.task_config.get_defender_thresholds()
-                self._defender_thresholds["tw_size"] = self.task_config.get_defender_tw_size()
-                self._actions_played = []
-            case _: # Default option - no defender
-                self._defender_type = None
-    
-    def _read_detection_probabilities(self)->dict:
-        """
-        Method to read detection probabilities from the task config task.
-        """
-        detection_probability = {}
-        detection_probability[components.ActionType.ScanNetwork] = self.task_config.read_defender_detection_prob('scan_network')
-        detection_probability[components.ActionType.FindServices] = self.task_config.read_defender_detection_prob('find_services')
-        detection_probability[components.ActionType.ExploitService] = self.task_config.read_defender_detection_prob('exploit_service')
-        detection_probability[components.ActionType.FindData] = self.task_config.read_defender_detection_prob('find_data')
-        detection_probability[components.ActionType.ExfiltrateData] = self.task_config.read_defender_detection_prob('exfiltrate_data')
-        self.logger.info(f"Detection probabilities:{detection_probability}")
-        return detection_probability
-
-    def detect(self, state:components.GameState, action:components.Action, actions_played):
-        """
-        Checks if current action was detected based on the defendr type:
-        """
-        if self._defender_type is not None: # There is a defender present
-            match self._defender_type:
-                case "Stochastic":
-                    detection = self._stochastic_detection(action)
-                    self.logger.info(f"\tAction detected?: {detection}")
-                    return detection
-                case "StochasticWithThreshold":
-                    self.logger.info(f"Checking detection based on rules: {action}")
-                    detection = self._stochastic_detection_with_thresholds(action, actions_played)
-                    self.logger.info(f"\tAction detected?: {detection}")
-                    return detection
-        else: # No defender in the environment
-            logger.info("\tNo defender present")
-            return False
-    
-    def _stochastic_detection_with_thresholds(self, action:components.Action, actions_played)->bool:        
-        """ Method used for detection with stochastic defender with minimal thresholds"""
-        if len(actions_played) > self._defender_thresholds["tw_size"]: # single action is never detected:
-            last_n_actions = actions_played[-self._defender_thresholds["tw_size"]:]
-            last_n_action_types = [action.type for action in last_n_actions]
-            repeated_action_episode = actions_played.count(action)
-            self.logger.info('\tThreshold check')
-            # update threh
-            match action.type: # thresholds are based on action type
-                case components.ActionType.ScanNetwork:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ScanNetwork)/self._defender_thresholds["tw_size"]
-                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ScanNetwork)
-                                                for _,grouped in itertools.groupby(last_n_action_types))
-                    if tw_ratio < self._defender_thresholds[components.ActionType.ScanNetwork]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ScanNetwork]["consecutive_actions"]:
-                        return False
-                    else:
-                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ScanNetwork]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ScanNetwork]['consecutive_actions']})")
-                        return self._stochastic_detection(action)
-                case components.ActionType.FindServices:
-                    tw_ratio = last_n_action_types.count(components.ActionType.FindServices)/self._defender_thresholds["tw_size"]
-                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.FindServices)
-                                                for _,grouped in itertools.groupby(last_n_action_types))
-                    if tw_ratio < self._defender_thresholds[components.ActionType.FindServices]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.FindServices]["consecutive_actions"]:
-                        return False
-                    else:
-                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindServices]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.FindServices]['consecutive_actions']})")
-                        return self._stochastic_detection(action)
-                case components.ActionType.FindData:
-                    tw_ratio = last_n_action_types.count(components.ActionType.FindData)/self._defender_thresholds["tw_size"]
-                    if tw_ratio < self._defender_thresholds[components.ActionType.FindData]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.FindData]["repeated_actions_episode"]:
-                        return False
-                    else:
-                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.FindData]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
-                        return self._stochastic_detection(action)
-                case components.ActionType.ExploitService:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ExploitService)/self._defender_thresholds["tw_size"]
-                    if tw_ratio < self._defender_thresholds[components.ActionType.ExploitService]["tw_ratio"] and repeated_action_episode < self._defender_thresholds[components.ActionType.ExploitService]["repeated_actions_episode"]:
-                        return False
-                    else:
-                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExploitService]['tw_ratio']}), #repeated actions:{repeated_action_episode}")
-                        return self._stochastic_detection(action)
-                case components.ActionType.ExfiltrateData:
-                    tw_ratio = last_n_action_types.count(components.ActionType.ExfiltrateData)/self._defender_thresholds["tw_size"]
-                    num_consecutive_scans = max(sum(1 for item in grouped if item == components.ActionType.ExfiltrateData)
-                                                for _,grouped in itertools.groupby(last_n_action_types))
-                    if tw_ratio < self._defender_thresholds[components.ActionType.ExfiltrateData]["tw_ratio"] and num_consecutive_scans < self._defender_thresholds[components.ActionType.ExfiltrateData]["consecutive_actions"]:
-                        return False
-                    else:
-                        self.logger.info(f"\t\t Threshold crossed - TW ratio:{tw_ratio}(T={self._defender_thresholds[components.ActionType.ExfiltrateData]['tw_ratio']}), #consecutive actions:{num_consecutive_scans} (T={self._defender_thresholds[components.ActionType.ExfiltrateData]['consecutive_actions']})")
-                        return self._stochastic_detection(action)
-                case _: # default case - No detection
-                    return False
-        return False
-    
-    def _stochastic_detection(self, action: components.Action)->bool:
-        """ Method stochastic detection based on action default probability"""
-        roll = random.random()
-        self.logger.info(f"\tRunning stochastic detection. {roll} < {self.detection_probability[action.type]}")
-        return roll < self.detection_probability[action.type]
-    
-    def reset(self)->None:
-        self.logger.info("Defender resetted")
-
 class NetworkSecurityEnvironment(object):
     """
     Class to manage the whole network security game
@@ -187,24 +70,7 @@ class NetworkSecurityEnvironment(object):
         components.ActionType.ExploitService.default_success_p = self.task_config.read_env_action_data('exploit_service')
         components.ActionType.FindData.default_success_p = self.task_config.read_env_action_data('find_data')
         components.ActionType.ExfiltrateData.default_success_p = self.task_config.read_env_action_data('exfiltrate_data')
-
-        # Place the defender
-        self._defender = SimplisticDefender(task_config_file)
-        
-        # Get attacker start
-        self._attacker_start_position = self.task_config.get_attackers_start_position()
-
-        # should be randomized once or every episode?
-        self._randomize_goal_every_episode = self.task_config.get_randomize_goal_every_episode()
-        
-
-        # # Process episodic randomization of goal position
-        # if not self._randomize_goal_every_episode:
-        #     # REPLACE 'random' keyword once
-        #     logger.info("Episodic randomization disabled, generating static goal_conditions")
-        #     self._goal_conditions = self._process_win_conditions(self._goal_conditions)
-        # else:
-        #     logger.info("Episodic randomization enabled, keeping 'random' keyword in the goal description.")
+        components.ActionType.BlockIP.default_success_p = self.task_config.read_env_action_data('block_ip')
 
         # At this point all 'random' values should be assigned to something
         # Check if dynamic network and ip adddresses are required
@@ -239,12 +105,7 @@ class NetworkSecurityEnvironment(object):
     def num_actions(self):
         return len(self.get_all_actions())
     
-    @property
-    def goal_description(self):
-       return self._goal_description
-        
     def get_all_states(self):
-        import itertools
         def all_combs(data):
             combs = []
             for i in range(1, len(data)+1):
@@ -297,8 +158,77 @@ class NetworkSecurityEnvironment(object):
                     for ip, host in self._ip_to_hostname.items():
                         if host_id == host:
                             actions.add(components.Action(components.ActionType.ExploitService, {"target_host":ip, "target_service":service, "source_host":src_ip}))
+        # Get BlockIP actions
+        for src_ip in self._ip_to_hostname:
+            for trg_ip in self._ip_to_hostname:
+                for block_ip in self._ip_to_hostname:
+                    actions.add(components.Action(components.ActionType.BlockIP, {"target_host":trg_ip, "source_host":src_ip, "blocked_host":block_ip}))
+
         return {k:v for k,v in enumerate(actions)}
     
+    def _process_win_conditions(self, win_conditions)->dict:
+        """
+        Method which analyses win_conditions and randomizes parts if required
+        """
+        logger.info("Processing win conditions")
+        updated_win_conditions = {}
+        
+        # networks
+        if win_conditions["known_networks"] == "random":
+            updated_win_conditions["known_networks"] = {random.choice(list(self._networks.keys()))}
+            logger.info("\t\tRadnomizing known_networks")
+        else:
+            updated_win_conditions["known_networks"] = copy.deepcopy(win_conditions["known_networks"])
+        logger.info(f"\tGoal known_networks: {updated_win_conditions['known_networks']}")
+        # known_hosts
+        if win_conditions["known_hosts"] == "random":
+            logger.info("\t\tRandomizing known_host")
+            updated_win_conditions["known_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
+        else:
+            updated_win_conditions["known_hosts"] = copy.deepcopy(win_conditions["known_hosts"])
+        logger.info(f"\tGoal known_hosts: {updated_win_conditions['known_hosts']}")
+        
+        # controlled_hosts
+        if win_conditions["controlled_hosts"] == "random":
+            logger.info("\tRandomizing controlled_hots")
+            updated_win_conditions["controlled_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
+        else:
+            updated_win_conditions["controlled_hosts"] = copy.deepcopy(win_conditions["controlled_hosts"])
+        logger.info(f"\tGoal controlled_hosts: {updated_win_conditions['controlled_hosts']}")
+        
+        # services
+        updated_win_conditions["known_services"] = {}
+        for host, service_list in win_conditions["known_services"].items():
+            # Was the position defined as random?
+            if isinstance(service_list, str) and service_list.lower() == "random":
+                available_services = []
+                for service in self._services[self._ip_to_hostname[host]]:
+                    available_services.append(components.Service(service.name, service.type, service.version, service.is_local))
+                logger.info(f"\tRandomizing known_services in {host}")
+                updated_win_conditions["known_services"][host] = random.choice(available_services)
+            else:
+                updated_win_conditions["known_services"][host] = copy.deepcopy(win_conditions["known_services"][host])
+        logger.info(f"\tGoal known_services: {updated_win_conditions['known_services']}")
+        
+        # data
+        # prepare all available data if randomization is needed
+        available_data = set()
+        for data in self._data.values():
+            for datapoint in data:
+                available_data.add(components.Data(datapoint.owner, datapoint.id))
+        
+        updated_win_conditions["known_data"] = {}
+        for host, data_set in win_conditions["known_data"].items():
+            # Was random data required in this host?
+            if isinstance(data_set, str) and data_set.lower() == "random":
+                # From all available data, randomly pick the one that is going to be requested in this host
+                updated_win_conditions["known_data"][host] = {random.choice(list(available_data))}
+                logger.info(f"\tRandomizing known_data in {host}")
+            else:
+                updated_win_conditions["known_data"][host] = copy.deepcopy(win_conditions["known_data"][host])
+        logger.info(f"\tGoal known_data: {updated_win_conditions['known_data']}")
+        return updated_win_conditions
+
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
         Process the cyst configuration file
@@ -620,13 +550,14 @@ class NetworkSecurityEnvironment(object):
             logger.debug("Data content not found because target IP does not exists.")
         return content
     
-    def _execute_action(self, current:components.GameState, action:components.Action, action_type='netsecenv')-> components.GameState:
+    def _execute_action(self, current_state:components.GameState, action:components.Action, agent_id, action_type='netsecenv')-> components.GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
         So in here all actions were already successful.
 
         - actions_type: Define if the action is simulated in netsecenv or in the real world
+        - agent_id: is the name or type of agent that requested the action
 
         Returns: A new GameState
         """
@@ -634,20 +565,22 @@ class NetworkSecurityEnvironment(object):
         match action.type:
             case components.ActionType.ScanNetwork:
                 if action_type == "realworld":
-                    next_state = self._execute_scan_network_action_real_world(current, action)
+                    next_state = self._execute_scan_network_action_real_world(current_state, action)
                 else:
-                    next_state = self._execute_scan_network_action(current, action)
+                    next_state = self._execute_scan_network_action(current_state, action)
             case components.ActionType.FindServices:
                 if action_type == "realworld":
-                    next_state = self._execute_find_services_real_world(current, action)
+                    next_state = self._execute_find_services_real_world(current_state, action)
                 else:
-                    next_state = self._execute_find_services_action(current, action)
+                    next_state = self._execute_find_services_action(current_state, action)
             case components.ActionType.FindData:
-                next_state = self._execute_find_data_action(current, action)
+                next_state = self._execute_find_data_action(current_state, action)
             case components.ActionType.ExploitService:
-                next_state = self._execute_exploit_service_action(current, action)
+                next_state = self._execute_exploit_service_action(current_state, action)
             case components.ActionType.ExfiltrateData:
-                next_state = self._execute_exfiltrate_data_action(current, action)
+                next_state = self._execute_exfiltrate_data_action(current_state, action)
+            case components.ActionType.BlockIP:
+                next_state = self._execute_block_ip_action(current_state, action)
             case _:
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
@@ -658,7 +591,8 @@ class NetworkSecurityEnvironment(object):
         next_controlled_h = copy.deepcopy(current.controlled_hosts)
         next_services = copy.deepcopy(current.known_services)
         next_data = copy.deepcopy(current.known_data)
-        return next_nets, next_known_h, next_controlled_h, next_services, next_data
+        next_blocked = copy.deepcopy(current.known_blocks)
+        return next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked
 
     def _firewall_check(self, src_ip:components.IP, dst_ip:components.IP)->bool:
         """Checks if firewall allows connection from 'src_ip to ''dst_ip'"""
@@ -668,13 +602,13 @@ class NetworkSecurityEnvironment(object):
             connection_allowed = False
         return connection_allowed
 
-    def _execute_scan_network_action(self, current:components.GameState, action:components.Action)->components.GameState:
+    def _execute_scan_network_action(self, current_state:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the ScanNetwork action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
         logger.info(f"\t\tScanning {action.parameters['target_network']}")
-        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             new_ips = set()
             for ip in self._ip_to_hostname.keys(): #check if IP exists
                 logger.debug(f"\t\tChecking if {ip} in {action.parameters['target_network']}")
@@ -687,17 +621,17 @@ class NetworkSecurityEnvironment(object):
             next_known_h = next_known_h.union(new_ips)
         else:
             logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _execute_find_services_action(self, current:components.GameState, action:components.Action)->components.GameState:
+    def _execute_find_services_action(self, current_state:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the FindServices action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
         logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
-        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
-                found_services = self._get_services_from_host(action.parameters["target_host"], current.controlled_hosts)
+                found_services = self._get_services_from_host(action.parameters["target_host"], current_state.controlled_hosts)
                 logger.debug(f"\t\t\tFound {len(found_services)}: {found_services}")
                 if len(found_services) > 0:
                     next_services[action.parameters["target_host"]] = found_services
@@ -711,13 +645,13 @@ class NetworkSecurityEnvironment(object):
                 logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
     def _execute_find_data_action(self, current:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the FindData action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current)
         logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
@@ -732,24 +666,24 @@ class NetworkSecurityEnvironment(object):
                 logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_exfiltrate_data_action(self, current:components.GameState, action:components.Action)->components.GameState:
+    def _execute_exfiltrate_data_action(self, current_state:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the ExfiltrateData action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
         logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
         # Is the target host controlled?
-        if action.parameters["target_host"] in current.controlled_hosts:
-            logger.debug(f"\t\t\t {action.parameters['target_host']} is under-control: {current.controlled_hosts}")
+        if action.parameters["target_host"] in current_state.controlled_hosts:
+            logger.debug(f"\t\t\t {action.parameters['target_host']} is under-control: {current_state.controlled_hosts}")
             # Is the source host controlled?
-            if action.parameters["source_host"] in current.controlled_hosts:
-                logger.debug(f"\t\t\t {action.parameters['source_host']} is under-control: {current.controlled_hosts}")
+            if action.parameters["source_host"] in current_state.controlled_hosts:
+                logger.debug(f"\t\t\t {action.parameters['source_host']} is under-control: {current_state.controlled_hosts}")
                 # Is the source host in the list of hosts we know data from? (this is to avoid the keyerror later in the if)
                 # Does the current state for THIS source already know about this data?
                 if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
-                    if action.parameters['source_host'] in current.known_data.keys() and action.parameters["data"] in current.known_data[action.parameters["source_host"]]:
+                    if action.parameters['source_host'] in current_state.known_data.keys() and action.parameters["data"] in current_state.known_data[action.parameters["source_host"]]:
                         # Does the source host have any data?
                         if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
                             # Does the source host have this data?
@@ -776,16 +710,16 @@ class NetworkSecurityEnvironment(object):
                 logger.debug("\t\t\tCan not exfiltrate. Source host is not controlled.")
         else:
             logger.debug("\t\t\tCan not exfiltrate. Target host is not controlled.")
-        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_exploit_service_action(self, current:components.GameState, action:components.Action)->components.GameState:
+    def _execute_exploit_service_action(self, current_state:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the ExploitService action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
         # We don't check if the target is a known_host because it can be a blind attempt to attack
         logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
-        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
+        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             if action.parameters["target_host"] in self._ip_to_hostname: #is it existing IP?
                 if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
                     if self._ip_to_hostname[action.parameters["target_host"]] in self._services: #does it have any services?
@@ -813,13 +747,67 @@ class NetworkSecurityEnvironment(object):
                 logger.debug("\t\t\tCan not exploit. Target host does not exist.")
         else:
             logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_scan_network_action_real_world(self, current:components.GameState, action:components.Action)->components.GameState:
+    def _execute_block_ip_action(self, current_state, action):
+        """
+        Executes the BlockIP action 
+        - The action has BlockIP("target_host": IP object, "source_host": IP object, "blocked_host": IP object)
+        - The target host is the host where the blocking will be applied (the FW)
+        - The source host is the host that the agent uses to connect to the target host. A host that must be controlled by the agent
+        - The blocked host is the host that will be included in the FW list to be blocked.
+
+        Logic:
+        - Check if the agent controls the source host
+        - Check if the agent controls the target host
+        - Add the rule to the FW list
+        - Update the state
+        """
+        blocked_host = action.parameters['blocked_host']
+
+        next_nets, next_known_h, next_controlled_h, next_services, next_blocked, next_blocked = self._state_parts_deep_copy(current_state)
+        logger.info(f"\t\tBlockIP {action.parameters['target_host']}")
+        # Is the src in the controlled hosts?
+        if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
+            # Is the target in the controlled hosts?
+            if "target_host" in action.parameters.keys() and action.parameters["target_host"] in current_state.controlled_hosts:
+                # For now there is only one FW in the main router, but this should change in the future. 
+                # This means we ignore the 'target_host' that would be the router where this is applied.
+
+                # Stop the blocked host to connect _to_ any other IP
+                try:
+                    self._firewall[blocked_host] = set()
+                except KeyError:
+                    # The blocked_host host was not in the list
+                    pass
+                # Stop the other hosts to connect _to the blocked_host_
+                for host in self._firewall.keys():
+                    try:
+                        self._firewall[host].remove(blocked_host)
+                    except KeyError:
+                        # The blocked_host host was not in the list
+                        pass
+                # Update the state of blocked ips. It is a dict with key target_host and a set with blocked hosts inside
+                new_blocked = set()
+                # Store the blocked host IP in the set of blocked hosts
+                new_blocked.add(action.parameters["blocked_host"])
+                if len(new_blocked) > 0:
+                    if action.parameters["target_host"] not in next_blocked.keys():
+                        next_blocked[action.parameters["target_host"]] = new_blocked
+                    else:
+                        next_blocked[action.parameters["target_host"]] = next_blocked[action.parameters["target_host"]].union(new_blocked)
+            else:
+                logger.info(f"\t\t\t Invalid target_host:'{action.parameters['target_host']}'")
+        else:
+            logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_blocked, next_nets, next_blocked)
+
+
+    def _execute_scan_network_action_real_world(self, current_state:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the ScanNetwork action in the the real world
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
         logger.info(f"\t\tScanning {action.parameters['target_network']} in real world.")
         nmap_file_xml = 'nmap-result.xml'
         command = f"nmap -sn {action.parameters['target_network']} -oX {nmap_file_xml}"
@@ -851,13 +839,13 @@ class NetworkSecurityEnvironment(object):
             logger.debug(f"\t\t\tAdding {ip} to new_ips. {status}, {mac_address}, {vendor}")
             new_ips.add(ip)
         next_known_h = next_known_h.union(new_ips)
-        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_find_services_action_real_world(self, current:components.GameState, action:components.Action)->components.GameState:
+    def _execute_find_services_action_real_world(self, current_state:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the FindServices action in the real world
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data = self._state_parts_deep_copy(current)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
         logger.info(f"\t\tScanning ports in {action.parameters['target_host']} in real world.")
         nmap_file_xml = 'nmap-result.xml'
         command = f"nmap -sT -n {action.parameters['target_host']} -oX {nmap_file_xml}"
@@ -893,8 +881,7 @@ class NetworkSecurityEnvironment(object):
             logger.info(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
             next_known_h.add(action.parameters["target_host"])
             next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
-    
-        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets)
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
     def create_state_from_view(self, view:dict, add_neighboring_nets=True)->components.GameState:
         """
@@ -958,7 +945,7 @@ class NetworkSecurityEnvironment(object):
         for ip, data_list in view["known_data"]:
             known_data[self._ip_mapping[ip]] = data_list
         game_state = components.GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
-        logger.info(f"Generated GS:{game_state}")
+        logger.info(f"Generated GameState:{game_state}")
         return game_state
 
     def re_map_goal_dict(self, goal_dict)->dict:
@@ -971,7 +958,8 @@ class NetworkSecurityEnvironment(object):
             "known_hosts":set(),
             "controlled_hosts":set(),
             "known_services": {},
-            "known_data": {}
+            "known_data": {},
+            "known_blocks": {}
         }
         for net in goal_dict["known_networks"]:
             if net in self._network_mapping:
@@ -1003,6 +991,12 @@ class NetworkSecurityEnvironment(object):
             else:
                 # Unknown IP, do not map
                 new_dict["known_data"][host] = items
+        for host, items in goal_dict["known_blocks"].items():
+            if host in self._ip_mapping:
+                new_dict["known_blocks"][self._ip_mapping[host]] = items
+            else:
+                # Unknown IP, do not map
+                new_dict["known_blocks"][host] = items
         return new_dict    
 
     def update_goal_descriptions(self, goal_description):
@@ -1017,28 +1011,36 @@ class NetworkSecurityEnvironment(object):
     #         with open(filename, "w") as outfile:
     #             json.dump(self._trajectories, outfile)
         
-    # def save_trajectories(self, trajectory_filename=None):
-    #     steps = []
-    #     for state,action,reward,next_state in self._episode_replay_buffer:
-    #         steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
-    #     goal_state = components.GameState(
-    #         known_hosts=self._goal_conditions["known_hosts"],
-    #         known_networks=self._goal_conditions["known_networks"],
-    #         controlled_hosts=self._goal_conditions["controlled_hosts"],
-    #         known_services=self._goal_conditions["known_services"],
-    #         known_data=self._goal_conditions["known_data"]
-    #     )
-    #     trajectory = {
-    #         "goal": goal_state.as_dict,
-    #         "end_reason":self._end_reason,
-    #         "trajectory":steps
-    #     }
-    #     if not trajectory_filename:
-    #         trajectory_filename = "NSG_trajectories.json"
-    #     if trajectory["end_reason"]:
-    #         self._trajectories.append(trajectory)
-    #         logger.info("Saving trajectories")
-    #         self.store_trajectories_to_file(trajectory_filename)
+    def save_trajectories(self, trajectory_filename=None):
+        steps = []
+        for state, action, reward, next_state in self._episode_replay_buffer:
+            steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
+
+        # Store all the goals of all the agents types
+        # This is not working anymore for now, since there is no easy way to get all the goals of all the
+        # types of attackers and add them to the dict
+        # goals_dics = {}
+        # for type_of_agent in xxx:
+            # goal_state = components.GameState(
+                # known_hosts = self._attacker_goal_conditions["known_hosts"],
+                # known_networks = self._attacker_goal_conditions["known_networks"],
+                # controlled_hosts = self._attacker_goal_conditions["controlled_hosts"],
+                # known_services = self._attacker_goal_conditions["known_services"],
+                # known_data = self._attacker_goal_conditions["known_data"]
+            # )
+            # goals_dics[type_of_agent] = goal_state.as_dict
+
+        trajectory = {
+            # "goals": goals_dics,
+            "end_reason":self._end_reason,
+            "trajectory":steps
+        }
+        if not trajectory_filename:
+            trajectory_filename = "NSG_trajectories.json"
+        if trajectory["end_reason"]:
+            self._trajectories.append(trajectory)
+            logger.info("Saving trajectories")
+            self.store_trajectories_to_file(trajectory_filename)
     
     def reset(self, trajectory_filename=None)->None: 
         """
@@ -1062,7 +1064,6 @@ class NetworkSecurityEnvironment(object):
       
 
         self._actions_played = []
-        self._defender.reset()
 
     def step(self, state:components.GameState, action:components.Action, agent_id:tuple,action_type='netsecenv')-> components.GameState:
         """
@@ -1070,15 +1071,14 @@ class NetworkSecurityEnvironment(object):
         in: action
         out: observation of the state of the env
         """
-        logger.info(f"Agent's action: {action}")
+        logger.info(f"Agent {agent_id}. Action: {action}")
         # Reward for taking an action
         reward = self._rewards["step"]
-        self._actions_played.append(action)
 
         # 1. Perform the action
         self._actions_played.append(action)
         if random.random() <= action.type.default_success_p or action_type == 'realworld':
-            next_state = self._execute_action(state, action, action_type=action_type)
+            next_state = self._execute_action(state, action, agent_id, action_type=action_type)
         else:
             logger.info("\tAction NOT sucessful")
             next_state = state
