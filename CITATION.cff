@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+title: >-
+  NetSecGame, a RL env for training and evaluating AI agents in network security tasks.
+message: 'If you use this software, please cite it as below.'
+type: software
+url: "https://github.com/stratosphereips/NetSecGame"
+authors:
+  - given-names: Sebastian
+    family-names: Garcia
+    email: sebastian.garcia@agents.fel.cvut.cz
+    affiliation: >-
+      Stratosphere Laboratory, AIC, FEL, Czech
+      Technical University in Prague
+    orcid: 'https://orcid.org/0000-0001-6238-9910'
+  - given-names: Ondrej
+    family-names: Lukas
+    email: ondrej.lukas@aic.fel.cvut.cz
+    affiliation: >-
+      Stratosphere Laboratory, AIC, FEL, Czech
+      Technical University in Prague
+    orcid: 'https://orcid.org/0000-0002-7922-8301'
+  - given-names: Maria
+    family-names: Rigaki
+    email: maria.rigaki@aic.fel.cvut.cz
+    affiliation: >-
+      Stratosphere Laboratory, AIC, FEL, Czech
+      Technical University in Prague
+    orcid: 'https://orcid.org/0000-0002-0688-7752'
+  - given-names: Carlos
+    family-names: Catania
+    email: carlos.catania@ingenieria.uncuyo.edu.ar
+    affiliation: >-
+      LABSIN - Computer Science Department, School of Engineering, Uncuyo University
+    orcid: 'https://orcid.org/0000-0002-1749-310X'

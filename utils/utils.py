@@ -413,12 +413,12 @@ class ConfigParser():
             use_dynamic_addresses = False
         return bool(use_dynamic_addresses)
 
-    def get_store_replay_buffer(self):
+    def get_store_trajectories(self):
         """
         Read if the replay buffer should be stored in file
         """
         try:
-            store_rb = self.config['env']['store_replay_buffer']
+            store_rb = self.config['env']['save_trajectories']
         except KeyError:
             # Option is not in the configuration - default to FALSE
             store_rb = False

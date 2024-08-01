@@ -11,7 +11,6 @@ from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, E
 import numpy as np
 import logging
 from faker import Faker
-import json
 from utils.utils import ConfigParser
 import subprocess
 import xml.etree.ElementTree as ElementTree
@@ -79,14 +78,14 @@ class NetworkSecurityEnvironment(object):
             logger.info("Dynamic change of the IP and network addresses enabled")
             self._faker_object = Faker()
             Faker.seed(seed)
-        # read if replay buffer should be store on disc
-        if self.task_config.get_store_replay_buffer():
-            logger.info("Storing of replay buffer enabled")
-            self._episode_replay_buffer = []
-            self._trajectories = []
-        else:
-            logger.info("Storing of replay buffer disabled")
-            self._episode_replay_buffer = None
+        # # read if replay buffer should be store on disc
+        # if self.task_config.get_store_replay_buffer():
+        #     logger.info("Storing of replay buffer enabled")
+        #     self._episode_replay_buffer = []
+        #     self._trajectories = []
+        # else:
+        #     logger.info("Storing of replay buffer disabled")
+        self._episode_replay_buffer = None
 
         # Make a copy of data placements so it is possible to reset to it when episode ends
         self._data_original = copy.deepcopy(self._data)
@@ -1006,11 +1005,11 @@ class NetworkSecurityEnvironment(object):
             new_description = new_description.replace(str(ip), str(self._ip_mapping[ip]))
         return new_description
     
-    def store_trajectories_to_file(self, filename:str)->None:
-        if self._trajectories:
-            logger.info(f"Saving trajectories to '{filename}'")
-            with open(filename, "w") as outfile:
-                json.dump(self._trajectories, outfile)
+    # def store_trajectories_to_file(self, filename:str)->None:
+    #     if self._trajectories:
+    #         logger.info(f"Saving trajectories to '{filename}'")
+    #         with open(filename, "w") as outfile:
+    #             json.dump(self._trajectories, outfile)
         
     def save_trajectories(self, trajectory_filename=None):
         steps = []
