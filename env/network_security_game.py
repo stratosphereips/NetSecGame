@@ -107,7 +107,6 @@ class NetworkSecurityEnvironment(object):
         return len(self.get_all_actions())
     
     def get_all_states(self):
-        import itertools
         def all_combs(data):
             combs = []
             for i in range(1, len(data)+1):
@@ -592,6 +591,7 @@ class NetworkSecurityEnvironment(object):
         next_controlled_h = copy.deepcopy(current.controlled_hosts)
         next_services = copy.deepcopy(current.known_services)
         next_data = copy.deepcopy(current.known_data)
+        next_blocked = copy.deepcopy(current.known_blocked)
         return next_nets, next_known_h, next_controlled_h, next_services, next_data
 
     def _firewall_check(self, src_ip:components.IP, dst_ip:components.IP)->bool:
