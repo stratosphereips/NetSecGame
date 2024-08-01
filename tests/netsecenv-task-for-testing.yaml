@@ -15,7 +15,6 @@ coordinator:
         known_services: {}
         known_data: {213.47.23.195: [[User1,DatabaseData]]}
         known_blocks: {}
-
       start_position:
         known_networks: []
         known_hosts: []
@@ -26,7 +25,6 @@ coordinator:
         # Same format as before
         known_data: {}
         known_blocks: {}
-
     Defender:
       goal:
         description: "Block all attackers"
