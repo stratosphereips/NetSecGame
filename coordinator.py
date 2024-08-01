@@ -509,6 +509,7 @@ class Coordinator:
         goal_reached["controlled_hosts"] = set(goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
         goal_reached["services"] = goal_dict_satistfied(goal_conditions["known_services"], state.known_services)
         goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
+        goal_reached["known_blocks"] = goal_dict_satistfied(goal_conditions["known_blocks"], state.known_blocks)
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
