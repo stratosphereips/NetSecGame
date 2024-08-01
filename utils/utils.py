@@ -9,7 +9,7 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
-from env.game_components import IP, Data, Network, Service, GameState, Action, ActionType, Observation
+from env.game_components import IP, Data, Network, Service, GameState, Action, Observation
 import netaddr
 import logging
 import csv
@@ -157,10 +157,10 @@ class ConfigParser():
             try:
                 # Check the host is a good ip
                 _ = netaddr.IPAddress(target_host)
-                target_host_IP = IP(target_host)
+                target_host_ip = IP(target_host)
                 for known_blocked_host in dict_blocked_hosts.values():
-                    known_blocked_host_IP = IP(known_blocked_host)
-                    known_blocks[target_host_IP].append(known_blocked_host_IP)
+                    known_blocked_host_ip = IP(known_blocked_host)
+                    known_blocks[target_host_ip].append(known_blocked_host_ip)
             except (ValueError, netaddr.AddrFormatError):
                 if target_host.lower() == "all_routers":
                     known_blocks["all_routers"] = dict_blocked_hosts
