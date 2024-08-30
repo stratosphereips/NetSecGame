@@ -100,6 +100,7 @@ def parse_action(log_line: str, model_type) -> dict:
             action_dict.pop("action", None)
             action_dict.pop("parameters", None)
         except:
+            # print(json_string)
             return {}
 
         if action_dict["type"] == "ActionType.ExploitService":
