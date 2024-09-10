@@ -16,8 +16,10 @@ def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
     for play in game_plays:
         if end_reason and play["end_reason"] not in end_reason:
             continue
+        if len(play["trajectory"]["actions"]) == 0:
+            continue
         state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][0]))
-        print(f'Trajectory len: {len(play["trajectory"]["actions"])}')
+        #print(f'Trajectory len: {len(play["trajectory"]["actions"])}')
         for i in range(1, len(play["trajectory"]["actions"])):
             next_state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i]))
             action = Action.from_dict((play["trajectory"]["actions"][i]))
@@ -110,8 +112,8 @@ if __name__ == '__main__':
     get_graph_stats(graph_t2, state_to_id, action_to_id)
 
     a_edges, d_edges, a_nodes, d_nodes = get_graph_modificiation(graph_t1, graph_t2)
-    print(len(a_edges), len(d_edges), len(a_nodes), len(d_nodes))
-    print("positions of same states:")
-    for node in node_set(graph_t1).intersection(node_set(graph_t2)):
-        print(g1_timestaps[node], g2_timestaps[node])
-        print("-----------------------")
+    print(f"AE:{len(a_edges)},DE:{len(d_edges)}, AN:{len(a_nodes)},DN:{len(d_nodes)}")
+    # print("positions of same states:")
+    # for node in node_set(graph_t1).intersection(node_set(graph_t2)):
+    #     print(g1_timestaps[node], g2_timestaps[node])
+    #     print("-----------------------")
