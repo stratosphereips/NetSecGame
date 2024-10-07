@@ -800,7 +800,7 @@ class NetworkSecurityEnvironment(object):
                 logger.info(f"\t\t\t Invalid target_host:'{action.parameters['target_host']}'")
         else:
             logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return components.GameState(next_controlled_h, next_known_h, next_services, next_blocked, next_nets, next_blocked)
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
 
     def _execute_scan_network_action_real_world(self, current_state:components.GameState, action:components.Action)->components.GameState:
