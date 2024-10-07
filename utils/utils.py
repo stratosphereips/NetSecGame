@@ -153,19 +153,29 @@ class ConfigParser():
         """
         known_blocks_conf = self.config["coordinator"]['agents'][type_agent][type_data]['known_blocks']
         known_blocks = {}
-        for target_host, dict_blocked_hosts in known_blocks_conf.items():
+        for target_host, block_list in known_blocks_conf.items():
             try:
-                # Check the host is a good ip
-                _ = netaddr.IPAddress(target_host)
-                target_host_ip = IP(target_host)
-                for known_blocked_host in dict_blocked_hosts.values():
-                    known_blocked_host_ip = IP(known_blocked_host)
-                    known_blocks[target_host_ip].append(known_blocked_host_ip)
-            except (ValueError, netaddr.AddrFormatError):
-                if target_host.lower() == "all_routers":
-                    known_blocks["all_routers"] = dict_blocked_hosts
-            except (ValueError):
-                known_blocks = {}
+                target_host  = IP(target_host)
+            except ValueError:
+                self.logger.error(f"Error when converting {target_host} to IP address object")
+            if isinstance(block_list,list):
+                known_blocks[target_host] = map(lambda x: IP(x), block_list)
+            elif block_list == "all_attackers":
+                known_blocks[target_host] = block_list
+            else:
+                raise ValueError(f"Unsupported value in 'known_blocks': {known_blocks_conf}")
+            # try:
+            #     # Check the host is a good ip
+            #     _ = netaddr.IPAddress(target_host)
+            #     target_host_ip = IP(target_host)
+            #     for known_blocked_host in dict_blocked_hosts.values():
+            #         known_blocked_host_ip = IP(known_blocked_host)
+            #         known_blocks[target_host_ip].append(known_blocked_host_ip)
+            # except (ValueError, netaddr.AddrFormatError):
+            #     if target_host.lower() == "all_routers":
+            #         known_blocks["all_routers"] = dict_blocked_hosts
+            # except (ValueError):
+            #     known_blocks = {}
         return known_blocks
     
     def read_agents_known_services(self, type_agent: str, type_data: str) -> dict:
@@ -218,8 +228,14 @@ class ConfigParser():
             try:
                 _ = netaddr.IPAddress(ip)
                 known_hosts.add(IP(ip))
-            except (ValueError, netaddr.AddrFormatError):
-                self.logger('Configuration problem with the known hosts')
+            except (ValueError, netaddr.AddrFormatError) as e :
+                if ip == 'random':
+                    # A random start ip was asked for
+                    known_hosts.add('random')
+                elif ip == 'all_local':
+                    known_hosts.add('all_local')
+                else:
+                    self.logger.error(f'Configuration problem with the known hosts: {e}')
         return known_hosts
 
     def read_agents_controlled_hosts(self, type_agent: str, type_data: str) -> dict:
@@ -232,12 +248,14 @@ class ConfigParser():
             try:
                 _ = netaddr.IPAddress(ip)
                 controlled_hosts.add(IP(ip))
-            except (ValueError, netaddr.AddrFormatError):
+            except (ValueError, netaddr.AddrFormatError) as e:
                 if ip == 'random' :
                     # A random start ip was asked for
                     controlled_hosts.add('random')
+                elif ip == 'all_local':
+                    controlled_hosts.add('all_local')
                 else:
-                    self.logger('Configuration problem with the known hosts')
+                    self.logger.error(f'Configuration problem with the controlled hosts: {e}')
         return controlled_hosts
 
     def get_player_win_conditions(self, type_of_player):
@@ -262,6 +280,9 @@ class ConfigParser():
 
         # Goal data
         known_data = self.read_agents_known_data(type_of_player, 'goal')
+
+        # Blocks
+        known_blocks = self.read_agents_known_blocks(type_of_player, 'goal')
 
         player_goal = {}
         player_goal['known_networks'] = known_networks
@@ -307,7 +328,7 @@ class ConfigParser():
             case "Attacker":
                 return self.get_player_start_position(agent_role)
             case "Defender":
-                return {}
+                return self.get_player_start_position(agent_role)
             case "Benign":
                 return {
                     'known_networks': set(),
@@ -356,7 +377,10 @@ class ConfigParser():
                 except KeyError:
                     description = ""
             case "Defender":
-                description = ""
+                try:
+                    description = self.config['coordinator']['agents'][agent_role]["goal"]["description"]
+                except KeyError:
+                    description = ""
             case "Benign":
                 description = ""
             case _:
