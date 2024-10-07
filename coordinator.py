@@ -90,7 +90,14 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         self.max_connections = max_connections
         self.current_connections = 0
         self.logger = logging.getLogger("AIDojo-Server")
+        self._stop = False
 
+    def close(self)->None:
+        self.logger.info(
+           "Stopping server"
+        )
+        self._stop = True
+    
     async def handle_new_agent(self, reader, writer):
         async def send_data_to_agent(writer, data: str) -> None:
             """
@@ -113,7 +120,7 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         try:
             addr = writer.get_extra_info("peername")
             self.logger.info(f"New agent connected: {addr}")
-            while True:
+            while not self._stop:
                 data = await reader.read(500)
                 raw_message = data.decode().strip()
                 if len(raw_message):
@@ -151,6 +158,9 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         finally:
             # Decrement the count of current connections
             self.current_connections -= 1
+            writer.close()
+            return
+            
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
 
@@ -188,7 +198,8 @@ class Coordinator:
     @property
     def episode_end(self)->bool:
         # Terminate episode if at least one player wins or reaches the timeout
-        return any(self._agent_episode_ends.values())
+        self.logger.debug(f"End evaluation: {self._agent_episode_ends.values()}")
+        return all(self._agent_episode_ends.values())
     
     def convert_msg_dict_to_json(self, msg_dict)->str:
             try:
@@ -604,7 +615,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=str,
-        default="WARNING",
+        default="INFO",
     )
 
     args = parser.parse_args()
