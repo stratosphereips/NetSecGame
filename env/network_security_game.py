@@ -765,7 +765,7 @@ class NetworkSecurityEnvironment(object):
         """
         blocked_host = action.parameters['blocked_host']
 
-        next_nets, next_known_h, next_controlled_h, next_services, next_blocked, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
         logger.info(f"\t\tBlockIP {action.parameters['target_host']}")
         # Is the src in the controlled hosts?
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
@@ -800,7 +800,7 @@ class NetworkSecurityEnvironment(object):
                 logger.info(f"\t\t\t Invalid target_host:'{action.parameters['target_host']}'")
         else:
             logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return components.GameState(next_controlled_h, next_known_h, next_services, next_blocked, next_nets, next_blocked)
+        return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
 
     def _execute_scan_network_action_real_world(self, current_state:components.GameState, action:components.Action)->components.GameState:
@@ -883,6 +883,15 @@ class NetworkSecurityEnvironment(object):
             next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
         return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
+    def _get_all_local_ips(self)->set:
+        local_ips = set()
+        for net, ips in self._networks.items():
+            if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+                for ip in ips:
+                    local_ips.add(self._ip_mapping[ip])
+        logger.info(f"\t\t\tLocal ips: {local_ips}")
+        return local_ips
+
     def create_state_from_view(self, view:dict, add_neighboring_nets=True)->components.GameState:
         """
         Builds a GameState from given view.
@@ -908,6 +917,10 @@ class NetworkSecurityEnvironment(object):
                 selected = random.choice(self.hosts_to_start)
                 controlled_hosts.add(selected)
                 logger.info(f'\t\tMaking agent start in {selected}')
+            elif host == "all_local":
+                # all local ips
+                logger.info('\t\tAdding all local hosts to agent')
+                controlled_hosts = controlled_hosts.union(self._get_all_local_ips())
             else:
                 logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {host}")
         # re-map all known based on current mapping in self._ip_mapping
@@ -1004,31 +1017,11 @@ class NetworkSecurityEnvironment(object):
         for ip in self._ip_mapping:
             new_description = new_description.replace(str(ip), str(self._ip_mapping[ip]))
         return new_description
-    
-    # def store_trajectories_to_file(self, filename:str)->None:
-    #     if self._trajectories:
-    #         logger.info(f"Saving trajectories to '{filename}'")
-    #         with open(filename, "w") as outfile:
-    #             json.dump(self._trajectories, outfile)
         
     def save_trajectories(self, trajectory_filename=None):
         steps = []
         for state, action, reward, next_state in self._episode_replay_buffer:
             steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
-
-        # Store all the goals of all the agents types
-        # This is not working anymore for now, since there is no easy way to get all the goals of all the
-        # types of attackers and add them to the dict
-        # goals_dics = {}
-        # for type_of_agent in xxx:
-            # goal_state = components.GameState(
-                # known_hosts = self._attacker_goal_conditions["known_hosts"],
-                # known_networks = self._attacker_goal_conditions["known_networks"],
-                # controlled_hosts = self._attacker_goal_conditions["controlled_hosts"],
-                # known_services = self._attacker_goal_conditions["known_services"],
-                # known_data = self._attacker_goal_conditions["known_data"]
-            # )
-            # goals_dics[type_of_agent] = goal_state.as_dict
 
         trajectory = {
             # "goals": goals_dics,
