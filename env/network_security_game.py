@@ -765,7 +765,7 @@ class NetworkSecurityEnvironment(object):
         """
         blocked_host = action.parameters['blocked_host']
 
-        next_nets, next_known_h, next_controlled_h, next_services, next_blocked, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
         logger.info(f"\t\tBlockIP {action.parameters['target_host']}")
         # Is the src in the controlled hosts?
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
@@ -920,7 +920,7 @@ class NetworkSecurityEnvironment(object):
             elif host == "all_local":
                 # all local ips
                 logger.info('\t\tAdding all local hosts to agent')
-                controlled_hosts.union(self._get_all_local_ips())
+                controlled_hosts = controlled_hosts.union(self._get_all_local_ips())
             else:
                 logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {host}")
         # re-map all known based on current mapping in self._ip_mapping
@@ -1017,8 +1017,6 @@ class NetworkSecurityEnvironment(object):
         for ip in self._ip_mapping:
             new_description = new_description.replace(str(ip), str(self._ip_mapping[ip]))
         return new_description
-    
-
         
     def save_trajectories(self, trajectory_filename=None):
         steps = []
