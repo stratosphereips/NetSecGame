@@ -420,7 +420,7 @@ class GameState():
             known_services = {IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
                 for s in services} for k,services in data_dict["known_services"].items()},  
             known_data = {IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in data_dict["known_data"].items()},
-            known_blocks = {IP(target_host):{IP(blocked_host) for blocked_host in blocked_hosts} for target_host, blocked_hosts in data_dict["known_blocks"].items()}
+            known_blocks = {IP(target_host):{IP(blocked_host["ip"]) for blocked_host in blocked_hosts} for target_host, blocked_hosts in data_dict["known_blocks"].items()}
                 )
         return state
 
