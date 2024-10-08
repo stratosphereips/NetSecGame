@@ -14,8 +14,6 @@ from env.aidojo_world import AIDojoWorld
 import subprocess
 import xml.etree.ElementTree as ElementTree
 
- 
-
 class NetworkSecurityEnvironment(AIDojoWorld):
     """
     Class to manage the whole network security game
@@ -993,7 +991,11 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         return next_state
 
 class NetworkSecurityEnvironmentRealWorld(NetworkSecurityEnvironment):
-    
+    """
+    Class to manage the whole network security game in the real world (current network)
+    It uses some Cyst libraries for the network topology
+    It presents a env environment to play
+    """
     def __init__(self, task_config_file, world_name="NetSecEnvRealWorld") -> None:
         super().__init__(task_config_file, world_name)
 
