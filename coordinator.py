@@ -479,7 +479,7 @@ class Coordinator:
             
             current_state = self._agent_states[agent_addr]
             # Build new Observation for the agent
-            self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr, self.world_type)
+            self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr)
             self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
 
             reward = self._world._rewards["step"]

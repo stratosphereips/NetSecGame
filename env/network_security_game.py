@@ -475,7 +475,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             self.logger.debug("Data content not found because target IP does not exists.")
         return content
     
-    def _execute_action(self, current_state:components.GameState, action:components.Action, agent_id, action_type='netsecenv')-> components.GameState:
+    def _execute_action(self, current_state:components.GameState, action:components.Action, agent_id)-> components.GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
@@ -489,15 +489,9 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         next_state = None
         match action.type:
             case components.ActionType.ScanNetwork:
-                if action_type == "realworld":
-                    next_state = self._execute_scan_network_action_real_world(current_state, action)
-                else:
-                    next_state = self._execute_scan_network_action(current_state, action)
-            case components.ActionType.FindServices:
-                if action_type == "realworld":
-                    next_state = self._execute_find_services_real_world(current_state, action)
-                else:
-                    next_state = self._execute_find_services_action(current_state, action)
+                next_state = self._execute_scan_network_action(current_state, action)
+            case components.ActionType.FindServices:   
+                next_state = self._execute_find_services_action(current_state, action)
             case components.ActionType.FindData:
                 next_state = self._execute_find_data_action(current_state, action)
             case components.ActionType.ExploitService:
@@ -960,7 +954,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
 
         self._actions_played = []
 
-    def step(self, state:components.GameState, action:components.Action, agent_id:tuple,action_type='netsecenv')-> components.GameState:
+    def step(self, state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
         """
         Take a step in the environment given an action
         in: action
@@ -972,8 +966,8 @@ class NetworkSecurityEnvironment(AIDojoWorld):
 
         # 1. Perform the action
         self._actions_played.append(action)
-        if random.random() <= action.type.default_success_p or action_type == 'realworld':
-            next_state = self._execute_action(state, action, agent_id, action_type=action_type)
+        if random.random() <= action.type.default_success_p:
+            next_state = self._execute_action(state, action, agent_id)
         else:
             self.logger.info("\tAction NOT sucessful")
             next_state = state
@@ -1079,7 +1073,7 @@ class NetworkSecurityEnvironmentRealWorld(NetworkSecurityEnvironment):
             next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
         return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _execute_action(self, current_state:components.GameState, action:components.Action, agent_id, action_type='netsecenv')-> components.GameState:
+    def _execute_action(self, current_state:components.GameState, action:components.Action, agent_id)-> components.GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
@@ -1112,7 +1106,7 @@ class NetworkSecurityEnvironmentRealWorld(NetworkSecurityEnvironment):
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
 
-    def step(self, state:components.GameState, action:components.Action, agent_id:tuple,action_type='netsecenv')-> components.GameState:
+    def step(self, state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
         """
         Take a step in the environment given an action
         in: action
@@ -1126,7 +1120,7 @@ class NetworkSecurityEnvironmentRealWorld(NetworkSecurityEnvironment):
         self._actions_played.append(action)
         
         # No randomness in action success - we are playing in real world
-        next_state = self._execute_action(state, action, agent_id, action_type=action_type)
+        next_state = self._execute_action(state, action, agent_id)
         
 
         
