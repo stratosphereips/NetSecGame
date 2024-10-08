@@ -22,13 +22,35 @@ class AIDojoWorld(object):
         self.logger = logging.getLogger(world_name)
 
     def step(current_state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
+        """
+        Executes given action in a current state of the environment and produces new GameState.
+        """
         raise NotImplementedError
 
     def create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->components.GameState:
+        """
+        Produces a GameState based on the view of the world.
+        """
         raise NotImplementedError
     
     def reset()->None:
+        """
+        Resets the world to its initial state.
+        """
         raise NotImplementedError
+
+    def update_goal_descriptions(self, goal_description:str)->str:
+       """
+       Takes the existing goal description (text) and updates it with respect to the world.
+       """
+       raise NotImplementedError
+    
+    def update_goal_dict(self, goal_dict:dict)->dict:
+        """
+        Takes the existing goal dict and updates it with respect to the world.
+        """
+        raise NotImplementedError
+    
 
 class NetworkSecurityEnvironment(AIDojoWorld):
     """
@@ -901,7 +923,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         self.logger.info(f"Generated GameState:{game_state}")
         return game_state
 
-    def re_map_goal_dict(self, goal_dict:dict)->dict:
+    def update_goal_dict(self, goal_dict:dict)->dict:
         """
         Updates goal dict based on the current values
         in self._network_mapping and self._ip_mapping.
