@@ -8,7 +8,8 @@ import logging
 import json
 import asyncio
 from datetime import datetime
-from env.network_security_game import NetworkSecurityEnvironment
+from env.network_security_game import NetworkSecurityEnvironment, NetworkSecurityEnvironmentRealWorld
+from env.aidojo_world import AIDojoWorld
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState
 from utils.utils import observation_as_dict, get_logging_level
 from pathlib import Path
@@ -164,15 +165,24 @@ class ConnectionLimitProtocol(asyncio.Protocol):
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
 
-
 class Coordinator:
     def __init__(self, actions_queue, answers_queue, net_sec_config, allowed_roles, world_type="netsecenv"):
+        # communication channels for asyncio
         self._actions_queue = actions_queue
         self._answers_queue = answers_queue
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
-        self._world = NetworkSecurityEnvironment(net_sec_config)
+        # world definition
+        match world_type:
+            case "netsecenv":
+                self._world = NetworkSecurityEnvironment(net_sec_config)
+            case "netsecenv-real-world":
+                self._world = NetworkSecurityEnvironmentRealWorld(net_sec_config)
+            case _:
+                self._world = AIDojoWorld(net_sec_config)
         self.world_type = world_type
+        
+        #  
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
@@ -335,7 +345,7 @@ class Coordinator:
         win_conditions = {}
         for agent_role in self.ALLOWED_ROLES:
             try:
-                win_conditions[agent_role] = self._world.re_map_goal_dict(
+                win_conditions[agent_role] = self._world.update_goal_dict(
                     self._world.task_config.get_win_conditions(agent_role=agent_role)
                 )
             except KeyError:
@@ -469,7 +479,7 @@ class Coordinator:
             
             current_state = self._agent_states[agent_addr]
             # Build new Observation for the agent
-            self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr, self.world_type)
+            self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr)
             self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
 
             reward = self._world._rewards["step"]
@@ -533,7 +543,7 @@ class Coordinator:
         self.logger.info(f"Goal check for {agent_addr}({self.agents[agent_addr][1]})")
         agents_state = self._agent_states[agent_addr]
         agent_role = self.agents[agent_addr][1]
-        win_condition = self._world.re_map_goal_dict(self._win_conditions_per_role[agent_role])
+        win_condition = self._world.update_goal_dict(self._win_conditions_per_role[agent_role])
         goal_check = self._check_goal(agents_state, win_condition)
         if goal_check:
             self.logger.info("\tGoal reached!")
