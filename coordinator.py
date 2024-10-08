@@ -9,6 +9,7 @@ import json
 import asyncio
 from datetime import datetime
 from env.network_security_game import NetworkSecurityEnvironment
+from env.aidojo_world import AIDojoWorld
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState
 from utils.utils import observation_as_dict, get_logging_level
 from pathlib import Path
@@ -172,7 +173,11 @@ class Coordinator:
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
         # world definition
-        self._world = NetworkSecurityEnvironment(net_sec_config)
+        match world_type:
+            case "netsecenv":
+                self._world = NetworkSecurityEnvironment(net_sec_config)
+            case _:
+                self._world = AIDojoWorld(net_sec_config)
         self.world_type = world_type
         #  
         self._starting_positions_per_role = self._get_starting_position_per_role()
