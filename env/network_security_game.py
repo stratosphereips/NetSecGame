@@ -95,10 +95,10 @@ class NetworkSecurityEnvironment(object):
         return self._seed
     
     @property
-    def num_actions(self):
+    def num_actions(self)->int:
         return len(self.get_all_actions())
     
-    def get_all_states(self):
+    def get_all_states(self)->set:
         def all_combs(data):
             combs = []
             for i in range(1, len(data)+1):
@@ -125,7 +125,7 @@ class NetworkSecurityEnvironment(object):
         print("\n",coms_data)
         return set(itertools.product(combs_nets, coms_known_h, coms_owned_h, coms_services, coms_data))
     
-    def get_all_actions(self):
+    def get_all_actions(self)->set:
         actions = set()
         
         # Network scans
@@ -679,7 +679,7 @@ class NetworkSecurityEnvironment(object):
             logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_block_ip_action(self, current_state, action):
+    def _execute_block_ip_action(self, current_state:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the BlockIP action 
         - The action has BlockIP("target_host": IP object, "source_host": IP object, "blocked_host": IP object)
@@ -821,7 +821,7 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"\t\t\tLocal ips: {local_ips}")
         return local_ips
 
-    def create_state_from_view(self, view:dict, add_neighboring_nets=True)->components.GameState:
+    def create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->components.GameState:
         """
         Builds a GameState from given view.
         If there is a keyword 'random' used, it is replaced by a valid option at random.
@@ -890,7 +890,7 @@ class NetworkSecurityEnvironment(object):
         logger.info(f"Generated GameState:{game_state}")
         return game_state
 
-    def re_map_goal_dict(self, goal_dict)->dict:
+    def re_map_goal_dict(self, goal_dict:dict)->dict:
         """
         Updates goal dict based on the current values
         in self._network_mapping and self._ip_mapping.
@@ -941,13 +941,13 @@ class NetworkSecurityEnvironment(object):
                 new_dict["known_blocks"][host] = items
         return new_dict    
 
-    def update_goal_descriptions(self, goal_description):
+    def update_goal_descriptions(self, goal_description:str)->str:
         new_description = goal_description
         for ip in self._ip_mapping:
             new_description = new_description.replace(str(ip), str(self._ip_mapping[ip]))
         return new_description
             
-    def reset(self, trajectory_filename=None)->None: 
+    def reset(self, trajectory_filename:str=None)->None: 
         """
         Function to reset the state of the game
         and prepare for a new episode
