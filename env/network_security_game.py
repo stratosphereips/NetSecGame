@@ -1095,12 +1095,16 @@ class NetworkSecurityEnvironmentRealWorld(NetworkSecurityEnvironment):
             case components.ActionType.FindServices:
                 next_state = self._execute_find_services_real_world(current_state, action)
             case components.ActionType.FindData:
+                # This Action type is not implemente in real world - use the simualtion
                 next_state = self._execute_find_data_action(current_state, action)
             case components.ActionType.ExploitService:
+                # This Action type is not implemente in real world - use the simualtion
                 next_state = self._execute_exploit_service_action(current_state, action)
             case components.ActionType.ExfiltrateData:
+                # This Action type is not implemente in real world - use the simualtion
                 next_state = self._execute_exfiltrate_data_action(current_state, action)
             case components.ActionType.BlockIP:
+                # This Action type is not implemente in real world - use the simualtion
                 next_state = self._execute_block_ip_action(current_state, action)
             case _:
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
