@@ -18,6 +18,19 @@ import xml.etree.ElementTree as ElementTree
 # Set the logging
 logger = logging.getLogger('Netsecenv')
 
+
+class AIDojoWorld(object):
+
+
+    def step(current_state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
+        raise NotImplementedError
+
+    def create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->components.GameState:
+        raise NotImplementedError
+    
+    def reset()->None:
+        raise NotImplementedError
+
 class NetworkSecurityEnvironment(object):
     """
     Class to manage the whole network security game
@@ -954,11 +967,11 @@ class NetworkSecurityEnvironment(object):
         """
         # write all steps in the episode replay buffer in the file
         logger.info('--- Reseting env to its initial state ---')
-        if self._episode_replay_buffer is not None:
-            # Save trajectories to file
-            self.save_trajectories(trajectory_filename)
-            # reset the replay buffer
-            self._episode_replay_buffer = [] 
+        # if self._episode_replay_buffer is not None:
+        #     # Save trajectories to file
+        #     self.save_trajectories(trajectory_filename)
+        #     # reset the replay buffer
+        #     self._episode_replay_buffer = [] 
         # change IPs if needed
         if self.task_config.get_use_dynamic_addresses():
             self._create_new_network_mapping()
