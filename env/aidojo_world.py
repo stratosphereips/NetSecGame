@@ -4,8 +4,12 @@ import env.game_components as components
 import logging
 from utils.utils import ConfigParser
 
+"""
+Basic class for worlds to be used in the AI Dojo.
+Every world (environment) used in AI Dojo should extend this class and implement
+all its methods to be compatible with the game server and game coordinator.
+"""
 class AIDojoWorld(object):
-
     def __init__(self, task_config_file:str, world_name:str)->None:
         self.task_config = ConfigParser(task_config_file)
         self.logger = logging.getLogger(world_name)
