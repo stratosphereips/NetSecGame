@@ -10,7 +10,7 @@ Every world (environment) used in AI Dojo should extend this class and implement
 all its methods to be compatible with the game server and game coordinator.
 """
 class AIDojoWorld(object):
-    def __init__(self, task_config_file:str, world_name:str)->None:
+    def __init__(self, task_config_file:str, world_name:str="BasicAIDojoWorld")->None:
         self.task_config = ConfigParser(task_config_file)
         self.logger = logging.getLogger(world_name)
 
