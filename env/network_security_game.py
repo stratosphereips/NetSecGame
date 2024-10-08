@@ -78,13 +78,6 @@ class NetworkSecurityEnvironment(object):
             logger.info("Dynamic change of the IP and network addresses enabled")
             self._faker_object = Faker()
             Faker.seed(seed)
-        # # read if replay buffer should be store on disc
-        # if self.task_config.get_store_replay_buffer():
-        #     logger.info("Storing of replay buffer enabled")
-        #     self._episode_replay_buffer = []
-        #     self._trajectories = []
-        # else:
-        #     logger.info("Storing of replay buffer disabled")
         self._episode_replay_buffer = None
 
         # Make a copy of data placements so it is possible to reset to it when episode ends
@@ -166,68 +159,68 @@ class NetworkSecurityEnvironment(object):
 
         return {k:v for k,v in enumerate(actions)}
     
-    def _process_win_conditions(self, win_conditions)->dict:
-        """
-        Method which analyses win_conditions and randomizes parts if required
-        """
-        logger.info("Processing win conditions")
-        updated_win_conditions = {}
+    # def _process_win_conditions(self, win_conditions)->dict:
+    #     """
+    #     Method which analyses win_conditions and randomizes parts if required
+    #     """
+    #     logger.info("Processing win conditions")
+    #     updated_win_conditions = {}
         
-        # networks
-        if win_conditions["known_networks"] == "random":
-            updated_win_conditions["known_networks"] = {random.choice(list(self._networks.keys()))}
-            logger.info("\t\tRadnomizing known_networks")
-        else:
-            updated_win_conditions["known_networks"] = copy.deepcopy(win_conditions["known_networks"])
-        logger.info(f"\tGoal known_networks: {updated_win_conditions['known_networks']}")
-        # known_hosts
-        if win_conditions["known_hosts"] == "random":
-            logger.info("\t\tRandomizing known_host")
-            updated_win_conditions["known_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
-        else:
-            updated_win_conditions["known_hosts"] = copy.deepcopy(win_conditions["known_hosts"])
-        logger.info(f"\tGoal known_hosts: {updated_win_conditions['known_hosts']}")
+    #     # networks
+    #     if win_conditions["known_networks"] == "random":
+    #         updated_win_conditions["known_networks"] = {random.choice(list(self._networks.keys()))}
+    #         logger.info("\t\tRadnomizing known_networks")
+    #     else:
+    #         updated_win_conditions["known_networks"] = copy.deepcopy(win_conditions["known_networks"])
+    #     logger.info(f"\tGoal known_networks: {updated_win_conditions['known_networks']}")
+    #     # known_hosts
+    #     if win_conditions["known_hosts"] == "random":
+    #         logger.info("\t\tRandomizing known_host")
+    #         updated_win_conditions["known_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
+    #     else:
+    #         updated_win_conditions["known_hosts"] = copy.deepcopy(win_conditions["known_hosts"])
+    #     logger.info(f"\tGoal known_hosts: {updated_win_conditions['known_hosts']}")
         
-        # controlled_hosts
-        if win_conditions["controlled_hosts"] == "random":
-            logger.info("\tRandomizing controlled_hots")
-            updated_win_conditions["controlled_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
-        else:
-            updated_win_conditions["controlled_hosts"] = copy.deepcopy(win_conditions["controlled_hosts"])
-        logger.info(f"\tGoal controlled_hosts: {updated_win_conditions['controlled_hosts']}")
+    #     # controlled_hosts
+    #     if win_conditions["controlled_hosts"] == "random":
+    #         logger.info("\tRandomizing controlled_hots")
+    #         updated_win_conditions["controlled_hosts"] = {random.choice(list(self._ip_to_hostname.keys()))}
+    #     else:
+    #         updated_win_conditions["controlled_hosts"] = copy.deepcopy(win_conditions["controlled_hosts"])
+    #     logger.info(f"\tGoal controlled_hosts: {updated_win_conditions['controlled_hosts']}")
         
-        # services
-        updated_win_conditions["known_services"] = {}
-        for host, service_list in win_conditions["known_services"].items():
-            # Was the position defined as random?
-            if isinstance(service_list, str) and service_list.lower() == "random":
-                available_services = []
-                for service in self._services[self._ip_to_hostname[host]]:
-                    available_services.append(components.Service(service.name, service.type, service.version, service.is_local))
-                logger.info(f"\tRandomizing known_services in {host}")
-                updated_win_conditions["known_services"][host] = random.choice(available_services)
-            else:
-                updated_win_conditions["known_services"][host] = copy.deepcopy(win_conditions["known_services"][host])
-        logger.info(f"\tGoal known_services: {updated_win_conditions['known_services']}")
+    #     # services
+    #     updated_win_conditions["known_services"] = {}
+    #     for host, service_list in win_conditions["known_services"].items():
+    #         # Was the position defined as random?
+    #         if isinstance(service_list, str) and service_list.lower() == "random":
+    #             available_services = []
+    #             for service in self._services[self._ip_to_hostname[host]]:
+    #                 available_services.append(components.Service(service.name, service.type, service.version, service.is_local))
+    #             logger.info(f"\tRandomizing known_services in {host}")
+    #             updated_win_conditions["known_services"][host] = random.choice(available_services)
+    #         else:
+    #             updated_win_conditions["known_services"][host] = copy.deepcopy(win_conditions["known_services"][host])
+    #     logger.info(f"\tGoal known_services: {updated_win_conditions['known_services']}")
         
-        # data
-        # prepare all available data if randomization is needed
-        available_data = set()
-        for data in self._data.values():
-            for datapoint in data:
-                available_data.add(components.Data(datapoint.owner, datapoint.id))
+    #     # data
+    #     # prepare all available data if randomization is needed
+    #     available_data = set()
+    #     for data in self._data.values():
+    #         for datapoint in data:
+    #             available_data.add(components.Data(datapoint.owner, datapoint.id))
         
-        updated_win_conditions["known_data"] = {}
-        for host, data_set in win_conditions["known_data"].items():
-            # Was random data required in this host?
-            if isinstance(data_set, str) and data_set.lower() == "random":
-                # From all available data, randomly pick the one that is going to be requested in this host
-                updated_win_conditions["known_data"][host] = {random.choice(list(available_data))}
-                logger.info(f"\tRandomizing known_data in {host}")
-            else:
-                updated_win_conditions["known_data"][host] = copy.deepcopy(win_conditions["known_data"][host])
-        logger.info(f"\tGoal known_data: {updated_win_conditions['known_data']}")
-        return updated_win_conditions
+    #     updated_win_conditions["known_data"] = {}
+    #     for host, data_set in win_conditions["known_data"].items():
+    #         # Was random data required in this host?
+    #         if isinstance(data_set, str) and data_set.lower() == "random":
+    #             # From all available data, randomly pick the one that is going to be requested in this host
+    #             updated_win_conditions["known_data"][host] = {random.choice(list(available_data))}
+    #             logger.info(f"\tRandomizing known_data in {host}")
+    #         else:
+    #             updated_win_conditions["known_data"][host] = copy.deepcopy(win_conditions["known_data"][host])
+    #     logger.info(f"\tGoal known_data: {updated_win_conditions['known_data']}")
+    #     return updated_win_conditions
 
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
@@ -802,7 +795,6 @@ class NetworkSecurityEnvironment(object):
             logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-
     def _execute_scan_network_action_real_world(self, current_state:components.GameState, action:components.Action)->components.GameState:
         """
         Executes the ScanNetwork action in the the real world
@@ -1018,22 +1010,22 @@ class NetworkSecurityEnvironment(object):
             new_description = new_description.replace(str(ip), str(self._ip_mapping[ip]))
         return new_description
         
-    def save_trajectories(self, trajectory_filename=None):
-        steps = []
-        for state, action, reward, next_state in self._episode_replay_buffer:
-            steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
+    # def save_trajectories(self, trajectory_filename=None):
+    #     steps = []
+    #     for state, action, reward, next_state in self._episode_replay_buffer:
+    #         steps.append({"s": state.as_dict, "a":action.as_dict, "r":reward, "s_next":next_state.as_dict})
 
-        trajectory = {
-            # "goals": goals_dics,
-            "end_reason":self._end_reason,
-            "trajectory":steps
-        }
-        if not trajectory_filename:
-            trajectory_filename = "NSG_trajectories.json"
-        if trajectory["end_reason"]:
-            self._trajectories.append(trajectory)
-            logger.info("Saving trajectories")
-            self.store_trajectories_to_file(trajectory_filename)
+    #     trajectory = {
+    #         # "goals": goals_dics,
+    #         "end_reason":self._end_reason,
+    #         "trajectory":steps
+    #     }
+    #     if not trajectory_filename:
+    #         trajectory_filename = "NSG_trajectories.json"
+    #     if trajectory["end_reason"]:
+    #         self._trajectories.append(trajectory)
+    #         logger.info("Saving trajectories")
+    #         self.store_trajectories_to_file(trajectory_filename)
     
     def reset(self, trajectory_filename=None)->None: 
         """
