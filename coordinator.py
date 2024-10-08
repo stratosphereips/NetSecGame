@@ -8,7 +8,8 @@ import logging
 import json
 import asyncio
 from datetime import datetime
-from env.network_security_game import NetworkSecurityEnvironment
+from env.network_security_game import NetworkSecurityEnvironment, NetworkSecurityEnvironmentRealWorld
+from env.aidojo_world import AIDojoWorld
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState
 from utils.utils import observation_as_dict, get_logging_level
 from pathlib import Path
@@ -90,7 +91,14 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         self.max_connections = max_connections
         self.current_connections = 0
         self.logger = logging.getLogger("AIDojo-Server")
+        self._stop = False
 
+    def close(self)->None:
+        self.logger.info(
+           "Stopping server"
+        )
+        self._stop = True
+    
     async def handle_new_agent(self, reader, writer):
         async def send_data_to_agent(writer, data: str) -> None:
             """
@@ -113,7 +121,7 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         try:
             addr = writer.get_extra_info("peername")
             self.logger.info(f"New agent connected: {addr}")
-            while True:
+            while not self._stop:
                 data = await reader.read(500)
                 raw_message = data.decode().strip()
                 if len(raw_message):
@@ -151,18 +159,30 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         finally:
             # Decrement the count of current connections
             self.current_connections -= 1
+            writer.close()
+            return
+            
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
 
-
 class Coordinator:
     def __init__(self, actions_queue, answers_queue, net_sec_config, allowed_roles, world_type="netsecenv"):
+        # communication channels for asyncio
         self._actions_queue = actions_queue
         self._answers_queue = answers_queue
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
-        self._world = NetworkSecurityEnvironment(net_sec_config)
+        # world definition
+        match world_type:
+            case "netsecenv":
+                self._world = NetworkSecurityEnvironment(net_sec_config)
+            case "netsecenv-real-world":
+                self._world = NetworkSecurityEnvironmentRealWorld(net_sec_config)
+            case _:
+                self._world = AIDojoWorld(net_sec_config)
         self.world_type = world_type
+        
+        #  
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
@@ -188,7 +208,8 @@ class Coordinator:
     @property
     def episode_end(self)->bool:
         # Terminate episode if at least one player wins or reaches the timeout
-        return any(self._agent_episode_ends.values())
+        self.logger.debug(f"End evaluation: {self._agent_episode_ends.values()}")
+        return all(self._agent_episode_ends.values())
     
     def convert_msg_dict_to_json(self, msg_dict)->str:
             try:
@@ -237,7 +258,7 @@ class Coordinator:
                             self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
                             if all(self._reset_requests.values()):
                                 # should we discard the queue here?
-                                self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q{self._answers_queue.empty()}")
+                                self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q:{self._answers_queue.empty()}")
                                 self._world.reset()
                                 self._get_goal_description_per_role()
                                 self._get_win_condition_per_role()
@@ -265,7 +286,7 @@ class Coordinator:
         except asyncio.CancelledError:
             self.logger.info("\tTerminating by CancelledError")
         except Exception as e:
-            self.logger.error(f"Exception in main_coordinator(): {e}")
+            self.logger.error(f"Exception in Class coordinator(): {e}")
             raise e
 
     def _initialize_new_player(self, agent_addr:tuple, agent_name:str, agent_role:str) -> Observation:
@@ -324,7 +345,7 @@ class Coordinator:
         win_conditions = {}
         for agent_role in self.ALLOWED_ROLES:
             try:
-                win_conditions[agent_role] = self._world.re_map_goal_dict(
+                win_conditions[agent_role] = self._world.update_goal_dict(
                     self._world.task_config.get_win_conditions(agent_role=agent_role)
                 )
             except KeyError:
@@ -458,7 +479,7 @@ class Coordinator:
             
             current_state = self._agent_states[agent_addr]
             # Build new Observation for the agent
-            self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr, self.world_type)
+            self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr)
             self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
 
             reward = self._world._rewards["step"]
@@ -522,10 +543,12 @@ class Coordinator:
         self.logger.info(f"Goal check for {agent_addr}({self.agents[agent_addr][1]})")
         agents_state = self._agent_states[agent_addr]
         agent_role = self.agents[agent_addr][1]
-        win_condition = self._world.re_map_goal_dict(self._win_conditions_per_role[agent_role])
+        win_condition = self._world.update_goal_dict(self._win_conditions_per_role[agent_role])
         goal_check = self._check_goal(agents_state, win_condition)
         if goal_check:
             self.logger.info("\tGoal reached!")
+        else:
+            self.logger.info("\tGoal not reached!")
         return goal_check
     
     def _check_goal(self, state:GameState, goal_conditions:dict)->bool:
@@ -556,6 +579,7 @@ class Coordinator:
         goal_reached["controlled_hosts"] = set(goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
         goal_reached["services"] = goal_dict_satistfied(goal_conditions["known_services"], state.known_services)
         goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
+        goal_reached["known_blocks"] = goal_dict_satistfied(goal_conditions["known_blocks"], state.known_blocks)
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
@@ -601,7 +625,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=str,
-        default="WARNING",
+        default="INFO",
     )
 
     args = parser.parse_args()

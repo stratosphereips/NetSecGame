@@ -133,7 +133,9 @@ class TestCoordinator:
             known_data={
                 IP("1.1.1.1"):[Data("Joe Doe", "password", 10, "txt")]
             },
-            known_networks=[Network("1.1.1.1","24")]
+            known_networks=[Network("1.1.1.1","24")],
+            known_blocks={}
+
         )
         win_conditions = {
             "known_networks":[],
@@ -144,7 +146,8 @@ class TestCoordinator:
             },
             "known_data":{
                 
-            }
+            },
+            "known_blocks":{}
         }
 
         assert coordinator_init._check_goal(game_state, win_conditions) is True
@@ -159,7 +162,8 @@ class TestCoordinator:
                 known_data={
                     IP("1.1.1.1"):[Data("Joe Doe", "password", 10, "txt")]
                 },
-                known_networks=[Network("1.1.1.1","24")]
+                known_networks=[Network("1.1.1.1","24")],
+                known_blocks={}
             )
             win_conditions = {
                 "known_networks":[],
@@ -170,7 +174,8 @@ class TestCoordinator:
                 },
                 "known_data":{
                     
-                }
+                },
+                "known_blocks":{}
             }
 
             assert coordinator_init._check_goal(game_state, win_conditions) is False
@@ -185,13 +190,15 @@ class TestCoordinator:
         known_data={
             IP("1.1.1.1"):[Data("Joe Doe", "password", 10, "txt")]
         },
-        known_networks=[Network("1.1.1.1","24")]
+        known_networks=[Network("1.1.1.1","24")],
+        known_blocks={}
         )
         win_conditions = {
             "known_networks":[],
             "known_hosts":[],
             "controlled_hosts":[],
             "known_services":{},
-            "known_data":{}
+            "known_data":{},
+            "known_blocks":{}
         }
         assert coordinator_init._check_goal(game_state, win_conditions) is True

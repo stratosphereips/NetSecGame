@@ -47,9 +47,8 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 
 ### Assumptions of the NetSecGame
 1. NetSecGame works with the closed-world assumption. Only the defined entities exist in the simulation.
-2. Actions have no `Delete` effect. No entity is removed from the environment, agents do not forget discovered assets.
-3. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
-
+2. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
+(From commit d6d4ac9, July 18th, 2024, the new action BlockIP removes controlled hosts from the state of others. So the state can get smaller)
 
 - The action FindServices finds the new services in a host. If in a subsequent call to FindServices there are less services, they completely replace the list of previous services found. That is, each list of services is the final one and no memory is retained of previous open services.
 
@@ -60,9 +59,19 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
 5. Playing `Find Services` can be used to discover hosts (if those have any active services)
 6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
+7. The `BlockIP` action needs its three parameters (Source host, Target host and Blocked host) to be in the controlled list of the Agent. 
 
 ### Actions for the defender
-In this version of the environment, the defender does not have actions, and it is not an agent. It is an omnipresent entity in the network that can detect actions from the attacker. This follows the logic that in real computer networks, the admins have tools that consume logs from all computers simultaneously, and they can detect actions from a central position (such as a SIEM). There are several modes of the defender (see [Task Configuration - Defender](#defender-configuration) for details.
+The defender does have the action to block an IP address in a target host. 
+
+There is no global defender anymore as there was before, because now it is a multi-agent system.
+
+The actions are:
+- BlockIP(). That takes as parameters:
+  - "target_host": IP object where the block will be applied.
+  - "source_host": IP object where this actions is executed from.
+  - "blocked_host": IP object to block in ANY direction as seen in the target_host.
+
 
 ### Starting the game
 The environment should be created prior strating the agents. The properties of the environment can be defined in a YAML file. The game server can be started by running:
@@ -147,7 +156,7 @@ Configuration of the attacking agents. Consists of two parts:
 Example attacker configuration:
 ```YAML
 agents:
-  attackers:
+  Attacker:
     goal:
       randomize_goal_every_episode: False
       known_networks: []
@@ -155,6 +164,7 @@ agents:
       controlled_hosts: []
       known_services: {192.168.1.3: [Local system, lanman server, 10.0.19041, False], 192.168.1.4: [Other system, SMB server, 21.2.39421, False]}
       known_data: {213.47.23.195: ["random"]}
+      known_blocks: {'all_routers': 'all_attackers'}
 
     start_position:
       known_networks: []
@@ -165,48 +175,38 @@ agents:
       # Services are defined as a target host where the service must be, and then a description in the form 'name,type,version,is_local'
       known_services: {}
       known_data: {}
+      known_blocks: {}
 ```
 ### Defender configuration (`defenders`)
-Definition of defending agent's properties. Currently, the defender is **NOT** a separate agent but it is considered part of the environment.
-`type` - Type of the defender. Three types are currently implemented:
-  1. `NoDefender` (default) - interation without defender
-  2. `StochasticDefender` - detections are based on ActionType probabilities (defined in the task configuraion, section `action_detetection_prob`).
-  3. `StochasticDefenderWithThreshold` - Modification of stochastic defender. Detection probabilities are used *IF* threasholds in the particular ActionType is reached. Thresholds are computed in time windows defined by `tw_size` (`tw_size=5` means that 5 previous actions are taken into account). If ratio of some ActionType within the timewindow is above the threshold, the probability defined in the task configuraion, section `action_detetection_prob` is used to determine if the action was detected. For action *BELOW* the thresholds, no detection is made. Additionally, thresholds for consecutive action type is defined in `consecutive_actions`. For example with
-```YAML
-  scan_network:
-    consecutive_actions: 2
-```
-if the agent uses action ScanNetwork (regardless of the parameters) twice or more, the detection can occur. Action types `FindData` and `exploit_service` have additional thresholds for repeated actions (with parameters) throughout the **WHOLE** episode (e.g. if action `<ActionType.FindData|{'target_host': 192.168.2.2}>` is played more than 2 with following configuration, the detection can happen based on the defined probability).  
+Currently, the defender **is** a separate agent.
+
+If you want to have an defender in the game, you need to connect a defender agent. If you don't want to have a defender, just don't use any.
 
 Example of defender configuration:
 ```YAML
-agents:
-  defenders:
-    type: 'StochasticWithThreshold'
-    tw_size: 5
-    thresholds:
-      scan_network:
-        consecutive_actions: 2
-        tw_ratio: 0.25
-      find_services:
-        consecutive_actions: 3
-        tw_ratio: 0.3
-      exploit_service:
-        repeated_actions_episode: 2
-        tw_ratio: 0.25
-      find_data:
-        tw_ratio: 0.5
-        repeated_actions_episode: 2
-      exfiltrate_data:
-        consecutive_actions: 2
-        tw_ratio: 0.25
-    action_detetection_prob:
-        scan_network: 0.05
-        find_services: 0.075
-        exploit_service: 0.1
-        find_data: 0.025
-        exfiltrate_data: 0.025
+   Defender:
+      goal:
+        description: "Block all attackers"
+        is_any_part_of_goal_random: False
+        known_networks: []
+        known_hosts: []
+        controlled_hosts: []
+        known_services: {}
+        known_data: {}
+        known_blocks: {'any_routers': 'all_attackers_controlled_hosts'}
+
+      start_position:
+        known_networks: [all_local]
+        known_hosts: [all_local]
+        controlled_hosts: [all_local]
+        known_services: {all_local}
+        known_data: {all_local}
+        blocked_ips: {}
+        known_blocks: {}
 ```
+
+As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In this example the goal of the defender is determined by a state where the known blocks can be applied in any router's firewall and must include all the controlled hosts of all the attackers. These are `magic` words that will push the coordinator to check these positions without reviling them to the defender.
+
 
 ## Definition of the network topology
 The network topology and rules are defined using a [CYST](https://pypi.org/project/cyst/) simulator configuration. Cyst defines a complex network configuration, and this environment does not use all Cyst features for now. CYST components currently used are:
