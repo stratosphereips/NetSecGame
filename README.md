@@ -33,7 +33,7 @@ python3 -m pip install -r requirements.txt
 ```
 
 ## Architecture
-The architecture of the environment can be seen [here](Architecture.md).
+The architecture of the environment can be seen [here](docs/Architecture.md).
 
 ## Components of the NetSecGame Environment
 The NetSecGame environment has several components in the following files:
