@@ -1079,7 +1079,7 @@ class NetworkSecurityEnvironmentRealWorld(NetworkSecurityEnvironment):
             next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
         return components.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _execute_action(self, current_state:components.GameState, action:components.Action, agent_id)-> components.GameState:
+    def _execute_action(self, current_state:components.GameState, action:components.Action, agent_id, action_type='netsecenv')-> components.GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
@@ -1095,7 +1095,7 @@ class NetworkSecurityEnvironmentRealWorld(NetworkSecurityEnvironment):
             case components.ActionType.ScanNetwork:
                     next_state = self._execute_scan_network_action_real_world(current_state, action)
             case components.ActionType.FindServices:
-                next_state = self._execute_find_services_real_world(current_state, action)
+                next_state = self._execute_find_services_action_real_world(current_state, action)
             case components.ActionType.FindData:
                 # This Action type is not implemente in real world - use the simualtion
                 next_state = self._execute_find_data_action(current_state, action)
