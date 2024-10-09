@@ -419,7 +419,7 @@ class Coordinator:
         self._store_trajectory_to_file(agent_addr)
         new_observation = Observation(self._agent_states[agent_addr], 0, self.episode_end, {})
         # reset trajectory
-        self._reset_trajectory(agent_addr)
+        self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         output_message_dict = {
             "to_agent": agent_addr,
             "status": str(GameStatus.OK),
