@@ -664,6 +664,6 @@ if __name__ == "__main__":
     if task_config_file is None:
         raise KeyError("Task configuration must be provided to start the coordinator! Use -h for more details.")
     # Create AI Dojo
-    ai_dojo = AIDojo(host, port, task_config_file, world_type="netsecenv-real-world")
+    ai_dojo = AIDojo(host, port, task_config_file, world_type)
     # Run it!
     ai_dojo.run()
