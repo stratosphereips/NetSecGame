@@ -69,12 +69,7 @@ class AIDojo:
         stop = loop.create_future()
         
         # register the signal handler to the stopping event
-         # register the signal handler to the stopping event
-        def shutdown():
-            self.logger.info("Received exit signal, shutting down.")
-            stop.set_result(None)
-        loop.add_signal_handler(signal.SIGINT, shutdown)
-        loop.add_signal_handler(signal.SIGTERM, shutdown)
+        loop.add_signal_handler(signal.SIGINT, stop.set_result, None)
 
         await stop # Event that triggers stopping the AIDojo
         # Stop the server
@@ -458,7 +453,7 @@ class Coordinator:
                 writer.write(self._agent_trajectories[agent_addr])
             self.logger.info(f"Trajectory of {agent_addr} strored in {filename}")
     
-    def _reset_trajectory(self, agent_addr)->dict:
+    def _reset_trajectory(self,agent_addr)->dict:
         agent_name, agent_role = self.agents[agent_addr]
         self.logger.debug(f"Resetting trajectory of {agent_addr}")
         return {
