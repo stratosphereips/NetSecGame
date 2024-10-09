@@ -696,6 +696,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 # Stop the blocked host to connect _to_ any other IP
                 try:
                     self._firewall[blocked_host] = set()
+                    self.logger.debug(f"Removing all allowed connections from {blocked_host}")
                 except KeyError:
                     # The blocked_host host was not in the list
                     pass
@@ -703,6 +704,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 for host in self._firewall.keys():
                     try:
                         self._firewall[host].remove(blocked_host)
+                        self.logger.debug(f"Removing {blocked_host} from allowed connections from {host}")
                     except KeyError:
                         # The blocked_host host was not in the list
                         pass
