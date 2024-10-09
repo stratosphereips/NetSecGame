@@ -8,8 +8,9 @@ import logging
 import json
 import asyncio
 from datetime import datetime
-from env.network_security_game import NetworkSecurityEnvironment, NetworkSecurityEnvironmentRealWorld
-from env.aidojo_world import AIDojoWorld
+from env.worlds.network_security_game import NetworkSecurityEnvironment
+from env.worlds.network_security_game_real_world import NetworkSecurityEnvironmentRealWorld
+from env.worlds.aidojo_world import AIDojoWorld
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState
 from utils.utils import observation_as_dict, get_logging_level
 from pathlib import Path
@@ -663,6 +664,6 @@ if __name__ == "__main__":
     if task_config_file is None:
         raise KeyError("Task configuration must be provided to start the coordinator! Use -h for more details.")
     # Create AI Dojo
-    ai_dojo = AIDojo(host, port, task_config_file, world_type)
+    ai_dojo = AIDojo(host, port, task_config_file, world_type="netsecenv-real-world")
     # Run it!
     ai_dojo.run()
