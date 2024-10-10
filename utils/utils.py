@@ -57,6 +57,9 @@ def state_as_ordered_string(state:GameState)->str:
     ret += "},data:{"
     for host in sorted(state.known_data.keys()):
         ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_data[host])])}]"
+    ret += "}, blocks:{"
+    for host in sorted(state.known_blocks.keys()):
+        ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_blocks[host])])}]"
     ret += "}"
     return ret
 
