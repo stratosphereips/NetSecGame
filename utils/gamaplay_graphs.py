@@ -13,11 +13,16 @@ from env.game_components import GameState, Action, ActionType
 def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
     edges = {}
     nodes_timestamps = {}
+    wins = []
     for play in game_plays:
         if end_reason and play["end_reason"] not in end_reason:
             continue
         if len(play["trajectory"]["actions"]) == 0:
             continue
+        if play["end_reason"] == "goal_reached":
+            wins.append(1)
+        else:
+            wins.append(0)
         state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][0]))
         #print(f'Trajectory len: {len(play["trajectory"]["actions"])}')
         for i in range(1, len(play["trajectory"]["actions"])):
@@ -40,7 +45,7 @@ def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
             nodes_timestamps[states[next_state]].add(i)
             state = next_state
 
-    return edges, nodes_timestamps
+    return edges, nodes_timestamps, np.mean(wins), np.std(wins)
 
 def get_graph_stats(edge_list, states, actions)->tuple:
     nodes = set()
@@ -100,15 +105,17 @@ if __name__ == '__main__':
     states = {}
     actions = {}
     
-    graph_t1, g1_timestaps = gameplay_graph(trajectories1, states, actions,end_reason=args.end_reason)
-    graph_t2, g2_timestaps = gameplay_graph(trajectories2, states, actions,end_reason=args.end_reason)
+    graph_t1, g1_timestaps, t1_wr_mean, t1_wr_std = gameplay_graph(trajectories1, states, actions,end_reason=args.end_reason)
+    graph_t2, g2_timestaps, t2_wr_mean, t2_wr_std = gameplay_graph(trajectories2, states, actions,end_reason=args.end_reason)
     
     state_to_id = {v:k for k,v in states.items()}
     action_to_id = {v:k for k,v in states.items()}
 
     print(f"Trajectory 1: {args.t1}")
+    print(f"WR={t1_wr_mean}±{t1_wr_std}")
     get_graph_stats(graph_t1, state_to_id, action_to_id)
     print(f"Trajectory 2: {args.t2}")
+    print(f"WR={t2_wr_mean}±{t2_wr_std}")
     get_graph_stats(graph_t2, state_to_id, action_to_id)
 
     a_edges, d_edges, a_nodes, d_nodes = get_graph_modificiation(graph_t1, graph_t2)
