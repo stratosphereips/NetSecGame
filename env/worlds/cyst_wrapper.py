@@ -1,6 +1,12 @@
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
-import env.game_components as components
-from env.worlds.aidojo_world import AIDojoWorld
+
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import game_components as components
+from worlds.aidojo_world import AIDojoWorld
+from cyst.api.environment.environment import Environment 
 
 class CYSTWrapper(AIDojoWorld):
     """
@@ -40,3 +46,10 @@ class CYSTWrapper(AIDojoWorld):
         Takes the existing goal dict and updates it with respect to the world.
         """
         raise NotImplementedError
+
+
+if __name__ == "__main__":
+    cyst_wrapper = CYSTWrapper("env/netsecenv_conf.yaml")
+    objects = cyst_wrapper.task_config.get_scenario()
+    print(objects)
+    #e = Environment.create().configure(target, attacker, router, exploit1, connection1, connection2)
