@@ -1,6 +1,10 @@
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 # Template of world to be used in AI Dojo
-import env.game_components as components
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+import game_components as components
 import logging
 from utils.utils import ConfigParser
 
