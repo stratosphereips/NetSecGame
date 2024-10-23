@@ -16,6 +16,7 @@ from utils.utils import observation_as_dict, get_logging_level
 from pathlib import Path
 import os
 import signal
+from env.global_defender import stochastic_with_threshold
 
 class AIDojo:
     def __init__(self, host: str, port: int, net_sec_config: str, world_type) -> None:
@@ -189,7 +190,7 @@ class Coordinator:
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
         self._steps_limit = self._world.task_config.get_max_steps()
-
+        self._use_global_defender = self._world.task_config.get_use_global_defender()
         # player information
         self.agents = {}
         # step counter per agent_addr (int)
@@ -306,7 +307,7 @@ class Coordinator:
         self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
         self._agent_detected[agent_addr] = self._check_detection(agent_addr, None) 
         self._agent_episode_ends[agent_addr] = False
-        if self._world.task_config.get_store_trajectories() or self._world.task_config.get_use_global_defender():
+        if self._world.task_config.get_store_trajectories() or self._use_global_defender:
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
@@ -595,11 +596,19 @@ class Coordinator:
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
-    def _check_detection(self, agent_addr:tuple, last_action:Action):
+    def _check_detection(self, agent_addr:tuple, last_action:Action)->bool:
         self.logger.info(f"Detection check for {agent_addr}({self.agents[agent_addr][1]})")
-        self.logger.info("\tNot detected!")
-        return False
-
+        detection = False
+        if last_action:
+            if self._use_global_defender:
+                self.logger.warning("Global defender - ONLY use for backward compatibility!")
+                episode_actions = self._agent_trajectories[agent_addr]["actions"] if "actions" in self._agent_trajectories[agent_addr] else []
+                detection =  stochastic_with_threshold(last_action, episode_actions)
+        if detection:
+            self.logger.info("\tDetected!")
+        else:
+            self.logger.info("\tNot detected!")
+        return detection
 __version__ = "v0.2.1"
 
 
