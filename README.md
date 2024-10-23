@@ -40,7 +40,7 @@ The NetSecGame environment has several components in the following files:
 
 - File `env/network_security_game.py` implements the game environment
 - File `env/game_components.py` implements a library with objects used in the environment. See [detailed explanation](docs/Components.md) of the game components.
-- File `utils/utils.py` is a collection of utils function which the agents can use
+- File `utils/utils.py` is a collection of utils functions which the agents can use
 - Files in the `env/scenarios` folder, such as `env/scenarios/scenario_configuration.py`. Implements the network game's configuration of hosts, data, services, and connections. It is taken from CYST.
 The [scenarios](#definition-of-the-network-topology) define the **topology** of a network (number of hosts, connections, networks, services, data, users, firewall rules, etc.) while the [task-configuration](#task-configuration) is to be used for definition of the exact task for the agent in one of the scenarios (with fix topology).
 - Agents compatible with the NetSecGame are located in a separate repository [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main)
@@ -50,7 +50,7 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 2. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
 (From commit d6d4ac9, July 18th, 2024, the new action BlockIP removes controlled hosts from the state of others. So the state can get smaller)
 
-- The action FindServices finds the new services in a host. If in a subsequent call to FindServices there are less services, they completely replace the list of previous services found. That is, each list of services is the final one and no memory is retained of previous open services.
+- The action FindServices finds the new services in a host. If in a subsequent call to FindServices there are less services, they completely replace the list of previous services found. That is, each list of services is the final one, and no memory of previous open services is retained.
 
 ### Assumption and Conditions for Actions
 1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
@@ -59,24 +59,24 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
 5. Playing `Find Services` can be used to discover hosts (if those have any active services)
 6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
-7. The `BlockIP` action needs its three parameters (Source host, Target host and Blocked host) to be in the controlled list of the Agent. 
+7. The `BlockIP` action needs its three parameters (Source host, Target host, and Blocked host) to be in the controlled list of the Agent. 
 
 ### Actions for the defender
 The defender does have the action to block an IP address in a target host. 
 
 
 > [!NOTE]  
-> The global defender, which was available in the previous versions of the environment will not be supported in the fuutre. To enable backward compatibilty, the global defender functionality can be enabled by adding `use_global_defender: True` to the configuration YAML file in the `env` section. This option is disabled by default.
+> The global defender, available in the previous environment versions, will not be supported in the future. To enable backward compatibility, the global defender functionality can be enabled by adding `use_global_defender: True` to the configuration YAML file in the `env` section. This option is disabled by default.
 
 The actions are:
 - BlockIP(). That takes as parameters:
   - "target_host": IP object where the block will be applied.
-  - "source_host": IP object where this actions is executed from.
+  - "source_host": IP object from which this action is executed.
   - "blocked_host": IP object to block in ANY direction as seen in the target_host.
 
 
 ### Starting the game
-The environment should be created prior strating the agents. The properties of the environment can be defined in a YAML file. The game server can be started by running:
+The environment should be created before starting the agents. The properties of the environment can be defined in a YAML file. The game server can be started by running:
 ```python3 coordinator.py```
 
 When created, the environment:
@@ -84,16 +84,16 @@ When created, the environment:
 2. loads the network configuration from the config file
 3. reads the defender type from the configuration
 4. creates starting position and goal position following the config file
-5. starts the game server in specified address and port
+5. starts the game server in a specified address and port
 
 ### Interaction with the Environment
-When the game server is created, [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main) connect to it and interact with the environment. In every step of the interaction, agents submits an [Action](./docs/Components.md#actions) and receives [Observation](./docs/Components.md#observations) with `next_state`, `reward`, `is_terminal`, `end`, and `info` values. Once the terminal state or timeout is reached, no more interaction is possible until the agent asks for game reset. Each agent should extend the `BaseAgent` class in [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
+When the game server is created, [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main) connect to it and interact with the environment. In every step of the interaction, agents submits an [Action](./docs/Components.md#actions) and receives [Observation](./docs/Components.md#observations) with `next_state`, `reward`, `is_terminal`, `end`, and `info` values. Once the terminal state or timeout is reached, no more interaction is possible until the agent asks for a game reset. Each agent should extend the `BaseAgent` class in [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
 
 
 ## Configuration
-The NetSecEnv is highly configurable in terms of the properties of the world, tasks and agent interacation. Modification of the world is done in the YAML configuration file in two main areas:
-1. Environment (`env` section) controls the properties of the world (taxonomy of networks, maximum allowed steps per episode, probabilities of success of actions etc.)
-2. Task configuration defines the agents properties (starting position, goal)
+The NetSecEnv is highly configurable in terms of the properties of the world, tasks, and agent interaction. Modification of the world is done in the YAML configuration file in two main areas:
+1. Environment (`env` section) controls the properties of the world (taxonomy of networks, maximum allowed steps per episode, probabilities of action success, etc.)
+2. Task configuration defines the agents' properties (starting position, goal)
 
 ### Environment configuration
 The environment part defines the properties of the environment for the task (see the example below). In particular:
@@ -102,11 +102,11 @@ The environment part defines the properties of the environment for the task (see
 - `max_steps` - sets the maximum number of steps an agent can make before an episode is terminated
 - `store_replay_buffer` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of **EVERY** episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)
-- `  use_firewall` - if `True` firewall rules defined in `scenario` are used when executing actions. When `False`, firewall is ignored and all connections are allowed (Default)
+- `  use_firewall` - if `True` firewall rules defined in `scenario` are used when executing actions. When `False`, the firewall is ignored, and all connections are allowed (Default)
 - `goal_reward` - sets reward which agent gets when it reaches the goal (default 100)
-- `detection_reward` - sets reward which agent gets when it is detected (default -50)
+- `detection_reward` - sets the reward that which agent gets when it is detected (default -50)
 - `step_reward` - sets reward which agent gets for every step taken (default -1)
-- `actions` - defines probability of success for every ActionType
+- `actions` - defines the probability of success for every ActionType
 
 ```YAML
 env:
@@ -132,28 +132,28 @@ env:
 ```
 
 ## Task configuration
-The task configuration part (section `coordinator[agents]`) defines the starting and goal position of the attacker and type of defender that is used.
+The task configuration part (section `coordinator[agents]`) defines the starting and goal position of the attacker and the type of defender that is used.
 
 ### Attacker configuration (`attackers`)
 Configuration of the attacking agents. Consists of two parts:
-1. Goal definition (`goal`) which describes the `GameState` properties that must be fullfiled to award `goal_reward` to the attacker:
+1. Goal definition (`goal`) which describes the `GameState` properties that must be fulfilled to award `goal_reward` to the attacker:
     - `known_networks:`(set)
     - `known_hosts`(set)
     - `controlled_hosts`(set)
     - `known_services`(dict)
     - `known_data`(dict)
 
-     Each of the part can be empty (not part of the goal, exactly defined (e.g. `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`.
-    Addtitionally  if `random` keyword is used int he goal definition, 
+     Each of the parts can be empty (not part of the goal, exactly defined (e.g., `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include the keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`.
+    Additionally,  if `random` keyword is used in the goal definition, 
     `randomize_goal_every_episode`. If set to `True`, each keyword `random` is replaced with a randomly selected, valid option at the beginning of **EVERY** episode. If set to `False`, randomization is performed only **once** when the environment is 
-2. Definiton of starting position (`start_position`) which describes the `GameState` in which the attacker starts. It consists of:
+2. Definition of starting position (`start_position`), which describes the `GameState` in which the attacker starts. It consists of:
     - `known_networks:`(set)
     - `known_hosts`(set)
     - `controlled_hosts`(set)
     - `known_services`(dict)
     - `known_data`(dict)
 
-    The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts` so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`
+    The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts`, so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`
 
 Example attacker configuration:
 ```YAML
@@ -174,7 +174,7 @@ agents:
       # The attacker must always at least control the CC if the goal is to exfiltrate there
       # Example of fixing the starting point of the agent in a local host
       controlled_hosts: [213.47.23.195, random]
-      # Services are defined as a target host where the service must be, and then a description in the form 'name,type,version,is_local'
+      # Services are defined as a target host where the service must be, and then a description in the form 'name, type, version, is_local'
       known_services: {}
       known_data: {}
       known_blocks: {}
@@ -182,7 +182,7 @@ agents:
 ### Defender configuration (`defenders`)
 Currently, the defender **is** a separate agent.
 
-If you want to have an defender in the game, you need to connect a defender agent. If you don't want to have a defender, just don't use any.
+If you want a defender in the game, you must connect a defender agent. For playing without a defender, leave the section empty.
 
 Example of defender configuration:
 ```YAML
@@ -207,7 +207,7 @@ Example of defender configuration:
         known_blocks: {}
 ```
 
-As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In this example the goal of the defender is determined by a state where the known blocks can be applied in any router's firewall and must include all the controlled hosts of all the attackers. These are `magic` words that will push the coordinator to check these positions without reviling them to the defender.
+As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In this example, the goal of the defender is determined by a state where the known blocks can be applied in any router's firewall and must include all the controlled hosts of all the attackers. These are `magic` words that will push the coordinator to check these positions without revealing them to the defender.
 
 
 ## Definition of the network topology
@@ -215,7 +215,7 @@ The network topology and rules are defined using a [CYST](https://pypi.org/proje
 
 - Server hosts (are a NodeConf in CYST)
     - Interfaces, each with one IP address
-    - Users that can login to the host
+    - Users that can log in to the host
     - Active and passive services
     - Data in the server
     - To which network is connected
@@ -238,22 +238,22 @@ The network topology and rules are defined using a [CYST](https://pypi.org/proje
 In the current state, we support a single scenario: Data exfiltration to a remote C&C server.
 
 #### Data exfiltration to a remote C&C
-For the data exfiltration we support 3 variants. The full scenario contains 5 clients (where the attacker can start) and 5 servers where the data which is supposed to be exfiltrated can be located. *scenario1_small* is a variant with a single client (attacker always starts there) and all 5 servers. *scenario1_tiny* contains only single server with data. The tiny scenario is trivial and intended only for debuggin purposes.
+For the data exfiltration we support 3 variants. The full scenario contains 5 clients (where the attacker can start) and 5 servers where the data that is supposed to be exfiltrated can be located. *scenario1_small* is a variant with a single client (the attacker always starts there) and all 5 servers. *scenario1_tiny* contains only a single server with data. The tiny scenario is trivial and intended only for debugging purposes.
 <table>
   <tr><th>Scenario 1</th><th>Scenario 1 - small</th><th>Scenario 1 -tiny</th></tr>
   <tr><td><img src="readme_images/scenario_1.png" alt="Scenario 1 - Data exfiltration" width="300"></td><td><img src="readme_images/scenario 1_small.png" alt="Scenario 1 - small" width="300"</td><td><img src="readme_images/scenario_1_tiny.png" alt="Scenario 1 - tiny" width="300"></td></tr>
 </table>
 
 ## Trajectory storing and analysis
-Trajectory is a sequence of GameStates, Actions and rewards in one run of a game. It contains the complete information of the actions played by the agent, the rewards observed and their effect on the state of the environment. Trajectory visualization and analysis tools are described in [Trajectory analysis tools](./docs/Trajectory_analysis.md)
+The trajectory is a sequence of GameStates, Actions, and rewards in one run of a game. It contains the complete information of the actions played by the agent, the rewards observed and their effect on the state of the environment. Trajectory visualization and analysis tools are described in [Trajectory analysis tools](./docs/Trajectory_analysis.md)
 
-Trajectories performed by the agents can be stored in a file using following configuration:
+Trajectories performed by the agents can be stored in a file using the following configuration:
 ```YAML
 env:
   save_trajectories: True
 ```
 > [!CAUTION]
-> Trajectory file can grow large very fast. It is recommended to use this feature on evaluation/testing runs only. By default this feature is not enabled.
+> Trajectory files can grow very fast. It is recommended to use this feature on evaluation/testing runs only. By default, this feature is not enabled.
 ## Testing the environment
 
 It is advised after every change you test if the env is running correctly by doing
