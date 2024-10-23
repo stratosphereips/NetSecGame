@@ -498,6 +498,13 @@ class ConfigParser():
             use_firewall = False
         return use_firewall
 
+    def get_use_global_defender(self)->bool:
+        try:
+            use_firewall = self.config['env']['use_global_defender']
+        except KeyError:
+            use_firewall = False
+        return use_firewall
+    
 def get_logging_level(debug_level):
     """
     Configure logging level based on the provided debug_level string.

@@ -98,8 +98,8 @@ env:
   # Or you can fix the seed
   # random_seed: 42
   scenario: 'scenario1'
+  use_global_defender: True
   max_steps: 50
-  store_replay_buffer: False
   use_dynamic_addresses: False
   use_firewall: True
   save_trajectories: False
