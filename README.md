@@ -64,7 +64,9 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 ### Actions for the defender
 The defender does have the action to block an IP address in a target host. 
 
-There is no global defender anymore as there was before, because now it is a multi-agent system.
+
+> [!NOTE]  
+> The global defender, which was available in the previous versions of the environment will not be supported in the fuutre. To enable backward compatibilty, the global defender functionality can be enabled by adding `use_global_defender: True` to the configuration YAML file in the `env` section. This option is disabled by default.
 
 The actions are:
 - BlockIP(). That takes as parameters:
