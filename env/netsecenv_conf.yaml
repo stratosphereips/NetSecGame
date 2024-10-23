@@ -98,7 +98,7 @@ env:
   # Or you can fix the seed
   # random_seed: 42
   scenario: 'scenario1'
-  use_global_defender: True
+  use_global_defender: False
   max_steps: 50
   use_dynamic_addresses: False
   use_firewall: True
