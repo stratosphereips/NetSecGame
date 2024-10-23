@@ -183,7 +183,8 @@ class Coordinator:
                 self._world = AIDojoWorld(net_sec_config)
         self.world_type = world_type
         
-        #  
+        
+
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
@@ -203,6 +204,7 @@ class Coordinator:
         # goal reach status per agent_addr (bool)
         self._agent_goal_reached = {}
         self._agent_episode_ends = {}
+        self._agent_detected = {}
         # trajectories per agent_addr
         self._agent_trajectories = {}
     
@@ -302,8 +304,9 @@ class Coordinator:
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = self._world.create_state_from_view(self._agent_starting_position[agent_addr])
         self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
+        self._agent_detected[agent_addr] = self._check_detection(agent_addr, None) 
         self._agent_episode_ends[agent_addr] = False
-        if self._world.task_config.get_store_trajectories():
+        if self._world.task_config.get_store_trajectories() or self._world.task_config.get_use_global_defender():
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
@@ -416,7 +419,8 @@ class Coordinator:
             f"Coordinator responding to RESET request from agent {agent_addr}"
         )
         # store trajectory in file if needed
-        self._store_trajectory_to_file(agent_addr)
+        if self._world.task_config.get_store_trajectories():
+            self._store_trajectory_to_file(agent_addr)
         new_observation = Observation(self._agent_states[agent_addr], 0, self.episode_end, {})
         # reset trajectory
         self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
@@ -483,6 +487,8 @@ class Coordinator:
             self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr)
             self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
 
+            self._agent_detected[agent_addr] = self._check_detection(agent_addr, action)
+
             reward = self._world._rewards["step"]
             obs_info = {}
             end_reason = None
@@ -495,6 +501,11 @@ class Coordinator:
                 self._agent_episode_ends[agent_addr] = True
                 obs_info = {"end_reason": "max_steps"}
                 end_reason = "max_steps"
+            elif self._agent_detected[agent_addr]:
+                reward += self._world._rewards["detection"]
+                self._agent_episode_ends[agent_addr] = True
+                obs_info = {"end_reason": "max_steps"}
+            
             # record step in trajecory
             self._add_step_to_trajectory(agent_addr, action, reward,self._agent_states[agent_addr], end_reason)
             new_observation = Observation(self._agent_states[agent_addr], reward, self.episode_end, info=obs_info)
@@ -584,6 +595,10 @@ class Coordinator:
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
+    def _check_detection(self, agent_addr:tuple, last_action:Action):
+        self.logger.info(f"Detection check for {agent_addr}({self.agents[agent_addr][1]})")
+        self.logger.info("\tNot detected!")
+        return False
 
 __version__ = "v0.2.1"
 
@@ -626,7 +641,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=str,
-        default="WARNING",
+        default="INFO",
     )
 
     args = parser.parse_args()
