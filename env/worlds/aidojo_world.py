@@ -4,7 +4,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import game_components as components
+import env.game_components as components
 import logging
 from utils.utils import ConfigParser
 
