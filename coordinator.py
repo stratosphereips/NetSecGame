@@ -609,7 +609,7 @@ class Coordinator:
         else:
             self.logger.info("\tNot detected!")
         return detection
-__version__ = "v0.2.1"
+__version__ = "v0.2.2"
 
 
 if __name__ == "__main__":
