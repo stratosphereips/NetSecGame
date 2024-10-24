@@ -6,7 +6,6 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import game_components as components
 from worlds.aidojo_world import AIDojoWorld
-from cyst.api.environment.environment import Environment 
 
 class CYSTWrapper(AIDojoWorld):
     """
@@ -17,7 +16,7 @@ class CYSTWrapper(AIDojoWorld):
         self.logger.info("Initializing CYST environment")
 
 
-    def step(current_state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
+    def step(self, current_state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
         """
         Executes given action in a current state of the environment and produces new GameState.
         """
