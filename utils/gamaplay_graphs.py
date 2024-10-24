@@ -6,7 +6,7 @@ import utils
 import argparse
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
-from env.game_components import GameState, Action, ActionType
+from env.game_components import GameState, Action
 
 
 

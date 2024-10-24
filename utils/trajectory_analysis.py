@@ -204,17 +204,17 @@ def barplot_action_efficiency(data:list, model_names:list, filename="action_effi
     plt.savefig(os.path.join("figures", filename))
     plt.close()
 
-    states_per_step = {}
-    for play in game_plays:
-        if end_reason and play["end_reason"] != end_reason:
-            continue
-        for i,step in enumerate(play["trajectory"]):
-            if i not in states_per_step.keys():
-                states_per_step[i] = set()
-            state = GameState.from_dict(step["s"])
-            states_per_step[i].add(utils.state_as_ordered_string(state))
-    for i, states in states_per_step.items():
-        print(f"Step {i}, #different states:{len(states)}")
+    # states_per_step = {}
+    # for play in game_plays:
+    #     if end_reason and play["end_reason"] != end_reason:
+    #         continue
+    #     for i,step in enumerate(play["trajectory"]):
+    #         if i not in states_per_step.keys():
+    #             states_per_step[i] = set()
+    #         state = GameState.from_dict(step["s"])
+    #         states_per_step[i].add(utils.state_as_ordered_string(state))
+    # for i, states in states_per_step.items():
+    #     print(f"Step {i}, #different states:{len(states)}")
 
 def trajectory_step_distance(step1:dict, step2:dict)->float:
     s1 = GameState.from_dict(step1["s"])
