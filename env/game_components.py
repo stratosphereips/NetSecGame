@@ -37,7 +37,7 @@ class IP():
         try:
             ipaddress.ip_address(self.ip)
         except ValueError:
-            raise ValueError("Invalid IP address provided")
+            raise ValueError(f"Invalid IP address provided: {self.ip}")
 
     def __repr__(self):
         return self.ip
@@ -125,6 +125,7 @@ class ActionType(enum.Enum):
     - FindData
     - ExploitService
     - ExfiltrateData
+    - BlockIP
     - JoinGame
     - QuitGame
     """
@@ -152,6 +153,8 @@ class ActionType(enum.Enum):
                 return ActionType.FindData
             case "ActionType.ExfiltrateData":
                 return ActionType.ExfiltrateData
+            case "ActionType.BlockIP":
+                return ActionType.BlockIP
             case "ActionType.JoinGame":
                 return ActionType.JoinGame
             case "ActionType.ResetGame":
@@ -167,6 +170,7 @@ class ActionType(enum.Enum):
     FindData = 0.8
     ExploitService = 0.7
     ExfiltrateData = 0.8
+    BlockIP = 1
     JoinGame = 1
     QuitGame = 1
     ResetGame = 1
@@ -191,6 +195,7 @@ class Action():
     - FindData {"target_host": IP object, "source_host": IP object}
     - ExploitService {"target_host": IP object, "target_service": Service object, "source_host": IP object}
     - ExfiltrateData {"target_host": IP object, "source_host": IP object, "data": Data object}
+    - BlockIP("target_host": IP object, "source_host": IP object, "blocked_host": IP object)
     """
     def __init__(self, action_type: ActionType, params: dict={}) -> None:
         self._type = action_type
@@ -226,6 +231,8 @@ class Action():
                 case "source_host":
                     params[k] = IP(v)
                 case "target_host":
+                    params[k] = IP(v)
+                case "blocked_host":
                     params[k] = IP(v)
                 case "target_network":
                     net,mask = v.split("/")
@@ -291,6 +298,10 @@ class Action():
                 parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
                                 "source_host": IP(parameters_dict["source_host"]["ip"]),
                               "data": Data(parameters_dict["data"]["owner"],parameters_dict["data"]["id"])}
+            case ActionType.BlockIP:
+                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
+                              "source_host": IP(parameters_dict["source_host"]["ip"]),
+                              "blocked_host": IP(parameters_dict["blocked_host"]["ip"])}
             case ActionType.JoinGame:
                 parameters = {"agent_info":AgentInfo(parameters_dict["agent_info"]["name"], parameters_dict["agent_info"]["role"])}
             case ActionType.QuitGame:
@@ -312,10 +323,11 @@ class GameState():
     known_services: dict = field(default_factory=dict, hash=True)
     known_data: dict = field(default_factory=dict, hash=True)
     known_networks: set = field(default_factory=set, hash=True)
+    known_blocks: dict = field(default_factory=dict, hash=True)
     
     @property
     def as_graph(self):
-        node_types = {"network":0, "host":1, "service":2, "datapoint":3}
+        node_types = {"network":0, "host":1, "service":2, "datapoint":3, "blocks": 4}
         graph_nodes = {}
         node_features = []
         controlled = []
@@ -376,7 +388,7 @@ class GameState():
         return node_features, controlled, edges, {v:k for k, v in graph_nodes.items()}
 
     def __str__(self) -> str:
-        return f"State<nets:{self.known_networks}; known:{self.known_hosts}; owned:{self.controlled_hosts}; services:{self.known_services}; data:{self.known_data}>"    
+        return f"State<nets:{self.known_networks}; known:{self.known_hosts}; owned:{self.controlled_hosts}; services:{self.known_services}; data:{self.known_data}; blocks:{self.known_blocks}>"    
 
     def as_json(self) -> str:
         """
@@ -394,17 +406,26 @@ class GameState():
             "known_hosts":[dataclasses.asdict(x) for x in self.known_hosts],
             "controlled_hosts":[dataclasses.asdict(x) for x in self.controlled_hosts],
             "known_services": {str(host):[dataclasses.asdict(s) for s in services] for host,services in self.known_services.items()},
-            "known_data":{str(host):[dataclasses.asdict(d) for d in data] for host,data in self.known_data.items()}}
+            "known_data":{str(host):[dataclasses.asdict(d) for d in data] for host,data in self.known_data.items()},
+            "known_blocks":{str(target_host):[dataclasses.asdict(blocked_host) for blocked_host in blocked_hosts] for target_host, blocked_hosts in self.known_blocks.items()}
+                    }
         return ret_dict
 
     @classmethod
     def from_dict(cls, data_dict:dict):
-        state = GameState(known_networks={Network(x["ip"], x["mask"]) for x in data_dict["known_networks"]},
-            known_hosts={IP(x["ip"]) for x in data_dict["known_hosts"]},
-            controlled_hosts={IP(x["ip"]) for x in data_dict["controlled_hosts"]},
-            known_services={IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
+        if "known_blocks" in data_dict:
+            known_blocks = {IP(target_host):{IP(blocked_host["ip"]) for blocked_host in blocked_hosts} for target_host, blocked_hosts in data_dict["known_blocks"].items()}
+        else:
+            known_blocks = {}
+        state = GameState(
+            known_networks = {Network(x["ip"], x["mask"]) for x in data_dict["known_networks"]},
+            known_hosts = {IP(x["ip"]) for x in data_dict["known_hosts"]},
+            controlled_hosts = {IP(x["ip"]) for x in data_dict["controlled_hosts"]},
+            known_services = {IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
                 for s in services} for k,services in data_dict["known_services"].items()},  
-            known_data={IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in data_dict["known_data"].items()}) 
+            known_data = {IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in data_dict["known_data"].items()},
+            known_blocks = known_blocks
+                )
         return state
 
     @classmethod
@@ -413,12 +434,15 @@ class GameState():
         Creates GameState object from json representation in string
         """
         json_data = json.loads(json_string)
-        state = GameState(known_networks={Network(x["ip"], x["mask"]) for x in json_data["known_networks"]},
-                    known_hosts={IP(x["ip"]) for x in json_data["known_hosts"]},
-                    controlled_hosts={IP(x["ip"]) for x in json_data["controlled_hosts"]},
-                    known_services={IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
-                        for s in services} for k,services in json_data["known_services"].items()},  
-                    known_data={IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in json_data["known_data"].items()}) 
+        state = GameState(
+            known_networks = {Network(x["ip"], x["mask"]) for x in json_data["known_networks"]},
+            known_hosts = {IP(x["ip"]) for x in json_data["known_hosts"]},
+            controlled_hosts = {IP(x["ip"]) for x in json_data["controlled_hosts"]},
+            known_services = {IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
+                for s in services} for k,services in json_data["known_services"].items()},  
+            known_data = {IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in json_data["known_data"].items()},
+            known_blocks = {IP(target_host):{IP(blocked_host) for blocked_host in blocked_hosts} for target_host, blocked_hosts in json_data["known_blocks"].items()}
+            )
         return state
 
 
@@ -454,8 +478,9 @@ class GameStatus(enum.Enum):
     def __repr__(self) -> str:
         return str(self)
 if __name__ == "__main__":
-    data1 = Data(owner="test", id="test_data", content="content", type="db")
-    data2 = Data(owner="test", id="test_data", content="content", type="db")
+    pass
+    #data1 = Data(owner="test", id="test_data", content="content", type="db")
+    #data2 = Data(owner="test", id="test_data", content="content", type="db")
     # print(data)
     # print(data.size)
 

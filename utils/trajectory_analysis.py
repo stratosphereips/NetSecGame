@@ -15,11 +15,15 @@ from sklearn.preprocessing import StandardScaler
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
 from env.game_components import GameState, Action, ActionType
 
-def read_json(filename)->list:
+   
+
+def read_json(filename, max_lines=50)->list:
     trajectories = []
     with jsonlines.open(filename) as reader:
         for obj in reader:
             trajectories.append(obj)
+            if len(trajectories) > max_lines:
+                break
     return trajectories
 
 def compute_mean_length(game_plays:list)->float:
@@ -200,17 +204,17 @@ def barplot_action_efficiency(data:list, model_names:list, filename="action_effi
     plt.savefig(os.path.join("figures", filename))
     plt.close()
 
-    states_per_step = {}
-    for play in game_plays:
-        if end_reason and play["end_reason"] != end_reason:
-            continue
-        for i,step in enumerate(play["trajectory"]):
-            if i not in states_per_step.keys():
-                states_per_step[i] = set()
-            state = GameState.from_dict(step["s"])
-            states_per_step[i].add(utils.state_as_ordered_string(state))
-    for i, states in states_per_step.items():
-        print(f"Step {i}, #different states:{len(states)}")
+    # states_per_step = {}
+    # for play in game_plays:
+    #     if end_reason and play["end_reason"] != end_reason:
+    #         continue
+    #     for i,step in enumerate(play["trajectory"]):
+    #         if i not in states_per_step.keys():
+    #             states_per_step[i] = set()
+    #         state = GameState.from_dict(step["s"])
+    #         states_per_step[i].add(utils.state_as_ordered_string(state))
+    # for i, states in states_per_step.items():
+    #     print(f"Step {i}, #different states:{len(states)}")
 
 def trajectory_step_distance(step1:dict, step2:dict)->float:
     s1 = GameState.from_dict(step1["s"])
@@ -559,11 +563,10 @@ def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
     for play in game_plays:
         if end_reason and play["end_reason"] not in end_reason:
             continue
-
+        state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][0]))
         for i in range(1, len(play["trajectory"]["actions"])):
-            state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i-1]))
-            next_state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i-1]))
-            action = Action.from_dict((play["trajectory"]["actions"][i-1]))
+            next_state = utils.state_as_ordered_string(GameState.from_dict(play["trajectory"]["states"][i]))
+            action = Action.from_dict((play["trajectory"]["actions"][i]))
             if state not in states:
                 states[state] = len(states)
             if next_state not in states:
@@ -575,35 +578,37 @@ def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
             if actions[action] not in edges[states[state], states[next_state]]:
                 edges[states[state], states[next_state]][actions[action]] = 0
             edges[states[state], states[next_state]][actions[action]] += 1
+            state = next_state
     return edges
 
 def get_graph_stats(edge_list, states, actions)->tuple:
-    visited_states = set()
-    played_actions = []
-    outgoing_edges = {}
-    incoming_edges = {}
-    loops = {}
-    for (src,dst), edges in edge_list.items():
-        visited_states.add(src)
-        visited_states.add(dst)
-        if src not in outgoing_edges:
-            outgoing_edges[src] = 0
-        outgoing_edges[src] += 1
-        if dst not in incoming_edges:
-            incoming_edges[dst] = 0
-        incoming_edges[dst] += 1
-        for a in edges.keys():
-            played_actions.append(a)
-        if src == dst:
-            loops[(src,dst)] = len(edges)
-    
-    print(f"Total visited states: {len(visited_states)}")
-    print(f"Total played actions: {len(played_actions)}")
-    print(f"Unique played actions: {len(set(played_actions))}")
-    print(f"Total State transformation edges: {len(edge_list)}")
-    print(f"Node in-degree - min:{np.min(list(incoming_edges.values()))}, max:{np.max(list(incoming_edges.values()))}, mean:{np.mean(list(incoming_edges.values()))}, std:{np.std(list(incoming_edges.values()))}")
-    print(f"Node out-degree - min:{np.min(list(outgoing_edges.values()))}, max:{np.max(list(outgoing_edges.values()))}, mean:{np.mean(list(outgoing_edges.values()))}, std:{np.std(list(outgoing_edges.values()))}")
-    print(f"Loops - min:{np.min(list(loops.values()))}, max:{np.max(list(loops.values()))}, mean:{np.mean(list(loops.values()))}, std:{np.std(list(loops.values()))}")
+    nodes = set()
+    edges = set()
+    simple_edges = set()
+    node_in_degree = {}
+    node_out_degree = {}
+    loop_edges = set()
+    for (src,dst) in edge_list:
+        nodes.add(src)
+        nodes.add(dst)
+        if src not in node_out_degree.keys():
+            node_out_degree[src] = 0
+        if dst not in node_in_degree.keys():
+            node_in_degree[dst] = 0
+        node_out_degree[src] += 1
+        node_in_degree[dst] += 1
+        simple_edges.add((src,dst))
+        for a in edge_list[src, dst]:
+            edges.add((src,dst,a))
+            if src == dst:
+                loop_edges.add((src,dst,a))
+    print(f"# Nodes:{len(nodes)}")
+    print(f"# Edges:{len(edges)}")
+    print(f"# Simple:{len(simple_edges)}")
+    print(f"# loops:{len(loop_edges)}")
+    print(f"node IN-degree: {np.mean(list(node_in_degree.values()))}+-{np.std(list(node_in_degree.values()))}")
+    print(f"node OUT-degree: {np.mean(list(node_out_degree.values()))}+-{np.std(list(node_out_degree.values()))}")
+    return nodes, edges, simple_edges, node_in_degree, node_out_degree, loop_edges
 
 def get_change_in_edges(edge_list1, edge_list2):
     removed_edges = {}
@@ -639,16 +644,67 @@ def get_change_in_nodes(edge_list1, edge_list2):
         new.add(dst)
     return {n for n in new if n not in original}, {n for n in original if n not in new}
 
+def get_graph_modificiation(edge_list1, edge_list2):
+    """
+    Produces the addition and deletion graphs
+    """
+    deleted_edges = {}
+    for k in edge_list1.keys():
+        if k not in edge_list2:
+            deleted_edges[k] = set(edge_list1[k].keys())
+        else:
+            diff = set()
+            for a in edge_list1[k].keys():
+                if a not in edge_list2[k]:
+                    diff.add(a)
+            if len(diff) > 0:
+                deleted_edges[k] = diff
+    added_edges = {}
+    for k in edge_list2.keys():
+        if k not in edge_list1:
+            added_edges[k] = set(edge_list2[k].keys())
+        else:
+            diff = set()
+            for a in edge_list2[k].keys():
+                if a not in edge_list1[k]:
+                    diff.add(a)
+            if len(diff) > 0:
+                added_edges[k] = diff
+    return added_edges, deleted_edges
+
 if __name__ == '__main__':
     # filter trajectories based on their ending
     END_REASON = None
     #END_REASON = ["goal_reached"]
     #game_plays = read_json("./trajectories/2024-07-03_QAgent_Attacker.jsonl")
-    game_plays = read_json("trajectories/2024-07-02_BaseAgent_Attacker.jsonl")
-    for play in game_plays:
+    game_plays_optimal= read_json("trajectories/2024-07-25_BaseAgent_Attacker_optimal.jsonl")
+    for play in game_plays_optimal:
         play["model"] = "Optimal"
-    generate_mdp_from_trajecotries(game_plays, filename="mdp_test", end_reason=END_REASON)
-    generate_sankey_from_trajecotries(game_plays, filename="sankey_test", end_reason=END_REASON, threshold=0.1)
+
+    game_plays_extra_steps = read_json("trajectories/2024-07-25_BaseAgent_Attacker_failed.jsonl")
+    for play in game_plays_optimal:
+        play["model"] = "Not-optimal"
+    states = {}
+    actions = {}
+    edges_optimal = gameplay_graph(game_plays_optimal, states, actions,end_reason=END_REASON)
+    edges_not_optimal = gameplay_graph(game_plays_extra_steps, states, actions,end_reason=END_REASON)
+    print(edges_optimal)
+    print(edges_not_optimal)
+    state_to_id = {v:k for k,v in states.items()}
+    action_to_id = {v:k for k,v in states.items()}
+
+    added, deleted = get_graph_modificiation(edges_optimal, edges_not_optimal)
+    print("added:", added)
+    print("deleted:", deleted)
+    get_graph_stats(edges_optimal, state_to_id, action_to_id)
+    get_graph_stats(edges_not_optimal, state_to_id, action_to_id)
+    # print("optimal")
+    # get_graph_stats(edges_optimal, state_to_id, action_to_id)
+    # print("sub-optimal")
+    # get_graph_stats(edges_not_optimal, state_to_id, action_to_id)
+
+
+
     # print(compute_mean_length(game_plays))
     # get_action_type_barplot_per_step(game_plays, end_reason=END_REASON)
     # get_action_type_histogram_per_step(game_plays, end_reason=END_REASON)

@@ -9,7 +9,7 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
-from env.game_components import IP, Data, Network, Service, GameState, Action, ActionType, Observation
+from env.game_components import IP, Data, Network, Service, GameState, Action, Observation
 import netaddr
 import logging
 import csv
@@ -57,6 +57,9 @@ def state_as_ordered_string(state:GameState)->str:
     ret += "},data:{"
     for host in sorted(state.known_data.keys()):
         ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_data[host])])}]"
+    ret += "}, blocks:{"
+    for host in sorted(state.known_blocks.keys()):
+        ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_blocks[host])])}]"
     ret += "}"
     return ret
 
@@ -112,13 +115,6 @@ class ConfigParser():
             self.logger.error(f'Error loading the configuration file{e}')
             pass
     
-    def read_defender_detection_prob(self, action_name: str) -> dict:
-        if self.config["coordinator"]["agents"]["defenders"]["type"] in ["StochasticWithThreshold", "StochasticDefender"]:
-            action_detect_p = self.config["coordinator"]["agents"]["defenders"]["action_detetection_prob"][action_name]
-        else:
-            action_detect_p = 0
-        return action_detect_p  
-
     def read_env_action_data(self, action_name: str) -> dict:
         """
         Generic function to read the known data for any agent and goal of position
@@ -153,6 +149,37 @@ class ConfigParser():
             except (ValueError, netaddr.AddrFormatError):
                 known_data = {}
         return known_data
+
+    def read_agents_known_blocks(self, type_agent: str, type_data: str) -> dict:
+        """
+        Generic function to read the known blocks for any agent and goal of position
+        """
+        known_blocks_conf = self.config["coordinator"]['agents'][type_agent][type_data]['known_blocks']
+        known_blocks = {}
+        for target_host, block_list in known_blocks_conf.items():
+            try:
+                target_host  = IP(target_host)
+            except ValueError:
+                self.logger.error(f"Error when converting {target_host} to IP address object")
+            if isinstance(block_list,list):
+                known_blocks[target_host] = map(lambda x: IP(x), block_list)
+            elif block_list == "all_attackers":
+                known_blocks[target_host] = block_list
+            else:
+                raise ValueError(f"Unsupported value in 'known_blocks': {known_blocks_conf}")
+            # try:
+            #     # Check the host is a good ip
+            #     _ = netaddr.IPAddress(target_host)
+            #     target_host_ip = IP(target_host)
+            #     for known_blocked_host in dict_blocked_hosts.values():
+            #         known_blocked_host_ip = IP(known_blocked_host)
+            #         known_blocks[target_host_ip].append(known_blocked_host_ip)
+            # except (ValueError, netaddr.AddrFormatError):
+            #     if target_host.lower() == "all_routers":
+            #         known_blocks["all_routers"] = dict_blocked_hosts
+            # except (ValueError):
+            #     known_blocks = {}
+        return known_blocks
     
     def read_agents_known_services(self, type_agent: str, type_data: str) -> dict:
         """
@@ -204,8 +231,14 @@ class ConfigParser():
             try:
                 _ = netaddr.IPAddress(ip)
                 known_hosts.add(IP(ip))
-            except (ValueError, netaddr.AddrFormatError):
-                self.logger('Configuration problem with the known hosts')
+            except (ValueError, netaddr.AddrFormatError) as e :
+                if ip == 'random':
+                    # A random start ip was asked for
+                    known_hosts.add('random')
+                elif ip == 'all_local':
+                    known_hosts.add('all_local')
+                else:
+                    self.logger.error(f'Configuration problem with the known hosts: {e}')
         return known_hosts
 
     def read_agents_controlled_hosts(self, type_agent: str, type_data: str) -> dict:
@@ -218,77 +251,87 @@ class ConfigParser():
             try:
                 _ = netaddr.IPAddress(ip)
                 controlled_hosts.add(IP(ip))
-            except (ValueError, netaddr.AddrFormatError):
+            except (ValueError, netaddr.AddrFormatError) as e:
                 if ip == 'random' :
                     # A random start ip was asked for
                     controlled_hosts.add('random')
+                elif ip == 'all_local':
+                    controlled_hosts.add('all_local')
                 else:
-                    self.logger('Configuration problem with the known hosts')
+                    self.logger.error(f'Configuration problem with the controlled hosts: {e}')
         return controlled_hosts
 
-    
-    def get_attackers_win_conditions(self):
+    def get_player_win_conditions(self, type_of_player):
         """
-        Get the goal of the attacker 
+        Get the goal of the player
+        type_of_player: Can be 'attackers' or 'defenders' 
         """
         # Read known nets
-        known_networks = self.read_agents_known_networks('attackers', 'goal')
+        known_networks = self.read_agents_known_networks(type_of_player, 'goal')
 
         # Read known hosts
-        known_hosts = self.read_agents_known_hosts('attackers', 'goal')
+        known_hosts = self.read_agents_known_hosts(type_of_player, 'goal')
 
         # Read controlled hosts
-        controlled_hosts = self.read_agents_controlled_hosts('attackers', 'goal')
+        controlled_hosts = self.read_agents_controlled_hosts(type_of_player, 'goal')
 
         # Goal services
-        known_services = self.read_agents_known_services('attackers', 'goal')
+        known_services = self.read_agents_known_services(type_of_player, 'goal')
+
+        # Read known blocks 
+        known_blocks = self.read_agents_known_blocks(type_of_player, 'goal')
 
         # Goal data
-        known_data = self.read_agents_known_data('attackers', 'goal')
+        known_data = self.read_agents_known_data(type_of_player, 'goal')
 
-        attackers_goal = {}
-        attackers_goal['known_networks'] = known_networks
-        attackers_goal['controlled_hosts'] = controlled_hosts
-        attackers_goal['known_hosts'] = known_hosts
-        attackers_goal['known_data'] = known_data
-        attackers_goal['known_services'] = known_services
+        # Blocks
+        known_blocks = self.read_agents_known_blocks(type_of_player, 'goal')
 
-        return attackers_goal
+        player_goal = {}
+        player_goal['known_networks'] = known_networks
+        player_goal['controlled_hosts'] = controlled_hosts
+        player_goal['known_hosts'] = known_hosts
+        player_goal['known_data'] = known_data
+        player_goal['known_services'] = known_services
+        player_goal['known_blocks'] = known_blocks
+
+        return player_goal
     
-    def get_attackers_start_position(self):
+    def get_player_start_position(self, type_of_player):
         """
         Generate the starting position of an attacking agent
+        type_of_player: Can be 'attackers' or 'defenders' 
         """
         # Read known nets
-        known_networks = self.read_agents_known_networks('attackers', 'start_position')
+        known_networks = self.read_agents_known_networks(type_of_player, 'start_position')
 
         # Read known hosts
-        known_hosts = self.read_agents_known_hosts('attackers', 'start_position')
+        known_hosts = self.read_agents_known_hosts(type_of_player, 'start_position')
 
         # Read controlled hosts
-        controlled_hosts = self.read_agents_controlled_hosts('attackers', 'start_position')
+        controlled_hosts = self.read_agents_controlled_hosts(type_of_player, 'start_position')
 
         # Start services
-        known_services = self.read_agents_known_services('attackers', 'start_position')
+        known_services = self.read_agents_known_services(type_of_player, 'start_position')
 
         # Start data
-        known_data = self.read_agents_known_data('attackers', 'start_position')
+        known_data = self.read_agents_known_data(type_of_player, 'start_position')
 
-        attackers_start_position = {}
-        attackers_start_position['known_networks'] = known_networks
-        attackers_start_position['controlled_hosts'] = controlled_hosts
-        attackers_start_position['known_hosts'] = known_hosts
-        attackers_start_position['known_data'] = known_data
-        attackers_start_position['known_services'] = known_services
+        player_start_position = {}
+        player_start_position['known_networks'] = known_networks
+        player_start_position['controlled_hosts'] = controlled_hosts
+        player_start_position['known_hosts'] = known_hosts
+        player_start_position['known_data'] = known_data
+        player_start_position['known_services'] = known_services
 
-        return attackers_start_position
+        return player_start_position
 
     def get_start_position(self, agent_role):
         match agent_role:
             case "Attacker":
-                return self.get_attackers_start_position()
+                return self.get_player_start_position(agent_role)
             case "Defender":
-                return {}
+                return self.get_player_start_position(agent_role)
             case "Benign":
                 return {
                     'known_networks': set(),
@@ -303,9 +346,9 @@ class ConfigParser():
     def get_win_conditions(self, agent_role):
          match agent_role:
             case "Attacker":
-                return self.get_attackers_win_conditions()
+                return self.get_player_win_conditions(agent_role)
             case "Defender":
-                return {}
+                return self.get_player_win_conditions(agent_role)
             case "Benign":
                 # create goal that is unreachable so we have infinite play by the benign agent
                 return {
@@ -313,7 +356,8 @@ class ConfigParser():
                     'controlled_hosts': set(),
                     'known_hosts': set(),
                     'known_data': {IP("1.1.1.1"): {Data(owner='User1', id='DataFromInternet', size=0, type='')}},
-                    'known_services': {}
+                    'known_services': {},
+                    'known_blocks': {}
                 }
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
@@ -332,11 +376,14 @@ class ConfigParser():
         match agent_role:
             case "Attacker":
                 try:
-                    description = self.config['coordinator']['agents']["attackers"]["goal"]["description"]
+                    description = self.config['coordinator']['agents'][agent_role]["goal"]["description"]
                 except KeyError:
                     description = ""
             case "Defender":
-                description = ""
+                try:
+                    description = self.config['coordinator']['agents'][agent_role]["goal"]["description"]
+                except KeyError:
+                    description = ""
             case "Benign":
                 description = ""
             case _:
@@ -404,42 +451,6 @@ class ConfigParser():
             store_rb = False
         return store_rb
     
-    def get_defender_type(self):
-        """
-        Get the type of the defender
-        """
-        try:
-            defender_placements = self.config["coordinator"]['agents']['defenders']['type']
-        except KeyError:
-            # Option is not in the configuration - default to no defender present
-            defender_placements = "NoDefender"
-        return defender_placements
-    
-    def get_defender_tw_size(self):
-        tw_size = self.config["coordinator"]['agents']['defenders']['tw_size']
-        return tw_size
-    
-    def get_defender_thresholds(self):
-        """Function to read thresholds for stochastic defender with thresholds"""
-        thresholds = {}
-        config_thresholds = self.config["coordinator"]['agents']['defenders']["thresholds"]
-        # ScanNetwork
-        thresholds[ActionType.ScanNetwork] = {"consecutive_actions": config_thresholds["scan_network"]["consecutive_actions"]}
-        thresholds[ActionType.ScanNetwork]["tw_ratio"] = config_thresholds["scan_network"]["tw_ratio"]
-        # FindServices
-        thresholds[ActionType.FindServices] = {"consecutive_actions": config_thresholds["find_services"]["consecutive_actions"]}
-        thresholds[ActionType.FindServices]["tw_ratio"] = config_thresholds["find_services"]["tw_ratio"]
-        # FindData
-        thresholds[ActionType.FindData] = {"repeated_actions_episode": config_thresholds["find_data"]["repeated_actions_episode"]}
-        thresholds[ActionType.FindData]["tw_ratio"] = config_thresholds["find_data"]["tw_ratio"]
-        # ExploitService
-        thresholds[ActionType.ExploitService] = {"repeated_actions_episode": config_thresholds["exploit_service"]["repeated_actions_episode"]}
-        thresholds[ActionType.ExploitService]["tw_ratio"] = config_thresholds["exploit_service"]["tw_ratio"]
-        # ExfiltrateData
-        thresholds[ActionType.ExfiltrateData] = {"consecutive_actions": config_thresholds["exfiltrate_data"]["consecutive_actions"]}
-        thresholds[ActionType.ExfiltrateData]["tw_ratio"] = config_thresholds["exfiltrate_data"]["tw_ratio"]
-        return thresholds
-
     def get_scenario(self):
         """
         Get the scenario config object
@@ -487,6 +498,13 @@ class ConfigParser():
             use_firewall = False
         return use_firewall
 
+    def get_use_global_defender(self)->bool:
+        try:
+            use_firewall = self.config['env']['use_global_defender']
+        except KeyError:
+            use_firewall = False
+        return use_firewall
+    
 def get_logging_level(debug_level):
     """
     Configure logging level based on the provided debug_level string.
