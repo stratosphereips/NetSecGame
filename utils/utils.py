@@ -9,6 +9,7 @@ sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from env.scenarios import scenario_configuration
 from env.scenarios import smaller_scenario_configuration
 from env.scenarios import tiny_scenario_configuration
+from env.scenarios import three_net_scenario
 from env.game_components import IP, Data, Network, Service, GameState, Action, Observation
 import netaddr
 import logging
@@ -463,6 +464,8 @@ class ConfigParser():
             cyst_config = smaller_scenario_configuration.configuration_objects
         elif scenario == "scenario1_tiny":
             cyst_config = tiny_scenario_configuration.configuration_objects
+        elif scenario == "three_nets":
+            cyst_config = three_net_scenario.configuration_objects
         else:
             cyst_config = 'scenario1'
         return cyst_config
