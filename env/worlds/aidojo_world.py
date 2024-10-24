@@ -18,7 +18,7 @@ class AIDojoWorld(object):
         self.task_config = ConfigParser(task_config_file)
         self.logger = logging.getLogger(world_name)
 
-    def step(current_state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
+    def step(self, current_state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
         """
         Executes given action in a current state of the environment and produces new GameState.
         """
