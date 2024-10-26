@@ -3,9 +3,10 @@
 coordinator:
   # Define the conf for all the 'attacker' agents.
   agents:
-    Attacker:
+    attackers:
       goal:
         description: "Exfiltrate data to '213.47.23.195'"
+        # Put randomize_goal_every_episode in True if you put any of the goal values in 'random'
         is_any_part_of_goal_random: True
         known_networks: []
         #known_networks: [192.168.1.0/24, 192.168.3.0/24]
@@ -26,8 +27,6 @@ coordinator:
         # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the goal data is
         # known_data: {213.47.23.195: [random]}
         known_blocks: {}
-        # Example of known blocks. In the host 192.168.2.2, block all connections coming or going to 192.168.1.3
-        # known_blocks: {192.168.2.2: {192.168.1.3}}
 
       start_position:
         known_networks: []
@@ -87,6 +86,7 @@ coordinator:
         known_services: {'all_local': all_local}
         known_data: {'all_local': all_local}
         # Blocked IPs
+        blocked_ips: {}
         known_blocks: {'all_local': all_local}
         # Example of known blocks to start with. In the host 192.168.2.2, block all connections coming or going to 192.168.1.3
         # known_blocks: {192.168.2.2: {192.168.1.3}}
@@ -122,15 +122,17 @@ coordinator:
       exploit_service: 0.1
       find_data: 0.025
       exfiltrate_data: 0.025
+
 env:
   # random means to choose the seed in a random way, so it is not fixed
   random_seed: 'random'
   # Or you can fix the seed
   # random_seed: 42
   scenario: 'scenario1'
-  use_global_defender: False
-  max_steps: 50
+  max_steps: 100
+  store_replay_buffer: False
   use_dynamic_addresses: False
+  use_global_defender: False
   use_firewall: True
   save_trajectories: False
   goal_reward: 100
@@ -146,6 +148,4 @@ env:
     find_data:
       prob_success: 1.0
     exfiltrate_data:
-      prob_success: 1.0
-    block_ip:
       prob_success: 1.0
