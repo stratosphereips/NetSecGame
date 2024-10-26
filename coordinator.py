@@ -298,7 +298,7 @@ class Coordinator:
         Method to initialize new player upon joining the game.
         Returns initial observation for the agent based on the agent's role
         """
-        self.logger.info(f"\tInitializing new player{agent_addr}")
+        self.logger.info(f"\tInitializing new player{agent_addr} with role {agent_role}")
         self.agents[agent_addr] = (agent_name, agent_role)
         self._agent_steps[agent_addr] = 0
         self._reset_requests[agent_addr] = False

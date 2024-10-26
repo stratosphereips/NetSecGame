@@ -142,6 +142,7 @@ Configuration of the attacking agents. Consists of two parts:
     - `controlled_hosts`(set)
     - `known_services`(dict)
     - `known_data`(dict)
+    - `known_blocks` (dict)
 
      Each of the parts can be empty (not part of the goal, exactly defined (e.g., `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include the keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`.
     Additionally,  if `random` keyword is used in the goal definition, 
@@ -152,6 +153,7 @@ Configuration of the attacking agents. Consists of two parts:
     - `controlled_hosts`(set)
     - `known_services`(dict)
     - `known_data`(dict)
+    - `known_blocks` (dict)
 
     The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts`, so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`
 
@@ -180,35 +182,80 @@ agents:
       known_blocks: {}
 ```
 ### Defender configuration (`defenders`)
-Currently, the defender **is** a separate agent.
+Definition of defending agent's properties. Currently, the defender can be a separate agent or it can be a global defender as part of the environment. This is defined in the `coodinator.DefenderType.type` key.
 
-If you want a defender in the game, you must connect a defender agent. For playing without a defender, leave the section empty.
+`type` - Type of the defender. Four types are currently implemented:
+  1. `NoDefender` (default) - interation without defender
+  2. `StochasticDefender` - detections are based on ActionType probabilities (defined in the task configuraion, section `action_detetection_prob`).
+  3. `StochasticDefenderWithThreshold` - Modification of stochastic defender. Detection probabilities are used *IF* threasholds in the particular ActionType is reached. Thresholds are computed in time windows defined by `tw_size` (`tw_size=5` means that 5 previous actions are taken into account). If ratio of some ActionType within the timewindow is above the threshold, the probability defined in the task configuraion, section `action_detetection_prob` is used to determine if the action was detected. For action *BELOW* the thresholds, no detection is made. Additionally, thresholds for consecutive action type is defined in `consecutive_actions`. For example with
+  4. `Agents` - It means that the defender is not global but managed by individual agents, as defined by the `defenders` configuration key.
 
 Example of defender configuration:
 ```YAML
-   Defender:
-      goal:
-        description: "Block all attackers"
-        is_any_part_of_goal_random: False
-        known_networks: []
-        known_hosts: []
-        controlled_hosts: []
-        known_services: {}
-        known_data: {}
-        known_blocks: {'any_routers': 'all_attackers_controlled_hosts'}
+coordinator:
+  DefenderType:
+    type: 'StochasticWithThreshold'
+    tw_size: 5
+    thresholds:
+      scan_network:
+        consecutive_actions: 2
+        tw_ratio: 0.25
+      find_services:
+        consecutive_actions: 3
+        tw_ratio: 0.3
+      exploit_service:
+        repeated_actions_episode: 2
+        tw_ratio: 0.25
+      find_data:
+        tw_ratio: 0.5
+        repeated_actions_episode: 2
+      exfiltrate_data:
+        consecutive_actions: 2
+        tw_ratio: 0.25
+    action_detetection_prob:
+        scan_network: 0.05
+        find_services: 0.075
+        exploit_service: 0.1
+        find_data: 0.025
+        exfiltrate_data: 0.025
+```
 
-      start_position:
-        known_networks: [all_local]
-        known_hosts: [all_local]
-        controlled_hosts: [all_local]
-        known_services: {all_local}
-        known_data: {all_local}
-        blocked_ips: {}
-        known_blocks: {}
+As part of this configuration there are subkeys.
+```YAML
+  scan_network:
+    consecutive_actions: 2
+```
+
+This means that if the agent uses action `ScanNetwork` (regardless of the parameters) twice or more, a detection may occur based on the probabilities. 
+Action types `FindData` and `exploit_service` have additional thresholds for repeated actions (with parameters) throughout the **WHOLE** episode (e.g. if action `<ActionType.FindData|{'target_host': 192.168.2.2}>` is played more than two times with following configuration, the detection may happen based on the defined probability).  
+
+#### Defender as agents
+If the type of DefenderType is `agents` then the configuration used is defined in `coordinator.agents.defenders`.
+
+```YAML
+defenders:
+  goal:
+    description: "Block all attackers"
+    is_any_part_of_goal_random: False
+    known_networks: []
+    known_hosts: []
+    controlled_hosts: []
+    known_services: {}
+    known_data: {}
+    known_blocks: {'any_routers': 'all_attackers_controlled_hosts'}
+
+  start_position:
+    known_networks: [all_local]
+    known_hosts: [all_local]
+    controlled_hosts: [all_local]
+    known_services: {'all_local': all_local}
+    known_data: {'all_local': all_local}
+    known_blocks: {'all_local': all_local}
 ```
 
 As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In this example, the goal of the defender is determined by a state where the known blocks can be applied in any router's firewall and must include all the controlled hosts of all the attackers. These are `magic` words that will push the coordinator to check these positions without revealing them to the defender.
 
+In the start position, the defender has `known_services`, `known_data`, and `known_blocks` defined to know all the local values. This means that the defender starts with almost perfect knowledge on the game, except for the position of the attacker (or even if there is an attacker).
 
 ## Definition of the network topology
 The network topology and rules are defined using a [CYST](https://pypi.org/project/cyst/) simulator configuration. Cyst defines a complex network configuration, and this environment does not use all Cyst features for now. CYST components currently used are:

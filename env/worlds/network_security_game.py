@@ -734,6 +734,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         """
         Builds a GameState from given view.
         If there is a keyword 'random' used, it is replaced by a valid option at random.
+        If there is a keyword 'all_local' used, it is replaced by all the options
 
         Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
         """
@@ -741,9 +742,9 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         # re-map all networks based on current mapping in self._network_mapping
         known_networks = set([self._network_mapping[net] for net in  view["known_networks"]])
         
-        
+        # 
+        # Add controlled_hosts
         controlled_hosts = set()
-        # controlled_hosts
         for host in view['controlled_hosts']:
             if isinstance(host, components.IP):
                 controlled_hosts.add(self._ip_mapping[host])
@@ -761,11 +762,16 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 controlled_hosts = controlled_hosts.union(self._get_all_local_ips())
             else:
                 self.logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {host}")
+
+        # 
+        # Add known_hosts
         # re-map all known based on current mapping in self._ip_mapping
         known_hosts = set([self._ip_mapping[ip] for ip in view["known_hosts"]])
         # Add all controlled hosts to known_hosts
         known_hosts = known_hosts.union(controlled_hosts)
        
+        #
+        # Add known_networks
         if add_neighboring_nets:
             # Extend the known networks with the neighbouring networks
             # This is to solve in the env (and not in the agent) the problem
@@ -789,12 +795,24 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                             known_networks.add(ip)
                         #return value back to the original
                         net_obj.value += 256
+        #
+        # Add known_services
         known_services ={}
         for ip, service_list in view["known_services"]:
             known_services[self._ip_mapping[ip]] = service_list
+
+        #
+        # Add known_data
         known_data = {}
         for ip, data_list in view["known_data"]:
             known_data[self._ip_mapping[ip]] = data_list
+
+        # Add known_blocks
+        known_blocks = {}
+        for ip, blocked_list in view["known_data"]:
+            known_blocks = {}
+        # new_dict["known_blocks"][self._ip_mapping[host]] = items
+
         game_state = components.GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
         self.logger.info(f"Generated GameState:{game_state}")
         return game_state
