@@ -25,6 +25,7 @@
 # Name can be anything you want. Type too. Version too. Is_local is a boolean to specify if the service is opened to the network or only in the localhost.
 # Example:
 # known_services: {192.168.1.3: [Local system, lanman server, 10.0.19041, False], 192.168.1.4: [Other system, SMB server, 21.2.39421, False]}
+# You can also use the special word 'all' to assign all known services in all hosts.
 
 # Known data: Data known by the agents.
 # In known data, put the target host that must have the data and which data in format: [user owner, data]
@@ -35,6 +36,7 @@
 # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the data is. 
 # Very useful to set random goals that are important for Reinforcement Learning.
 # known_data: {213.47.23.195: [random]}
+# You can also use the special world 'all' to add all the known data in all hosts.
 
 # Known blocks. Firewall blocks known by the agent.
 # This is a dictionary. The Key is the _target host_ where the rule is applied. The value of the dictionary is a list of IPs that are blocked in that _target host_.
@@ -42,6 +44,7 @@
 # Example: In the host 192.168.2.2, block all connections coming or going _to_ and _from_ 192.168.1.3 and 192.168.1.4
 # known_blocks: {192.168.2.2: [192.168.1.3, 192.168.1.4]}
 # You can also use the wildcard string 'all_routers', and 'all_attackers', to mean that all the controlled hosts of all the attackers should be in this list in order to win
+# You can also use the special world 'all' to add all the known blocks in all hosts.
 
 coordinator:
   # Define the conf for all the 'attacker' agents.
@@ -55,7 +58,7 @@ coordinator:
         known_hosts: []
         controlled_hosts: []
         known_services: {}
-        known_data: {213.47.23.195: [[User1,DataFromServer1]]}
+        known_data: {213.47.23.195: [[User1, DataFromServer1]]}
         known_blocks: {}
 
       start_position:
@@ -83,9 +86,9 @@ coordinator:
         known_networks: ['all_local']
         known_hosts: ['all_local']
         controlled_hosts: ['all_local']
-        known_services: {'all_local': ['all_local']}
-        known_data: {'all_local': ['all_local']}
-        known_blocks: {'all_local': ['all_local']}
+        known_services: {'all': ['all']}
+        known_data: {'all': ['all']}
+        known_blocks: {'all': ['all']}
 
   DefenderType:
     # types are StochasticDefender and NoDefender
