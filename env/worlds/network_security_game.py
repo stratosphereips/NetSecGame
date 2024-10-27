@@ -78,7 +78,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         self._data_original = copy.deepcopy(self._data)
         self._data_content_original = copy.deepcopy(self._data_content)
 
-        # Make a copy of the blocks so it is possible to reset later
+        # Make a copy of the firewall so it is possible to reset later
         self._firewall_original = copy.deepcopy(self._firewall)
         
         self._actions_played = []
@@ -262,17 +262,17 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             firewall = {ip:set() for ip in all_ips}
             if self.task_config.get_use_firewall():
                 self.logger.info("Firewall enabled - processing FW rules")
-                # LOCAL NETWORKS
+                # Local Networks
                 for net, ips in self._networks.items():
-                    # IF net is local, allow connection between all nodes in it
+                    # If net is local, allow connection between all nodes in it
                     if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
                         for src in ips:
                             for dst in ips:
                                 firewall[src].add(dst)
                 
-                # LOCAL TO INTERNET
+                # Local to Internet
                 for net, ips in self._networks.items():
-                    # IF net is local, allow connection between all nodes in it
+                    # If net is local, allow connection between all nodes in it
                     if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
                         for public_net, public_ips in self._networks.items():
                             if not netaddr.IPNetwork(str(public_net)).ip.is_ipv4_private_use():
@@ -281,7 +281,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                                         firewall[src].add(dst)
                                         #add self loop:
                                         firewall[dst].add(dst)
-                # FW RULES FROM CONFIG
+                # FW rules from config
                 for rule in fw_rules:
                     if rule.policy == FirewallPolicy.ALLOW:
                         src_net = netaddr.IPNetwork(rule.src_net)
@@ -455,13 +455,13 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         Returns set of Data tuples from given host IP
         Check if the host is in the list of controlled hosts
         """
-        blocks = set()
+        blocked_ips = set()
         if host_ip in controlled_hosts: #only return data if the agent controls the host
             if host_ip in self._firewall:
-                blocks = self._firewall[host_ip]
+                blocked_ips = self._firewall[host_ip]
         else:
-            self.logger.debug("\t\t\tCan't get blocks in host. The host is not controlled.")
-        return blocks
+            self.logger.debug("\t\t\tCan't get blocked ips in host. The host is not controlled.")
+        return blocked_ips
 
     def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
         """
@@ -855,22 +855,27 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 known_data[self._ip_mapping[ip]] = data_list
 
         # Add known_blocks
-        known_blocks = {}
-        for b_ip, blocked_list in view["known_blocks"].items():
-            if b_ip == 'all':
-                for ip in self._get_all_local_ips():
+        known_blocks = []
+        for blocked_list in view["known_blocks"]:
+            src_host = blocked_list[0]
+            if src_host == 'all':
+                # Get all blocks
+                for local_ip in self._get_all_local_ips():
                     # Be careful that we are using the variable controlled_hosts, that was set in this function previously.
-                    blocks = self._get_firewall_in_host(ip, controlled_hosts)
-                    if blocked_list == ['all']:
-                        if blocks:
-                            # Only add the host with data if there is actually data in the host.
-                            known_blocks[self._ip_mapping[ip]] = blocks
-                    else:
-                        # Not all the blocks were requested, add one by one.
-                        pass
-        # new_dict["known_blocks"][self._ip_mapping[host]] = items
+                    # The firewall stores the allowed connections.
+                    allowed_connections = self._get_firewall_in_host(local_ip, controlled_hosts)
+                    # Now find the blocked connectins (not in allowed)
+                    for candidate_blocked_ip in self._get_all_local_ips():
+                        # Check if each candidate is actually not allowed
+                        if candidate_blocked_ip not in allowed_connections:
+                            # From local_ip to candidate there is no allow, so store as block
+                            blocked_src_dst = [local_ip, candidate_blocked_ip]
+                            known_blocks.append(blocked_src_dst)
+            else:
+                # They are real ips
+                known_blocks.append([self._ip_mapping[src_host], self._ip_mapping[dst_host]])
 
-        game_state = components.GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
+        game_state = components.GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks, known_blocks)
         self.logger.info(f"Generated GameState:{game_state}")
         return game_state
 
@@ -880,12 +885,12 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         in self._network_mapping and self._ip_mapping.
         """
         new_dict = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
+            "known_networks": set(),
+            "known_hosts": set(),
+            "controlled_hosts": set(),
             "known_services": {},
             "known_data": {},
-            "known_blocks": {}
+            "known_blocks": []
         }
         for net in goal_dict["known_networks"]:
             if net in self._network_mapping:
@@ -917,12 +922,13 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             else:
                 # Unknown IP, do not map
                 new_dict["known_data"][host] = items
-        for host, items in goal_dict["known_blocks"].items():
-            if host in self._ip_mapping:
-                new_dict["known_blocks"][self._ip_mapping[host]] = items
-            else:
-                # Unknown IP, do not map
-                new_dict["known_blocks"][host] = items
+        for host_list in goal_dict["known_blocks"]:
+            for host_src, host_dst in host_list:
+                if host_src in self._ip_mapping and host_dst in self._ip_mapping:
+                    new_dict["known_blocks"][self._ip_mapping[host]] = [host_src, host_dst]
+                else:
+                    # Unknown IP, do not map
+                    new_dict["known_blocks"][host] = [host_src, host_dst]
         return new_dict    
 
     def update_goal_descriptions(self, goal_description:str)->str:
