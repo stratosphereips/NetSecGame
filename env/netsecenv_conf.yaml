@@ -36,15 +36,14 @@
 # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the data is. 
 # Very useful to set random goals that are important for Reinforcement Learning.
 # known_data: {213.47.23.195: [random]}
-# You can also use the special world 'all' to add all the known data in all hosts.
+# You can also use the special word 'all' to add all the known data in all hosts.
 
-# Known blocks. Firewall blocks known by the agent.
-# This is a dictionary. The Key is the _target host_ where the rule is applied. The value of the dictionary is a list of IPs that are blocked in that _target host_.
-# The blocks are applied as everything going to and from those IPs.
-# Example: In the host 192.168.2.2, block all connections coming or going _to_ and _from_ 192.168.1.3 and 192.168.1.4
-# known_blocks: {192.168.2.2: [192.168.1.3, 192.168.1.4]}
-# You can also use the wildcard string 'all_routers', and 'all_attackers', to mean that all the controlled hosts of all the attackers should be in this list in order to win
-# You can also use the special world 'all' to add all the known blocks in all hosts.
+# Known blocks. Firewall blocks known by the agent. There is, for now, a global FW for the whole network.
+# This is a list of lists. Each internal list blocks from a src IP to a dst IP.
+# Example: Block connections coming _from_ 192.168.1.3 _to_ 192.168.1.4, and block all connections _from 192.168.2.3 _to_ 192.168.2.4
+# known_blocks: [ [192.168.1.3, 192.168.1.4], [192.168.2.3, 192.168.2.4]
+# You can also use the special word 'all' to add all the known blocks.
+# You can also use the wildcard string 'all_attackers' to add all the controlled hosts of all attackers
 
 coordinator:
   # Define the conf for all the 'attacker' agents.
@@ -59,7 +58,7 @@ coordinator:
         controlled_hosts: []
         known_services: {}
         known_data: {213.47.23.195: [[User1, DataFromServer1]]}
-        known_blocks: {}
+        known_blocks: [[]]
 
       start_position:
         known_networks: []
@@ -68,7 +67,7 @@ coordinator:
         controlled_hosts: [213.47.23.195, random]
         known_services: {}
         known_data: {}
-        known_blocks: {}
+        known_blocks: [[]]
 
     Defender:
       goal:
@@ -80,7 +79,7 @@ coordinator:
         known_services: {}
         known_data: {}
         # Default for the defender is not to have any goal in the blocks because the generic goal of the defender is to stop the attackers from winning. Check documentation.
-        known_blocks: {}
+        known_blocks: [[]]
 
       start_position:
         known_networks: ['all_local']
@@ -88,7 +87,7 @@ coordinator:
         controlled_hosts: ['all_local']
         known_services: {'all': ['all']}
         known_data: {'all': ['all']}
-        known_blocks: {'all': ['all']}
+        known_blocks: [['all']]
 
   DefenderType:
     # types are StochasticDefender and NoDefender
