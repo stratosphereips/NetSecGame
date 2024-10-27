@@ -557,14 +557,41 @@ class Coordinator:
         agents_state = self._agent_states[agent_addr]
         agent_role = self.agents[agent_addr][1]
         win_condition = self._world.update_goal_dict(self._win_conditions_per_role[agent_role])
-        goal_check = self._check_goal(agents_state, win_condition)
-        if goal_check:
-            self.logger.info("\tGoal reached!")
+
+        goal_check_attacker = False
+        goal_check_defender = False
+        if agent_role == 'Attacker':
+            goal_check_attacker = self._check_goal_attacker(agents_state, win_condition)
+        elif agent_role == 'Defender':
+            # Be careful, we need first the info if the attacker won to do this
+            goal_check_defender = self._check_goal_defender(agents_state, win_condition, goal_check_attacker)
+
+        if goal_check_attacker:
+            self.logger.info("\tGoal reached for the attacker!")
+        elif goal_check_defender:
+            self.logger.info("\tGoal reached for the defender!")
         else:
             self.logger.info("\tGoal not reached!")
-        return goal_check
+        if agent_role == 'Attacker':
+            return goal_check_attacker
+        elif agent_role == 'Defender':
+            return goal_check_defender
+
+    def _check_goal_defender(self, state:GameState, goal_conditions:dict, attacker_won: bool)->bool:
+        """
+        Check the goal of the defender
+        This is:
+        - If the timeout of the episode was reached (it ended), and if the attacker did not fulfilled its goal
+        """
+        # For now the defender never wins
+        return False
+
+        # The check if we are at the end of the episode is not implemented YET. We need to check this when the episode ends... how?
+        if not attacker_won:
+            return True
+        return False
     
-    def _check_goal(self, state:GameState, goal_conditions:dict)->bool:
+    def _check_goal_attacker(self, state:GameState, goal_conditions:dict)->bool:
         """
         Check if the goal conditons were satisfied in a given game state
         """
@@ -584,6 +611,15 @@ class Coordinator:
                     #some keys are missing in the known_dict
                     return False
             return False
+
+        def goal_list_of_list_satistfied(goal_dict:dict, known_dict: dict)-> bool:
+            """
+            Helper function for checking if a goal list of list condition is satisfied
+            """
+            # check if we have all IPs that should have some values (are keys in goal_dict)
+            if goal_dict <= known_dict:
+                return True
+            return False
         
         # For each part of the state of the game, check if the conditions are met
         goal_reached = {}    
@@ -592,7 +628,7 @@ class Coordinator:
         goal_reached["controlled_hosts"] = set(goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
         goal_reached["services"] = goal_dict_satistfied(goal_conditions["known_services"], state.known_services)
         goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
-        goal_reached["known_blocks"] = goal_dict_satistfied(goal_conditions["known_blocks"], state.known_blocks)
+        goal_reached["known_blocks"] = goal_list_of_list_satistfied(goal_conditions["known_blocks"], state.known_blocks)
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
