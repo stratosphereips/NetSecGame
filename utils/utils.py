@@ -15,6 +15,7 @@ import logging
 import csv
 from random import randint
 import json
+from netaddr import IPNetwork, IPSet
 
 def read_replay_buffer_from_csv(csvfile:str)->list:
     """
@@ -519,6 +520,25 @@ def get_logging_level(debug_level):
     
     level = log_levels.get(debug_level.upper(), logging.ERROR)
     return level
+
+
+# Define the private IP ranges
+PRIVATE_NETWORKS = IPSet([
+    IPNetwork('10.0.0.0/8'),
+    IPNetwork('172.16.0.0/12'),
+    IPNetwork('192.168.0.0/16'),
+    IPNetwork('169.254.0.0/16'),  # Link-local
+    IPNetwork('127.0.0.0/8'),     # Loopback
+    IPNetwork('::1/128'),         # IPv6 loopback
+    IPNetwork('fc00::/7'),        # Unique local address IPv6
+    IPNetwork('fe80::/10')        # Link-local IPv6
+])
+
+def is_private_network(network):
+    ip_set = IPSet([IPNetwork(network)])
+    # Check if all IPs in the network are within the private IP ranges
+    return ip_set.issubset(PRIVATE_NETWORKS)
+
 
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
