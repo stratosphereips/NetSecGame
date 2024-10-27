@@ -148,8 +148,8 @@ class ConfigParser():
                         known_data[known_data_host].add(known_data_content)
 
             except (ValueError, netaddr.AddrFormatError):
-                if ip == 'all_local' and data == ['all_local']:
-                    known_data['all_local'] = 'all_local'
+                if ip == 'all' and data == ['all']:
+                    known_data['all'] = ['all']
         return known_data
 
     def read_agents_known_blocks(self, type_agent: str, type_data: str) -> dict:
@@ -160,7 +160,7 @@ class ConfigParser():
         known_blocks = {}
         for target_host, block_list in known_blocks_conf.items():
             try:
-                # Check the host is a good ip
+                # Check if the target host is a good ip
                 _ = netaddr.IPAddress(target_host)
                 target_host_ip = IP(target_host)
                 for known_blocked_host in block_list:
@@ -168,13 +168,18 @@ class ConfigParser():
                         known_blocked_host_ip = IP(known_blocked_host)
                         known_blocks[target_host_ip].append(known_blocked_host_ip)
                     except (ValueError, netaddr.AddrFormatError):
-                        if known_blocked_host.lower() == "all_local":
-                            known_blocks[target_host_ip] = known_blocked_host
+                        # The target host is a good ip, but the requested blocks is 'all'
+                        if known_blocked_host.lower() == "all":
+                            known_blocks[target_host_ip] = "all"
+                        elif known_blocked_host.lower() == "all_attackers":
+                            known_blocks[target_host_ip] = "all_attackers"
             except (ValueError, netaddr.AddrFormatError):
                 if target_host.lower() == "all_routers":
                     known_blocks["all_routers"] = block_list
-                elif target_host.lower() == "all_local":
-                    known_blocks["all_local"] = block_list
+                elif target_host.lower() == "all":
+                    known_blocks["all"] = block_list
+                elif known_blocked_host.lower() == "all_attackers":
+                    known_blocks[target_host_ip] = "all_attackers"
             except (ValueError):
                 known_blocks = {}
         return known_blocks
@@ -199,8 +204,8 @@ class ConfigParser():
                 known_services[known_services_host] = Service(name, type, version, is_local)
 
             except (ValueError, netaddr.AddrFormatError):
-                if ip == 'all_local' and data == ['all_local']:
-                    known_services['all_local'] = 'all_local'
+                if ip == 'all' and data == ['all']:
+                    known_services['all'] = ['all']
         return known_services
 
     def read_agents_known_networks(self, type_agent: str, type_data: str) -> dict:
