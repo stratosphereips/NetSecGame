@@ -26,7 +26,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
         self._networks = {} # A `dict` of the networks present in the environment. Keys: `Network` objects, values `set` of `IP` objects.
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
-        self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
+        self._data = {} # Dict of all data in the environment. Keys: hostname (`str`), values list of `Data` objetcs.
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         self._data_content = {} #content of each datapoint from self._data
         # All exploits in the environment
@@ -77,6 +77,9 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         # Make a copy of data placements so it is possible to reset to it when episode ends
         self._data_original = copy.deepcopy(self._data)
         self._data_content_original = copy.deepcopy(self._data_content)
+
+        # Make a copy of the blocks so it is possible to reset later
+        self._firewall_original = copy.deepcopy(self._firewall)
         
         self._actions_played = []
         self.logger.info("Environment initialization finished")
@@ -421,6 +424,8 @@ class NetworkSecurityEnvironment(AIDojoWorld):
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
         """
         Returns set of Service tuples from given hostIP
+        It needs the controlled_hosts parameter to know if the host is controlled, which means if the local services should be included too.
+        If the host is not controlled, then the local services are not included.
         """
         found_services = {}
         if host_ip in self._ip_to_hostname: #is it existing IP?
@@ -444,6 +449,19 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             if host_ip in values:
                 networks.add(net)
         return networks
+
+    def _get_firewall_in_host(self, host_ip:str, controlled_hosts:set)->set:
+        """
+        Returns set of Data tuples from given host IP
+        Check if the host is in the list of controlled hosts
+        """
+        blocks = set()
+        if host_ip in controlled_hosts: #only return data if the agent controls the host
+            if host_ip in self._firewall:
+                blocks = self._firewall[host_ip]
+        else:
+            self.logger.debug("\t\t\tCan't get blocks in host. The host is not controlled.")
+        return blocks
 
     def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
         """
@@ -742,7 +760,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         self.logger.info(f'Generating state from view:{view}')
         # re-map all networks based on current mapping in self._network_mapping
         known_networks = set()
-        for view_net in  view["known_networks"]:
+        for view_net in view["known_networks"]:
             if view_net == 'all_local':
                 # Add all the local networks we have in world
                 for net in self._network_mapping:
@@ -776,9 +794,15 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         # 
         # Add known_hosts
         # re-map all known based on current mapping in self._ip_mapping
-        known_hosts = set([self._ip_mapping[ip] for ip in view["known_hosts"]])
-        # Add all controlled hosts to known_hosts
-        known_hosts = known_hosts.union(controlled_hosts)
+        known_hosts = set()
+        for view_khost in view["known_hosts"]:
+            if view_khost == 'all_local':
+                known_hosts = known_hosts.union(self._get_all_local_ips())
+            else:
+                # The known hosts are specific. Add them.
+                known_hosts.add(self._ip_mapping[view_khost])
+                # Also add all the controlled hosts
+                known_hosts = known_hosts.union(controlled_hosts)
        
         #
         # Add known_networks
@@ -807,20 +831,43 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                         net_obj.value += 256
         #
         # Add known_services
-        known_services ={}
-        for ip, service_list in view["known_services"]:
-            known_services[self._ip_mapping[ip]] = service_list
+        known_services = {}
+        for s_ip, service_list in view["known_services"].items():
+            if s_ip == 'all':
+                for ip in self._get_all_local_ips():
+                    # Be careful that we are using the variable controlled_hosts, that was set in this function previously.
+                    known_services[self._ip_mapping[ip]] = self._get_services_from_host(ip, controlled_hosts)
+            else:
+                known_services[self._ip_mapping[ip]] = service_list
 
         #
         # Add known_data
         known_data = {}
-        for ip, data_list in view["known_data"]:
-            known_data[self._ip_mapping[ip]] = data_list
+        for d_ip, data_list in view["known_data"].items():
+            if d_ip == 'all':
+                for ip in self._get_all_local_ips():
+                    # Be careful that we are using the variable controlled_hosts, that was set in this function previously.
+                    data = self._get_data_in_host(ip, controlled_hosts)
+                    if data:
+                        # Only add the host with data if there is actually data in the host.
+                        known_data[self._ip_mapping[ip]] = data
+            else:
+                known_data[self._ip_mapping[ip]] = data_list
 
         # Add known_blocks
         known_blocks = {}
-        for ip, blocked_list in view["known_data"]:
-            known_blocks = {}
+        for b_ip, blocked_list in view["known_blocks"].items():
+            if b_ip == 'all':
+                for ip in self._get_all_local_ips():
+                    # Be careful that we are using the variable controlled_hosts, that was set in this function previously.
+                    blocks = self._get_firewall_in_host(ip, controlled_hosts)
+                    if blocked_list == ['all']:
+                        if blocks:
+                            # Only add the host with data if there is actually data in the host.
+                            known_blocks[self._ip_mapping[ip]] = blocks
+                    else:
+                        # Not all the blocks were requested, add one by one.
+                        pass
         # new_dict["known_blocks"][self._ip_mapping[host]] = items
 
         game_state = components.GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
@@ -898,6 +945,8 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
         self._data_content_original = copy.deepcopy(self._data_content_original)
+        # reset self._firewall to original state
+        self._firewall = copy.deepcopy(self._firewall_original)
       
 
         self._actions_played = []
