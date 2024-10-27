@@ -11,6 +11,7 @@ from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, E
 import numpy as np
 from faker import Faker
 from env.worlds.aidojo_world import AIDojoWorld
+from utils.utils import is_private_network
 
 class NetworkSecurityEnvironment(AIDojoWorld):
     """
@@ -740,7 +741,16 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         """
         self.logger.info(f'Generating state from view:{view}')
         # re-map all networks based on current mapping in self._network_mapping
-        known_networks = set([self._network_mapping[net] for net in  view["known_networks"]])
+        known_networks = set()
+        for view_net in  view["known_networks"]:
+            if view_net == 'all_local':
+                # Add all the local networks we have in world
+                for net in self._network_mapping:
+                    if is_private_network(net.__repr__()):
+                        known_networks.add(self._network_mapping[net])
+            else:
+                # The conf has specific networks to add. So add them
+                known_networks.add(self._network_mapping[net])
         
         # 
         # Add controlled_hosts
