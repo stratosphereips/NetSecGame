@@ -407,14 +407,14 @@ class GameState():
             "controlled_hosts":[dataclasses.asdict(x) for x in self.controlled_hosts],
             "known_services": {str(host):[dataclasses.asdict(s) for s in services] for host,services in self.known_services.items()},
             "known_data":{str(host):[dataclasses.asdict(d) for d in data] for host,data in self.known_data.items()},
-            "known_blocks":{str(target_host):[blocked_host for blocked_host in blocked_hosts] for target_host, blocked_hosts in self.known_blocks.items()}
+            "known_blocks":[[str(blocked_hosts_list)] for blocked_hosts_list in self.known_blocks]
                     }
         return ret_dict
 
     @classmethod
     def from_dict(cls, data_dict:dict):
         if "known_blocks" in data_dict:
-            known_blocks = {IP(target_host):{IP(blocked_host["ip"]) for blocked_host in blocked_hosts} for target_host, blocked_hosts in data_dict["known_blocks"].items()}
+            known_blocks = [[blocked_hosts_list] for blocked_hosts_list in data_dict["known_blocks"]]
         else:
             known_blocks = {}
         state = GameState(
