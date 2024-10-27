@@ -58,10 +58,13 @@ def state_as_ordered_string(state:GameState)->str:
     ret += "},data:{"
     for host in sorted(state.known_data.keys()):
         ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_data[host])])}]"
-    ret += "}, blocks:{"
-    for host in sorted(state.known_blocks.keys()):
-        ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_blocks[host])])}]"
+    ret += "},"
+    #ret += "blocks:{"
+    ret += f"blocks:[{','.join([str(x) for x in sorted(state.known_blocks)])}]"
+    #for host in sorted(state.known_blocks):
+        #ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_blocks[host])])}]"
     ret += "}"
+
     return ret
 
 def observation_to_str(observation:Observation)-> str:
@@ -157,31 +160,23 @@ class ConfigParser():
         Generic function to read the known blocks for any agent and goal of position
         """
         known_blocks_conf = self.config["coordinator"]['agents'][type_agent][type_data]['known_blocks']
-        known_blocks = {}
-        for target_host, block_list in known_blocks_conf.items():
+        known_blocks = []
+        for block_list in known_blocks_conf:
             try:
-                # Check if the target host is a good ip
-                _ = netaddr.IPAddress(target_host)
-                target_host_ip = IP(target_host)
-                for known_blocked_host in block_list:
-                    try:
-                        known_blocked_host_ip = IP(known_blocked_host)
-                        known_blocks[target_host_ip].append(known_blocked_host_ip)
-                    except (ValueError, netaddr.AddrFormatError):
-                        # The target host is a good ip, but the requested blocks is 'all'
-                        if known_blocked_host.lower() == "all":
-                            known_blocks[target_host_ip] = "all"
-                        elif known_blocked_host.lower() == "all_attackers":
-                            known_blocks[target_host_ip] = "all_attackers"
+                # Check if hosts in the list are IPs.
+                _ = IP(block_list[0])
+                _ = IP(block_list[1])
+                new_known_block_list = []
+                new_known_block_list.append([IP(block_list[0]), IP(block_list[1])])
+                known_blocks.append(new_known_block_list)
             except (ValueError, netaddr.AddrFormatError):
-                if target_host.lower() == "all_routers":
-                    known_blocks["all_routers"] = block_list
-                elif target_host.lower() == "all":
-                    known_blocks["all"] = block_list
-                elif known_blocked_host.lower() == "all_attackers":
-                    known_blocks[target_host_ip] = "all_attackers"
-            except (ValueError):
-                known_blocks = {}
+                # The host is not an IP
+                if block_list[0].lower() == "all":
+                    new_known_block_list = []
+                    new_known_block_list.append("all")
+                    known_blocks.append(new_known_block_list)
+            except IndexError:
+                known_blocks = []
         return known_blocks
     
     def read_agents_known_services(self, type_agent: str, type_data: str) -> dict:
@@ -363,7 +358,7 @@ class ConfigParser():
                     'known_hosts': set(),
                     'known_data': {IP("1.1.1.1"): {Data(owner='User1', id='DataFromInternet', size=0, type='')}},
                     'known_services': {},
-                    'known_blocks': {}
+                    'known_blocks': []
                 }
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
