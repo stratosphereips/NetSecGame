@@ -147,7 +147,8 @@ class ConfigParser():
                         known_data[known_data_host].add(known_data_content)
 
             except (ValueError, netaddr.AddrFormatError):
-                known_data = {}
+                if ip == 'all_local' and data == ['all_local']:
+                    known_data['all_local'] = 'all_local'
         return known_data
 
     def read_agents_known_blocks(self, type_agent: str, type_data: str) -> dict:
@@ -158,27 +159,23 @@ class ConfigParser():
         known_blocks = {}
         for target_host, block_list in known_blocks_conf.items():
             try:
-                target_host  = IP(target_host)
-            except ValueError:
-                self.logger.error(f"Error when converting {target_host} to IP address object")
-            if isinstance(block_list,list):
-                known_blocks[target_host] = map(lambda x: IP(x), block_list)
-            elif block_list == "all_attackers":
-                known_blocks[target_host] = block_list
-            else:
-                raise ValueError(f"Unsupported value in 'known_blocks': {known_blocks_conf}")
-            # try:
-            #     # Check the host is a good ip
-            #     _ = netaddr.IPAddress(target_host)
-            #     target_host_ip = IP(target_host)
-            #     for known_blocked_host in dict_blocked_hosts.values():
-            #         known_blocked_host_ip = IP(known_blocked_host)
-            #         known_blocks[target_host_ip].append(known_blocked_host_ip)
-            # except (ValueError, netaddr.AddrFormatError):
-            #     if target_host.lower() == "all_routers":
-            #         known_blocks["all_routers"] = dict_blocked_hosts
-            # except (ValueError):
-            #     known_blocks = {}
+                # Check the host is a good ip
+                _ = netaddr.IPAddress(target_host)
+                target_host_ip = IP(target_host)
+                for known_blocked_host in block_list:
+                    try:
+                        known_blocked_host_ip = IP(known_blocked_host)
+                        known_blocks[target_host_ip].append(known_blocked_host_ip)
+                    except (ValueError, netaddr.AddrFormatError):
+                        if known_blocked_host.lower() == "all_local":
+                            known_blocks[target_host_ip] = known_blocked_host
+            except (ValueError, netaddr.AddrFormatError):
+                if target_host.lower() == "all_routers":
+                    known_blocks["all_routers"] = block_list
+                elif target_host.lower() == "all_local":
+                    known_blocks["all_local"] = block_list
+            except (ValueError):
+                known_blocks = {}
         return known_blocks
     
     def read_agents_known_services(self, type_agent: str, type_data: str) -> dict:
@@ -198,11 +195,11 @@ class ConfigParser():
                 type = data[1]
                 version = data[2]
                 is_local = data[3]
-
                 known_services[known_services_host] = Service(name, type, version, is_local)
 
             except (ValueError, netaddr.AddrFormatError):
-                known_services = {}
+                if ip == 'all_local' and data == ['all_local']:
+                    known_services['all_local'] = 'all_local'
         return known_services
 
     def read_agents_known_networks(self, type_agent: str, type_data: str) -> dict:
@@ -217,6 +214,8 @@ class ConfigParser():
                     _ = netaddr.IPNetwork(net)
                     host_part, net_part = net.split('/')
                     known_networks.add(Network(host_part, int(net_part)))
+                elif net == 'all_local':
+                    known_networks.add('all_local')
             except (ValueError, TypeError, netaddr.AddrFormatError):
                 self.logger('Configuration problem with the known networks')
         return known_networks
@@ -266,26 +265,23 @@ class ConfigParser():
         Get the goal of the player
         type_of_player: Can be 'attackers' or 'defenders' 
         """
-        # Read known nets
+        # Read nets to win
         known_networks = self.read_agents_known_networks(type_of_player, 'goal')
 
-        # Read known hosts
+        # Read known hosts to win
         known_hosts = self.read_agents_known_hosts(type_of_player, 'goal')
 
-        # Read controlled hosts
+        # Read controlled hosts to win
         controlled_hosts = self.read_agents_controlled_hosts(type_of_player, 'goal')
 
-        # Goal services
+        # Read services to win
         known_services = self.read_agents_known_services(type_of_player, 'goal')
 
-        # Read known blocks 
+        # Read known blocks  to win
         known_blocks = self.read_agents_known_blocks(type_of_player, 'goal')
 
-        # Goal data
+        # Read known data to win
         known_data = self.read_agents_known_data(type_of_player, 'goal')
-
-        # Blocks
-        known_blocks = self.read_agents_known_blocks(type_of_player, 'goal')
 
         player_goal = {}
         player_goal['known_networks'] = known_networks
@@ -311,11 +307,14 @@ class ConfigParser():
         # Read controlled hosts
         controlled_hosts = self.read_agents_controlled_hosts(type_of_player, 'start_position')
 
-        # Start services
+        # Read known services 
         known_services = self.read_agents_known_services(type_of_player, 'start_position')
 
-        # Start data
+        # Read known data
         known_data = self.read_agents_known_data(type_of_player, 'start_position')
+
+        # Read known blocks
+        known_blocks = self.read_agents_known_blocks(type_of_player, 'start_position')
 
         player_start_position = {}
         player_start_position['known_networks'] = known_networks
@@ -323,6 +322,7 @@ class ConfigParser():
         player_start_position['known_hosts'] = known_hosts
         player_start_position['known_data'] = known_data
         player_start_position['known_services'] = known_services
+        player_start_position['known_blocks'] = known_blocks
 
         return player_start_position
 
