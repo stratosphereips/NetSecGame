@@ -58,7 +58,7 @@ class AIDojo:
             ConnectionLimitProtocol(
                 self._action_queue,
                 self._answer_queue,
-                max_connections=2
+                max_connections=10
             ),
             host,
             port
