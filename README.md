@@ -167,8 +167,8 @@ agents:
       known_hosts: []
       controlled_hosts: []
       known_services: {192.168.1.3: [Local system, lanman server, 10.0.19041, False], 192.168.1.4: [Other system, SMB server, 21.2.39421, False]}
-      known_data: {213.47.23.195: ["random"]}
-      known_blocks: {'all_routers': 'all_attackers'}
+      known_data: {213.47.23.195: [random]}
+      known_blocks: {'all_routers': [all_attackers]}
 
     start_position:
       known_networks: []
