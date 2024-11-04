@@ -98,7 +98,7 @@ The NetSecEnv is highly configurable in terms of the properties of the world, ta
 ### Environment configuration
 The environment part defines the properties of the environment for the task (see the example below). In particular:
 - `random_seed` - sets seed for any random processes in the environment
-- `scenario` - sets the scenario (network topology) used in the task (currently, `scenario1_tiny`, `scenario1_small`, and `scenario1` are available)
+- `scenario` - sets the scenario (network topology) used in the task (currently, `scenario1_tiny`, `scenario1_small`, `scenario1` and `three_nets` are available)
 - `max_steps` - sets the maximum number of steps an agent can make before an episode is terminated
 - `store_replay_buffer` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of **EVERY** episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)
@@ -242,6 +242,12 @@ For the data exfiltration we support 3 variants. The full scenario contains 5 cl
 <table>
   <tr><th>Scenario 1</th><th>Scenario 1 - small</th><th>Scenario 1 -tiny</th></tr>
   <tr><td><img src="readme_images/scenario_1.png" alt="Scenario 1 - Data exfiltration" width="300"></td><td><img src="readme_images/scenario 1_small.png" alt="Scenario 1 - small" width="300"</td><td><img src="readme_images/scenario_1_tiny.png" alt="Scenario 1 - tiny" width="300"></td></tr>
+  <tr><th>3-nets scenario</th></tr>
+  <tr>
+    <td>
+       <img src="readme_images/three_nets.png" alt="Scenario 1 - Data exfiltration" width="300">
+    </td>
+  </tr>
 </table>
 
 ## Trajectory storing and analysis
