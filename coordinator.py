@@ -60,8 +60,8 @@ class AIDojo:
                 self._answer_queue,
                 max_connections=2
             ),
-            host,
-            port
+            self.host,
+            self.port
         )
         addrs = ", ".join(str(sock.getsockname()) for sock in running_server.sockets)
         self.logger.info(f"\tServing on {addrs}")
