@@ -1,0 +1,80 @@
+# TESTING configuration file for the NetSecGame environment
+# CYST scenarion: three_net_scenario
+# client's net: 192.168.2.0/24
+# first server net: 192.168.1.0/24
+# second sever net: 192.168.3.0/24
+# Second server net is only accessible from the first one
+
+coordinator:
+  # Define the conf for all the 'attacker' agents.
+  agents:
+    Attacker:
+      goal:
+        description: "Exfiltrate password DB data to '213.47.23.195'"
+        is_any_part_of_goal_random: True
+        known_networks: []
+        known_hosts: []
+        controlled_hosts: []
+        known_services: {}
+        known_data: {213.47.23.195: [[admin,passwords]]}
+        known_blocks: {}
+
+      start_position:
+        known_networks: []
+        known_hosts: []
+        controlled_hosts: [213.47.23.195, random]
+        known_services: {}
+        known_data: {}
+        known_blocks: {}
+
+    Defender:
+      goal:
+        description: "Block all attackers"
+        is_any_part_of_goal_random: False
+        known_networks: []
+        known_hosts: []
+        controlled_hosts: []
+        known_services: {}
+        known_data: {}
+        known_blocks: {213.47.23.195: 'all_attackers'}
+
+      start_position:
+        # should be empty for defender - will be extracted from controlled hosts
+        known_networks: []
+        # should be empty for defender - will be extracted from controlled hosts
+        known_hosts: []
+        # list of controlled hosts, wildard "all_local" can be used to include all local IPs
+        controlled_hosts: [all_local]
+        known_services: {}
+        known_data: {}
+        # Blocked IPs
+        blocked_ips: {}
+        known_blocks: {}
+
+env:
+  # random means to choose the seed in a random way, so it is not fixed
+  random_seed: 'random'
+  # Or you can fix the seed
+  # random_seed: 42
+  scenario: 'three_nets'
+  use_global_defender: False
+  max_steps: 50
+  use_dynamic_addresses: False
+  use_firewall: True
+  save_trajectories: False
+  goal_reward: 100
+  detection_reward: -5
+  step_reward: -1
+  actions:
+    scan_network:
+      prob_success: 1.0
+    find_services:
+      prob_success: 1.0
+    exploit_service:
+      prob_success: 1.0
+    find_data:
+      prob_success: 1.0
+    exfiltrate_data:
+      prob_success: 1.0
+    block_ip:
+      prob_success: 1.0
