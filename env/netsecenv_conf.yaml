@@ -97,7 +97,7 @@ env:
   random_seed: 'random'
   # Or you can fix the seed
   # random_seed: 42
-  scenario: 'scenario1'
+  scenario: 'three_nets'
   use_global_defender: False
   max_steps: 50
   use_dynamic_addresses: False
