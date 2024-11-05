@@ -1,5 +1,6 @@
 # Utility functions for then env and for the agents
 # Author: Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
+# Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
 #import configparser
 import yaml
 import sys
@@ -16,6 +17,19 @@ import logging
 import csv
 from random import randint
 import json
+import hashlib
+
+def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
+    """
+    Computes hash of a given file.
+    """
+    hash_algorithm = hashlib.new(hash_func)
+    with open(filepath, 'rb') as file:
+        chunk = file.read(chunk_size)
+        while chunk:
+            hash_algorithm.update(chunk)
+            chunk = file.read(chunk_size)
+    return hash_algorithm.hexdigest()
 
 def read_replay_buffer_from_csv(csvfile:str)->list:
     """
