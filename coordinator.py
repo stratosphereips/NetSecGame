@@ -215,7 +215,7 @@ class Coordinator:
         return all(self._agent_episode_ends.values())
     
     @property
-    def CONFIG_FILE_HASH(self):
+    def config_file_hash(self):
         return self._CONFIG_FILE_HASH
 
     def convert_msg_dict_to_json(self, msg_dict)->str:
@@ -396,7 +396,7 @@ class Coordinator:
                         "max_steps": max_steps,
                         "goal_description": self._goal_description_per_role[agent_role],
                         "num_actions": self._world.num_actions,
-                        "configuration_hash": self.CONFIG_FILE_HASH
+                        "configuration_hash": self._CONFIG_FILE_HASH
                         },
                 }
             else:
