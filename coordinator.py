@@ -498,7 +498,7 @@ class Coordinator:
                 self._agent_episode_ends[agent_addr] = True
                 end_reason = "goal_reached"
                 obs_info = {'end_reason': "goal_reached"}
-            elif self._agent_steps[agent_addr] >= self._steps_limit:
+            elif self._timeout_reached(agent_addr):
                 self._agent_episode_ends[agent_addr] = True
                 obs_info = {"end_reason": "max_steps"}
                 end_reason = "max_steps"
@@ -532,7 +532,7 @@ class Coordinator:
         end_reason = ""
         if self._agent_goal_reached[agent_addr]:
             end_reason = "goal_reached"
-        elif self._agent_steps[agent_addr] >= self._world.timeout:
+        elif self._timeout_reached(agent_addr):
             end_reason = "max_steps"
         else:
             end_reason = "game_lost"
@@ -609,6 +609,19 @@ class Coordinator:
         else:
             self.logger.info("\tNot detected!")
         return detection
+    
+    def _timeout_reached(self, agent_addr:tuple) ->bool:
+        """
+        Checks if the agent reached the max allowed steps. Only applies to role 'Attacker'
+        """
+        self.logger.debug(f"Checking timout for {self.agents[agent_addr]}")
+        if self.agents[agent_addr][1] == "Attacker":
+            if self._agent_steps[agent_addr] >= self._steps_limit:
+                self.logger.info("Timeout reached by {self.agents[agent_addr]}!")
+                return True
+        else:
+            return False
+
 __version__ = "v0.2.2"
 
 

@@ -55,8 +55,8 @@ class TestCoordinator:
         assert coord._agent_states == {}
         assert coord._agent_goal_reached == {}
         assert coord._agent_episode_ends == {}
-        assert type(coord._actions_queue) == queue.Queue
-        assert type(coord._answers_queue) == queue.Queue
+        assert type(coord._actions_queue) is queue.Queue
+        assert type(coord._answers_queue) is queue.Queue
     
     def test_initialize_new_player(self, coordinator_init):
         coord = coordinator_init
@@ -202,3 +202,21 @@ class TestCoordinator:
             "known_blocks":{}
         }
         assert coordinator_init._check_goal(game_state, win_conditions) is True
+
+    def test_timeout(self, coordinator_registered_player):
+        coord, init_result = coordinator_registered_player
+        action = Action(
+            ActionType.ScanNetwork,
+            params={
+                "source_host": IP("192.168.2.2"),
+                "target_network": Network("192.168.1.0", 24),
+            },
+        )
+        result = init_result
+        for _ in range(15):
+            result = coord._process_generic_action(("192.168.1.1", "3300"), action)
+        assert result["to_agent"] == ("192.168.1.1", "3300")
+        assert result["status"] == "GameStatus.OK"
+        assert init_result["observation"]["state"] != result["observation"]["state"]
+        assert result["observation"]["end"]
+        assert result["observation"]["info"]["end_reason"] == "max_steps"
