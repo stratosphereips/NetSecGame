@@ -12,7 +12,7 @@ from env.worlds.network_security_game import NetworkSecurityEnvironment
 from env.worlds.network_security_game_real_world import NetworkSecurityEnvironmentRealWorld
 from env.worlds.aidojo_world import AIDojoWorld
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState
-from utils.utils import observation_as_dict, get_logging_level
+from utils.utils import observation_as_dict, get_logging_level, get_file_hash
 from pathlib import Path
 import os
 import signal
@@ -174,6 +174,7 @@ class Coordinator:
         self._answers_queue = answers_queue
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
+        
         # world definition
         match world_type:
             case "netsecenv":
@@ -183,9 +184,7 @@ class Coordinator:
             case _:
                 self._world = AIDojoWorld(net_sec_config)
         self.world_type = world_type
-        
-        
-
+        self._CONFIG_FILE_HASH = get_file_hash(net_sec_config)        
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
@@ -215,6 +214,10 @@ class Coordinator:
         self.logger.debug(f"End evaluation: {self._agent_episode_ends.values()}")
         return all(self._agent_episode_ends.values())
     
+    @property
+    def config_file_hash(self):
+        return self._CONFIG_FILE_HASH
+
     def convert_msg_dict_to_json(self, msg_dict)->str:
             try:
                 # Convert message into string representation
@@ -383,15 +386,17 @@ class Coordinator:
             agent_role = action.parameters["agent_info"].role
             if agent_role in self.ALLOWED_ROLES:
                 initial_observation = self._initialize_new_player(agent_addr, agent_name, agent_role)
+                max_steps =  self._world._max_steps if agent_role == "Attacker" else None
                 output_message_dict = {
                     "to_agent": agent_addr,
                     "status": str(GameStatus.CREATED),
                     "observation": observation_as_dict(initial_observation),
                     "message": {
                         "message": f"Welcome {agent_name}, registred as {agent_role}",
-                        "max_steps": self._world._max_steps,
+                        "max_steps": max_steps,
                         "goal_description": self._goal_description_per_role[agent_role],
-                        "num_actions": self._world.num_actions
+                        "num_actions": self._world.num_actions,
+                        "configuration_hash": self._CONFIG_FILE_HASH
                         },
                 }
             else:
