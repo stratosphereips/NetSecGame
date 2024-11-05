@@ -7,3 +7,6 @@ python3  -m pytest tests/test_actions.py -p no:warnings -vvvv -s --full-trace
 python3  -m pytest tests/test_components.py -p no:warnings -vvvv -s --full-trace
 python3  -m pytest tests/test_coordinator.py -p no:warnings -vvvv -s --full-trace
 
+# run ruff check as well
+ruff check --output-format=github --select=E9,F4,F6,F7,F8,N8 --ignore=F405 --target-version=py310 --line-length=120 .
+
