@@ -92,6 +92,7 @@ class TestCoordinator:
         assert "max_steps" in result["message"].keys()
         assert "goal_description" in result["message"].keys()
         assert not result["observation"]["end"]
+        assert "configuration_hash" in result["message"].keys()
     
     # def test_reset(self, coordinator_registered_player):
     #     coord, _ = coordinator_registered_player
