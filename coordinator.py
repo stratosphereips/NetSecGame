@@ -498,7 +498,7 @@ class Coordinator:
                 self._agent_episode_ends[agent_addr] = True
                 end_reason = "goal_reached"
                 obs_info = {'end_reason': "goal_reached"}
-            elif self._agent_steps[agent_addr] >= self._steps_limit:
+            elif self._timeout_reached(agent_addr):
                 self._agent_episode_ends[agent_addr] = True
                 obs_info = {"end_reason": "max_steps"}
                 end_reason = "max_steps"
@@ -532,7 +532,7 @@ class Coordinator:
         end_reason = ""
         if self._agent_goal_reached[agent_addr]:
             end_reason = "goal_reached"
-        elif self._agent_steps[agent_addr] >= self._world.timeout:
+        elif self._timeout_reached(agent_addr):
             end_reason = "max_steps"
         else:
             end_reason = "game_lost"
