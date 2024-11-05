@@ -614,8 +614,11 @@ class Coordinator:
         """
         Checks if the agent reached the max allowed steps. Only applies to role 'Attacker'
         """
-        if self.agents[agent_addr][0] == "Attacker":
-            return self._agent_steps[agent_addr] >= self._steps_limit
+        self.logger.debug(f"Checking timout for {self.agents[agent_addr]}")
+        if self.agents[agent_addr][1] == "Attacker":
+            if self._agent_steps[agent_addr] >= self._steps_limit:
+                self.logger.info("Timeout reached by {self.agents[agent_addr]}!")
+                return True
         else:
             return False
 
