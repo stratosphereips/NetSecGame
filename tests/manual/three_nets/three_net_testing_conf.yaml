@@ -58,7 +58,7 @@ env:
   # random_seed: 42
   scenario: 'three_nets'
   use_global_defender: False
-  max_steps: 50
+  max_steps: 15
   use_dynamic_addresses: False
   use_firewall: True
   save_trajectories: False
