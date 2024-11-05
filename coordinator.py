@@ -609,6 +609,16 @@ class Coordinator:
         else:
             self.logger.info("\tNot detected!")
         return detection
+    
+    def _timeout_reached(self, agent_addr:tuple) ->bool:
+        """
+        Checks if the agent reached the max allowed steps. Only applies to role 'Attacker'
+        """
+        if self.agents[agent_addr][0] == "Attacker":
+            return self._agent_steps[agent_addr] >= self._steps_limit
+        else:
+            return False
+
 __version__ = "v0.2.2"
 
 
