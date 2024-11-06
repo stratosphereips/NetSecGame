@@ -5,6 +5,7 @@ coordinator:
   # Define the conf for all the 'attacker' agents.
   agents:
     Attacker:
+      max_steps: 15
       goal:
         description: "Exfiltrate DatabaseData to '213.47.23.195'"
         # Put randomize_goal_every_episode in True if you put any of the goal values in 'random'
@@ -83,7 +84,6 @@ env:
   # Or you can fix the seed
   # random_seed: 42
   scenario: 'scenario1_small'
-  max_steps: 15
   store_replay_buffer: False
   use_dynamic_addresses: False
   goal_reward: 100
