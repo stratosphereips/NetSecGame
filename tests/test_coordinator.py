@@ -53,8 +53,8 @@ class TestCoordinator:
         assert coord._agent_starting_position == {}
         assert coord._agent_observations == {}
         assert coord._agent_states == {}
-        assert coord._agent_goal_reached == {}
-        assert coord._agent_episode_ends == {}
+        assert coord._agent_reward == {}
+        assert coord._agent_status == {}
         assert type(coord._actions_queue) is queue.Queue
         assert type(coord._answers_queue) is queue.Queue
     
@@ -69,7 +69,7 @@ class TestCoordinator:
         assert coord.agents[agent_addr] == (agent_name, agent_role)
         assert coord._agent_steps[agent_addr] == 0
         assert not coord._reset_requests[agent_addr]
-        assert not coord._agent_episode_ends[agent_addr]
+        assert coord._agent_status[agent_addr] == "playing_active"
 
         assert new_obs.reward == 0
         assert new_obs.end is False
@@ -219,5 +219,7 @@ class TestCoordinator:
         assert result["to_agent"] == ("192.168.1.1", "3300")
         assert result["status"] == "GameStatus.OK"
         assert init_result["observation"]["state"] != result["observation"]["state"]
+        assert coord._agent_steps[("192.168.1.1", "3300")] == 15
+        assert coord._agent_status[("192.168.1.1", "3300")] == "max_steps"
         assert result["observation"]["end"]
         assert result["observation"]["info"]["end_reason"] == "max_steps"
