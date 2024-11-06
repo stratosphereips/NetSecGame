@@ -188,7 +188,7 @@ class Coordinator:
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
-        self._steps_limit = self._world.task_config.get_max_steps()
+        self._steps_limit_per_role = self._world.task_config.get_max_steps()
         self._use_global_defender = self._world.task_config.get_use_global_defender()
         # player information
         self.agents = {}
@@ -205,6 +205,7 @@ class Coordinator:
         self._agent_goal_reached = {}
         self._agent_episode_ends = {}
         self._agent_detected = {}
+        self._attac
         # trajectories per agent_addr
         self._agent_trajectories = {}
     
@@ -375,6 +376,19 @@ class Coordinator:
                 goal_descriptions[agent_role] = ""
             self.logger.info(f"Goal description for role '{agent_role}': {goal_descriptions[agent_role]}")
         return goal_descriptions
+    
+    def _get_max_steps_per_role(self)->dict:
+        """
+        Method for finding max amount of steps in 1 episode for each agent role in the game.
+        """
+        max_steps = {}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                max_steps[agent_role] = self._world.task_config.get_max_steps(agent_role)
+            except KeyError:
+                max_steps[agent_role] = None
+            self.logger.info(f"Max steps in episode for '{agent_role}': {max_steps[agent_role]}")
+        return max_steps
     
     def _process_join_game_action(self, agent_addr: tuple, action: Action) -> dict:
         """ "
@@ -626,6 +640,22 @@ class Coordinator:
                 return True
         else:
             return False
+
+    def assign_rewards(self)->dict:
+        if not self.episode_end:
+            self.logger.warning("Episode is not over!")
+            return None
+        else:
+            rewards = {}
+            for agent, (agent_name, agent_role) in self.agents.items():
+                self.logger.debug(f"Computing reward for agent {agent} ({agent_name}, {agent_role})")
+                match agent_role:
+                    case "Attacker":
+                        pass
+                    case "Defender":
+                        pass
+                    case "Benign":
+                        rewards[agent] = 0
 
 __version__ = "v0.2.2"
 
