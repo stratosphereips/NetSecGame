@@ -134,8 +134,8 @@ env:
 ## Task configuration
 The task configuration part (section `coordinator[agents]`) defines the starting and goal position of the attacker and the type of defender that is used.
 
-### Attacker configuration (`attackers`)
-Configuration of the attacking agents. Consists of two parts:
+### Attacker configuration (`Attacker`)
+Configuration of the attacking agents. Consists of three parts:
 1. Goal definition (`goal`) which describes the `GameState` properties that must be fulfilled to award `goal_reward` to the attacker:
     - `known_networks:`(set)
     - `known_hosts`(set)
@@ -154,11 +154,14 @@ Configuration of the attacking agents. Consists of two parts:
     - `known_data`(dict)
 
     The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts`, so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`
+3. Definition of maximum allowed amount of steps:
+    - `max_steps:`(int)
 
 Example attacker configuration:
 ```YAML
 agents:
   Attacker:
+    max_steps: 100
     goal:
       randomize_goal_every_episode: False
       known_networks: []
@@ -179,7 +182,7 @@ agents:
       known_data: {}
       known_blocks: {}
 ```
-### Defender configuration (`defenders`)
+### Defender configuration (`Defender`)
 Currently, the defender **is** a separate agent.
 
 If you want a defender in the game, you must connect a defender agent. For playing without a defender, leave the section empty.
