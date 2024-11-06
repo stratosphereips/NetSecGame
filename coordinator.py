@@ -201,7 +201,8 @@ class Coordinator:
         self._agent_starting_position = {}
         # current state per agent_addr (GameState)
         self._agent_states = {}
-        # goal reach status per agent_addr (bool)
+        # agent status dict {agent_addr: string}
+        self._agent_status = {}
         self._agent_goal_reached = {}
         self._agent_episode_ends = {}
         self._agent_detected = {}
@@ -210,9 +211,11 @@ class Coordinator:
     
     @property
     def episode_end(self)->bool:
-        # Terminate episode if at least one player wins or reaches the timeout
-        self.logger.debug(f"End evaluation: {self._agent_episode_ends.values()}")
-        return all(self._agent_episode_ends.values())
+        # Episode ends ONLY IF all agents with defined max_steps reached the end fo the episode
+        # self.logger.debug(f"End evaluation: {self._agent_episode_ends.values()}")
+        exists_active_player = any(status == "playing_active" for status in self._agent_status.values())
+        self.logger.debug(f"End evaluation: {self._agent_status.items()} - Episode end:{not exists_active_player}")
+        return not exists_active_player
     
     @property
     def config_file_hash(self):
@@ -307,6 +310,13 @@ class Coordinator:
         self._reset_requests[agent_addr] = False
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = self._world.create_state_from_view(self._agent_starting_position[agent_addr])
+        
+        if self._steps_limit_per_role[agent_role]:
+            # This agent can force episode end (has timeout and goal defined)
+            self._agent_status[agent_addr] = "playing_active"
+        else:
+            # This agent can NOT force episode end (does NOT timeout or goal defined)
+            self._agent_status[agent_addr] = "playing"      
         self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
         self._agent_detected[agent_addr] = self._check_detection(agent_addr, None) 
         self._agent_episode_ends[agent_addr] = False
@@ -323,6 +333,7 @@ class Coordinator:
         agent_info = {}
         if agent_addr in self.agents:
             agent_info["state"] = self._agent_states.pop(agent_addr)
+            agent_info["status"] = self._agent_status.pop(agent_addr)
             agent_info["goal_reached"] = self._agent_goal_reached.pop(agent_addr)
             agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
             agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
@@ -504,23 +515,36 @@ class Coordinator:
             current_state = self._agent_states[agent_addr]
             # Build new Observation for the agent
             self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr)
-            self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
-
-            self._agent_detected[agent_addr] = self._check_detection(agent_addr, action)
+            
+            # check timout
+            if self._timeout_reached(agent_addr):
+                self._agent_status[agent_addr] = "max_steps"
+            
+            # check detection
+            if self._check_detection(agent_addr, action):
+                self._agent_status[agent_addr] = "blocked"
+                self._agent_detected[agent_addr] = True
+            
+            # check goal
+            if self._goal_reached(agent_addr):
+                self._agent_status[agent_addr] = "goal_reached"
+            
+            #self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
+            #self._agent_detected[agent_addr] = self._check_detection(agent_addr, action)
 
             reward = self._world._rewards["step"]
             obs_info = {}
             end_reason = None
-            if self._agent_goal_reached[agent_addr]:
+            if self._agent_status[agent_addr] == "goal_reached":
                 reward += self._world._rewards["goal"]
                 self._agent_episode_ends[agent_addr] = True
                 end_reason = "goal_reached"
                 obs_info = {'end_reason': "goal_reached"}
-            elif self._timeout_reached(agent_addr):
+            elif self._agent_status[agent_addr] == "max_steps":
                 self._agent_episode_ends[agent_addr] = True
                 obs_info = {"end_reason": "max_steps"}
                 end_reason = "max_steps"
-            elif self._agent_detected[agent_addr]:
+            elif self._agent_status[agent_addr] == "blocked":
                 reward += self._world._rewards["detection"]
                 self._agent_episode_ends[agent_addr] = True
                 obs_info = {"end_reason": "max_steps"}
