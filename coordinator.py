@@ -205,9 +205,9 @@ class Coordinator:
         self._agent_status = {}
         self._agent_reward = {}
 
-        self._agent_goal_reached = {}
-        self._agent_episode_ends = {}
-        self._agent_detected = {}
+        #self._agent_goal_reached = {}
+        #self._agent_episode_ends = {}
+        #self._agent_detected = {}
         # trajectories per agent_addr
         self._agent_trajectories = {}
     
@@ -278,14 +278,15 @@ class Coordinator:
                                     self._reset_requests[agent] = False
                                     self._agent_steps[agent] = 0
                                     self._agent_states[agent] = self._world.create_state_from_view(self._agent_starting_position[agent])
-                                    self._agent_goal_reached[agent] = self._goal_reached(agent)
+                                    self._agent_reward.pop(agent, None)
+                                    #self._agent_goal_reached[agent] = self._goal_reached(agent)
                                     if self._steps_limit_per_role[self.agents[agent][1]]:
                                         # This agent can force episode end (has timeout and goal defined)
                                         self._agent_status[agent] = "playing_active"
                                     else:
                                         # This agent can NOT force episode end (does NOT timeout or goal defined)
                                         self._agent_status[agent] = "playing"      
-                                    self._agent_episode_ends[agent] = False
+                                    #self._agent_episode_ends[agent] = False
                                     output_message_dict = self._create_response_to_reset_game_action(agent)
                                     msg_json = self.convert_msg_dict_to_json(output_message_dict)
                                     # Send to anwer_queue
@@ -325,9 +326,9 @@ class Coordinator:
         else:
             # This agent can NOT force episode end (does NOT timeout or goal defined)
             self._agent_status[agent_addr] = "playing"      
-        self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
-        self._agent_detected[agent_addr] = self._check_detection(agent_addr, None) 
-        self._agent_episode_ends[agent_addr] = False
+        #self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
+        #self._agent_detected[agent_addr] = self._check_detection(agent_addr, None) 
+        #self._agent_episode_ends[agent_addr] = False
         if self._world.task_config.get_store_trajectories() or self._use_global_defender:
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
@@ -342,10 +343,11 @@ class Coordinator:
         if agent_addr in self.agents:
             agent_info["state"] = self._agent_states.pop(agent_addr)
             agent_info["status"] = self._agent_status.pop(agent_addr)
-            agent_info["goal_reached"] = self._agent_goal_reached.pop(agent_addr)
+            #agent_info["goal_reached"] = self._agent_goal_reached.pop(agent_addr)
             agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
             agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
-            agent_info["episode_end"] = self._agent_episode_ends.pop(agent_addr)
+            agent_info["end_reward"] = self._agent_reward.pop(agent_addr, None)
+            #agent_info["episode_end"] = self._agent_episode_ends.pop(agent_addr)
             agent_info["agent_info"] = self.agents.pop(agent_addr)
             self.logger.debug(f"\t{agent_info}")
         else:
