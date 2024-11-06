@@ -205,7 +205,6 @@ class Coordinator:
         self._agent_goal_reached = {}
         self._agent_episode_ends = {}
         self._agent_detected = {}
-        self._attac
         # trajectories per agent_addr
         self._agent_trajectories = {}
     
