@@ -382,12 +382,14 @@ class ConfigParser():
         Get the max steps based on agent's role
         """
         try:
-            max_steps = self.config['coordinator']['agents'][role]["max_steps"]
-            max_steps = int(max_steps)
+            max_steps = int(self.config['coordinator']['agents'][role]["max_steps"])
         except KeyError:
             max_steps = None
             self.logger.warning(f"Item 'max_steps' not found in 'coordinator.agents.{role}'!. Setting value to default=None (no step limit)")
-        return None
+        except TypeError as e:
+            max_steps = None
+            self.logger.warning(f"Unsupported value in 'coordinator.agents.{role}.max_steps': {e}. Setting value to default=None (no step limit)")
+        return max_steps
 
 
     def get_goal_description(self, agent_role)->dict:
