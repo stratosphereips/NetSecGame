@@ -448,8 +448,9 @@ class Coordinator:
             "observation": observation_as_dict(new_observation),
             "message": {
                         "message": "Resetting Game and starting again.",
-                        "max_steps": self._world._max_steps,
-                        "goal_description": self._goal_description_per_role[self.agents[agent_addr][1]]
+                        "max_steps": self._steps_limit_per_role[self.agents[agent_addr][1]],
+                        "goal_description": self._goal_description_per_role[self.agents[agent_addr][1]],
+                         "configuration_hash": self._CONFIG_FILE_HASH
                         },
         }
         return output_message_dict
