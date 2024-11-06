@@ -277,6 +277,12 @@ class Coordinator:
                                     self._agent_steps[agent] = 0
                                     self._agent_states[agent] = self._world.create_state_from_view(self._agent_starting_position[agent])
                                     self._agent_goal_reached[agent] = self._goal_reached(agent)
+                                    if self._steps_limit_per_role[self.agents[agent][1]]:
+                                        # This agent can force episode end (has timeout and goal defined)
+                                        self._agent_status[agent] = "playing_active"
+                                    else:
+                                        # This agent can NOT force episode end (does NOT timeout or goal defined)
+                                        self._agent_status[agent] = "playing"      
                                     self._agent_episode_ends[agent] = False
                                     output_message_dict = self._create_response_to_reset_game_action(agent)
                                     msg_json = self.convert_msg_dict_to_json(output_message_dict)
