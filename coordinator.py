@@ -188,7 +188,7 @@ class Coordinator:
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
-        self._steps_limit_per_role = self._world.task_config.get_max_steps()
+        self._steps_limit_per_role = self._get_max_steps_per_role()
         self._use_global_defender = self._world.task_config.get_use_global_defender()
         # player information
         self.agents = {}
@@ -634,11 +634,13 @@ class Coordinator:
         Checks if the agent reached the max allowed steps. Only applies to role 'Attacker'
         """
         self.logger.debug(f"Checking timout for {self.agents[agent_addr]}")
-        if self.agents[agent_addr][1] == "Attacker":
-            if self._agent_steps[agent_addr] >= self._steps_limit:
+        agent_role = self.agents[agent_addr][1]
+        if self._steps_limit_per_role[agent_role]:
+            if self._agent_steps[agent_addr] >= self._steps_limit_per_role[agent_role]:
                 self.logger.info("Timeout reached by {self.agents[agent_addr]}!")
                 return True
         else:
+            self.logger.debug(f"No max steps defined for role {agent_role}")
             return False
 
     def assign_rewards(self)->dict:
