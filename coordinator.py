@@ -399,14 +399,13 @@ class Coordinator:
             agent_role = action.parameters["agent_info"].role
             if agent_role in self.ALLOWED_ROLES:
                 initial_observation = self._initialize_new_player(agent_addr, agent_name, agent_role)
-                max_steps =  self._world._max_steps if agent_role == "Attacker" else None
                 output_message_dict = {
                     "to_agent": agent_addr,
                     "status": str(GameStatus.CREATED),
                     "observation": observation_as_dict(initial_observation),
                     "message": {
                         "message": f"Welcome {agent_name}, registred as {agent_role}",
-                        "max_steps": max_steps,
+                        "max_steps": self._steps_limit_per_role[agent_role],
                         "goal_description": self._goal_description_per_role[agent_role],
                         "num_actions": self._world.num_actions,
                         "configuration_hash": self._CONFIG_FILE_HASH
