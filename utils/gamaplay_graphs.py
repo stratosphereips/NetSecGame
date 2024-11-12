@@ -4,6 +4,7 @@ import sys
 import os 
 import utils
 import argparse
+import matplotlib.pyplot as plt
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
 from env.game_components import GameState, Action
@@ -99,8 +100,32 @@ class TrajectoryGraph:
         for i in self._wins_per_checkpoint.keys():
             data = self.get_checkpoint_stats(i)
             ret[i] = data
-            print(f'{i},\t{data["winrate"]},\t{data["num_edges"]},\t{data["num_simplified_edges"]},\t{data["num_nodes"]},\t{data["num_loops"]},\t{data["num_simpligied_loops"]}')
+            print(f'{i},\t{data["winrate"]},\t{data["num_edges"]},\t{data["num_simplified_edges"]},\t{data["num_nodes"]},\t{data["num_loops"]},\t{data["num_simplified_loops"]}')
         return ret
+
+    def plot_graph_stats_progress(self):
+        data = self.get_graph_stats_progress()
+        wr = [data[i]["winrate"] for i in range(len(data))]
+        num_nodes = [data[i]["num_nodes"] for i in range(len(data))]
+        num_edges = [data[i]["num_edges"] for i in range(len(data))]
+        num_simle_edges = [data[i]["num_simplified_edges"] for i in range(len(data))]
+        num_loops = [data[i]["num_loops"] for i in range(len(data))]
+        num_simplified_loops  =  [data[i]["num_simplified_loops"] for i in range(len(data))]
+        checkpoints = range(len(wr)) 
+        plt.plot(checkpoints, num_nodes, label='Number of nodes')
+        plt.plot(checkpoints, num_edges, label='Number of edges')
+        plt.plot(checkpoints, num_simle_edges, label='Number of simplified edges')
+        plt.plot(checkpoints, num_loops, label='Number of loops')
+        plt.plot(checkpoints, num_simplified_loops, label='Number of simplified loops')
+
+        plt.title("Line Graph with Multiple Lines")
+        plt.yscale('log')
+        plt.xlabel("Checkpoints")
+        # Show legend
+        plt.legend()
+
+        # Save the figure as an image file
+        plt.savefig("multi_line_graph.png")
 
     def get_checkpoint_stats(self, checkpoint_id:int)->dict:
         if checkpoint_id not in self._wins_per_checkpoint:
@@ -112,7 +137,7 @@ class TrajectoryGraph:
             data["num_edges"] = len(self._checkpoint_edges[checkpoint_id])
             data["num_simplified_edges"] = len(self._checkpoint_simple_edges[checkpoint_id])
             data["num_loops"] = len([edge for edge in self._checkpoint_edges[checkpoint_id].keys() if edge[0]==edge[1]])
-            data["num_simpligied_loops"] = len([edge for edge in self._checkpoint_simple_edges[checkpoint_id].keys() if edge[0]==edge[1]])
+            data["num_simplified_loops"] = len([edge for edge in self._checkpoint_simple_edges[checkpoint_id].keys() if edge[0]==edge[1]])
             node_set = set([src_node for src_node,_,_ in self._checkpoint_edges[checkpoint_id].keys()]) | set([dst_node for _,dst_node,_ in self._checkpoint_edges[checkpoint_id].keys()])
             data["num_nodes"] = len(node_set)
             return data
@@ -250,7 +275,7 @@ if __name__ == '__main__':
     tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-10000.jsonl",max_lines=args.n_trajectories))
     tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-12000.jsonl",max_lines=args.n_trajectories))
     print(tg.num_checkpoints)
-    tg.get_graph_stats_progress()
+    tg.plot_graph_stats_progress()
     super_graph = tg.get_graph_structure_progress()
     for k,v in super_graph.items():
         if np.sum(v) > 3:
