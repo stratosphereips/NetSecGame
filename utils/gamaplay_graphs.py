@@ -8,6 +8,91 @@ import argparse
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
 from env.game_components import GameState, Action
 
+class TrajectoryGraph:
+    def __init__(self)->None:
+        self._checkpoints = {}
+        self._checkpoint_edges = {}
+        self._checkpoint_simple_edges = {}
+        self._wins_per_checkpoint = {}
+        self._state_to_id = {}
+        self._id_to_state = {}
+        self._action_to_id = {}
+        self._id_to_action = {}
+
+    @property
+    def num_checkpoints(self)->int:
+        return len(self._checkpoints)
+
+    def get_state_id(self, state:GameState)->int:
+        """
+        Returns state id or creates new one if the state was not registered before
+        """
+        state_str = utils.state_as_ordered_string(state)
+        if state_str not in self._state_to_id.keys():
+            self._state_to_id[state_str] = len(self._state_to_id)
+            self._id_to_state[self._state_to_id[state_str]] = state
+        return self._state_to_id[state_str]
+    
+    def get_state(self, id:int)->GameState:
+        return self._id_to_state[id]
+
+    def get_action_id(self, action:Action)->int:
+        """
+        Returns action id or creates new one if the state was not registered before
+        """
+        if action not in self._action_to_id.keys():
+            self._action_to_id[action] = len(self._action_to_id)
+            self._id_to_action[self._action_to_id[action]] = action
+        return self._action_to_id[action] 
+
+    def add_checkpoint(self, trajectories:list, end_reason=None)->None:
+        # Add complete trajectory list
+        wins = []
+        edges = {}
+        simple_edges = {}
+        for play in trajectories:
+            if end_reason and play["end_reason"] not in end_reason:
+                continue
+            if len(play["trajectory"]["actions"]) == 0:
+                continue
+            if play["end_reason"] == "goal_reached":
+                wins.append(1)
+            else:
+                wins.append(0)
+            state_id = self.get_state_id(GameState.from_dict(play["trajectory"]["states"][0]))
+            #print(f'Trajectory len: {len(play["trajectory"]["actions"])}')
+            for i in range(1, len(play["trajectory"]["actions"])):
+                next_state_id = self.get_state_id(GameState.from_dict(play["trajectory"]["states"][i]))
+                action_id = self.get_action_id(Action.from_dict((play["trajectory"]["actions"][i])))
+                # fullgraph
+                if (state_id, next_state_id, action_id) not in edges:
+                    edges[state_id, next_state_id, action_id] = 0
+                edges[state_id, next_state_id, action_id] += 1
+                
+                #simplified graph
+                if (state_id, next_state_id)not in simple_edges:
+                    simple_edges[state_id, next_state_id] = 0
+                simple_edges[state_id, next_state_id] += 1
+                state_id = next_state_id
+        self._checkpoint_simple_edges[self.num_checkpoints] = simple_edges
+        self._checkpoint_edges[self.num_checkpoints] = edges
+        self._wins_per_checkpoint[self.num_checkpoints] = np.array(wins)
+        self._checkpoints[self.num_checkpoints] = trajectories
+
+    def get_checkpoint_wr(self, checkpoint_id:int)->tuple:
+        if checkpoint_id not in self._wins_per_checkpoint:
+            raise IndexError(f"Checkpoint id '{checkpoint_id}' not found!")
+        else:
+            return np.mean(self._wins_per_checkpoint[checkpoint_id]), np.std(self._wins_per_checkpoint[checkpoint_id])
+
+    def get_wr_progress(self)->dict:
+        ret = {}
+        for i in self._wins_per_checkpoint.keys():
+            wr, std = self.get_checkpoint_wr(i)
+            ret[i] = {"wr":wr, "std":std}
+            print(f"Checkpoint {i}: WR={wr}±{std}")
+        return ret
+
 
 
 def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
@@ -94,33 +179,43 @@ if __name__ == '__main__':
 
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--t1", help="Trajectory file #1", action='store', required=True)
-    parser.add_argument("--t2", help="Trajectory file #2", action='store', required=True)
+    # parser.add_argument("--t1", help="Trajectory file #1", action='store', required=True)
+    # parser.add_argument("--t2", help="Trajectory file #2", action='store', required=True)
     parser.add_argument("--end_reason", help="Filter options for trajectories", default=None, type=str, action='store', required=False)
-    parser.add_argument("--n_trajectories", help="Limit of how many trajectories to use", action='store', default=1000, required=False)
+    parser.add_argument("--n_trajectories", help="Limit of how many trajectories to use", action='store', default=10000, required=False)
     
     args = parser.parse_args()
-    trajectories1 = read_json(args.t1, max_lines=args.n_trajectories)
-    trajectories2 = read_json(args.t2, max_lines=args.n_trajectories)
-    states = {}
-    actions = {}
+    # trajectories1 = read_json(args.t1, max_lines=args.n_trajectories)
+    # trajectories2 = read_json(args.t2, max_lines=args.n_trajectories)
+    # states = {}
+    # actions = {}
     
-    graph_t1, g1_timestaps, t1_wr_mean, t1_wr_std = gameplay_graph(trajectories1, states, actions,end_reason=args.end_reason)
-    graph_t2, g2_timestaps, t2_wr_mean, t2_wr_std = gameplay_graph(trajectories2, states, actions,end_reason=args.end_reason)
+    # graph_t1, g1_timestaps, t1_wr_mean, t1_wr_std = gameplay_graph(trajectories1, states, actions,end_reason=args.end_reason)
+    # graph_t2, g2_timestaps, t2_wr_mean, t2_wr_std = gameplay_graph(trajectories2, states, actions,end_reason=args.end_reason)
     
-    state_to_id = {v:k for k,v in states.items()}
-    action_to_id = {v:k for k,v in states.items()}
+    # state_to_id = {v:k for k,v in states.items()}
+    # action_to_id = {v:k for k,v in states.items()}
 
-    print(f"Trajectory 1: {args.t1}")
-    print(f"WR={t1_wr_mean}±{t1_wr_std}")
-    get_graph_stats(graph_t1, state_to_id, action_to_id)
-    print(f"Trajectory 2: {args.t2}")
-    print(f"WR={t2_wr_mean}±{t2_wr_std}")
-    get_graph_stats(graph_t2, state_to_id, action_to_id)
+    # print(f"Trajectory 1: {args.t1}")
+    # print(f"WR={t1_wr_mean}±{t1_wr_std}")
+    # get_graph_stats(graph_t1, state_to_id, action_to_id)
+    # print(f"Trajectory 2: {args.t2}")
+    # print(f"WR={t2_wr_mean}±{t2_wr_std}")
+    # get_graph_stats(graph_t2, state_to_id, action_to_id)
 
-    a_edges, d_edges, a_nodes, d_nodes = get_graph_modificiation(graph_t1, graph_t2)
-    print(f"AE:{len(a_edges)},DE:{len(d_edges)}, AN:{len(a_nodes)},DN:{len(d_nodes)}")
-    # print("positions of same states:")
-    # for node in node_set(graph_t1).intersection(node_set(graph_t2)):
-    #     print(g1_timestaps[node], g2_timestaps[node])
-    #     print("-----------------------")
+    # a_edges, d_edges, a_nodes, d_nodes = get_graph_modificiation(graph_t1, graph_t2)
+    # print(f"AE:{len(a_edges)},DE:{len(d_edges)}, AN:{len(a_nodes)},DN:{len(d_nodes)}")
+    # # print("positions of same states:")
+    # # for node in node_set(graph_t1).intersection(node_set(graph_t2)):
+    # #     print(g1_timestaps[node], g2_timestaps[node])
+    # #     print("-----------------------")
+    tg = TrajectoryGraph()
+    
+    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-2000.jsonl",max_lines=args.n_trajectories))
+    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-4000.jsonl",max_lines=args.n_trajectories))
+    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-6000.jsonl",max_lines=args.n_trajectories))
+    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-8000.jsonl",max_lines=args.n_trajectories))
+    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-10000.jsonl",max_lines=args.n_trajectories))
+    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-12000.jsonl",max_lines=args.n_trajectories))
+    print(tg.num_checkpoints)
+    tg.get_wr_progress()
