@@ -93,6 +93,38 @@ class TrajectoryGraph:
             print(f"Checkpoint {i}: WR={wr}±{std}")
         return ret
 
+    def get_graph_stats_progress(self):
+        ret = {}
+        print("Checkpoint,\tWR,\tEdges,\tSimpleEdges,\tNodes,\tLoops,\tSimpleLoops")
+        for i in self._wins_per_checkpoint.keys():
+            data = self.get_checkpoint_stats(i)
+            ret[i] = data
+            print(f'{i},\t{data["winrate"]},\t{data["num_edges"]},\t{data["num_simplified_edges"]},\t{data["num_nodes"]},\t{data["num_loops"]},\t{data["num_simpligied_loops"]}')
+        return ret
+
+    def get_checkpoint_stats(self, checkpoint_id:int)->dict:
+        if checkpoint_id not in self._wins_per_checkpoint:
+            raise IndexError(f"Checkpoint id '{checkpoint_id}' not found!")
+        else:
+            data = {}
+            data["winrate"] = np.mean(self._wins_per_checkpoint[checkpoint_id])
+            data["winrate_std"] = np.std(self._wins_per_checkpoint[checkpoint_id])
+            data["num_edges"] = len(self._checkpoint_edges[checkpoint_id])
+            data["num_simplified_edges"] = len(self._checkpoint_simple_edges[checkpoint_id])
+            data["num_loops"] = len([edge for edge in self._checkpoint_edges[checkpoint_id].keys() if edge[0]==edge[1]])
+            data["num_simpligied_loops"] = len([edge for edge in self._checkpoint_simple_edges[checkpoint_id].keys() if edge[0]==edge[1]])
+            node_set = set([src_node for src_node,_,_ in self._checkpoint_edges[checkpoint_id].keys()]) | set([dst_node for _,dst_node,_ in self._checkpoint_edges[checkpoint_id].keys()])
+            data["num_nodes"] = len(node_set)
+            return data
+
+    def get_graph_structure_progress(self)->dict:
+
+        all_edges = set().union(*(inner_dict.keys() for inner_dict in self._checkpoint_edges.values()))
+        super_graph = {key:np.zeros(self.num_checkpoints) for key in all_edges}
+        for i, edge_list in self._checkpoint_edges.items():
+            for edge in edge_list:
+                super_graph[edge][i] = 1
+        return super_graph
 
 
 def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
@@ -218,4 +250,8 @@ if __name__ == '__main__':
     tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-10000.jsonl",max_lines=args.n_trajectories))
     tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-12000.jsonl",max_lines=args.n_trajectories))
     print(tg.num_checkpoints)
-    tg.get_wr_progress()
+    tg.get_graph_stats_progress()
+    super_graph = tg.get_graph_structure_progress()
+    for k,v in super_graph.items():
+        if np.sum(v) > 3:
+            print(k, v)
