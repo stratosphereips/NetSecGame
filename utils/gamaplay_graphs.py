@@ -151,6 +151,19 @@ class TrajectoryGraph:
                 super_graph[edge][i] = 1
         return super_graph
 
+    def get_graph_structure_probabilistic_progress(self)->dict:
+
+        all_edges = set().union(*(inner_dict.keys() for inner_dict in self._checkpoint_edges.values()))
+        super_graph = {key:np.zeros(self.num_checkpoints) for key in all_edges}
+        for i, edge_list in self._checkpoint_edges.items():
+            total_out_edges_use = {}
+            for (src, _, _), frequency in edge_list.items():
+                if src not in total_out_edges_use:
+                    total_out_edges_use[src] = 0
+                total_out_edges_use[src] += frequency
+            for (src,dst,edge), value in edge_list.items():
+                super_graph[(src,dst,edge)][i] = value/total_out_edges_use[src]
+        return super_graph
 
 def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
     edges = {}
@@ -276,7 +289,7 @@ if __name__ == '__main__':
     tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-12000.jsonl",max_lines=args.n_trajectories))
     print(tg.num_checkpoints)
     tg.plot_graph_stats_progress()
-    super_graph = tg.get_graph_structure_progress()
+    super_graph = tg.get_graph_structure_probabilistic_progress()
     for k,v in super_graph.items():
-        if np.sum(v) > 3:
+        if np.mean(v) > 0.25:
             print(k, v)
