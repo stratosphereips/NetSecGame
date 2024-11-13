@@ -77,6 +77,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         # Make a copy of data placements so it is possible to reset to it when episode ends
         self._data_original = copy.deepcopy(self._data)
         self._data_content_original = copy.deepcopy(self._data_content)
+        self._firewall_original = copy.deepcopy(self._firewall)
         
         self._actions_played = []
         self.logger.info("Environment initialization finished")
@@ -893,6 +894,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
         self._data_content_original = copy.deepcopy(self._data_content_original)
+        self._firewall = copy.deepcopy(self._firewall_original)
         self._fw_blocks = {}
       
 
