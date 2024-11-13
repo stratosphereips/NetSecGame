@@ -710,12 +710,14 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                     if action.parameters["target_host"] != action.parameters['blocked_host']:
                         try:
                             #remove connection target_host -> blocked_host
-                            self._firewall[action.parameters["target_host"]].pop(action.parameters["blocked_host"])
+                            self._firewall[action.parameters["target_host"]].discard(action.parameters["blocked_host"])
+                            self.logger.debug(f"\t\t\t Removed rule:'{action.parameters['target_host']}' -> {action.parameters['blocked_host']}")
                         except KeyError:
                             pass
                         try:
                             #remove blocked_host -> target_host
-                            self._firewall[action.parameters["blocked_host"]].pop(action.parameters["blocked_host"])
+                            self._firewall[action.parameters["blocked_host"]].discard(action.parameters["target_host"])
+                            self.logger.debug(f"\t\t\t Removed rule:'{action.parameters['blocked_host']}' -> {action.parameters['target_host']}")
                         except KeyError:
                             pass
 
