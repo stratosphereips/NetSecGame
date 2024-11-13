@@ -44,7 +44,10 @@ class TrajectoryGraph:
         if action not in self._action_to_id.keys():
             self._action_to_id[action] = len(self._action_to_id)
             self._id_to_action[self._action_to_id[action]] = action
-        return self._action_to_id[action] 
+        return self._action_to_id[action]
+
+    def get_action(self, id:int)-> Action:
+        return self._id_to_action[id]
 
     def add_checkpoint(self, trajectories:list, end_reason=None)->None:
         # Add complete trajectory list
@@ -279,17 +282,28 @@ if __name__ == '__main__':
     # # for node in node_set(graph_t1).intersection(node_set(graph_t2)):
     # #     print(g1_timestaps[node], g2_timestaps[node])
     # #     print("-----------------------")
-    tg = TrajectoryGraph()
+    # tg_no_blocks = TrajectoryGraph()
     
-    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-2000.jsonl",max_lines=args.n_trajectories))
-    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-4000.jsonl",max_lines=args.n_trajectories))
-    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-6000.jsonl",max_lines=args.n_trajectories))
-    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-8000.jsonl",max_lines=args.n_trajectories))
-    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-10000.jsonl",max_lines=args.n_trajectories))
-    tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-12000.jsonl",max_lines=args.n_trajectories))
-    print(tg.num_checkpoints)
-    tg.plot_graph_stats_progress()
-    super_graph = tg.get_graph_structure_probabilistic_progress()
-    for k,v in super_graph.items():
-        if np.mean(v) > 0.25:
-            print(k, v)
+    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-2000.jsonl",max_lines=args.n_trajectories))
+    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-4000.jsonl",max_lines=args.n_trajectories))
+    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-6000.jsonl",max_lines=args.n_trajectories))
+    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-8000.jsonl",max_lines=args.n_trajectories))
+    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-10000.jsonl",max_lines=args.n_trajectories))
+    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-12000.jsonl",max_lines=args.n_trajectories))
+    
+    # tg_no_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-5000_no_blocks.jsonl",max_lines=args.n_trajectories))
+    # tg_no_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-10000_no_blocks.jsonl",max_lines=args.n_trajectories))
+    # tg_no_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-15000_no_blocks.jsonl",max_lines=args.n_trajectories))
+    # tg_no_blocks.plot_graph_stats_progress()
+   
+    tg_blocks = TrajectoryGraph()
+    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-5000_blocks.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-10000_blocks.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-15000_blocks.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-20000_blocks.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.plot_graph_stats_progress()
+
+    super_graph = tg_blocks.get_graph_structure_probabilistic_progress()
+    print(len(super_graph))
+    edges_present_everycheckpoint = [k for k,v in super_graph.items() if np.min(v) > 0]
+    print(len(edges_present_everycheckpoint))
