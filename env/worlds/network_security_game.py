@@ -700,7 +700,6 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         - Update the state
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
-        self.logger.info(f"\t\tBlockConnection {action.parameters['target_host']} <-> {action.parameters['blocked_host']}")
         # Is the src in the controlled hosts?
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             # Is the target in the controlled hosts?
@@ -709,6 +708,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 # This means we ignore the 'target_host' that would be the router where this is applied.
                 if self._firewall_check(action.parameters["source_host"], action.parameters["target_host"]):
                     if action.parameters["target_host"] != action.parameters['blocked_host']:
+                        self.logger.info(f"\t\tBlockConnection {action.parameters['target_host']} <-> {action.parameters['blocked_host']}")
                         try:
                             #remove connection target_host -> blocked_host
                             self._firewall[action.parameters["target_host"]].discard(action.parameters["blocked_host"])
@@ -737,6 +737,8 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                             next_blocked[action.parameters["blocked_host"]] = set()
                         next_blocked[action.parameters["target_host"]].add(action.parameters["blocked_host"])           
                         next_blocked[action.parameters["blocked_host"]].add(action.parameters["target_host"])
+                    else:
+                        self.logger.info(f"\t\t\t Cant block connection form :'{action.parameters['target_host']}' to '{action.parameters['blocked_host']}'")
                 else:
                     self.logger.debug(f"\t\t\t Connection from '{action.parameters['source_host']}->'{action.parameters['target_host']} is blocked blocked by FW")
             else:
