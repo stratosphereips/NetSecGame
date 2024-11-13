@@ -27,6 +27,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
         self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
+        self._fw_blocks = {}
         self._data_content = {} #content of each datapoint from self._data
         # All exploits in the environment
         self._exploits = {}
@@ -680,10 +681,8 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         - Add the rule to the FW list
         - Update the state
         """
-        blocked_host = action.parameters['blocked_host']
-
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
-        self.logger.info(f"\t\tBlockIP {action.parameters['target_host']}")
+        self.logger.info(f"\t\tBlockConnection {action.parameters['target_host']} <-> {action.parameters['blocked_host']}")
         # Is the src in the controlled hosts?
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             # Is the target in the controlled hosts?
@@ -691,31 +690,33 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 # For now there is only one FW in the main router, but this should change in the future. 
                 # This means we ignore the 'target_host' that would be the router where this is applied.
                 if self._firewall_check(action.parameters["source_host"], action.parameters["target_host"]):
-                            
-                    # Stop the blocked host to connect _to_ any other IP
-                    try:
-                        self._firewall[blocked_host] = set()
-                        self.logger.debug(f"Removing all allowed connections from {blocked_host}")
-                    except KeyError:
-                        # The blocked_host host was not in the list
-                        pass
-                    # Stop the other hosts to connect _to the blocked_host_
-                    for host in self._firewall.keys():
+                    if action.parameters["target_host"] != action.parameters['blocked_host']:
                         try:
-                            self._firewall[host].remove(blocked_host)
-                            self.logger.debug(f"Removing {blocked_host} from allowed connections from {host}")
+                            #remove connection target_host -> blocked_host
+                            self._firewall[action.parameters["target_host"]].pop(action.parameters["blocked_host"])
                         except KeyError:
-                            # The blocked_host host was not in the list
                             pass
-                    # Update the state of blocked ips. It is a dict with key target_host and a set with blocked hosts inside
-                    new_blocked = set()
-                    # Store the blocked host IP in the set of blocked hosts
-                    new_blocked.add(action.parameters["blocked_host"])
-                    if len(new_blocked) > 0:
+                        try:
+                            #remove blocked_host -> target_host
+                            self._firewall[action.parameters["blocked_host"]].pop(action.parameters["blocked_host"])
+                        except KeyError:
+                            pass
+
+                        #Update the FW_Rules visible to agents
+                        if action.parameters["target_host"] not in  self._fw_blocks.keys():
+                            self._fw_blocks[action.parameters["target_host"]] = set()
+                        self._fw_blocks[action.parameters["target_host"]].add(action.parameters["blocked_host"])
+                        if action.parameters["blocked_host"] not in  self._fw_blocks.keys():
+                            self._fw_blocks[action.parameters["blocked_host"]] = set()
+                        self._fw_blocks[action.parameters["blocked_host"]].add(action.parameters["target_host"])
+
+                        # update the state
                         if action.parameters["target_host"] not in next_blocked.keys():
-                            next_blocked[action.parameters["target_host"]] = new_blocked
-                        else:
-                            next_blocked[action.parameters["target_host"]] = next_blocked[action.parameters["target_host"]].union(new_blocked)
+                            next_blocked[action.parameters["target_host"]] = set()
+                        if action.parameters["blocked_host"] not in next_blocked.keys():
+                            next_blocked[action.parameters["blocked_host"]] = set()
+                        next_blocked[action.parameters["target_host"]].add(action.parameters["blocked_host"])           
+                        next_blocked[action.parameters["blocked_host"]].add(action.parameters["target_host"])
                 else:
                     self.logger.debug(f"\t\t\t Connection from '{action.parameters['source_host']}->'{action.parameters['target_host']} is blocked blocked by FW")
             else:
