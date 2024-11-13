@@ -893,6 +893,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
         self._data_content_original = copy.deepcopy(self._data_content_original)
+        self._fw_blocks = {}
       
 
         self._actions_played = []
