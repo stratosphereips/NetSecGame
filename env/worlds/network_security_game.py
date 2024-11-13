@@ -458,6 +458,16 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         else:
             self.logger.debug("\t\t\tCan't get data in host. The host is not controlled.")
         return data
+    
+    def _get_known_blocks_in_host(self, host_ip:str, controlled_hosts:set)->set:
+        known_blocks = set()
+        if host_ip in controlled_hosts: #only return data if the agent controls the host
+            if host_ip in self._ip_to_hostname:
+                if host_ip in self._fw_blocks:
+                    known_blocks = self._fw_blocks[host_ip]
+        else:
+            self.logger.debug("\t\t\tCan't get data in host. The host is not controlled.")
+        return known_blocks
 
     def _get_data_content(self, host_ip:str, data_id:str)->str:
         """
@@ -580,6 +590,13 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                         next_data[action.parameters["target_host"]] = new_data
                     else:
                         next_data[action.parameters["target_host"]] = next_data[action.parameters["target_host"]].union(new_data)
+                # ADD KNOWN FW BLOCKS
+                new_blocks = self._get_known_blocks_in_host(action.parameters["target_host"], current.controlled_hosts)
+                if len(new_blocks) > 0:
+                    if action.parameters["target_host"] not in next_blocked.keys():
+                        next_blocked[action.parameters["target_host"]] = new_blocks
+                    else:
+                        next_blocked[action.parameters["target_host"]] = next_blocked[action.parameters["target_host"]].union(new_blocks)
             else:
                 self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
