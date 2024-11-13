@@ -106,7 +106,7 @@ class TrajectoryGraph:
             print(f'{i},\t{data["winrate"]},\t{data["num_edges"]},\t{data["num_simplified_edges"]},\t{data["num_nodes"]},\t{data["num_loops"]},\t{data["num_simplified_loops"]}')
         return ret
 
-    def plot_graph_stats_progress(self):
+    def plot_graph_stats_progress(self, filedir="figures", filename="trajectory_graph_stats.png"):
         data = self.get_graph_stats_progress()
         wr = [data[i]["winrate"] for i in range(len(data))]
         num_nodes = [data[i]["num_nodes"] for i in range(len(data))]
@@ -121,14 +121,14 @@ class TrajectoryGraph:
         plt.plot(checkpoints, num_loops, label='Number of loops')
         plt.plot(checkpoints, num_simplified_loops, label='Number of simplified loops')
 
-        plt.title("Line Graph with Multiple Lines")
+        plt.title("Graph statistics per checkpoint")
         plt.yscale('log')
         plt.xlabel("Checkpoints")
         # Show legend
         plt.legend()
 
         # Save the figure as an image file
-        plt.savefig("multi_line_graph.png")
+        plt.savefig(os.path.join(filedir, filename))
 
     def get_checkpoint_stats(self, checkpoint_id:int)->dict:
         if checkpoint_id not in self._wins_per_checkpoint:
