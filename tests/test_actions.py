@@ -331,7 +331,9 @@ class TestActionsNoDefender:
         new_state = env.step(state=state, action=action, agent_id=None)
         assert target_host in new_state.known_blocks.keys()
         assert blocked_host in new_state.known_blocks[target_host]
-
+        assert target_host in env._fw_blocks.keys()
+        assert blocked_host in env._fw_blocks[target_host]
+  
     def test_block_ip_same_different_source(self, env_obs_exploited_service):
         env, state = env_obs_exploited_service
         source_host = components.IP('192.168.2.2')
@@ -345,6 +347,9 @@ class TestActionsNoDefender:
         new_state = env.step(state=state, action=action, agent_id=None)
         assert target_host in new_state.known_blocks.keys()
         assert blocked_host in new_state.known_blocks[target_host]
+        assert target_host in env._fw_blocks.keys()
+        assert blocked_host in env._fw_blocks[target_host]
+
 
     def test_block_ip_self_block(self, env_obs_exploited_service):
         env, state = env_obs_exploited_service
@@ -356,3 +361,4 @@ class TestActionsNoDefender:
         action = components.Action(components.ActionType.BlockIP, parameters)
         new_state = env.step(state=state, action=action, agent_id=None)
         assert target_host not in new_state.known_blocks.keys()
+        assert target_host not in env._fw_blocks.keys()
