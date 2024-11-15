@@ -92,6 +92,21 @@ def env_obs_found_data2(env_obs_exploited_service2):
     new_state = env.step(state=state, action=action, agent_id=None)
     return (env, new_state)
 
+@pytest.fixture
+def env_obs_blocked_connection(env_obs_exploited_service):
+    "After blocking"
+    env, state = env_obs_exploited_service
+    source_host = components.IP('192.168.2.2')
+    target_host = components.IP('192.168.1.3')
+    blocked_host = components.IP('192.168.2.2')
+    parameters = {
+        "target_host":target_host,
+        "source_host":source_host,
+        "blocked_host": blocked_host}
+    action = components.Action(components.ActionType.BlockIP, parameters)
+    new_state = env.step(state=state, action=action, agent_id=None)
+    return (env, new_state)
+
 class TestActionsNoDefender:
     def test_scan_network_not_exist(self, env_obs):
         """
@@ -303,3 +318,47 @@ class TestActionsNoDefender:
         new_state = env.step(state=state, action=action, agent_id=None)
         assert state == new_state
         assert components.IP('192.168.1.3') not in new_state.known_services
+
+    def test_block_ip_same_host(self, env_obs_exploited_service):
+        env, state = env_obs_exploited_service
+        target_host = components.IP('192.168.2.2')
+        blocked_host = components.IP("1.1.1.1")
+        parameters = {
+            "target_host":target_host,
+            "source_host":target_host,
+            "blocked_host": blocked_host}
+        action = components.Action(components.ActionType.BlockIP, parameters)
+        new_state = env.step(state=state, action=action, agent_id=None)
+        assert target_host in new_state.known_blocks.keys()
+        assert blocked_host in new_state.known_blocks[target_host]
+        assert target_host in env._fw_blocks.keys()
+        assert blocked_host in env._fw_blocks[target_host]
+  
+    def test_block_ip_same_different_source(self, env_obs_exploited_service):
+        env, state = env_obs_exploited_service
+        source_host = components.IP('192.168.2.2')
+        target_host = components.IP("192.168.1.3")
+        blocked_host = components.IP("1.1.1.1")
+        parameters = {
+            "target_host":target_host,
+            "source_host":source_host,
+            "blocked_host": blocked_host}
+        action = components.Action(components.ActionType.BlockIP, parameters)
+        new_state = env.step(state=state, action=action, agent_id=None)
+        assert target_host in new_state.known_blocks.keys()
+        assert blocked_host in new_state.known_blocks[target_host]
+        assert target_host in env._fw_blocks.keys()
+        assert blocked_host in env._fw_blocks[target_host]
+
+
+    def test_block_ip_self_block(self, env_obs_exploited_service):
+        env, state = env_obs_exploited_service
+        target_host = components.IP('192.168.2.2')
+        parameters = {
+            "target_host":target_host,
+            "source_host":components.IP('192.168.2.2'),
+            "blocked_host": target_host}
+        action = components.Action(components.ActionType.BlockIP, parameters)
+        new_state = env.step(state=state, action=action, agent_id=None)
+        assert target_host not in new_state.known_blocks.keys()
+        assert target_host not in env._fw_blocks.keys()
