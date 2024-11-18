@@ -4,6 +4,7 @@ coordinator:
   # Define the conf for all the 'attacker' agents.
   agents:
     Attacker:
+      max_steps: 50
       goal:
         description: "Exfiltrate data to '213.47.23.195'"
         is_any_part_of_goal_random: True
@@ -28,7 +29,6 @@ coordinator:
         known_blocks: {}
         # Example of known blocks. In the host 192.168.2.2, block all connections coming or going to 192.168.1.3
         # known_blocks: {192.168.2.2: {192.168.1.3}}
-
       start_position:
         known_networks: []
         known_hosts: []
@@ -99,7 +99,6 @@ env:
   # random_seed: 42
   scenario: 'scenario1'
   use_global_defender: False
-  max_steps: 50
   use_dynamic_addresses: False
   use_firewall: True
   save_trajectories: False

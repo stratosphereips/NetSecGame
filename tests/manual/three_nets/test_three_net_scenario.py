@@ -11,7 +11,7 @@ from env.game_components import Action, ActionType, IP, Network, Service, Data
 if __name__ == "__main__":
 
     # !!! RUN THE COORDINATOR IN SEPARATE PROCESS AS FOLLOWS !!!
-    # python3 coordinator.py  --task_config=./tests/manual/three_nets/three_net_testing_conf.yaml
+    # python3 coordinator.py  --task_config=./tests/manual/three_nets/three_net_testing_conf.yaml -l DEBUG
     NSE_config = "./three_net_testing_conf.yaml"
     coordinator_conf = "../../../coordinator.conf"
     log_filename = "three_net_test.log"

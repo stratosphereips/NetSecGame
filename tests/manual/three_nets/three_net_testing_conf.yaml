@@ -9,6 +9,7 @@ coordinator:
   # Define the conf for all the 'attacker' agents.
   agents:
     Attacker:
+      max_steps: 15
       goal:
         description: "Exfiltrate password DB data to '213.47.23.195'"
         is_any_part_of_goal_random: True
@@ -58,7 +59,6 @@ env:
   # random_seed: 42
   scenario: 'three_nets'
   use_global_defender: False
-  max_steps: 15
   use_dynamic_addresses: False
   use_firewall: True
   save_trajectories: False

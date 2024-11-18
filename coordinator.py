@@ -188,7 +188,7 @@ class Coordinator:
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
-        self._steps_limit = self._world.task_config.get_max_steps()
+        self._steps_limit_per_role = self._get_max_steps_per_role()
         self._use_global_defender = self._world.task_config.get_use_global_defender()
         # player information
         self.agents = {}
@@ -201,18 +201,19 @@ class Coordinator:
         self._agent_starting_position = {}
         # current state per agent_addr (GameState)
         self._agent_states = {}
-        # goal reach status per agent_addr (bool)
-        self._agent_goal_reached = {}
-        self._agent_episode_ends = {}
-        self._agent_detected = {}
+        # agent status dict {agent_addr: string}
+        self._agent_statuses = {}
+        # agent status dict {agent_addr: int}
+        self._agent_rewards = {}
         # trajectories per agent_addr
         self._agent_trajectories = {}
     
     @property
     def episode_end(self)->bool:
-        # Terminate episode if at least one player wins or reaches the timeout
-        self.logger.debug(f"End evaluation: {self._agent_episode_ends.values()}")
-        return all(self._agent_episode_ends.values())
+        # Episode ends ONLY IF all agents with defined max_steps reached the end fo the episode
+        exists_active_player = any(status == "playing_active" for status in self._agent_statuses.values())
+        self.logger.debug(f"End evaluation: {self._agent_statuses.items()} - Episode end:{not exists_active_player}")
+        return not exists_active_player
     
     @property
     def config_file_hash(self):
@@ -273,8 +274,13 @@ class Coordinator:
                                     self._reset_requests[agent] = False
                                     self._agent_steps[agent] = 0
                                     self._agent_states[agent] = self._world.create_state_from_view(self._agent_starting_position[agent])
-                                    self._agent_goal_reached[agent] = self._goal_reached(agent)
-                                    self._agent_episode_ends[agent] = False
+                                    self._agent_rewards.pop(agent, None)
+                                    if self._steps_limit_per_role[self.agents[agent][1]]:
+                                        # This agent can force episode end (has timeout and goal defined)
+                                        self._agent_statuses[agent] = "playing_active"
+                                    else:
+                                        # This agent can NOT force episode end (does NOT timeout or goal defined)
+                                        self._agent_statuses[agent] = "playing"      
                                     output_message_dict = self._create_response_to_reset_game_action(agent)
                                     msg_json = self.convert_msg_dict_to_json(output_message_dict)
                                     # Send to anwer_queue
@@ -307,9 +313,13 @@ class Coordinator:
         self._reset_requests[agent_addr] = False
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = self._world.create_state_from_view(self._agent_starting_position[agent_addr])
-        self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr) 
-        self._agent_detected[agent_addr] = self._check_detection(agent_addr, None) 
-        self._agent_episode_ends[agent_addr] = False
+        
+        if self._steps_limit_per_role[agent_role]:
+            # This agent can force episode end (has timeout and goal defined)
+            self._agent_statuses[agent_addr] = "playing_active"
+        else:
+            # This agent can NOT force episode end (does NOT timeout or goal defined)
+            self._agent_statuses[agent_addr] = "playing"      
         if self._world.task_config.get_store_trajectories() or self._use_global_defender:
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
@@ -323,10 +333,10 @@ class Coordinator:
         agent_info = {}
         if agent_addr in self.agents:
             agent_info["state"] = self._agent_states.pop(agent_addr)
-            agent_info["goal_reached"] = self._agent_goal_reached.pop(agent_addr)
+            agent_info["status"] = self._agent_statuses.pop(agent_addr)
             agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
             agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
-            agent_info["episode_end"] = self._agent_episode_ends.pop(agent_addr)
+            agent_info["end_reward"] = self._agent_rewards.pop(agent_addr, None)
             agent_info["agent_info"] = self.agents.pop(agent_addr)
             self.logger.debug(f"\t{agent_info}")
         else:
@@ -376,6 +386,19 @@ class Coordinator:
             self.logger.info(f"Goal description for role '{agent_role}': {goal_descriptions[agent_role]}")
         return goal_descriptions
     
+    def _get_max_steps_per_role(self)->dict:
+        """
+        Method for finding max amount of steps in 1 episode for each agent role in the game.
+        """
+        max_steps = {}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                max_steps[agent_role] = self._world.task_config.get_max_steps(agent_role)
+            except KeyError:
+                max_steps[agent_role] = None
+            self.logger.info(f"Max steps in episode for '{agent_role}': {max_steps[agent_role]}")
+        return max_steps
+    
     def _process_join_game_action(self, agent_addr: tuple, action: Action) -> dict:
         """ "
         Method for processing Action of type ActionType.JoinGame
@@ -386,14 +409,13 @@ class Coordinator:
             agent_role = action.parameters["agent_info"].role
             if agent_role in self.ALLOWED_ROLES:
                 initial_observation = self._initialize_new_player(agent_addr, agent_name, agent_role)
-                max_steps =  self._world._max_steps if agent_role == "Attacker" else None
                 output_message_dict = {
                     "to_agent": agent_addr,
                     "status": str(GameStatus.CREATED),
                     "observation": observation_as_dict(initial_observation),
                     "message": {
                         "message": f"Welcome {agent_name}, registred as {agent_role}",
-                        "max_steps": max_steps,
+                        "max_steps": self._steps_limit_per_role[agent_role],
                         "goal_description": self._goal_description_per_role[agent_role],
                         "num_actions": self._world.num_actions,
                         "configuration_hash": self._CONFIG_FILE_HASH
@@ -436,8 +458,9 @@ class Coordinator:
             "observation": observation_as_dict(new_observation),
             "message": {
                         "message": "Resetting Game and starting again.",
-                        "max_steps": self._world._max_steps,
-                        "goal_description": self._goal_description_per_role[self.agents[agent_addr][1]]
+                        "max_steps": self._steps_limit_per_role[self.agents[agent_addr][1]],
+                        "goal_description": self._goal_description_per_role[self.agents[agent_addr][1]],
+                         "configuration_hash": self._CONFIG_FILE_HASH
                         },
         }
         return output_message_dict
@@ -491,24 +514,34 @@ class Coordinator:
             current_state = self._agent_states[agent_addr]
             # Build new Observation for the agent
             self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr)
-            self._agent_goal_reached[agent_addr] = self._goal_reached(agent_addr)
-
-            self._agent_detected[agent_addr] = self._check_detection(agent_addr, action)
-
+            # check timout
+            if self._max_steps_reached(agent_addr):
+                self._agent_statuses[agent_addr] = "max_steps"           
+            # check detection
+            if self._check_detection(agent_addr, action):
+                self._agent_statuses[agent_addr] = "blocked"
+                self._agent_detected[agent_addr] = True            
+            # check goal
+            if self._goal_reached(agent_addr):
+                self._agent_statuses[agent_addr] = "goal_reached"
+            # add reward for taking a step
             reward = self._world._rewards["step"]
+            
             obs_info = {}
             end_reason = None
-            if self._agent_goal_reached[agent_addr]:
-                reward += self._world._rewards["goal"]
-                self._agent_episode_ends[agent_addr] = True
+            if self._agent_statuses[agent_addr] == "goal_reached":
+                self._assign_end_rewards()
+                reward += self._agent_rewards[agent_addr]
                 end_reason = "goal_reached"
                 obs_info = {'end_reason': "goal_reached"}
-            elif self._timeout_reached(agent_addr):
-                self._agent_episode_ends[agent_addr] = True
+            elif self._agent_statuses[agent_addr] == "max_steps":
+                self._assign_end_rewards()
+                reward += self._agent_rewards[agent_addr]
                 obs_info = {"end_reason": "max_steps"}
                 end_reason = "max_steps"
-            elif self._agent_detected[agent_addr]:
-                reward += self._world._rewards["detection"]
+            elif self._agent_statuses[agent_addr] == "blocked":
+                self._assign_end_rewards()
+                reward += self._agent_rewards[agent_addr]
                 self._agent_episode_ends[agent_addr] = True
                 obs_info = {"end_reason": "max_steps"}
             
@@ -524,6 +557,7 @@ class Coordinator:
                 "status": str(GameStatus.OK),
             }
         else:
+            self._assign_end_rewards()
             self.logger.error(f"{self.episode_end}, {self._agent_episode_ends}")
             output_message_dict = self._generate_episode_end_message(agent_addr)
         return output_message_dict
@@ -533,15 +567,8 @@ class Coordinator:
         Method for generating response when agent attemps to make a step after episode ended.
         """
         current_observation = self._agent_observations[agent_addr]
-        reward = 0 # TODO
-        end_reason = ""
-        if self._agent_goal_reached[agent_addr]:
-            end_reason = "goal_reached"
-        elif self._timeout_reached(agent_addr):
-            end_reason = "max_steps"
-        else:
-            end_reason = "game_lost"
-            reward += self._world._rewards["detection"]
+        reward = self._agent_rewards[agent_addr]
+        end_reason = self._agent_statuses[agent_addr]
         new_observation = Observation(
             current_observation.state,
             reward=reward,
@@ -586,7 +613,7 @@ class Coordinator:
                     if len(matching_keys) == len(goal_dict.keys()):
                         return True
                 except KeyError:
-                    #some keys are missing in the known_dict
+                    # some keys are missing in the known_dict
                     return False
             return False
         
@@ -615,17 +642,57 @@ class Coordinator:
             self.logger.info("\tNot detected!")
         return detection
     
-    def _timeout_reached(self, agent_addr:tuple) ->bool:
+    def _max_steps_reached(self, agent_addr:tuple) ->bool:
         """
         Checks if the agent reached the max allowed steps. Only applies to role 'Attacker'
         """
         self.logger.debug(f"Checking timout for {self.agents[agent_addr]}")
-        if self.agents[agent_addr][1] == "Attacker":
-            if self._agent_steps[agent_addr] >= self._steps_limit:
+        agent_role = self.agents[agent_addr][1]
+        if self._steps_limit_per_role[agent_role]:
+            if self._agent_steps[agent_addr] >= self._steps_limit_per_role[agent_role]:
                 self.logger.info("Timeout reached by {self.agents[agent_addr]}!")
                 return True
         else:
+            self.logger.debug(f"No max steps defined for role {agent_role}")
             return False
+
+    def _assign_end_rewards(self)->None:
+        """
+        Method which assings rewards to each agent which has finished playing
+        """
+        is_episode_over = self.episode_end
+        for agent, status in self._agent_statuses.items():
+            if agent not in self._agent_rewards.keys(): # reward has not been assigned yet
+                agent_name, agent_role = self.agents[agent]
+                if agent_role == "Attacker":
+                    match status:
+                        case "goal_reached":
+                            self._agent_rewards[agent] = self._world._rewards["goal"]
+                        case "max_steps":
+                            self._agent_rewards[agent] = 0
+                        case "blocked":
+                            self._agent_rewards[agent] = self._world._rewards["detection"]
+                    self.logger.info(f"End reward for {agent_name}({agent_role}, status: '{status}') = {self._agent_rewards[agent]}")
+                elif agent_role == "Defender":
+                    if self._agent_statuses[agent] == "max_steps": #defender was responsible for the end
+                        raise NotImplementedError
+                        self._agent_rewards[agent] = 0
+                    else:
+                        if is_episode_over: #only assign defender's reward when episode ends
+                            sucessful_attacks = list(self._agent_statuses.values).count("goal_reached")
+                            if sucessful_attacks > 0:
+                                self._agent_rewards[agent] = sucessful_attacks*self._world._rewards["detection"]
+                                self._agent_statuses[agent] = "game_lost"
+                            else: #no successful attacker
+                                self._agent_rewards[agent] = self._world._rewards["goal"]
+                                self._agent_statuses[agent] = "goal_reached"
+                            self.logger.info(f"End reward for {agent_name}({agent_role}, status: '{status}') = {self._agent_rewards[agent]}")
+                else:
+                    if is_episode_over:
+                        self._agent_rewards[agent] = 0
+                        self.logger.info(f"End reward for {agent_name}({agent_role}, status: '{status}') = {self._agent_rewards[agent]}")
+                        
+                    
 
 __version__ = "v0.2.2"
 
@@ -668,7 +735,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=str,
-        default="INFO",
+        default="WARNING",
     )
 
     args = parser.parse_args()

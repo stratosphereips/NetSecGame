@@ -45,9 +45,6 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         self._seed = seed
         self.logger.info(f'Setting env seed to {seed}')
 
-        # Set maximum number of steps in one episode
-        self._max_steps = self.task_config.get_max_steps()
-        self.logger.info(f"\tSetting max steps to {self._max_steps}")
         
         # Set rewards for goal/detection/step
         self._rewards = {
