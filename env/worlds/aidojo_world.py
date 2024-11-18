@@ -7,6 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 import env.game_components as components
 import logging
 from utils.utils import ConfigParser
+import asyncio
 
 """
 Basic class for worlds to be used in the AI Dojo.
@@ -14,9 +15,11 @@ Every world (environment) used in AI Dojo should extend this class and implement
 all its methods to be compatible with the game server and game coordinator.
 """
 class AIDojoWorld(object):
-    def __init__(self, task_config_file:str, world_name:str="BasicAIDojoWorld")->None:
+    def __init__(self, task_config_file:str,action_queue:asyncio.Queue, response_queue:asyncio.Queue, world_name:str="BasicAIDojoWorld")->None:
         self.task_config = ConfigParser(task_config_file)
         self.logger = logging.getLogger(world_name)
+        self._action_queue = action_queue
+        self._response_queue = response_queue
 
     def step(self, current_state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
         """

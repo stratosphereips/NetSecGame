@@ -23,11 +23,11 @@ class AIDojo:
         self.host = host
         self.port = port
         self.logger = logging.getLogger("AIDojo-main")
-        self._action_queue = asyncio.Queue()
-        self._answer_queue = asyncio.Queue()
+        self._agent_action_queue = asyncio.Queue()
+        self._agent_answer_queue = asyncio.Queue()
         self._coordinator = Coordinator(
-            self._action_queue,
-            self._answer_queue,
+            self._agent_action_queue,
+            self._agent_answer_queue,
             net_sec_config,
             allowed_roles=["Attacker", "Defender", "Benign"],
             world_type = world_type,
@@ -56,8 +56,8 @@ class AIDojo:
         self.logger.info("Starting the server listening for agents")
         running_server = await asyncio.start_server(
             ConnectionLimitProtocol(
-                self._action_queue,
-                self._answer_queue,
+                self._agent_action_queue,
+                self._agent_action_queue,
                 max_connections=2
             ),
             self.host,
@@ -172,13 +172,15 @@ class Coordinator:
         # communication channels for asyncio
         self._actions_queue = actions_queue
         self._answers_queue = answers_queue
+        self._world_action_queue = asyncio.Queue()
+        self._world_response_queue = asyncio.Queue()
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
         
         # world definition
         match world_type:
             case "netsecenv":
-                self._world = NetworkSecurityEnvironment(net_sec_config)
+                self._world = NetworkSecurityEnvironment(net_sec_config,self._world_action_queue, self._world_response_queue)
             case "netsecenv-real-world":
                 self._world = NetworkSecurityEnvironmentRealWorld(net_sec_config)
             case _:

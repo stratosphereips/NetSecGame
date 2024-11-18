@@ -18,8 +18,8 @@ class NetworkSecurityEnvironment(AIDojoWorld):
     It uses some Cyst libraries for the network topology
     It presents a env environment to play
     """
-    def __init__(self, task_config_file, world_name="NetSecEnv") -> None:
-        super().__init__(task_config_file, world_name)
+    def __init__(self, task_config_file, action_queue, response_queue, world_name="NetSecEnv") -> None:
+        super().__init__(task_config_file, action_queue, response_queue, world_name)
         self.logger.info("Initializing NetSetGame environment")
         # Prepare data structures for all environment components (to be filled in self._process_cyst_config())
         self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
