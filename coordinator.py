@@ -7,6 +7,7 @@ import argparse
 import logging
 import json
 import asyncio
+import enum
 from datetime import datetime
 from env.worlds.network_security_game import NetworkSecurityEnvironment
 from env.worlds.network_security_game_real_world import NetworkSecurityEnvironmentRealWorld
@@ -17,6 +18,22 @@ from pathlib import Path
 import os
 import signal
 from env.global_defender import stochastic_with_threshold
+
+@enum.unique
+class AgentStatus(enum.Enum):
+    JoinRequested = 0
+    Ready = 1
+    Playing = 2
+    PlayingActive = 3
+    FinishedMaxSteps = 4
+    FinishedBlocked = 5
+    FinishedGoalReached = 6
+    FinishedGameLost = 7
+    ResetRequested = 8
+
+def __repr__(self):
+    return str(self)
+    
 
 class AIDojo:
     def __init__(self, host: str, port: int, net_sec_config: str, world_type) -> None:
@@ -203,7 +220,7 @@ class Coordinator:
         self._agent_starting_position = {}
         # current state per agent_addr (GameState)
         self._agent_states = {}
-        # agent status dict {agent_addr: string}
+        # agent status dict {agent_addr: AgentStatus}
         self._agent_statuses = {}
         # agent status dict {agent_addr: int}
         self._agent_rewards = {}
@@ -213,7 +230,7 @@ class Coordinator:
     @property
     def episode_end(self)->bool:
         # Episode ends ONLY IF all agents with defined max_steps reached the end fo the episode
-        exists_active_player = any(status == "playing_active" for status in self._agent_statuses.values())
+        exists_active_player = any(status is AgentStatus.PlayingActive for status in self._agent_statuses.values())
         self.logger.debug(f"End evaluation: {self._agent_statuses.items()} - Episode end:{not exists_active_player}")
         return not exists_active_player
     
@@ -242,60 +259,65 @@ class Coordinator:
 
         try:
             self.logger.info("Main coordinator started.")
+
+            # Task to handle responses from the World
+            asyncio.create_task(self._handle_world_responses())
             while True:
                 # Read message from the queue
-                agent_addr, message = await self._actions_queue.get()
-                if message is not None:
-                    self.logger.debug(f"Coordinator received: {message}.")
-                    try:  # Convert message to Action
-                        action = Action.from_json(message)
-                    except Exception as e:
-                        self.logger.error(
-                            f"Error when converting msg to Action using Action.from_json():{e}, {message}"
-                        )
-                    match action.type:  # process action based on its type
-                        case ActionType.JoinGame:
-                            output_message_dict = self._process_join_game_action(agent_addr, action)
-                            msg_json = self.convert_msg_dict_to_json(output_message_dict)
-                            # Send to anwer_queue
-                            await self._answers_queue.put(msg_json)
-                        case ActionType.QuitGame:
-                            self.logger.info(f"Coordinator received from QUIT message from agent {agent_addr}")
-                            # remove agent address from the reset request dict
-                            self._remove_player(agent_addr)
-                        case ActionType.ResetGame:
-                            self._reset_requests[agent_addr] = True
-                            self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
-                            if all(self._reset_requests.values()):
-                                # should we discard the queue here?
-                                self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q:{self._answers_queue.empty()}")
-                                self._world.reset()
-                                self._get_goal_description_per_role()
-                                self._get_win_condition_per_role()
-                                for agent in self._reset_requests:
-                                    self._reset_requests[agent] = False
-                                    self._agent_steps[agent] = 0
-                                    self._agent_states[agent] = self._world.create_state_from_view(self._agent_starting_position[agent])
-                                    self._agent_rewards.pop(agent, None)
-                                    if self._steps_limit_per_role[self.agents[agent][1]]:
-                                        # This agent can force episode end (has timeout and goal defined)
-                                        self._agent_statuses[agent] = "playing_active"
-                                    else:
-                                        # This agent can NOT force episode end (does NOT timeout or goal defined)
-                                        self._agent_statuses[agent] = "playing"      
-                                    output_message_dict = self._create_response_to_reset_game_action(agent)
-                                    msg_json = self.convert_msg_dict_to_json(output_message_dict)
-                                    # Send to anwer_queue
-                                    await self._answers_queue.put(msg_json)
-                            else:
-                                self.logger.info("\t Waiting for other agents to request reset")
-                        case _:
-                            output_message_dict = self._process_generic_action(
-                                agent_addr, action
+                if not self._actions_queue.empty():
+                    agent_addr, message = await self._actions_queue.get()
+                    if message is not None:
+                        self.logger.debug(f"Coordinator received: {message}.")
+                        try:  # Convert message to Action
+                            action = Action.from_json(message)
+                        except Exception as e:
+                            self.logger.error(
+                                f"Error when converting msg to Action using Action.from_json():{e}, {message}"
                             )
-                            msg_json = self.convert_msg_dict_to_json(output_message_dict)
-                            # Send to anwer_queue
-                            await self._answers_queue.put(msg_json)
+
+                        match action.type:  # process action based on its type
+                            case ActionType.JoinGame:
+                                output_message_dict = self._process_join_game_action(agent_addr, action)
+                                msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                                # Send to anwer_queue
+                                await self._answers_queue.put(msg_json)
+                            case ActionType.QuitGame:
+                                self.logger.info(f"Coordinator received from QUIT message from agent {agent_addr}")
+                                # remove agent address from the reset request dict
+                                self._remove_player(agent_addr)
+                            case ActionType.ResetGame:
+                                self._reset_requests[agent_addr] = True
+                                self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
+                                if all(self._reset_requests.values()):
+                                    # should we discard the queue here?
+                                    self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q:{self._answers_queue.empty()}")
+                                    self._world.reset()
+                                    self._get_goal_description_per_role()
+                                    self._get_win_condition_per_role()
+                                    for agent in self._reset_requests:
+                                        self._reset_requests[agent] = False
+                                        self._agent_steps[agent] = 0
+                                        self._agent_states[agent] = self._world.create_state_from_view(self._agent_starting_position[agent])
+                                        self._agent_rewards.pop(agent, None)
+                                        if self._steps_limit_per_role[self.agents[agent][1]]:
+                                            # This agent can force episode end (has timeout and goal defined)
+                                            self._agent_statuses[agent] = AgentStatus.PlayingActive
+                                        else:
+                                            # This agent can NOT force episode end (does NOT timeout or goal defined)
+                                            self._agent_statuses[agent] = AgentStatus.Playing      
+                                        output_message_dict = self._create_response_to_reset_game_action(agent)
+                                        msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                                        # Send to anwer_queue
+                                        await self._answers_queue.put(msg_json)
+                                else:
+                                    self.logger.info("\t Waiting for other agents to request reset")
+                            case _:
+                                output_message_dict = self._process_generic_action(
+                                    agent_addr, action
+                                )
+                                msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                                # Send to anwer_queue
+                                await self._answers_queue.put(msg_json)
 
                 await asyncio.sleep(0.0000001)
         except asyncio.CancelledError:
@@ -318,10 +340,10 @@ class Coordinator:
         
         if self._steps_limit_per_role[agent_role]:
             # This agent can force episode end (has timeout and goal defined)
-            self._agent_statuses[agent_addr] = "playing_active"
+            self._agent_statuses[agent_addr] = AgentStatus.PlayingActive
         else:
             # This agent can NOT force episode end (does NOT timeout or goal defined)
-            self._agent_statuses[agent_addr] = "playing"      
+            self._agent_statuses[agent_addr] = AgentStatus.Playing      
         if self._world.task_config.get_store_trajectories() or self._use_global_defender:
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
@@ -518,34 +540,34 @@ class Coordinator:
             self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr)
             # check timout
             if self._max_steps_reached(agent_addr):
-                self._agent_statuses[agent_addr] = "max_steps"           
+                self._agent_statuses[agent_addr] = AgentStatus.FinishedMaxSteps        
             # check detection
             if self._check_detection(agent_addr, action):
-                self._agent_statuses[agent_addr] = "blocked"
+                self._agent_statuses[agent_addr] = AgentStatus.FinishedBlocked
                 self._agent_detected[agent_addr] = True            
             # check goal
             if self._goal_reached(agent_addr):
-                self._agent_statuses[agent_addr] = "goal_reached"
+                self._agent_statuses[agent_addr] = AgentStatus.FinishedGoalReached
             # add reward for taking a step
             reward = self._world._rewards["step"]
             
             obs_info = {}
             end_reason = None
-            if self._agent_statuses[agent_addr] == "goal_reached":
+            if self._agent_statuses[agent_addr] is AgentStatus.FinishedGoalReached:
                 self._assign_end_rewards()
                 reward += self._agent_rewards[agent_addr]
                 end_reason = "goal_reached"
                 obs_info = {'end_reason': "goal_reached"}
-            elif self._agent_statuses[agent_addr] == "max_steps":
+            elif self._agent_statuses[agent_addr] is AgentStatus.FinishedMaxSteps:
                 self._assign_end_rewards()
                 reward += self._agent_rewards[agent_addr]
                 obs_info = {"end_reason": "max_steps"}
                 end_reason = "max_steps"
-            elif self._agent_statuses[agent_addr] == "blocked":
+            elif self._agent_statuses[agent_addr] is AgentStatus.FinishedBlocked:
                 self._assign_end_rewards()
                 reward += self._agent_rewards[agent_addr]
                 self._agent_episode_ends[agent_addr] = True
-                obs_info = {"end_reason": "max_steps"}
+                obs_info = {"end_reason": "blocked"}
             
             # record step in trajecory
             self._add_step_to_trajectory(agent_addr, action, reward,self._agent_states[agent_addr], end_reason)
@@ -668,15 +690,15 @@ class Coordinator:
                 agent_name, agent_role = self.agents[agent]
                 if agent_role == "Attacker":
                     match status:
-                        case "goal_reached":
+                        case AgentStatus.FinishedGoalReached:
                             self._agent_rewards[agent] = self._world._rewards["goal"]
-                        case "max_steps":
+                        case AgentStatus.FinishedMaxSteps:
                             self._agent_rewards[agent] = 0
-                        case "blocked":
+                        case AgentStatus.FinishedBlocked:
                             self._agent_rewards[agent] = self._world._rewards["detection"]
                     self.logger.info(f"End reward for {agent_name}({agent_role}, status: '{status}') = {self._agent_rewards[agent]}")
                 elif agent_role == "Defender":
-                    if self._agent_statuses[agent] == "max_steps": #defender was responsible for the end
+                    if self._agent_statuses[agent] is AgentStatus.FinishedMaxSteps: #defender was responsible for the end
                         raise NotImplementedError
                         self._agent_rewards[agent] = 0
                     else:
@@ -694,8 +716,30 @@ class Coordinator:
                         self._agent_rewards[agent] = 0
                         self.logger.info(f"End reward for {agent_name}({agent_role}, status: '{status}') = {self._agent_rewards[agent]}")
                         
-                    
+    async def _handle_world_responses(self):
+        """
+        Continuously processes responses from the AIDojo World, evaluates the states, checks for goal and assings rewards to agent
+        """
+        while True:
+            try:
+                # Get a response from the World Response Queue
+                agent_id, response = await self.world_response_queue.get()
 
+                # Processing of the response
+                response_msg_json = self._process_world_response(agent_id, response)                
+                # Notify the agent
+                await self._answers_queue.put(response_msg_json)
+                await asyncio.sleep(0.0000001)
+            except Exception as e:
+                self.logger.error(f"Error handling world response: {e}")
+    
+    
+    def _process_world_response(self, agent_id, response)->str:
+        self.logger.info(f"Processing response for agent {agent_id}: {response}")
+        return "OK"
+
+    def _create_response_join_ok(self, agent_id,):
+        pass
 __version__ = "v0.2.2"
 
 
