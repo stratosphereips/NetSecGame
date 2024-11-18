@@ -90,67 +90,6 @@ class NetworkSecurityEnvironment(AIDojoWorld):
     def num_actions(self)->int:
         return len(self.get_all_actions())
     
-    def get_all_states(self)->set:
-        def all_combs(data):
-            combs = []
-            for i in range(1, len(data)+1):
-                els = [x for x in itertools.combinations(data, i)]
-                combs += els
-            return combs
-        combs_nets =  all_combs(self._networks.keys())
-        print(combs_nets)
-        coms_known_h = all_combs([x for x in self._ip_to_hostname.keys() if x not in [components.IP("192.168.1.1"),components.IP("192.168.2.1")]])
-        print(coms_known_h)
-        coms_owned_h = all_combs(self._ip_to_hostname.keys())
-        all_services = set()
-        for service_list in self._services.values():
-            for s in service_list:
-                if not s.is_local:
-                    all_services.add(s)
-        coms_services = all_combs(all_services)
-        print("\n",coms_services)
-        all_data = set()
-        for data_list in self._data.values():
-            for d in data_list:
-                all_data.add(d)
-        coms_data = all_combs(all_data)
-        print("\n",coms_data)
-        return set(itertools.product(combs_nets, coms_known_h, coms_owned_h, coms_services, coms_data))
-    
-    def get_all_actions(self)->set:
-        actions = set()
-        
-        # Network scans
-        for net,ips in self._networks.items():
-            for ip in ips:
-                actions.add(components.Action(components.ActionType.ScanNetwork,{"target_network":net, "source_host":ip}))
-
-        # Get Network scans, Service Find and Data Find
-        for src_ip in self._ip_to_hostname:
-            for trg_ip in self._ip_to_hostname:
-                if trg_ip != src_ip:
-                    # ServiceFind
-                    actions.add(components.Action(components.ActionType.FindServices, {"target_host":trg_ip,"source_host":src_ip}))
-                    # Data Exfiltration
-                    for data_list in self._data.values():
-                        for data in data_list:
-                            actions.add(components.Action(components.ActionType.ExfiltrateData, {"target_host":trg_ip, "data":data, "source_host":src_ip}))
-                # DataFind
-                actions.add(components.Action(components.ActionType.FindData, {"target_host":ip, "source_host":src_ip}))
-            # Get Execute services
-            for host_id, services in self._services.items():
-                for service in services:
-                    for ip, host in self._ip_to_hostname.items():
-                        if host_id == host:
-                            actions.add(components.Action(components.ActionType.ExploitService, {"target_host":ip, "target_service":service, "source_host":src_ip}))
-        # Get BlockIP actions
-        for src_ip in self._ip_to_hostname:
-            for trg_ip in self._ip_to_hostname:
-                for block_ip in self._ip_to_hostname:
-                    actions.add(components.Action(components.ActionType.BlockIP, {"target_host":trg_ip, "source_host":src_ip, "blocked_host":block_ip}))
-
-        return {k:v for k,v in enumerate(actions)}
-    
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
         Process the cyst configuration file
@@ -928,3 +867,9 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             self._episode_replay_buffer.append((current_state, action, reward, next_state))
         # Return an observation
         return next_state
+
+    async def process_action(self):
+        while True:
+            agent_id, state, action = await self._action_queue.get()
+            new_state = self.step(state, action, agent_id)
+            await self._response_queue.put((agent_id, new_state))

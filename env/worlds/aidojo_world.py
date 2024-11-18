@@ -50,3 +50,15 @@ class AIDojoWorld(object):
         Takes the existing goal dict and updates it with respect to the world.
         """
         raise NotImplementedError
+
+    async def process_action(self):
+        """
+        Main method for Coordinator - AIDojo World communication
+        """
+        while True:
+            # read action from the action queue
+            agent_id, state, action = await self._action_queue.get()
+            # make the step
+            new_state = self.step(state, action, agent_id)
+            # insert new state in the response queue
+            await self._response_queue.put((agent_id, new_state))
