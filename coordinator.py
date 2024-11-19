@@ -766,27 +766,7 @@ class Coordinator:
             if agent_status is AgentStatus.JoinRequested:
                 output_message_dict = self._process_world_response_created(agent_addr, game_status, agent_new_state)
             elif agent_status is AgentStatus.ResetRequested:
-                if game_status is GameStatus.RESET_DONE:
-                    self._reset_requests[agent_addr] = False
-                    self._agent_steps[agent_addr] = 0
-                    self._agent_states[agent_addr] = agent_new_state
-                    self._agent_rewards.pop(agent_addr, None)
-                    if self._steps_limit_per_role[self.agents[agent_addr][1]]:
-                        # This agent can force episode end (has timeout and goal defined)
-                        self._agent_statuses[agent_addr] = AgentStatus.PlayingActive
-                    else:
-                        # This agent can NOT force episode end (does NOT timeout or goal defined)
-                        self._agent_statuses[agent_addr] = AgentStatus.Playing      
-                    output_message_dict = self._create_response_to_reset_game_action(agent_addr)
-                else:
-                    # remove traces of agent from the game
-                    self._remove_player(agent_addr)
-                    output_message_dict = {
-                        "to_agent": agent_addr,
-                        "status": str(game_status),
-                        "message": f"Error when resetting the agent {agent_name}",
-                    }
-
+                output_message_dict = self._process_world_response_reset_done(agent_addr, game_status, agent_new_state)
             elif agent_status is AgentStatus.Quitting:
                 if game_status is GameStatus.OK:
                     self.logger.debug(f"Agent {agent_addr} removed successfuly from the world")
@@ -807,7 +787,7 @@ class Coordinator:
 
     def _process_world_response_created(self, agent_addr:tuple, game_status:GameStatus, new_agent_game_state:GameState)->dict:
         """
-        Crates reply to Action.JoinGame for agent based on the response of the AIDojo World
+        Handles reply to Action.JoinGame for agent based on the response of the AIDojo World
         """
         # is agent correctly started in the world
         if game_status is GameStatus.CREATED: 
@@ -832,6 +812,33 @@ class Coordinator:
                 "to_agent": agent_addr,
                 "status": str(game_status),
                 "message": f"Error when initializing the agent {agent_name}({agent_role})",
+            }
+        return output_message_dict
+
+    def _process_world_response_reset_done(self, agent_addr, game_status, agent_new_state)->dict:
+        """
+        Handles  reply to Action.JoinGame for agent based on the response of the AIDojo World
+        """
+        if game_status is GameStatus.RESET_DONE:
+            self._reset_requests[agent_addr] = False
+            self._agent_steps[agent_addr] = 0
+            self._agent_states[agent_addr] = agent_new_state
+            self._agent_rewards.pop(agent_addr, None)
+            if self._steps_limit_per_role[self.agents[agent_addr][1]]:
+                # This agent can force episode end (has timeout and goal defined)
+                self._agent_statuses[agent_addr] = AgentStatus.PlayingActive
+            else:
+                # This agent can NOT force episode end (does NOT timeout or goal defined)
+                self._agent_statuses[agent_addr] = AgentStatus.Playing      
+            output_message_dict = self._create_response_to_reset_game_action(agent_addr)
+        else:
+            # remove traces of agent from the game
+            agent_name, agent_role = self.agents
+            self._remove_player(agent_addr)
+            output_message_dict = {
+                "to_agent": agent_addr,
+                "status": str(game_status),
+                "message": f"Error when resetting the agent {agent_name} ({agent_role})",
             }
         return output_message_dict
 
