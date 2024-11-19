@@ -324,7 +324,7 @@ class Coordinator:
                                 self.logger.info("\t Waiting for other agents to request reset")
                         case _:
                             # actions in the game
-                            self._process_generic_action(agent_addr, action)
+                            await self._process_generic_action(agent_addr, action)
                 await asyncio.sleep(0.0000001)
         except asyncio.CancelledError:
             world_response_task.cancel()
@@ -921,7 +921,7 @@ if __name__ == "__main__":
     
     host = confjson.get("host", None)
     port = confjson.get("port", None)
-    world_type = "test"#confjson.get('world_type', 'netsecgame')
+    world_type = confjson.get('world_type', 'netsecgame')
 
     # prioritize task config from CLI
     if args.task_config:
