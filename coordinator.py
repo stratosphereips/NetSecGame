@@ -12,7 +12,6 @@ from datetime import datetime
 from env.worlds.network_security_game import NetworkSecurityEnvironment
 from env.worlds.network_security_game_real_world import NetworkSecurityEnvironmentRealWorld
 from env.worlds.aidojo_world import AIDojoWorld
-from env.worlds.test_world import TestWorld
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState
 from utils.utils import observation_as_dict, get_logging_level, get_file_hash
 from pathlib import Path
@@ -37,9 +36,6 @@ class AgentStatus(enum.Enum):
     ResetRequested = 8
     Quitting = 9
 
-def __repr__(self):
-    return str(self)
-    
 
 class AIDojo:
     def __init__(self, host: str, port: int, net_sec_config: str, world_type) -> None:
@@ -222,9 +218,9 @@ class Coordinator:
             case "netsecenv":
                 self._world = NetworkSecurityEnvironment(net_sec_config,self._world_action_queue, self._world_response_queue)
             case "netsecenv-real-world":
-                self._world = NetworkSecurityEnvironmentRealWorld(net_sec_config)
+                self._world = NetworkSecurityEnvironmentRealWorld(net_sec_config, world_action_queue, world_response_queue)
             case _:
-                self._world = TestWorld(net_sec_config, world_action_queue, world_response_queue)
+                self._world = AIDojoWorld(net_sec_config, world_action_queue, world_response_queue)
         self.world_type = world_type
         self._CONFIG_FILE_HASH = get_file_hash(net_sec_config)        
         self._starting_positions_per_role = self._get_starting_position_per_role()
