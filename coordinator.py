@@ -35,6 +35,7 @@ class AgentStatus(enum.Enum):
     FinishedGoalReached = 6
     FinishedGameLost = 7
     ResetRequested = 8
+    Quitting = 9
 
 def __repr__(self):
     return str(self)
@@ -298,9 +299,10 @@ class Coordinator:
                             await self._process_join_game_action(agent_addr, action)
                         case ActionType.QuitGame:
                             self.logger.info(f"Coordinator received from QUIT message from agent {agent_addr}")
-                            # remove agent address from the reset request dict
-                            await self._process_quit_game_action(agent_addr, action)
-                            self._remove_player(agent_addr)
+                            # update agent status
+                            self._agent_statuses[agent_addr] = AgentStatus.Quitting
+                            # forward the message to the world
+                            await self._world_action_queue.put((agent_addr, action, self._agent_states[agent_addr]))
                         case ActionType.ResetGame:
                             self._reset_requests[agent_addr] = True
                             self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
@@ -377,7 +379,7 @@ class Coordinator:
         """
         Removes player from the game.
         """
-        self.logger.info(f"Removing player {agent_addr}")
+        self.logger.info(f"Removing player {agent_addr} from the Coordinator")
         agent_info = {}
         if agent_addr in self.agents:
             agent_info["state"] = self._agent_states.pop(agent_addr)
@@ -792,7 +794,12 @@ class Coordinator:
                         "status": str(game_status),
                         "message": f"Error when initializing the agent {agent_name}({agent_role})",
                     }
-                    
+            elif agent_status is AgentStatus.Quitting:
+                if game_status is GameStatus.OK:
+                    self.logger.debug(f"Agent {agent_addr} removed successfuly from the world")
+                else:
+                    self.logger.warning(f"Error when removing Agent {agent_addr} from the world")
+                self._remove_player(agent_addr)
             elif agent_status in [AgentStatus.Ready, AgentStatus.Playing, AgentStatus.PlayingActive]:
                 pass
             elif agent_status in [AgentStatus.FinishedBlocked, AgentStatus.FinishedGameLost, AgentStatus.FinishedGoalReached, AgentStatus.FinishedMaxSteps]:
