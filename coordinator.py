@@ -345,7 +345,7 @@ class Coordinator:
         self._agent_steps[agent_addr] = 0
         self._reset_requests[agent_addr] = False
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
-        self._agent_statuses[agent_addr] = AgentStatus.PlayingActive if agent_role == "attacker" else AgentStatus.Playing
+        self._agent_statuses[agent_addr] = AgentStatus.PlayingActive if agent_role == "Attacker" else AgentStatus.Playing
         self._agent_states[agent_addr] = agent_current_state
 
 
@@ -538,6 +538,7 @@ class Coordinator:
         """
         self.logger.info(f"Processing {action} from {agent_addr}")
         if not self.episode_end:
+            self._agent_last_action[agent_addr] = action
             await self._world_action_queue.put((agent_addr, action, self._agent_states[agent_addr]))
         else:
             # Episode finished, just send back the rewards and final episode info
@@ -645,6 +646,7 @@ class Coordinator:
         """
         Method which assings rewards to each agent which has finished playing
         """
+        self.logger.debug("Assigning rewards")
         is_episode_over = self.episode_end
         for agent, status in self._agent_statuses.items():
             if agent not in self._agent_rewards.keys(): # reward has not been assigned yet
@@ -731,8 +733,8 @@ class Coordinator:
             
             msg_json = self.convert_msg_dict_to_json(output_message_dict)
             return msg_json
-        except KeyError:
-            self.logger.error(f"Agent '{agent_addr}' not found!")
+        except KeyError as e :
+            self.logger.error(f"Agent {agent_addr} not found! {e}")
 
     def _process_world_response_created(self, agent_addr:tuple, game_status:GameStatus, new_agent_game_state:GameState)->dict:
         """
@@ -806,8 +808,7 @@ class Coordinator:
                     self._agent_statuses[agent_addr] = AgentStatus.FinishedMaxSteps        
                 # check detection
                 if self._check_detection(agent_addr, last_action):
-                    self._agent_statuses[agent_addr] = AgentStatus.FinishedBlocked
-                    self._agent_detected[agent_addr] = True            
+                    self._agent_statuses[agent_addr] = AgentStatus.FinishedBlocked          
                 # check goal
                 if self._goal_reached(agent_addr):
                     self._agent_statuses[agent_addr] = AgentStatus.FinishedGoalReached
