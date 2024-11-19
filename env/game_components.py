@@ -460,7 +460,9 @@ Observation = namedtuple("Observation", ["state", "reward", "end", "info"])
 @enum.unique
 class GameStatus(enum.Enum):
     OK = 200
+
     CREATED = 201
+    RESET_DONE = 202
     BAD_REQUEST = 400
     FORBIDDEN = 403
     
