@@ -742,10 +742,13 @@ class Coordinator:
 
                     # Processing of the response
                     response_msg_json = self._process_world_response(agent_id, response)
-                    self.logger.info(f"Generated response for agent {agent_id}: {response_msg_json}")             
-                    # Notify the agent
-                    await self._answers_queues[agent_id].put(response_msg_json)
-                    self.logger.info(f"Placed response in answers queue for agent {agent_id}")
+                    # Notify the agent if there is message
+                    if len(response_msg_json) > 2: # we have NON EMPTY JSON  (len('{}') = 2)
+                        self.logger.info(f"Generated response for agent {agent_id}: {response_msg_json}") 
+                        await self._answers_queues[agent_id].put(response_msg_json)
+                        self.logger.info(f"Placed response in answers queue for agent {agent_id}")
+                    else:
+                        self.logger.info(f"Empty response for agent {agent_id}: {response_msg_json}. Skipping") 
                     await asyncio.sleep(0.0000001)
                 except Exception as e:
                     self.logger.error(f"Error handling world response: {e}")
