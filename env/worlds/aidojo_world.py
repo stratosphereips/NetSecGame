@@ -20,6 +20,11 @@ class AIDojoWorld(object):
         self.logger = logging.getLogger(world_name)
         self._action_queue = action_queue
         self._response_queue = response_queue
+        self._world_name = world_name
+    
+    @property
+    def world_name(self)->str:
+        return self._world_name
 
     def step(self, current_state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
         """
@@ -51,14 +56,14 @@ class AIDojoWorld(object):
         """
         raise NotImplementedError
 
-    async def process_action(self):
-        """
-        Main method for Coordinator - AIDojo World communication
-        """
-        while True:
-            # read action from the action queue
-            agent_id, state, action = await self._action_queue.get()
-            # make the step
-            new_state = self.step(state, action, agent_id)
-            # insert new state in the response queue
-            await self._response_queue.put((agent_id, new_state))
+    # async def process_action(self):
+    #     """
+    #     Main method for Coordinator - AIDojo World communication
+    #     """
+    #     while True:
+    #         # read action from the action queue
+    #         agent_id, state, action = await self._action_queue.get()
+    #         # make the step
+    #         new_state = self.step(state, action, agent_id)
+    #         # insert new state in the response queue
+    #         await self._response_queue.put((agent_id, new_state))
