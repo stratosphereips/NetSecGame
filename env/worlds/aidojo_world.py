@@ -2,12 +2,12 @@
 # Template of world to be used in AI Dojo
 import sys
 import os
+import asyncio
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import env.game_components as components
 import logging
 from utils.utils import ConfigParser
-import asyncio
+from env.game_components import GameState, Action, GameStatus, ActionType
 
 """
 Basic class for worlds to be used in the AI Dojo.
@@ -26,13 +26,13 @@ class AIDojoWorld(object):
     def world_name(self)->str:
         return self._world_name
 
-    def step(self, current_state:components.GameState, action:components.Action, agent_id:tuple)-> components.GameState:
+    def step(self, current_state:GameState, action:Action, agent_id:tuple)-> GameState:
         """
         Executes given action in a current state of the environment and produces new GameState.
         """
         raise NotImplementedError
 
-    def create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->components.GameState:
+    def create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->GameState:
         """
         Produces a GameState based on the view of the world.
         """
@@ -56,14 +56,28 @@ class AIDojoWorld(object):
         """
         raise NotImplementedError
 
-    # async def process_action(self):
-    #     """
-    #     Main method for Coordinator - AIDojo World communication
-    #     """
-    #     while True:
-    #         # read action from the action queue
-    #         agent_id, state, action = await self._action_queue.get()
-    #         # make the step
-    #         new_state = self.step(state, action, agent_id)
-    #         # insert new state in the response queue
-    #         await self._response_queue.put((agent_id, new_state))
+    async def handle_incoming_action(self)->None:
+        try:
+            self.logger.info(f"Staring the {self.world_name} processing.")
+            while True:
+                agent_id, action, game_state = await self._action_queue.get()
+                self.logger.debug(f"{self.world_name} received: {agent_id}, {action}, {game_state}.")
+                match action.type:
+                    case ActionType.JoinGame:
+                        msg = (agent_id, (self.create_state_from_view(game_state), GameStatus.CREATED))
+                    case ActionType.QuitGame:
+                        msg = (agent_id, (GameState(),GameStatus.OK))
+                    case ActionType.ResetGame:
+                        if agent_id == "world": #reset the world
+                            self.reset()
+                            continue
+                        else:
+                            msg = (agent_id, (self.create_state_from_view(game_state), GameStatus.RESET_DONE))
+                    case _:
+                        new_state = self.step(game_state, action,agent_id)
+                        msg = (agent_id, (new_state, GameStatus.OK))
+                # new_state = self.step(state, action, agent_id)
+                await self._response_queue.put(msg)
+                await asyncio.sleep(0.0000001)
+        except asyncio.CancelledError:
+            self.logger.info(f"\t{self.world_name} Terminating by CancelledError")
