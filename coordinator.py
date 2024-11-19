@@ -434,7 +434,7 @@ class Coordinator:
             self.logger.info(f"Max steps in episode for '{agent_role}': {max_steps[agent_role]}")
         return max_steps
     
-    async def _process_join_game_action(self, agent_addr: tuple, action: Action)->N one:
+    async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
         """ "
         Method for processing Action of type ActionType.JoinGame
         """
