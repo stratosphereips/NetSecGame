@@ -305,28 +305,16 @@ class Coordinator:
                             await self._world_action_queue.put((agent_addr, action, self._agent_states[agent_addr]))
                         case ActionType.ResetGame:
                             self._reset_requests[agent_addr] = True
+                            self._agent_statuses[agent_addr] = AgentStatus.ResetRequested
                             self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
                             if all(self._reset_requests.values()):
                                 # should we discard the queue here?
-                                self.logger.info(f"All agents requested reset, action_q:{self._actions_queue.empty()}, answers_q:{self._answers_queue.empty()}")
-                                self._world.reset()
-                                self._get_goal_description_per_role()
-                                self._get_win_condition_per_role()
+                                self.logger.info("All active agents requested reset")
+                                # send WORLD reset request to the world
+                                await self._world_action_queue.put(("world", Action(ActionType.ResetGame, params={}), None))
+                                # send request for each of the agents (to get new initial state)
                                 for agent in self._reset_requests:
-                                    self._reset_requests[agent] = False
-                                    self._agent_steps[agent] = 0
-                                    self._agent_states[agent] = self._world.create_state_from_view(self._agent_starting_position[agent])
-                                    self._agent_rewards.pop(agent, None)
-                                    if self._steps_limit_per_role[self.agents[agent][1]]:
-                                        # This agent can force episode end (has timeout and goal defined)
-                                        self._agent_statuses[agent] = AgentStatus.PlayingActive
-                                    else:
-                                        # This agent can NOT force episode end (does NOT timeout or goal defined)
-                                        self._agent_statuses[agent] = AgentStatus.Playing      
-                                    output_message_dict = self._create_response_to_reset_game_action(agent)
-                                    msg_json = self.convert_msg_dict_to_json(output_message_dict)
-                                    # Send to anwer_queue
-                                    await self._answers_queue.put(msg_json)
+                                    await self._world_action_queue.put((agent, Action(ActionType.ResetGame, params={}), self._agent_starting_position[agent]))
                             else:
                                 self.logger.info("\t Waiting for other agents to request reset")
                         case _:
@@ -498,7 +486,7 @@ class Coordinator:
         self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         output_message_dict = {
             "to_agent": agent_addr,
-            "status": str(GameStatus.OK),
+            "status": str(GameStatus.RESET_DONE),
             "observation": observation_as_dict(new_observation),
             "message": {
                         "message": "Resetting Game and starting again.",
@@ -794,6 +782,28 @@ class Coordinator:
                         "status": str(game_status),
                         "message": f"Error when initializing the agent {agent_name}({agent_role})",
                     }
+            elif agent_status is AgentStatus.ResetRequested:
+                if game_status is GameStatus.RESET_DONE:
+                    self._reset_requests[agent_addr] = False
+                    self._agent_steps[agent_addr] = 0
+                    self._agent_states[agent_addr] = agent_new_state
+                    self._agent_rewards.pop(agent_addr, None)
+                    if self._steps_limit_per_role[self.agents[agent_addr][1]]:
+                        # This agent can force episode end (has timeout and goal defined)
+                        self._agent_statuses[agent_addr] = AgentStatus.PlayingActive
+                    else:
+                        # This agent can NOT force episode end (does NOT timeout or goal defined)
+                        self._agent_statuses[agent_addr] = AgentStatus.Playing      
+                    output_message_dict = self._create_response_to_reset_game_action(agent_addr)
+                else:
+                    # remove traces of agent from the game
+                    self._remove_player(agent_addr)
+                    output_message_dict = {
+                        "to_agent": agent_addr,
+                        "status": str(game_status),
+                        "message": f"Error when resetting the agent {agent_name}",
+                    }
+
             elif agent_status is AgentStatus.Quitting:
                 if game_status is GameStatus.OK:
                     self.logger.debug(f"Agent {agent_addr} removed successfuly from the world")
@@ -803,8 +813,6 @@ class Coordinator:
             elif agent_status in [AgentStatus.Ready, AgentStatus.Playing, AgentStatus.PlayingActive]:
                 pass
             elif agent_status in [AgentStatus.FinishedBlocked, AgentStatus.FinishedGameLost, AgentStatus.FinishedGoalReached, AgentStatus.FinishedMaxSteps]:
-                pass
-            elif agent_status is AgentStatus.ResetRequested:
                 pass
             else:
                 self.logger.error(f"Unsupported value '{agent_status}'!")
