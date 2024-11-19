@@ -243,6 +243,8 @@ class Coordinator:
         self._agent_starting_position = {}
         # current state per agent_addr (GameState)
         self._agent_states = {}
+        # last action played by agent (Action)
+        self._agent_last_action = {}
         # agent status dict {agent_addr: AgentStatus}
         self._agent_statuses = {}
         # agent status dict {agent_addr: int}
@@ -296,7 +298,6 @@ class Coordinator:
                         self.logger.error(
                             f"Error when converting msg to Action using Action.from_json():{e}, {message}"
                         )
-
                     match action.type:  # process action based on its type
                         case ActionType.JoinGame:
                             self.logger.debug(f"Start processing of ActionType.JoinGame by {agent_addr}")
@@ -322,13 +323,8 @@ class Coordinator:
                             else:
                                 self.logger.info("\t Waiting for other agents to request reset")
                         case _:
-                            output_message_dict = self._process_generic_action(
-                                agent_addr, action
-                            )
-                            msg_json = self.convert_msg_dict_to_json(output_message_dict)
-                            # Send to anwer_queue
-                            await self._answers_queue.put(msg_json)
-
+                            # actions in the game
+                            self._process_generic_action(agent_addr, action)
                 await asyncio.sleep(0.0000001)
         except asyncio.CancelledError:
             world_response_task.cancel()
@@ -464,7 +460,7 @@ class Coordinator:
                     "message": f"Incorrect agent_role {agent_role}",
                 }
                 response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
-                await self._answers_queue.put(response_msg_json)
+                await self._answers_queues[agent_addr].put(response_msg_json)
         else:
             self.logger.info("\tError in registration, agent already exists!")
             output_message_dict = {
@@ -473,7 +469,7 @@ class Coordinator:
                     "message": "Agent already exists.",
                 }
             response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
-            await self._answers_queue.put(response_msg_json)
+            await self._answers_queues[agent_addr].put(response_msg_json)
 
     def _create_response_to_reset_game_action(self, agent_addr: tuple) -> dict:
         """ "
@@ -536,67 +532,20 @@ class Coordinator:
                 "agent_name":agent_name
             }
     
-    def _process_generic_action(self, agent_addr: tuple, action: Action) -> dict:
+    async def _process_generic_action(self, agent_addr: tuple, action: Action) ->None:
         """
         Method processing the Actions relevant to the environment
         """
         self.logger.info(f"Processing {action} from {agent_addr}")
         if not self.episode_end:
-            # Process the message
-            # increase the action counter
-            self._agent_steps[agent_addr] += 1
-            self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
-            
-            current_state = self._agent_states[agent_addr]
-            # Build new Observation for the agent
-            self._agent_states[agent_addr] = self._world.step(current_state, action, agent_addr)
-            # check timout
-            if self._max_steps_reached(agent_addr):
-                self._agent_statuses[agent_addr] = AgentStatus.FinishedMaxSteps        
-            # check detection
-            if self._check_detection(agent_addr, action):
-                self._agent_statuses[agent_addr] = AgentStatus.FinishedBlocked
-                self._agent_detected[agent_addr] = True            
-            # check goal
-            if self._goal_reached(agent_addr):
-                self._agent_statuses[agent_addr] = AgentStatus.FinishedGoalReached
-            # add reward for taking a step
-            reward = self._world._rewards["step"]
-            
-            obs_info = {}
-            end_reason = None
-            if self._agent_statuses[agent_addr] is AgentStatus.FinishedGoalReached:
-                self._assign_end_rewards()
-                reward += self._agent_rewards[agent_addr]
-                end_reason = "goal_reached"
-                obs_info = {'end_reason': "goal_reached"}
-            elif self._agent_statuses[agent_addr] is AgentStatus.FinishedMaxSteps:
-                self._assign_end_rewards()
-                reward += self._agent_rewards[agent_addr]
-                obs_info = {"end_reason": "max_steps"}
-                end_reason = "max_steps"
-            elif self._agent_statuses[agent_addr] is AgentStatus.FinishedBlocked:
-                self._assign_end_rewards()
-                reward += self._agent_rewards[agent_addr]
-                self._agent_episode_ends[agent_addr] = True
-                obs_info = {"end_reason": "blocked"}
-            
-            # record step in trajecory
-            self._add_step_to_trajectory(agent_addr, action, reward,self._agent_states[agent_addr], end_reason)
-            new_observation = Observation(self._agent_states[agent_addr], reward, self.episode_end, info=obs_info)
-
-            self._agent_observations[agent_addr] = new_observation
-
-            output_message_dict = {
-                "to_agent": agent_addr,
-                "observation": observation_as_dict(new_observation),
-                "status": str(GameStatus.OK),
-            }
+            await self._world_action_queue.put((agent_addr, action, self._agent_states[agent_addr]))
         else:
+            # Episode finished, just send back the rewards and final episode info
             self._assign_end_rewards()
-            self.logger.error(f"{self.episode_end}, {self._agent_episode_ends}")
+            self.logger.info(f"{self.episode_end}, {self._agent_statuses[agent_addr]}")
             output_message_dict = self._generate_episode_end_message(agent_addr)
-        return output_message_dict
+            response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+            await self._answers_queues[agent_addr].put(response_msg_json)
     
     def _generate_episode_end_message(self, agent_addr:tuple)->dict:
         """
@@ -604,7 +553,7 @@ class Coordinator:
         """
         current_observation = self._agent_observations[agent_addr]
         reward = self._agent_rewards[agent_addr]
-        end_reason = self._agent_statuses[agent_addr]
+        end_reason = str(self._agent_statuses[agent_addr])
         new_observation = Observation(
             current_observation.state,
             reward=reward,
@@ -774,9 +723,9 @@ class Coordinator:
                     self.logger.warning(f"Error when removing Agent {agent_addr} from the world")
                 self._remove_player(agent_addr)
             elif agent_status in [AgentStatus.Ready, AgentStatus.Playing, AgentStatus.PlayingActive]:
-                pass
+                output_message_dict = self._process_world_response_step(agent_addr, game_status, agent_new_state)
             elif agent_status in [AgentStatus.FinishedBlocked, AgentStatus.FinishedGameLost, AgentStatus.FinishedGoalReached, AgentStatus.FinishedMaxSteps]:
-                pass
+                output_message_dict = self._process_world_response_step(agent_addr, game_status, agent_new_state)
             else:
                 self.logger.error(f"Unsupported value '{agent_status}'!")
             
@@ -839,6 +788,68 @@ class Coordinator:
                 "to_agent": agent_addr,
                 "status": str(game_status),
                 "message": f"Error when resetting the agent {agent_name} ({agent_role})",
+            }
+        return output_message_dict
+
+    def _process_world_response_step(self, agent_addr, game_status, agent_new_state)->dict:
+        if game_status is GameStatus.OK:
+            if not self.episode_end:
+                # increase the action counter
+                self._agent_steps[agent_addr] += 1
+                self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
+                # register the new state
+                self._agent_states[agent_addr] = agent_new_state
+                # load the action which lead to the new state
+                last_action = self._agent_last_action[agent_addr]
+                # check timeout
+                if self._max_steps_reached(agent_addr):
+                    self._agent_statuses[agent_addr] = AgentStatus.FinishedMaxSteps        
+                # check detection
+                if self._check_detection(agent_addr, last_action):
+                    self._agent_statuses[agent_addr] = AgentStatus.FinishedBlocked
+                    self._agent_detected[agent_addr] = True            
+                # check goal
+                if self._goal_reached(agent_addr):
+                    self._agent_statuses[agent_addr] = AgentStatus.FinishedGoalReached
+                # add reward for taking a step
+                reward = self._world._rewards["step"]
+                
+                obs_info = {}
+                end_reason = None
+                if self._agent_statuses[agent_addr] is AgentStatus.FinishedGoalReached:
+                    self._assign_end_rewards()
+                    reward += self._agent_rewards[agent_addr]
+                    end_reason = "goal_reached"
+                    obs_info = {'end_reason': "goal_reached"}
+                elif self._agent_statuses[agent_addr] is AgentStatus.FinishedMaxSteps:
+                    self._assign_end_rewards()
+                    reward += self._agent_rewards[agent_addr]
+                    obs_info = {"end_reason": "max_steps"}
+                    end_reason = "max_steps"
+                elif self._agent_statuses[agent_addr] is AgentStatus.FinishedBlocked:
+                    self._assign_end_rewards()
+                    reward += self._agent_rewards[agent_addr]
+                    obs_info = {"end_reason": "blocked"}
+                
+                # record step in trajecory
+                self._add_step_to_trajectory(agent_addr, last_action, reward,self._agent_states[agent_addr], end_reason)
+                new_observation = Observation(self._agent_states[agent_addr], reward, self.episode_end, info=obs_info)
+
+                self._agent_observations[agent_addr] = new_observation
+
+                output_message_dict = {
+                    "to_agent": agent_addr,
+                    "observation": observation_as_dict(new_observation),
+                    "status": str(GameStatus.OK),
+                }
+            else:
+                self._assign_end_rewards()
+                output_message_dict = self._generate_episode_end_message(agent_addr)
+        else: 
+            output_message_dict = {
+                "to_agent": agent_addr,
+                "status": str(game_status),
+                "message": f"Error when playing action {last_action}",
             }
         return output_message_dict
 
