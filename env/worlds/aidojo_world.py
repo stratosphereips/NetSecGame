@@ -58,10 +58,10 @@ class AIDojoWorld(object):
 
     async def handle_incoming_action(self)->None:
         try:
-            self.logger.info(f"Staring the {self.world_name} processing.")
+            self.logger.info(f"\tStaring {self.world_name} task.")
             while True:
                 agent_id, action, game_state = await self._action_queue.get()
-                self.logger.debug(f"{self.world_name} received: {agent_id}, {action}, {game_state}.")
+                self.logger.debug(f"Received from{agent_id}: {action}, {game_state}.")
                 match action.type:
                     case ActionType.JoinGame:
                         msg = (agent_id, (self.create_state_from_view(game_state), GameStatus.CREATED))
@@ -77,7 +77,8 @@ class AIDojoWorld(object):
                         new_state = self.step(game_state, action,agent_id)
                         msg = (agent_id, (new_state, GameStatus.OK))
                 # new_state = self.step(state, action, agent_id)
+                self.logger.debug(f"Sending to{agent_id}: {msg}")
                 await self._response_queue.put(msg)
-                await asyncio.sleep(0.0000001)
+                await asyncio.sleep(0)
         except asyncio.CancelledError:
             self.logger.info(f"\t{self.world_name} Terminating by CancelledError")
