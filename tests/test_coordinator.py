@@ -1,6 +1,7 @@
-from coordinator import Coordinator
+from coordinator import Coordinator, AgentStatus
 import pytest
 import queue
+import asyncio
 
 CONFIG_FILE = "tests/netsecenv-task-for-testing.yaml"
 ALLOWED_ROLES = ["Attacker", "Defender", "Benign"]
@@ -13,38 +14,43 @@ from env.game_components import Action, ActionType, AgentInfo, Network, IP, Game
 
 
 @pytest.fixture
-def coordinator_init():
-    """After init step"""
-    actions = queue.Queue()
-    answers = queue.Queue()
+async def coordinator_init():
+    """Initialize Coordinator instance for tests."""
+    actions = asyncio.Queue()
+    answers = {}
+    world_requests = asyncio.Queue()
+    world_responses = asyncio.Queue()
 
-    coord = Coordinator(actions, answers, CONFIG_FILE, ALLOWED_ROLES)
+    coord = Coordinator(
+        actions, answers, world_requests, world_responses, CONFIG_FILE, ALLOWED_ROLES
+    )
     return coord
 
 @pytest.fixture
-def coordinator_registered_player(coordinator_init):
-        coord = coordinator_init
+async def coordinator_registered_player(coordinator_init):
+    """Register a player with the Coordinator."""
+    coord = coordinator_init
+    registration = Action(
+        ActionType.JoinGame,
+        params={"agent_info": AgentInfo(name="mari", role="Attacker")},
+    )
 
-        registration = Action(
-            ActionType.JoinGame,
-            params={"agent_info": AgentInfo(name="mari", role="Attacker")},
-        )
-
-        coord._world.reset()
-
-        result = coord._process_join_game_action(
-            agent_addr=("192.168.1.1", "3300"),
-            action=registration,
-        )
-        return coord, result
-
-
+    # Process join action asynchronously
+    result = await coord._process_join_game_action(
+        agent_addr=("192.168.1.1", "3300"),
+        action=registration,
+    )
+    return coord, result
 class TestCoordinator:
-    def test_class_init(self):
-        actions = queue.Queue()
-        answers = queue.Queue()
+    
+    @pytest.mark.asyncio
+    async def test_class_init():
+        actions = asyncio.Queue()
+        answers = {}
+        world_requests = asyncio.Queue()
+        world_responses = asyncio.Queue()
 
-        coord = Coordinator(actions, answers, CONFIG_FILE, ALLOWED_ROLES)
+        coord = Coordinator(actions, answers, world_requests, world_responses, CONFIG_FILE, ALLOWED_ROLES)
 
         assert coord.ALLOWED_ROLES == ALLOWED_ROLES
         assert coord.agents == {}
@@ -55,10 +61,13 @@ class TestCoordinator:
         assert coord._agent_states == {}
         assert coord._agent_rewards == {}
         assert coord._agent_statuses == {}
-        assert type(coord._actions_queue) is queue.Queue
-        assert type(coord._answers_queue) is queue.Queue
-    
-    def test_initialize_new_player(self, coordinator_init):
+        assert isinstance(coord._actions_queue, asyncio.Queue)
+        assert isinstance(coord._answers_queues, dict)
+        assert isinstance(coord._world_action_queue, asyncio.Queue)
+        assert not isinstance(coord._world_response_queue, asyncio.Queue)
+
+    @pytest.mark.asyncio
+    async def test_initialize_new_player(self, coordinator_init):
         coord = coordinator_init
         agent_addr = ("1.1.1.1", "4242")
         agent_name = "TestAgent"
@@ -69,7 +78,7 @@ class TestCoordinator:
         assert coord.agents[agent_addr] == (agent_name, agent_role)
         assert coord._agent_steps[agent_addr] == 0
         assert not coord._reset_requests[agent_addr]
-        assert coord._agent_statuses[agent_addr] == "playing_active"
+        assert coord._agent_statuses[agent_addr] == AgentStatus.PlayingActive
 
         assert new_obs.reward == 0
         assert new_obs.end is False
