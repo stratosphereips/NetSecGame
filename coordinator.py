@@ -730,7 +730,7 @@ class Coordinator:
                         
     async def _handle_world_responses(self):
         """
-        Continuously processes responses from the AIDojo World, evaluates the states, checks for goal and assigns rewards to agent
+        Continuously processes responses from the AIDojo World, evaluates them and sends messages to agents
         """
         try:
             self.logger.info("\tStarting task to handle AIDojo World responses")
@@ -754,8 +754,7 @@ class Coordinator:
                     self.logger.error(f"Error handling world response: {e}")
         except asyncio.CancelledError:
             self.logger.info("\tTerminating by CancelledError")
-    
-    
+        
     def _process_world_response(self, agent_addr:tuple, response:tuple)->str:
         """
         Method for generation of messages to the agent based on the  world response
@@ -765,30 +764,7 @@ class Coordinator:
         try:
             agent_status = self._agent_statuses[agent_addr]
             if agent_status is AgentStatus.JoinRequested:
-                # is agent correctly started in the world
-                if game_status is GameStatus.CREATED: 
-                    observation = self._initialize_new_player(agent_addr, agent_new_state)
-                    agent_name, agent_role = self.agents[agent_addr]
-                    output_message_dict = {
-                        "to_agent": agent_addr,
-                        "status": str(game_status),
-                        "observation": observation_as_dict(observation),
-                        "message": {
-                            "message": f"Welcome {agent_name}, registred as {agent_role}",
-                            "max_steps": self._steps_limit_per_role[agent_role],
-                            "goal_description": self._goal_description_per_role[agent_role],
-                            "actions": [str(a) for a in ActionType],
-                            "configuration_hash": self._CONFIG_FILE_HASH
-                            },
-                    }
-                else:
-                    # remove traces of agent from the game
-                    self._remove_player(agent_addr)
-                    output_message_dict = {
-                        "to_agent": agent_addr,
-                        "status": str(game_status),
-                        "message": f"Error when initializing the agent {agent_name}({agent_role})",
-                    }
+                output_message_dict = self._process_world_response_created(agent_addr, game_status, agent_new_state)
             elif agent_status is AgentStatus.ResetRequested:
                 if game_status is GameStatus.RESET_DONE:
                     self._reset_requests[agent_addr] = False
@@ -829,7 +805,35 @@ class Coordinator:
         except KeyError:
             self.logger.error(f"Agent '{agent_addr}' not found!")
 
-
+    def _process_world_response_created(self, agent_addr:tuple, game_status:GameStatus, new_agent_game_state:GameState)->dict:
+        """
+        Crates reply to Action.JoinGame for agent based on the response of the AIDojo World
+        """
+        # is agent correctly started in the world
+        if game_status is GameStatus.CREATED: 
+            observation = self._initialize_new_player(agent_addr, new_agent_game_state)
+            agent_name, agent_role = self.agents[agent_addr]
+            output_message_dict = {
+                "to_agent": agent_addr,
+                "status": str(game_status),
+                "observation": observation_as_dict(observation),
+                "message": {
+                    "message": f"Welcome {agent_name}, registred as {agent_role}",
+                    "max_steps": self._steps_limit_per_role[agent_role],
+                    "goal_description": self._goal_description_per_role[agent_role],
+                    "actions": [str(a) for a in ActionType],
+                    "configuration_hash": self._CONFIG_FILE_HASH
+                    },
+            }
+        else:
+            # remove traces of agent from the game
+            self._remove_player(agent_addr)
+            output_message_dict = {
+                "to_agent": agent_addr,
+                "status": str(game_status),
+                "message": f"Error when initializing the agent {agent_name}({agent_role})",
+            }
+        return output_message_dict
 
 __version__ = "v0.2.2"
 
