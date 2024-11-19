@@ -248,14 +248,9 @@ def coordinator_init():
     """Initialize the Coordinator instance."""
     actions_queue = MagicMock()
     answers_queues = {}
-    world_action_queue = AsyncMock()
-    world_response_queue = AsyncMock()
-
     coord = Coordinator(
         actions_queue,
         answers_queues,
-        world_action_queue,
-        world_response_queue,
         CONFIG_FILE,
         ALLOWED_ROLES,
     )

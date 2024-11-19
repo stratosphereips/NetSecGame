@@ -43,14 +43,10 @@ class AIDojo:
         self.port = port
         self.logger = logging.getLogger("AIDojo-main")
         self._agent_action_queue = asyncio.Queue()
-        self._world_action_queue = asyncio.Queue()
-        self._world_response_queue = asyncio.Queue()
         self._agent_response_queues = {}
         self._coordinator = Coordinator(
             self._agent_action_queue,
             self._agent_response_queues,
-            self._world_action_queue,
-            self._world_response_queue,
             net_sec_config,
             allowed_roles=["Attacker", "Defender", "Benign"],
             world_type = world_type,
@@ -202,12 +198,12 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         await self.handle_new_agent(reader, writer)
 
 class Coordinator:
-    def __init__(self, actions_queue, answers_queues, world_action_queue, world_response_queue, net_sec_config, allowed_roles, world_type="netsecenv"):
+    def __init__(self, actions_queue, answers_queues, net_sec_config, allowed_roles, world_type="netsecenv"):
         # communication channels for asyncio
         self._actions_queue = actions_queue
         self._answers_queues = answers_queues
-        self._world_action_queue = world_action_queue
-        self._world_response_queue = world_response_queue
+        self._world_action_queue = asyncio.Queue()
+        self._world_response_queue = asyncio.Queue()
         self.task_config = ConfigParser(net_sec_config)
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
@@ -217,9 +213,9 @@ class Coordinator:
             case "netsecenv":
                 self._world = NetworkSecurityEnvironment(net_sec_config,self._world_action_queue, self._world_response_queue)
             case "netsecenv-real-world":
-                self._world = NetworkSecurityEnvironmentRealWorld(net_sec_config, world_action_queue, world_response_queue)
+                self._world = NetworkSecurityEnvironmentRealWorld(net_sec_config, self._world_action_queue, self._world_response_queue)
             case _:
-                self._world = AIDojoWorld(net_sec_config, world_action_queue, world_response_queue)
+                self._world = AIDojoWorld(net_sec_config, self._world_action_queue, self._world_response_queue)
         self.world_type = world_type
         self._CONFIG_FILE_HASH = get_file_hash(net_sec_config)        
         self._starting_positions_per_role = self._get_starting_position_per_role()
