@@ -477,6 +477,8 @@ class GameStatus(enum.Enum):
                 return GameStatus.BAD_REQUEST
             case "GameStatus.FORBIDDEN":
                 return GameStatus.FORBIDDEN
+            case "GameStatus.RESET_DONE":
+                return GameStatus.RESET_DONE
     def __repr__(self) -> str:
         return str(self)
 if __name__ == "__main__":
