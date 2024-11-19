@@ -200,10 +200,15 @@ class ConnectionLimitProtocol(asyncio.Protocol):
 class Coordinator:
     def __init__(self, actions_queue, answers_queues, net_sec_config, allowed_roles, world_type="netsecenv"):
         # communication channels for asyncio
+        # agents -> coordinator
         self._actions_queue = actions_queue
+        # coordinator -> agent (separate queue per agent)
         self._answers_queues = answers_queues
+        # coordinator -> world
         self._world_action_queue = asyncio.Queue()
+        # world -> coordinator
         self._world_response_queue = asyncio.Queue()
+
         self.task_config = ConfigParser(net_sec_config)
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
@@ -223,6 +228,7 @@ class Coordinator:
         self._goal_description_per_role = self._get_goal_description_per_role()
         self._steps_limit_per_role = self._get_max_steps_per_role()
         self._use_global_defender = self.task_config.get_use_global_defender()
+        
         # player information
         self.agents = {}
         # step counter per agent_addr (int)
@@ -270,9 +276,9 @@ class Coordinator:
         - Reads messages from action queue
         - processes actions based on their type
         - Forwards actions in the game engine
-        - Forwards responses to teh answer queue
+        - Evaluates states and checks for goal
+        - Forwards responses the agents
         """
-
         try:
             self.logger.info("Main coordinator started.")
             # Start World Response handler task
@@ -356,7 +362,7 @@ class Coordinator:
 
     def _remove_player(self, agent_addr:tuple)->dict:
         """
-        Removes player from the game.
+        Removes player from the game. Should be called AFTER QuitGame action was processed by the world.
         """
         self.logger.info(f"Removing player {agent_addr} from the Coordinator")
         agent_info = {}
@@ -428,7 +434,7 @@ class Coordinator:
             self.logger.info(f"Max steps in episode for '{agent_role}': {max_steps[agent_role]}")
         return max_steps
     
-    async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
+    async def _process_join_game_action(self, agent_addr: tuple, action: Action)->N one:
         """ "
         Method for processing Action of type ActionType.JoinGame
         """
@@ -488,7 +494,7 @@ class Coordinator:
         }
         return output_message_dict
 
-    def _add_step_to_trajectory(self, agent_addr:tuple, action:Action, reward:float, next_state:GameState, end_reason:str)->None:
+    def _add_step_to_trajectory(self, agent_addr:tuple, action:Action, reward:float, next_state:GameState, end_reason:str)-> None:
         """
         Method for adding one step to the agent trajectory.
         """
@@ -500,7 +506,7 @@ class Coordinator:
             if end_reason:
                 self._agent_trajectories[agent_addr]["end_reason"] = end_reason
     
-    def _store_trajectory_to_file(self, agent_addr, location="./trajectories"):
+    def _store_trajectory_to_file(self, agent_addr:tuple, location="./trajectories")-> None:
         self.logger.debug(f"Storing Trajectory of {agent_addr}in file")
         if agent_addr in self._agent_trajectories:
             agent_name, agent_role = self.agents[agent_addr] 
@@ -670,7 +676,7 @@ class Coordinator:
                         self._agent_rewards[agent] = 0
                         self.logger.info(f"End reward for {agent_name}({agent_role}, status: '{status}') = {self._agent_rewards[agent]}")
                         
-    async def _handle_world_responses(self):
+    async def _handle_world_responses(self)-> None:
         """
         Continuously processes responses from the AIDojo World, evaluates them and sends messages to agents
         """
@@ -697,9 +703,9 @@ class Coordinator:
         except asyncio.CancelledError:
             self.logger.info("\tTerminating by CancelledError")
         
-    def _process_world_response(self, agent_addr:tuple, response:tuple)->str:
+    def _process_world_response(self, agent_addr:tuple, response:tuple)-> str:
         """
-        Method for generation of messages to the agent based on the  world response
+        Method for generation of messages to the agent based on the world response
         """
         agent_new_state, game_status = response
         output_message_dict = {}
@@ -757,7 +763,7 @@ class Coordinator:
             }
         return output_message_dict
 
-    def _process_world_response_reset_done(self, agent_addr, game_status, agent_new_state)->dict:
+    def _process_world_response_reset_done(self, agent_addr:tuple, game_status:GameStatus, agent_new_state:GameState)->dict:
         """
         Handles  reply to Action.JoinGame for agent based on the response of the AIDojo World
         """
@@ -784,7 +790,16 @@ class Coordinator:
             }
         return output_message_dict
 
-    def _process_world_response_step(self, agent_addr, game_status, agent_new_state)->dict:
+    def _process_world_response_step(self, agent_addr:tuple, game_status:GameStatus, agent_new_state:GameState)->dict:
+        """
+        Handles  reply for agent based on the response of the AIDojo World. Covers followinf ActionTypes:
+        - ActionType.ScanNetwork
+        - ActionType.FindServices
+        - ActionType.FindData
+        - ActionType.ExfiltrateData
+        - ActionType.ExploitService
+        - ActionType.BlockIP
+        """
         if game_status is GameStatus.OK:
             if not self.episode_end:
                 # increase the action counter
