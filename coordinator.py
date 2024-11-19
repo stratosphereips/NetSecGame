@@ -195,7 +195,11 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         finally:
             # Decrement the count of current connections
             self.current_connections -= 1
-            self.agent_queues.pop(addr, None)
+            if addr in self.answers_queues:
+                self.answers_queues.pop(addr)
+                self.logger.info(f"Removed queue for agent {addr}")
+            else:
+                self.logger.warning(f"Queue for agent {addr} not found during cleanup.")
             writer.close()
             return
             
