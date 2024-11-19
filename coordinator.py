@@ -43,7 +43,6 @@ class AIDojo:
         self.port = port
         self.logger = logging.getLogger("AIDojo-main")
         self._agent_action_queue = asyncio.Queue()
-        self._agent_answer_queue = asyncio.Queue()
         self._world_action_queue = asyncio.Queue()
         self._world_response_queue = asyncio.Queue()
         self._agent_response_queues = {}
