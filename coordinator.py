@@ -169,7 +169,7 @@ class ConnectionLimitProtocol(asyncio.Protocol):
 
                 # Step 2: Forward the message to the Coordinator
                 await self.actions_queue.put((addr, raw_message))
-                await asyncio.sleep(0.001)
+                await asyncio.sleep(0)
                 # Step 3: Get a matching response from the answers queue
                 response_queue = self.answers_queues[addr]
                 response = await response_queue.get()
@@ -322,7 +322,7 @@ class Coordinator:
                         case _:
                             # actions in the game
                             await self._process_generic_action(agent_addr, action)
-                await asyncio.sleep(0.0000001)
+                await asyncio.sleep(0)
         except asyncio.CancelledError:
             world_response_task.cancel()
             world_processing_task.cancel()
@@ -697,7 +697,7 @@ class Coordinator:
                         self.logger.info(f"Placed response in answers queue for agent {agent_id}")
                     else:
                         self.logger.info(f"Empty response for agent {agent_id}: {response_msg_json}. Skipping") 
-                    await asyncio.sleep(0.0000001)
+                    await asyncio.sleep(0)
                 except Exception as e:
                     self.logger.error(f"Error handling world response: {e}")
         except asyncio.CancelledError:
