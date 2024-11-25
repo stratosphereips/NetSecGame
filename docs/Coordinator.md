@@ -2,12 +2,21 @@
 Coordinator is the centerpiece of the game orchestration. It provides an interface between the agents and the AIDojo world.
 
 1. Registration of new agents in the game
-2. Verification of agents' actionf format
+2. Verification of agents' action format
 3. Recording (and storing) trajectories of agents
 4. Detection of episode ends (either by reaching timout or agents reaching their respective goals)
 5. Assigning rewards for each action and at the end of each episode
 6. Removing agents from the game
 7. Registering the GameReset requests and handelling the game resets.
+
+## Connction to other game components
+Coordinator, having the role of the middle man in all communication between the agent and the world uses several queues for massing passing and handelling.
+
+1. `Actions queue` is a queue in which the agents submit their actions. It provides N:1 communication channel in which the coordinator receives the inputs.
+2. `Answer queue` is a separeate queue **per agent** in which the results of the actions are send to the agent.
+3.  
+<img src="/docs/figures/message_passing_coordinator.jpg" alt="Message passing overview" width="30%"/>
+
 
 ## Main components of the coordinator
 `self._actions_queue`: asycnio queue for agent -> aidojo_world communication
