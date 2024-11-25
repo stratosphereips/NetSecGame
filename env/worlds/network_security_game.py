@@ -5,7 +5,6 @@
 import netaddr
 import env.game_components as gc
 import random
-import itertools
 import copy
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 import numpy as np
