@@ -9,13 +9,12 @@ from env.worlds.network_security_game import NetworkSecurityEnvironment
 import env.game_components as components
 import pytest
 
-
 # Fixture are used to hold the current state and the environment
 # Each step takes the previous one as input and returns the env and new obseravation variables
 @pytest.fixture
 def env_obs():
     """After init step"""
-    env = NetworkSecurityEnvironment('tests/netsecenv-task-for-testing.yaml')
+    env = NetworkSecurityEnvironment('tests/netsecenv-task-for-testing.yaml', None, None) # No need to initialize asyncio queues for these tests
     starting_state = components.GameState(
         controlled_hosts=set([components.IP("213.47.23.195"), components.IP("192.168.2.2")]),
         known_hosts = set([components.IP("213.47.23.195"), components.IP("192.168.2.2")]),

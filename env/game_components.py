@@ -460,7 +460,9 @@ Observation = namedtuple("Observation", ["state", "reward", "end", "info"])
 @enum.unique
 class GameStatus(enum.Enum):
     OK = 200
+
     CREATED = 201
+    RESET_DONE = 202
     BAD_REQUEST = 400
     FORBIDDEN = 403
     
@@ -475,6 +477,8 @@ class GameStatus(enum.Enum):
                 return GameStatus.BAD_REQUEST
             case "GameStatus.FORBIDDEN":
                 return GameStatus.FORBIDDEN
+            case "GameStatus.RESET_DONE":
+                return GameStatus.RESET_DONE
     def __repr__(self) -> str:
         return str(self)
 if __name__ == "__main__":
