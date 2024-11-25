@@ -16,7 +16,7 @@ Coordinator, having the role of the middle man in all communication between the 
 2. `Answer queue` is a separeate queue **per agent** in which the results of the actions are send to the agent.
 3.  `World action queue` is a queue used for sending the acions from coordinator to the AI Dojo world
 4. `World response queue` is a channel used for wolrd -> coordinator communicaiton (responses to the agents' action)
-<img src="/docs/figures/message_passing_coordinator.jpg" alt="Message passing overview" width="30%"/>
+<img src="/docs/figures/message_passing_coordinator.jpg" alt="Message passing overview" width="100%"/>
 
 
 ## Main components of the coordinator
