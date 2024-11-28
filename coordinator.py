@@ -12,6 +12,7 @@ from datetime import datetime
 from env.worlds.network_security_game import NetworkSecurityEnvironment
 from env.worlds.network_security_game_real_world import NetworkSecurityEnvironmentRealWorld
 from env.worlds.aidojo_world import AIDojoWorld
+from env.worlds.cyst_wrapper import CYSTWrapper
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState
 from utils.utils import observation_as_dict, get_logging_level, get_file_hash
 from pathlib import Path
@@ -219,6 +220,8 @@ class Coordinator:
                 self._world = NetworkSecurityEnvironment(net_sec_config,self._world_action_queue, self._world_response_queue)
             case "netsecenv-real-world":
                 self._world = NetworkSecurityEnvironmentRealWorld(net_sec_config, self._world_action_queue, self._world_response_queue)
+            case "cyst":
+                self._world = CYSTWrapper(net_sec_config, self._world_action_queue, self._world_response_queue)
             case _:
                 self._world = AIDojoWorld(net_sec_config, self._world_action_queue, self._world_response_queue)
         self.world_type = world_type
