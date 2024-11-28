@@ -34,7 +34,7 @@ smb_server = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="microsoft-ds",
+            name="microsoft-ds",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -75,7 +75,7 @@ smb_server = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="ms-wbt-server",
+            name="ms-wbt-server",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -118,7 +118,7 @@ smb_server = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="windows login",
+            name="windows login",
             owner="Administrator",
             version="10.0.19041",
             local=True,
@@ -126,7 +126,7 @@ smb_server = cyst_cfg.NodeConfig(
             authentication_providers=[local_password_auth("windows login")],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="powershell",
+            name="powershell",
             owner="Local system",
             version="10.0.19041",
             local=True,
@@ -157,7 +157,7 @@ web_server = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="http",
+            name="http",
             owner="lighttpd",
             version="1.4.54",
             local=False,
@@ -170,7 +170,7 @@ web_server = cyst_cfg.NodeConfig(
             access_schemes=[],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="ssh",
+            name="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -213,7 +213,7 @@ web_server = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="bash",
+            name="bash",
             owner="root",
             version="5.0.0",
             local=True,
@@ -241,7 +241,7 @@ other_server_1 = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="ssh",
+            name="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -271,7 +271,7 @@ other_server_1 = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="bash",
+            name="bash",
             owner="root",
             version="5.0.0",
             local=True,
@@ -305,7 +305,7 @@ ad_server = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="active-directory",
+            name="active-directory",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -329,7 +329,7 @@ ad_server = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="windows login",
+            name="windows login",
             owner="Administrator",
             version="10.0.19041",
             local=True,
@@ -363,7 +363,7 @@ db_server = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="ssh",
+            name="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -406,7 +406,7 @@ db_server = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="postgresql",
+            name="postgresql",
             owner="postgresql",
             version="14.3.0",
             private_data=[
@@ -416,7 +416,7 @@ db_server = cyst_cfg.NodeConfig(
             access_level=cyst_cfg.AccessLevel.LIMITED,
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="bash",
+            name="bash",
             owner="root",
             version="5.0.0",
             local=True,
@@ -455,7 +455,7 @@ client_1 = cyst_cfg.NodeConfig(
     ],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="ms-wbt-server",
+            name="ms-wbt-server",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -486,14 +486,14 @@ client_1 = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="powershell",
+            name="powershell",
             owner="Local system",
             version="10.0.19041",
             local=True,
             access_level=cyst_cfg.AccessLevel.LIMITED,
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="can_attack_start_here",
+            name="can_attack_start_here",
             owner="Local system",
             version="1",
             local=True,
@@ -523,7 +523,7 @@ client_2 = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="ms-wbt-server",
+            name="ms-wbt-server",
             owner="Local system",
             version="10.0.19041",
             local=False,
@@ -554,14 +554,14 @@ client_2 = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="powershell",
+            name="powershell",
             owner="Local system",
             version="10.0.19041",
             local=True,
             access_level=cyst_cfg.AccessLevel.LIMITED,
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="can_attack_start_here",
+            name="can_attack_start_here",
             owner="Local system",
             version="1",
             local=True,
@@ -591,7 +591,7 @@ client_3 = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="ssh",
+            name="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -622,14 +622,14 @@ client_3 = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="bash",
+            name="bash",
             owner="root",
             version="5.0.0",
             local=True,
             access_level=cyst_cfg.AccessLevel.LIMITED,
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="can_attack_start_here",
+            name="can_attack_start_here",
             owner="Local system",
             version="1",
             local=True,
@@ -659,7 +659,7 @@ client_4 = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="ssh",
+            name="ssh",
             owner="openssh",
             version="8.1.0",
             local=False,
@@ -690,14 +690,14 @@ client_4 = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="bash",
+            name="bash",
             owner="root",
             version="5.0.0",
             local=True,
             access_level=cyst_cfg.AccessLevel.LIMITED,
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="can_attack_start_here",
+            name="can_attack_start_here",
             owner="Local system",
             version="1",
             local=True,
@@ -726,7 +726,7 @@ client_5 = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="bash",
+            name="bash",
             owner="root",
             version="5.0.0",
             local=True,
@@ -750,7 +750,7 @@ client_5 = cyst_cfg.NodeConfig(
             ],
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="can_attack_start_here",
+            name="can_attack_start_here",
             owner="Local system",
             version="1",
             local=True,
@@ -1122,14 +1122,14 @@ outside_node = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
         cyst_cfg.PassiveServiceConfig(
-            type="bash",
+            name="bash",
             owner="root",
             version="5.0.0",
             local=True,
             access_level=cyst_cfg.AccessLevel.LIMITED,
         ),
         cyst_cfg.PassiveServiceConfig(
-            type="listener",
+            name="listener",
             owner="attacker",
             version="1.0.0",
             local=False,
@@ -1173,7 +1173,7 @@ exploits = [
     cyst_cfg.ExploitConfig(
         services=[
             cyst_cfg.VulnerableServiceConfig(
-                name="microsoft-ds", min_version="10.0.19041", max_version="10.0.19041"
+                service="microsoft-ds", min_version="10.0.19041", max_version="10.0.19041"
             )
         ],
         locality=cyst_cfg.ExploitLocality.REMOTE,
