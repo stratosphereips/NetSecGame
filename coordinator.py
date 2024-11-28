@@ -937,7 +937,7 @@ if __name__ == "__main__":
     
     host = confjson.get("host", None)
     port = confjson.get("port", None)
-    world_type = confjson.get('world_type', 'netsecgame')
+    world_type = confjson.get('world_type', 'cyst')
 
     # prioritize task config from CLI
     if args.task_config:
@@ -948,6 +948,6 @@ if __name__ == "__main__":
     if task_config_file is None:
         raise KeyError("Task configuration must be provided to start the coordinator! Use -h for more details.")
     # Create AI Dojo
-    ai_dojo = AIDojo(host, port, task_config_file, world_type)
+    ai_dojo = AIDojo(host, port, task_config_file, "cyst")
     # Run it!
     ai_dojo.run()
