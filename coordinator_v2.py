@@ -161,23 +161,7 @@ if __name__ == "__main__":
         description="NetSecGame Coordinator Server Author: Ondrej Lukas ondrej.lukas@aic.fel.cvut.cz",
         usage="%(prog)s [options]",
     )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        help="Verbosity level. This shows more info about the results.",
-        action="store",
-        required=False,
-        type=int,
-    )
-    parser.add_argument(
-        "-c",
-        "--configfile",
-        help="Configuration file.",
-        action="store",
-        required=False,
-        type=str,
-        default="coordinator.conf",
-    )
+    
     
     parser.add_argument(
         "-l",
@@ -188,6 +172,54 @@ if __name__ == "__main__":
         type=str,
         default="DEBUG",
     )
+
+    parser.add_argument(
+        "-w",
+        "--world_type",
+        help="Define the world which is used as backed. Default NSE",
+        action="store",
+        required=False,
+        type=str,
+        default="netsecenv",
+    )
+
+    parser.add_argument(
+        "-gh",
+        "--game_host",
+        help="host where to run the game server",
+        action="store",
+        required=False,
+        type=str,
+        default="127.0.0.1",
+    )
+    parser.add_argument(
+        "-gp",
+        "--game_port",
+        help="Port where to run the game server",
+        action="store",
+        required=False,
+        type=int,
+        default="9000",
+    )
+    parser.add_argument(
+        "-sh",
+        "--service_host",
+        help="Host where to run the config server",
+        action="store",
+        required=False,
+        type=str,
+        default="127.0.0.1",
+    )
+    parser.add_argument(
+        "-sp",
+        "--service_port",
+        help="Port where to listen for cyst config",
+        action="store",
+        required=False,
+        type=int,
+        default="9001",
+    )
+
 
     args = parser.parse_args()
     print(args)
@@ -206,16 +238,7 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
         level=pass_level,
     )
-
-    # load config for coordinator
-    with open(args.configfile, "r") as jfile:
-        confjson = json.load(jfile)
-    
-    host = confjson.get("host", None)
-    port = confjson.get("port", None)
-    world_type = confjson.get('world_type', 'cyst')
-
-   
-    ai_dojo = AIDojo(host, port,host,4444, "cyst")
+  
+    ai_dojo = AIDojo(args.game_host, args.game_port, args.service_host , args.service_port, args.world_type)
     # Run it!
     ai_dojo.run()
