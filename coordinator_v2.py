@@ -20,7 +20,7 @@ from utils.utils import ConfigParser
 from coordinator import Coordinator, ConnectionLimitProtocol
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from aiohttp import web
-
+from cyst.api.environment.environment import Environment
 
 class AIDojo:
     def __init__(self, game_host: str, game_port: int, service_host, service_port, world_type) -> None:
@@ -131,13 +131,11 @@ class AIDojo:
                 self.logger.info(f"Received JSON: {data}")
 
                 # Signal the event to start the Coordinator and agent server
-                if "cyst_config" in data:
-                    self._cyst_objects = data["cyst_config"]
-                    self._start_event.set()
-                    return web.json_response({"status": "success", "received_data": data})
-                else:
-                    # Respond to the client
-                    return web.json_response({"status": "error", "received_data": data}, status=400)
+                env = Environment.create()
+                self._cyst_objects = env.configuration.general.load_configuration(data)
+        
+                self._start_event.set()
+                return web.json_response({"status": "success", "received_data": data})
             except Exception as e:
                 self.logger.error(f"Error processing JSON: {str(e)}")
                 return web.json_response({"status": "error", "message": str(e)}, status=400)
