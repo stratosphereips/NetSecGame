@@ -155,8 +155,9 @@ class TrajectoryGraph:
         return super_graph
 
     def get_graph_structure_probabilistic_progress(self)->dict:
-
+        # collect all edeges from all checkpoints
         all_edges = set().union(*(inner_dict.keys() for inner_dict in self._checkpoint_edges.values()))
+        # prepare data straucture for the probabiliites per edge
         super_graph = {key:np.zeros(self.num_checkpoints) for key in all_edges}
         for i, edge_list in self._checkpoint_edges.items():
             total_out_edges_use = {}
@@ -168,6 +169,17 @@ class TrajectoryGraph:
                 super_graph[(src,dst,edge)][i] = value/total_out_edges_use[src]
         return super_graph
 
+    def get_graph_entropies(self)->dict:
+        def compute_entropy(probs, epsilon_value=1e-10):
+            probs = np.array(probs)
+            normalized_probs = probs / np.sum(probs)
+            entropy = -np.sum(normalized_probs * np.log(normalized_probs +epsilon_value))  # Avoid log(0)
+            return entropy
+        probabilistic_graph = self.get_graph_structure_probabilistic_progress
+        edge_entropy = {}
+        for e, probs in probabilistic_graph:
+            edge_entropy[e] = compute_entropy(probs)
+        
 def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
     edges = {}
     nodes_timestamps = {}
@@ -258,49 +270,11 @@ if __name__ == '__main__':
     parser.add_argument("--n_trajectories", help="Limit of how many trajectories to use", action='store', default=10000, required=False)
     
     args = parser.parse_args()
-    # trajectories1 = read_json(args.t1, max_lines=args.n_trajectories)
-    # trajectories2 = read_json(args.t2, max_lines=args.n_trajectories)
-    # states = {}
-    # actions = {}
-    
-    # graph_t1, g1_timestaps, t1_wr_mean, t1_wr_std = gameplay_graph(trajectories1, states, actions,end_reason=args.end_reason)
-    # graph_t2, g2_timestaps, t2_wr_mean, t2_wr_std = gameplay_graph(trajectories2, states, actions,end_reason=args.end_reason)
-    
-    # state_to_id = {v:k for k,v in states.items()}
-    # action_to_id = {v:k for k,v in states.items()}
-
-    # print(f"Trajectory 1: {args.t1}")
-    # print(f"WR={t1_wr_mean}±{t1_wr_std}")
-    # get_graph_stats(graph_t1, state_to_id, action_to_id)
-    # print(f"Trajectory 2: {args.t2}")
-    # print(f"WR={t2_wr_mean}±{t2_wr_std}")
-    # get_graph_stats(graph_t2, state_to_id, action_to_id)
-
-    # a_edges, d_edges, a_nodes, d_nodes = get_graph_modificiation(graph_t1, graph_t2)
-    # print(f"AE:{len(a_edges)},DE:{len(d_edges)}, AN:{len(a_nodes)},DN:{len(d_nodes)}")
-    # # print("positions of same states:")
-    # # for node in node_set(graph_t1).intersection(node_set(graph_t2)):
-    # #     print(g1_timestaps[node], g2_timestaps[node])
-    # #     print("-----------------------")
-    # tg_no_blocks = TrajectoryGraph()
-    
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-2000.jsonl",max_lines=args.n_trajectories))
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-4000.jsonl",max_lines=args.n_trajectories))
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-6000.jsonl",max_lines=args.n_trajectories))
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-8000.jsonl",max_lines=args.n_trajectories))
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-10000.jsonl",max_lines=args.n_trajectories))
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-12000.jsonl",max_lines=args.n_trajectories))
-    
-    # tg_no_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-5000_no_blocks.jsonl",max_lines=args.n_trajectories))
-    # tg_no_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-10000_no_blocks.jsonl",max_lines=args.n_trajectories))
-    # tg_no_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-15000_no_blocks.jsonl",max_lines=args.n_trajectories))
-    # tg_no_blocks.plot_graph_stats_progress()
-   
+       
     tg_blocks = TrajectoryGraph()
-    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-5000_blocks.jsonl",max_lines=args.n_trajectories))
-    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-10000_blocks.jsonl",max_lines=args.n_trajectories))
-    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-15000_blocks.jsonl",max_lines=args.n_trajectories))
-    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-20000_blocks.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-29_SARSAAgent_Attacker_001-episodes-2000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-29_SARSAAgent_Attacker_001-episodes-4000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-29_SARSAAgent_Attacker_001-episodes-6000.jsonl",max_lines=args.n_trajectories))
     tg_blocks.plot_graph_stats_progress()
 
     super_graph = tg_blocks.get_graph_structure_probabilistic_progress()

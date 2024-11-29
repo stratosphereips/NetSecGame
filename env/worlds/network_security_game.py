@@ -136,15 +136,15 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             for service in node_obj.passive_services:
                 # Check if it is a candidate for random start
                 # Becareful, it will add all the IPs for this node
-                if service.type == "can_attack_start_here":
+                if service.name == "can_attack_start_here":
                     self.hosts_to_start.append(gc.IP(str(interface.ip)))
                     continue
 
                 if node_obj.id not in self._services:
                     self._services[node_obj.id] = []
-                self._services[node_obj.id].append(gc.Service(service.type, "passive", service.version, service.local))
+                self._services[node_obj.id].append(gc.Service(service.name, "passive", service.version, service.local))
                 #data
-                self.logger.info(f"\t\t\tProcessing data in node '{node_obj.id}':'{service.type}' service")
+                self.logger.info(f"\t\t\tProcessing data in node '{node_obj.id}':'{service.name}' service")
                 try:
                     for data in service.private_data:
                         if node_obj.id not in self._data:
