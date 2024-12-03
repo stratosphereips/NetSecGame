@@ -106,3 +106,4 @@ class AIDojoWorld(object):
                 await asyncio.sleep(0)
         except asyncio.CancelledError:
             self.logger.info(f"\t{self.world_name} Terminating by CancelledError")
+            raise
