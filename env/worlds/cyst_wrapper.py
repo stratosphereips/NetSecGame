@@ -30,6 +30,11 @@ class CYSTWrapper(AIDojoWorld):
         self._last_msg_per_agent = {}
         self._starting_positions = get_starting_position_from_cyst_config(cyst_objects)
         self._availabe_cyst_agents = {"Attacker":set([k for k in self._starting_positions.keys()])}
+        self._rewards = {
+            "goal": self.task_config.get_goal_reward(),
+            "detection": self.task_config.get_detection_reward(),
+            "step": self.task_config.get_step_reward()
+        }
 
 
 
