@@ -9,6 +9,7 @@ from game_components import GameState, Action, ActionType, GameStatus
 from worlds.aidojo_world import AIDojoWorld
 from cyst.api.environment.environment import Environment
 from cyst.api.environment.platform_specification import PlatformSpecification, PlatformType
+from utils.utils import get_starting_position_from_cyst_config
 
 class CYSTWrapper(AIDojoWorld):
     """
@@ -24,6 +25,7 @@ class CYSTWrapper(AIDojoWorld):
         self._last_state_per_agent = {}
         self._last_action_per_agent = {}
         self._last_msg_per_agent = {}
+        self._starting_positions = get_starting_position_from_cyst_config(cyst_objects)
 
 
 
