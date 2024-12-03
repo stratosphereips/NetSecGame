@@ -65,53 +65,59 @@ class AIDojo:
         json_listener_task = asyncio.create_task(self.start_json_listener())
         self.logger.info("Waiting for JSON to initialize Coordinator and Agent Server...")
         await json_listener_task  # Wait until JSON is received
-
-        # create coordinator
-        self._coordinator = Coordinator(
-            self._agent_action_queue,
-            self._agent_response_queues,
-            self._cyst_objects,
-            allowed_roles=["Attacker", "Defender", "Benign"],
-            world_type = self._world_type,
-            net_sec_config_file="env/netsecevn_conf_cyst_integration.yaml"
-        )
-
-        self.logger.info("Starting Coordinator taks")
-        coordinator_task = asyncio.create_task(self._coordinator.run())
-        tcp_server_task = asyncio.create_task(self.start_tcp_server())
-        
-
-        try:
-            await asyncio.gather(tcp_server_task, coordinator_task, return_exceptions=True)
-        except asyncio.CancelledError:
-            self.logger.info("Starting AIDojo termination")
-            for task in [tcp_server_task, coordinator_task]:
-                task.cancel()
-            # Wait for all tasks to be cancelled
-            await asyncio.gather(tcp_server_task, coordinator_task, return_exceptions=True)
-            self.logger.info("All worker tasks have been cancelled")
-            raise
-        finally:
-            self.logger.info("AIDojo termination completed")
-    
-    async def start_tcp_server(self):
-        self.logger.info("Starting the server listening for agents")
-        server = await asyncio.start_server(
-            ConnectionLimitProtocol(
+        if self._start_event.is_set():
+            # create coordinator
+            self._coordinator = Coordinator(
                 self._agent_action_queue,
                 self._agent_response_queues,
-                max_connections=2
-            ),
-            self.host,
-            self.port
-        )
-        addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
-        self.logger.info(f"\tServing on {addrs}")
+                self._cyst_objects,
+                allowed_roles=["Attacker", "Defender", "Benign"],
+                world_type = self._world_type,
+                net_sec_config_file="env/netsecevn_conf_cyst_integration.yaml"
+            )
 
+            self.logger.info("Starting Coordinator taks")
+            coordinator_task = asyncio.create_task(self._coordinator.run())
+            tcp_server_task = asyncio.create_task(self.start_tcp_server())
+            #tcp_server_task = None
+            #coordinator_task = None
+            
+
+            try:
+                self.logger.info("Game Server ready!")
+                await asyncio.gather(coordinator_task, tcp_server_task)
+
+            except asyncio.CancelledError:
+                self.logger.info("Starting AIDojo termination")
+                # Cancel the tasks explicitly (this is optional if gather handles it)
+                tcp_server_task.cancel()
+                coordinator_task.cancel()
+                await asyncio.gather(tcp_server_task, coordinator_task, return_exceptions=True)
+                raise
+            finally:
+                self.logger.info("AIDojo termination completed")
+    
+    async def start_tcp_server(self):
         try:
+            self.logger.info("Starting the server listening for agents")
+            server = await asyncio.start_server(
+                ConnectionLimitProtocol(
+                    self._agent_action_queue,
+                    self._agent_response_queues,
+                    max_connections=2
+                ),
+                self.host,
+                self.port
+            )
+            addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
+            self.logger.info(f"\tServing on {addrs}")
             await asyncio.Event().wait()  # Keep the server running indefinitely
         except asyncio.CancelledError:
             print("TCP server task was cancelled")
+            raise
+        except Exception as e:
+            self.logger.error(f"TCP server failed: {e}")
+            raise
         finally:
             server.close()
             await server.wait_closed()
@@ -157,6 +163,7 @@ class AIDojo:
             self.logger.info("Stopping JSON listener after receiving request.")
         except asyncio.CancelledError:
             self.logger.info(f"Service Server cancelled")
+            raise
         finally:
             await runner.cleanup()
             print(f"Worker 'Service Server' has cleaned up")
