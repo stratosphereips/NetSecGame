@@ -74,7 +74,7 @@ class AIDojo:
             self._cyst_objects,
             allowed_roles=["Attacker", "Defender", "Benign"],
             world_type = self._world_type,
-            net_sec_config_file="env/netsecenv_conf.yaml"
+            net_sec_config_file="env/netsecevn_conf_cyst_integration.yaml"
         )
 
         self.logger.info("Starting Coordinator taks")
@@ -136,8 +136,6 @@ class AIDojo:
                 # Signal the event to start the Coordinator and agent server
                 env = Environment.create()
                 self._cyst_objects = env.configuration.general.load_configuration(data)
-                for item in self._cyst_objects:
-                    self.logger.info(item)
                 self._start_event.set()
                 return web.json_response({"status": "success", "received_data": data})
             except Exception as e:
