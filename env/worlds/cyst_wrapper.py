@@ -7,13 +7,15 @@ import asyncio
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from game_components import GameState, Action, ActionType, GameStatus
 from worlds.aidojo_world import AIDojoWorld
+from cyst.api.environment.environment import Environment
+from cyst.api.environment.platform_specification import PlatformSpecification, PlatformType
 
 class CYSTWrapper(AIDojoWorld):
     """
     Class for connection CYST with the coordinator of AI Dojo
     """
-    def __init__(self, task_config_file, action_queue, response_queue,world_name="CYST-wrapper") -> None:
-        super().__init__(task_config_file, action_queue, response_queue, world_name)
+    def __init__(self, task_config_file, action_queue, response_queue, cyst_objects, world_name="CYST-wrapper") -> None:
+        super().__init__(task_config_file, action_queue, response_queue, world_name,)
         self.logger.info("Initializing CYST wrapper environment")
         self._id_to_cystid = {}
         self._cystid_to_id  = {}
