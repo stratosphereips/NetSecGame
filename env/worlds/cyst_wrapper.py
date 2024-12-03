@@ -3,6 +3,7 @@
 import sys
 import os
 import asyncio
+import requests
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from game_components import GameState, Action, ActionType, GameStatus
@@ -33,10 +34,12 @@ class CYSTWrapper(AIDojoWorld):
         """
         Executes given action in a current state of the environment and produces new GameState.
         """
+        self.logger.info(f"Processing {action} from {agent_id}({self._id_to_cystid[agent_id]}) ")
         self._last_state_per_agent[agent_id] = current_state
         self._last_action_per_agent[agent_id] = action
         cyst_msg = self.action_to_cyst_message(action)
-        cyst_rsp = self._call_cyst(cyst_msg)
+        self.logger.debug(f"Msg for cyst:{cyst_msg}")
+        cyst_rsp = self._call_cyst(self._id_to_cystid[agent_id], cyst_msg)
         new_state = self.cyst_response_to_game_state(cyst_rsp)
         msg = (agent_id, (new_state, GameStatus.OK))
         self.logger.debug(f"Sending to{agent_id}: {msg}")
@@ -76,14 +79,37 @@ class CYSTWrapper(AIDojoWorld):
         return cyst_id
     
     def action_to_cyst_message(self, action:Action)->dict:
-        raise NotImplementedError
+        self.logger.debug(f"Converting action {action} to dict")
+        action_dict = {
+            "action":"dojo:scan_network",
+            "params":
+                {
+                    "dst_ip":str(action.parameters["source_host"]),
+                    "dst_service":"",
+                    "to_network":str(action.parameters["target_network"])
+                }
+        }
+        self.logger.debug(f"\t{action_dict}")
+        return action_dict
     
     def cyst_response_to_game_state(self, str)->GameState:
         raise NotImplementedError
 
-    def _call_cyst(self, msg)->dict:
-        # TODO: 
-        return {}
+    def _call_cyst(self,cyst_id, msg)->dict:
+
+        url = f"http://localhost:8282/execute/{cyst_id}/" # Replace with your server's URL
+        data = msg        # The JSON data you want to send
+        self.logger.info(f"Sedning request {msg} to {url}")
+        try:
+            # Send the POST request with JSON data
+            response = requests.post(url, json=data)
+
+            # Print the response from the server
+            self.logger.debug('Status code:', response.status_code)
+            self.logger.debug('Response body:', response.text)
+            return response.status_code, response.text
+        except requests.exceptions.RequestException as e:
+            print('An error occurred:', e)
         
     async def _process_join_game(self, agent_id, join_action)->None:
         print(f"Processing {str(join_action)} from {agent_id}")
@@ -99,7 +125,7 @@ class CYSTWrapper(AIDojoWorld):
             msg = (agent_id, (GameState(controlled_hosts=kh, known_hosts=kh, known_networks=kn), GameStatus.CREATED))
         else:
             msg = (agent_id, (GameState(), GameStatus.FORBIDDEN))
-        self.logger.debug(f"Sending to{agent_id}: {msg}")
+        self.logger.debug(f"Sending to{agent_id}: {msg}. Mapped to CYST id: {cyst_id}")
         await self._response_queue.put(msg)
         return None
 
@@ -146,7 +172,7 @@ class CYSTWrapper(AIDojoWorld):
                         print("After processing join game")
                         self.logger.debug("After processing join game")
                     case "ActionType.ScanNetwork":
-                        
+                        await self.step(game_state, action, agent_id)
                     case _:
                         raise ValueError
                 # elif action.type is ActionType.QuitGame:
