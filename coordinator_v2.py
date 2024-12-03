@@ -61,11 +61,10 @@ class AIDojo:
         - Start a server that listens for agents
         """      
         self.logger.info("Starting all tasks")
-        loop = asyncio.get_running_loop()
         self.logger.info("Starting JSON listener server")
         json_listener_task = asyncio.create_task(self.start_json_listener())
         self.logger.info("Waiting for JSON to initialize Coordinator and Agent Server...")
-        await self._start_event.wait()  # Wait until JSON is received
+        await json_listener_task  # Wait until JSON is received
 
         # create coordinator
         self._coordinator = Coordinator(
@@ -79,9 +78,25 @@ class AIDojo:
 
         self.logger.info("Starting Coordinator taks")
         coordinator_task = asyncio.create_task(self._coordinator.run())
+        tcp_server_task = asyncio.create_task(self.start_tcp_server())
+        
 
+        try:
+            await asyncio.gather(tcp_server_task, coordinator_task)
+        except asyncio.CancelledError:
+            self.logger.info("Starting AIDojo termination")
+            for task in [tcp_server_task, coordinator_task]:
+                task.cancel()
+            # Wait for all tasks to be cancelled
+            await asyncio.gather(tcp_server_task, coordinator_task, return_exceptions=True)
+            self.logger.info("All worker tasks have been cancelled")
+            raise
+        finally:
+            self.logger.info("AIDojo termination completed")
+    
+    async def start_tcp_server(self):
         self.logger.info("Starting the server listening for agents")
-        running_server = await asyncio.start_server(
+        server = await asyncio.start_server(
             ConnectionLimitProtocol(
                 self._agent_action_queue,
                 self._agent_response_queues,
@@ -90,34 +105,18 @@ class AIDojo:
             self.host,
             self.port
         )
-        addrs = ", ".join(str(sock.getsockname()) for sock in running_server.sockets)
+        addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
         self.logger.info(f"\tServing on {addrs}")
-        
-        # prepare the stopping event for keyboard interrupt
-        stop = loop.create_future()
-        
-        # register the signal handler to the stopping event
-        loop.add_signal_handler(signal.SIGINT, stop.set_result, None)
 
-        await stop # Event that triggers stopping the AIDojo
-        # Stop the server
-        self.logger.info("Initializing server shutdown")
-        running_server.close()
-        await running_server.wait_closed()
-        self.logger.info("\tServer stopped")
-        # Stop coordinator taks
-        self.logger.info("Initializing coordinator shutdown")
-        coordinator_task.cancel()
-        await asyncio.gather(coordinator_task, return_exceptions=True)
-        self.logger.info("\tCoordinator stopped")
-
-        self.logger.info("Shutting down JSON listener")
-        json_listener_task.cancel()
-        await asyncio.gather(json_listener_task, return_exceptions=True)
-
-        # Everything stopped correctly, terminate
-        self.logger.info("AIDojo terminating")
-    
+        try:
+            await asyncio.Event().wait()  # Keep the server running indefinitely
+        except asyncio.CancelledError:
+            print("TCP server task was cancelled")
+        finally:
+            server.close()
+            await server.wait_closed()
+            print("TCP server has been shut down")
+            
     async def start_json_listener(self):
         """
         Starts an HTTP server to listen for JSON data.
@@ -141,22 +140,26 @@ class AIDojo:
             except Exception as e:
                 self.logger.error(f"Error processing JSON: {str(e)}")
                 return web.json_response({"status": "error", "message": str(e)}, status=400)
+        try:
+            # Blocking server setup
+            app = web.Application()
+            app.router.add_post("/", handle_json_request)
 
-        # Blocking server setup
-        app = web.Application()
-        app.router.add_post("/", handle_json_request)
+            runner = web.AppRunner(app)
+            await runner.setup()
+            site = web.TCPSite(runner, self._service_host, self._service_port)
+            self.logger.info(f"Starting JSON server on {self._service_host}:{self._service_port}")
+            await site.start()
 
-        runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, self._service_host, self._service_port)
-        self.logger.info(f"Starting JSON server on {self._service_host}:{self._service_port}")
-        await site.start()
-
-        # Wait for the event to proceed
-        await self.start_event.wait()
-        # Stop the JSON server after processing the first request
-        self.logger.info("Stopping JSON listener after receiving request.")
-        await runner.cleanup()
+            # Wait for the event to proceed
+            await self._start_event.wait()
+            # Stop the JSON server after processing the first request
+            self.logger.info("Stopping JSON listener after receiving request.")
+        except asyncio.CancelledError:
+            self.logger.info(f"Service Server cancelled")
+        finally:
+            await runner.cleanup()
+            print(f"Worker 'Service Server' has cleaned up")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
