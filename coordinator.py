@@ -14,7 +14,7 @@ from env.worlds.network_security_game_real_world import NetworkSecurityEnvironme
 from env.worlds.aidojo_world import AIDojoWorld
 from env.worlds.cyst_wrapper import CYSTWrapper
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState
-from utils.utils import observation_as_dict, get_logging_level, get_file_hash
+from utils.utils import observation_as_dict, get_logging_level, get_file_hash, get_str_hash
 from pathlib import Path
 import os
 import signal
@@ -121,13 +121,6 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         self.max_connections = max_connections
         self.current_connections = 0
         self.logger = logging.getLogger("AIDojo-Server")
-        self._stop = False
-
-    def close(self)->None:
-        self.logger.info(
-           "Stopping server"
-        )
-        self._stop = True
     
     async def handle_new_agent(self, reader, writer):
         async def send_data_to_agent(writer, data: str) -> None:
@@ -156,7 +149,7 @@ class ConnectionLimitProtocol(asyncio.Protocol):
             self.logger.info(f"Created queue for agent {addr}")
 
         try:
-            while not self._stop:
+            while True:
                 # Step 1: Read data from the agent
                 data = await reader.read(500)
                 if not data:
@@ -179,11 +172,9 @@ class ConnectionLimitProtocol(asyncio.Protocol):
                 # Step 4: Send the response to the agent
                 writer.write(bytes(str(response).encode()))
                 await writer.drain()
-        except KeyboardInterrupt:
+        except asyncio.CancelledError:
             self.logger.debug("Terminating by KeyboardInterrupt")
-            raise SystemExit
-        except Exception as e:
-            self.logger.error(f"Exception in handle_new_agent(): {e}")
+            raise
         finally:
             # Decrement the count of current connections
             self.current_connections -= 1
@@ -199,7 +190,7 @@ class ConnectionLimitProtocol(asyncio.Protocol):
         await self.handle_new_agent(reader, writer)
 
 class Coordinator:
-    def __init__(self, actions_queue, answers_queues, net_sec_config, allowed_roles, world_type="netsecenv"):
+    def __init__(self, actions_queue, answers_queues, net_sec_config, allowed_roles, world_type="netsecenv", net_sec_config_file=None):
         # communication channels for asyncio
         # agents -> coordinator
         self._actions_queue = actions_queue
@@ -210,22 +201,23 @@ class Coordinator:
         # world -> coordinator
         self._world_response_queue = asyncio.Queue()
 
-        self.task_config = ConfigParser(net_sec_config)
+        self.task_config = ConfigParser(net_sec_config_file)
         self.ALLOWED_ROLES = allowed_roles
         self.logger = logging.getLogger("AIDojo-Coordinator")
         
         # world definition
+        self.logger.info(f"Startinng world type: {world_type}")
         match world_type:
             case "netsecenv":
-                self._world = NetworkSecurityEnvironment(net_sec_config,self._world_action_queue, self._world_response_queue)
+                self._world = NetworkSecurityEnvironment(net_sec_config_file,self._world_action_queue, self._world_response_queue)
             case "netsecenv-real-world":
-                self._world = NetworkSecurityEnvironmentRealWorld(net_sec_config, self._world_action_queue, self._world_response_queue)
+                self._world = NetworkSecurityEnvironmentRealWorld(net_sec_config_file, self._world_action_queue, self._world_response_queue)
             case "cyst":
-                self._world = CYSTWrapper(net_sec_config, self._world_action_queue, self._world_response_queue)
+                self._world = CYSTWrapper(net_sec_config_file, self._world_action_queue, self._world_response_queue, net_sec_config)
             case _:
                 self._world = AIDojoWorld(net_sec_config, self._world_action_queue, self._world_response_queue)
         self.world_type = world_type
-        self._CONFIG_FILE_HASH = get_file_hash(net_sec_config)        
+        self._CONFIG_FILE_HASH = get_file_hash(net_sec_config_file)        
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
@@ -294,6 +286,7 @@ class Coordinator:
                     self.logger.debug(f"Coordinator received: {message}.")
                     try:  # Convert message to Action
                         action = Action.from_json(message)
+                        self.logger.debug(f"\tConverted to: {action}.")
                     except Exception as e:
                         self.logger.error(
                             f"Error when converting msg to Action using Action.from_json():{e}, {message}"
@@ -301,6 +294,7 @@ class Coordinator:
                     match action.type:  # process action based on its type
                         case ActionType.JoinGame:
                             self.logger.debug(f"Start processing of ActionType.JoinGame by {agent_addr}")
+                            self.logger.debug(f"{action.type}, {action.type.value}, {action.type == ActionType.JoinGame}")
                             await self._process_join_game_action(agent_addr, action)
                         case ActionType.QuitGame:
                             self.logger.info(f"Coordinator received from QUIT message from agent {agent_addr}")
@@ -330,8 +324,9 @@ class Coordinator:
         except asyncio.CancelledError:
             world_response_task.cancel()
             world_processing_task.cancel()
-            asyncio.gather(world_processing_task, world_response_task, return_exceptions=True)
+            await asyncio.gather(world_processing_task, world_response_task, return_exceptions=True)
             self.logger.info("\tTerminating by CancelledError")
+            raise
         except Exception as e:
             self.logger.error(f"Exception in Class coordinator(): {e}")
             raise e
@@ -451,8 +446,8 @@ class Coordinator:
             if agent_role in self.ALLOWED_ROLES:
                 self.agents[agent_addr] = (agent_name, agent_role)
                 self._agent_statuses[agent_addr] = AgentStatus.JoinRequested
-                self.logger.debug(f"Sending JoinRequest by {agent_addr} to the world_action_queue")
-                await self._world_action_queue.put((agent_addr, action, self._starting_positions_per_role[agent_role]))
+                self.logger.debug(f"Sending {action.type} by {agent_addr} to the world_action_queue")
+                await self._world_action_queue.put((agent_addr, Action(action_type=ActionType.JoinGame, params=action.parameters), self._starting_positions_per_role[agent_role]))
             else:
                 self.logger.info(
                     f"\tError in registration, unknown agent role: {agent_role}!"
@@ -711,6 +706,7 @@ class Coordinator:
                     self.logger.error(f"Error handling world response: {e}")
         except asyncio.CancelledError:
             self.logger.info("\tTerminating by CancelledError")
+            raise
         
     def _process_world_response(self, agent_addr:tuple, response:tuple)-> str:
         """
@@ -747,7 +743,7 @@ class Coordinator:
         Handles reply to Action.JoinGame for agent based on the response of the AIDojo World
         """
         # is agent correctly started in the world
-        if game_status is GameStatus.CREATED: 
+        if str(game_status) == "GameStatus.CREATED": 
             observation = self._initialize_new_player(agent_addr, new_agent_game_state)
             agent_name, agent_role = self.agents[agent_addr]
             output_message_dict = {
@@ -776,7 +772,7 @@ class Coordinator:
         """
         Handles  reply to Action.JoinGame for agent based on the response of the AIDojo World
         """
-        if game_status is GameStatus.RESET_DONE:
+        if str(game_status) is "GameStatus.RESET_DONE":
             self._reset_requests[agent_addr] = False
             self._agent_steps[agent_addr] = 0
             self._agent_states[agent_addr] = agent_new_state
@@ -809,7 +805,7 @@ class Coordinator:
         - ActionType.ExploitService
         - ActionType.BlockIP
         """
-        if game_status is GameStatus.OK:
+        if str(game_status) is "GameStatus.OK":
             if not self.episode_end:
                 # increase the action counter
                 self._agent_steps[agent_addr] += 1
