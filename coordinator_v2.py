@@ -82,7 +82,7 @@ class AIDojo:
         
 
         try:
-            await asyncio.gather(tcp_server_task, coordinator_task)
+            await asyncio.gather(tcp_server_task, coordinator_task, return_exceptions=True)
         except asyncio.CancelledError:
             self.logger.info("Starting AIDojo termination")
             for task in [tcp_server_task, coordinator_task]:
