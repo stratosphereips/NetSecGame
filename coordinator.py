@@ -22,20 +22,20 @@ from env.global_defender import stochastic_with_threshold
 from utils.utils import ConfigParser
 
 @enum.unique
-class AgentStatus(enum.Enum):
+class AgentStatus(str, enum.Enum):
     """
     Class representing the current status for each agent connected to the coordinator
     """
-    JoinRequested = 0
-    Ready = 1
-    Playing = 2
-    PlayingActive = 3
-    FinishedMaxSteps = 4
-    FinishedBlocked = 5
-    FinishedGoalReached = 6
-    FinishedGameLost = 7
-    ResetRequested = 8
-    Quitting = 9
+    JoinRequested = "JoinRequested"
+    Ready = "Ready"
+    Playing = "Playing"
+    PlayingActive = "PlayingActive"
+    FinishedMaxSteps = "FinishedMaxSteps"
+    FinishedBlocked = "FinishedBlocked"
+    FinishedGoalReached = "FinishedGoalReached"
+    FinishedGameLost = "FinishedGameLost"
+    ResetRequested = "ResetRequested"
+    Quitting = "Quitting"
 
 
 class AIDojo:
@@ -537,6 +537,7 @@ class Coordinator:
         self.logger.info(f"Processing {action} from {agent_addr}")
         if not self.episode_end:
             self._agent_last_action[agent_addr] = action
+            self.logger.debug(f"Registering {self._agent_last_action[agent_addr]} as last action of {agent_addr}")
             await self._world_action_queue.put((agent_addr, action, self._agent_states[agent_addr]))
         else:
             # Episode finished, just send back the rewards and final episode info
@@ -805,15 +806,17 @@ class Coordinator:
         - ActionType.ExploitService
         - ActionType.BlockIP
         """
-        if str(game_status) is "GameStatus.OK":
+        self.logger.debug("Processing world response of step")
+        # load the action which lead to the new state
+        last_action = self._agent_last_action[agent_addr]
+        self.logger.debug(f"Retrieved last action for {agent_addr}: {last_action}")
+        if str(game_status) == "GameStatus.OK":
             if not self.episode_end:
                 # increase the action counter
                 self._agent_steps[agent_addr] += 1
                 self.logger.info(f"Agent {agent_addr} ({self.agents[agent_addr]}) did #steps: {self._agent_steps[agent_addr]}")
                 # register the new state
                 self._agent_states[agent_addr] = agent_new_state
-                # load the action which lead to the new state
-                last_action = self._agent_last_action[agent_addr]
                 # check timeout
                 if self._max_steps_reached(agent_addr):
                     self._agent_statuses[agent_addr] = AgentStatus.FinishedMaxSteps        
@@ -857,7 +860,8 @@ class Coordinator:
             else:
                 self._assign_end_rewards()
                 output_message_dict = self._generate_episode_end_message(agent_addr)
-        else: 
+        else:
+
             output_message_dict = {
                 "to_agent": agent_addr,
                 "status": str(game_status),
