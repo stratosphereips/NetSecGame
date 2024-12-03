@@ -18,6 +18,8 @@ import csv
 from random import randint
 import json
 import hashlib
+import cyst
+from cyst.api.configuration.network.node import NodeConfig
 
 def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
     """
@@ -29,6 +31,14 @@ def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
         while chunk:
             hash_algorithm.update(chunk)
             chunk = file.read(chunk_size)
+    return hash_algorithm.hexdigest()
+
+def get_str_hash(string, hash_func='sha256', chunk_size=4096):
+    """
+    Computes hash of a given file.
+    """
+    hash_algorithm = hashlib.new(hash_func)
+    hash_algorithm.update(string.encode('utf-8'))
     return hash_algorithm.hexdigest()
 
 def read_replay_buffer_from_csv(csvfile:str)->list:
@@ -544,6 +554,25 @@ def get_logging_level(debug_level):
     
     level = log_levels.get(debug_level.upper(), logging.ERROR)
     return level
+
+def get_starting_position_from_cyst_config(cyst_objects):
+    starting_positions = {}
+    for obj in cyst_objects:
+        if isinstance(obj, NodeConfig):
+            for active_service in obj.active_services:
+                if active_service.type == "netsecenv_agent":
+                    print(f"startig processing {obj.id}.{active_service.name}")
+                    hosts = set()
+                    networks = set()
+                    for interface in obj.interfaces:
+                        hosts.add(IP(str(interface.ip)))
+                        net_ip, net_mask = str(interface.net).split("/")
+                        networks.add(Network(net_ip,int(net_mask)))
+                starting_positions[f"{obj.id}.{active_service.name}"] = {"known_hosts":hosts, "known_networks":networks}
+    return starting_positions
+
+
+
 
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
