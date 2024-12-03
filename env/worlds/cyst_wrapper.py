@@ -21,11 +21,11 @@ class CYSTWrapper(AIDojoWorld):
         self._id_to_cystid = {}
         self._cystid_to_id  = {}
         self._known_agent_roles = {}
-        self._availabe_cyst_agents = {}
         self._last_state_per_agent = {}
         self._last_action_per_agent = {}
         self._last_msg_per_agent = {}
         self._starting_positions = get_starting_position_from_cyst_config(cyst_objects)
+        self._availabe_cyst_agents = {"Attacker":set([k for k in self._starting_positions.keys()])}
 
 
 
@@ -86,6 +86,7 @@ class CYSTWrapper(AIDojoWorld):
         return {}
         
     async def _process_join_game(self, agent_id, join_action)->None:
+        print(f"Processing {str(join_action)} from {agent_id}")
         self.logger.debug(f"Processing {str(join_action)} from {agent_id}")
         agent_role = "Attacker"
         cyst_id = self.map_to_cyst(agent_id, agent_role)
@@ -93,11 +94,14 @@ class CYSTWrapper(AIDojoWorld):
             self._cystid_to_id[cyst_id] = agent_id
             self._id_to_cystid[agent_id] = cyst_id
             self._known_agent_roles[agent_id] = agent_role
-            msg = (agent_id, (GameState(), GameStatus.CREATED))
+            kh = self._starting_positions[cyst_id]["known_hosts"]
+            kn = self._starting_positions[cyst_id]["known_networks"]
+            msg = (agent_id, (GameState(controlled_hosts=kh, known_hosts=kh, known_networks=kn), GameStatus.CREATED))
         else:
             msg = (agent_id, (GameState(), GameStatus.FORBIDDEN))
         self.logger.debug(f"Sending to{agent_id}: {msg}")
         await self._response_queue.put(msg)
+        return None
 
     async def _process_quit_game(self, agent_id, quit_action)->None:
         try:
@@ -128,27 +132,42 @@ class CYSTWrapper(AIDojoWorld):
             self.logger.info(f"\tStaring {self.world_name} task.")
             while True:
                 agent_id, action, game_state = await self._action_queue.get()
-                self.logger.debug(f"Received from{agent_id}: {action},{action.type}, {game_state}.")
-                match action.type:
-                    case ActionType.JoinGame:
-                        self.logger.debug("going to the join game action")
+                self.logger.debug(f"Received from{agent_id}: {action} , {game_state}.")
+
+
+                # !!! TEMPORARY FIX!!!
+                action_type_string = str(action.type) # TODO FIX THIS ASAP!!!!!!
+                #!!!!!!!!!!!!!!!!!!!!!
+                match action_type_string:
+                    case "ActionType.JoinGame":
+                        print("Before processing join game")
+                        self.logger.debug("Before processing join game")
                         await self._process_join_game(agent_id, action)
-                    case ActionType.QuitGame:
-                        await self._process_quit_game(agent_id, action)
-                    case ActionType.ResetGame:
-                       await self._process_reset(agent_id, game_state)
+                        print("After processing join game")
+                        self.logger.debug("After processing join game")
+                    case "ActionType.ScanNetwork":
+                        
                     case _:
-                        await self.step(game_state, action, agent_id)
-                await asyncio.sleep(0)
+                        raise ValueError
+                # elif action.type is ActionType.QuitGame:
+                #     await self._process_quit_game(agent_id, action)
+                # elif action.type is ActionType.ResetGame:
+                #     await self._process_reset(agent_id, game_state)
+                # else:
+                #     self.logger.debug(f"Normal step: {action}")
+                #     await self.step(game_state, action, agent_id)
+                await asyncio.sleep(0.1)
         except asyncio.CancelledError:
-            self.logger.info(f"\t{self.world_name} Terminating by CancelledError")
+            self.logger.info(f"\t{self.world_name} Terminating by CYST wrapper by CancelledError")
+            raise
 
 
 if __name__ == "__main__":
+    
     req_q = asyncio.Queue()
     req_q.put_nowait(("test_agent", Action(action_type=ActionType.JoinGame, params={}), {}))
     res_q = asyncio.Queue()
 
-    cyst_wrapper = CYSTWrapper("env/netsecenv_conf.yaml", req_q, response_queue=res_q)
+    cyst_wrapper = CYSTWrapper("env/netsecenv_conf.yaml", req_q, response_queue=res_q, cyst_objects=[])
     asyncio.run(cyst_wrapper.handle_incoming_action())
    
