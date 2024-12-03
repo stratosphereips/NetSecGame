@@ -722,7 +722,7 @@ class Coordinator:
             elif agent_status is AgentStatus.ResetRequested:
                 output_message_dict = self._process_world_response_reset_done(agent_addr, game_status, agent_new_state)
             elif agent_status is AgentStatus.Quitting:
-                if game_status is GameStatus.OK:
+                if str(game_status) == "GameStatus.OK":
                     self.logger.debug(f"Agent {agent_addr} removed successfuly from the world")
                 else:
                     self.logger.warning(f"Error when removing Agent {agent_addr} from the world")
