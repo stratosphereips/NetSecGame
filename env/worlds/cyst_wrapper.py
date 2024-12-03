@@ -4,9 +4,12 @@ import sys
 import os
 import asyncio
 import requests
+import json
+import copy
+
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from game_components import GameState, Action, ActionType, GameStatus
+from game_components import GameState, Action, ActionType, GameStatus, IP
 from worlds.aidojo_world import AIDojoWorld
 from cyst.api.environment.environment import Environment
 from cyst.api.environment.platform_specification import PlatformSpecification, PlatformType
@@ -39,9 +42,38 @@ class CYSTWrapper(AIDojoWorld):
         self._last_action_per_agent[agent_id] = action
         cyst_msg = self.action_to_cyst_message(action)
         self.logger.debug(f"Msg for cyst:{cyst_msg}")
-        cyst_rsp = self._call_cyst(self._id_to_cystid[agent_id], cyst_msg)
-        new_state = self.cyst_response_to_game_state(cyst_rsp)
-        msg = (agent_id, (new_state, GameStatus.OK))
+        cyst_rsp_status, cyst_rsp_data = self._call_cyst(self._id_to_cystid[agent_id], cyst_msg)
+        self.logger.info(cyst_rsp_data)
+
+        extended_kh = copy.deepcopy(current_state.known_hosts)
+        extended_kn = copy.deepcopy(current_state.known_networks)
+        extended_ch = copy.deepcopy(current_state.controlled_hosts)
+        extended_ks = copy.deepcopy(current_state.known_services)
+        extended_kd = copy.deepcopy(current_state.known_data)
+        extended_kb = copy.deepcopy(current_state.known_blocks)
+        if cyst_rsp_status == 200:
+            self.logger.debug("Valid response from CYST")
+            new_ips = cyst_rsp_data["result"][1]["content"].split("[]")[0].strip("[]").split(",")
+            self.logger.debug(new_ips)
+            new_ips = filter(lambda x: x.startswith(" IPAddress"), new_ips)
+            new_ips = [x for x in new_ips]
+            self.logger.debug(new_ips)
+            new_ips = [x.split("'")[1] for x in new_ips]
+            self.logger.info(new_ips)
+            for ip in new_ips:
+                extended_kh.add(IP(ip))
+        
+        msg = (
+            agent_id,
+            (GameState(
+                known_hosts=extended_kh,
+                controlled_hosts=extended_ch,
+                known_networks=extended_kn,
+                known_services=extended_ks,
+                known_data=extended_kd,
+                known_blocks=extended_kb),
+                GameStatus.OK)
+            )
         self.logger.debug(f"Sending to{agent_id}: {msg}")
         await self._response_queue.put(msg)
 
@@ -105,11 +137,11 @@ class CYSTWrapper(AIDojoWorld):
             response = requests.post(url, json=data)
 
             # Print the response from the server
-            self.logger.debug('Status code:', response.status_code)
-            self.logger.debug('Response body:', response.text)
-            return response.status_code, response.text
+            self.logger.debug(f'Status code:{response.status_code}')
+            self.logger.debug(f'Response body:{response.text}')
+            return int(response.status_code), json.loads(response.text)
         except requests.exceptions.RequestException as e:
-            print('An error occurred:', e)
+            print(f'An error occurred: {e}')
         
     async def _process_join_game(self, agent_id, join_action)->None:
         print(f"Processing {str(join_action)} from {agent_id}")
@@ -130,6 +162,7 @@ class CYSTWrapper(AIDojoWorld):
         return None
 
     async def _process_quit_game(self, agent_id, quit_action)->None:
+        print(f"Processing {str(quit_action)} from {agent_id}")
         try:
             agent_role = self._known_agent_roles[agent_id]
             cyst_id = self._id_to_cystid[agent_id]
@@ -166,11 +199,11 @@ class CYSTWrapper(AIDojoWorld):
                 #!!!!!!!!!!!!!!!!!!!!!
                 match action_type_string:
                     case "ActionType.JoinGame":
-                        print("Before processing join game")
                         self.logger.debug("Before processing join game")
                         await self._process_join_game(agent_id, action)
-                        print("After processing join game")
                         self.logger.debug("After processing join game")
+                    case "ActionType.QuitGame":
+                        await self._process_quit_game(agent_id, action)
                     case "ActionType.ScanNetwork":
                         await self.step(game_state, action, agent_id)
                     case _:
@@ -196,4 +229,5 @@ if __name__ == "__main__":
 
     cyst_wrapper = CYSTWrapper("env/netsecenv_conf.yaml", req_q, response_queue=res_q, cyst_objects=[])
     asyncio.run(cyst_wrapper.handle_incoming_action())
+    req_q.put_nowait(("test_agent", Action(action_type=ActionType.ScanNetwork, params={"source_host":"192.168.0.4", "target_network":"192,168.0.1/24" }), {}))
    
