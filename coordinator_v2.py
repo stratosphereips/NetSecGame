@@ -30,6 +30,8 @@ class AIDojo:
         self._service_port = service_port
         self.logger = logging.getLogger("AIDojo-main")
         self._world_type = world_type
+        self._cyst_objects = None
+        self._cyst_object_string = None
         # prepare channels for coordinator
         self._agent_action_queue = asyncio.Queue()
         self._agent_response_queues = {}
@@ -72,6 +74,7 @@ class AIDojo:
             self._cyst_objects,
             allowed_roles=["Attacker", "Defender", "Benign"],
             world_type = self._world_type,
+            net_sec_config_file="env/netsecenv_conf.yaml"
         )
 
         self.logger.info("Starting Coordinator taks")
@@ -117,7 +120,7 @@ class AIDojo:
     
     async def start_json_listener(self):
         """
-        Starts an HTTP server to listen for JSON data on localhost:4444.
+        Starts an HTTP server to listen for JSON data.
         """
 
         async def handle_json_request(request):
@@ -133,7 +136,8 @@ class AIDojo:
                 # Signal the event to start the Coordinator and agent server
                 env = Environment.create()
                 self._cyst_objects = env.configuration.general.load_configuration(data)
-        
+                for item in self._cyst_objects:
+                    self.logger.info(item)
                 self._start_event.set()
                 return web.json_response({"status": "success", "received_data": data})
             except Exception as e:
@@ -146,8 +150,8 @@ class AIDojo:
 
         runner = web.AppRunner(app)
         await runner.setup()
-        site = web.TCPSite(runner, 'localhost', 4444)
-        self.logger.info("Starting JSON server on localhost:4444")
+        site = web.TCPSite(runner, self._service_host, self._service_port)
+        self.logger.info(f"Starting JSON server on {self._service_host}:{self._service_port}")
         await site.start()
 
         # Wait for the event to proceed
@@ -180,7 +184,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=str,
-        default="netsecenv",
+        default="cyst",
     )
 
     parser.add_argument(
@@ -217,7 +221,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=int,
-        default="9001",
+        default="9009",
     )
 
 
