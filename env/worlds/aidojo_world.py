@@ -16,7 +16,8 @@ all its methods to be compatible with the game server and game coordinator.
 """
 class AIDojoWorld(object):
     def __init__(self, task_config_file:str,action_queue:asyncio.Queue, response_queue:asyncio.Queue, world_name:str="BasicAIDojoWorld")->None:
-        self.task_config = ConfigParser(task_config_file)
+        if task_config_file:
+            self.task_config = ConfigParser(task_config_file)
         self.logger = logging.getLogger(world_name)
         self._action_queue = action_queue
         self._response_queue = response_queue
