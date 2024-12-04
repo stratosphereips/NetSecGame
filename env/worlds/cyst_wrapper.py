@@ -6,6 +6,7 @@ import asyncio
 import requests
 import json
 import copy
+import ast
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -58,15 +59,12 @@ class CYSTWrapper(AIDojoWorld):
         extended_kb = copy.deepcopy(current_state.known_blocks)
         if cyst_rsp_status == 200:
             self.logger.debug("Valid response from CYST")
-            new_ips = cyst_rsp_data["result"][1]["content"].split("[]")[0].strip("[]").split(",")
-            self.logger.debug(new_ips)
-            new_ips = filter(lambda x: x.startswith(" IPAddress"), new_ips)
-            new_ips = [x for x in new_ips]
-            self.logger.debug(new_ips)
-            new_ips = [x.split("'")[1] for x in new_ips]
-            self.logger.info(new_ips)
-            for ip in new_ips:
-                extended_kh.add(IP(ip))
+            self.logger.debug(f"Current known hosts:{extended_kh}, {[hash(x) for x in extended_kh]}")
+            data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
+            for ip_str in data:
+                ip = IP(ip_str)
+                self.logger.debug(f"{ip}, {ip in extended_kh}, {hash(ip)}, {[ip == x for x in extended_kh]}")
+                extended_kh.add(ip)
         
         msg = (
             agent_id,
@@ -121,7 +119,7 @@ class CYSTWrapper(AIDojoWorld):
             "action":"dojo:scan_network",
             "params":
                 {
-                    "dst_ip":str(action.parameters["source_host"]),
+                    "dst_ip":str(action.parameters["source_host"].ip),
                     "dst_service":"",
                     "to_network":str(action.parameters["target_network"])
                 }
