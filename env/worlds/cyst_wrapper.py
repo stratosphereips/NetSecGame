@@ -86,7 +86,6 @@ class CYSTWrapper(AIDojoWorld):
         Produces a GameState based on the view of the world.
         """
         # TODO: Send reset signal to cyst
-
     
     def reset()->None:
         """
@@ -115,15 +114,33 @@ class CYSTWrapper(AIDojoWorld):
     
     def action_to_cyst_message(self, action:Action)->dict:
         self.logger.debug(f"Converting action {action} to dict")
-        action_dict = {
-            "action":"dojo:scan_network",
-            "params":
-                {
-                    "dst_ip":str(action.parameters["source_host"].ip),
-                    "dst_service":"",
-                    "to_network":str(action.parameters["target_network"])
+        match str(action.type):
+            case "ActionType.ScanNetwork":
+                action_dict = {
+                    "action":"dojo:scan_network",
+                    "params":
+                        {
+                            "dst_ip":str(action.parameters["source_host"].ip),
+                            "dst_service":"",
+                            "to_network":str(action.parameters["target_network"])
+                        }
                 }
-        }
+            case "ActionType.FindServices":
+                action_dict = {
+                    "action":"dojo:find_services",
+                    "params":
+                        {
+                            "dst_ip":str(action.parameters["target_host"].ip),
+                            "dst_service":"",
+                            "to_network":str(action.parameters["target_network"])
+                        }
+                }
+            case "ActionType.FindData":
+                pass
+            case "ActionType.ExploitServices":
+                pass
+            case "ActionType.ExfiltrateData":
+                pass
         self.logger.debug(f"\t{action_dict}")
         return action_dict
     
