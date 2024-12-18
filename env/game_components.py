@@ -42,6 +42,11 @@ class IP():
     def __repr__(self):
         return self.ip
 
+    def __eq__(self, other):
+        if not isinstance(other, IP):
+            return NotImplemented
+        return self.ip == other.ip
+        
     def is_private(self):
         """
         Return if the IP is private or not
@@ -482,7 +487,28 @@ class GameStatus(enum.Enum):
     def __repr__(self) -> str:
         return str(self)
 if __name__ == "__main__":
-    pass
+    import asyncio
+
+    async def create_ip(ip_str):
+        return IP(ip_str)
+
+    async def main():
+        ip_address = '192.168.0.1'
+        task1 = asyncio.create_task(create_ip(ip_address))
+        task2 = asyncio.create_task(create_ip(ip_address))
+
+        ip1 = await task1
+        ip2 = await task2
+
+        print(f"ip1 == ip2: {ip1 == ip2}")           # Expected: True
+        print(f"hash(ip1) == hash(ip2): {hash(ip1) == hash(ip2)}")  # Expected: True
+        print(f"ip1 is ip2: {ip1 is ip2}")           # Expected: False (different instances)
+
+        ip_set = set()
+        ip_set.add(ip1)
+        print(f"ip2 in ip_set: {ip2 in ip_set}")     # Expected: True
+
+    asyncio.run(main())
     #data1 = Data(owner="test", id="test_data", content="content", type="db")
     #data2 = Data(owner="test", id="test_data", content="content", type="db")
     # print(data)
