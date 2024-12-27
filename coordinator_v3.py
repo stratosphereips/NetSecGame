@@ -41,7 +41,7 @@ class AgentStatus(str, enum.Enum):
 
 
 class GameCoordinator:
-    def __init__(self, game_host: str, game_port: int, service_host, service_port, world_type) -> None:
+    def __init__(self, game_host: str, game_port: int, service_host, service_port, world_type, allowed_roles=["Attacker", "Defender", "Benign"]) -> None:
         self.host = game_host
         self.port = game_port
         self._service_host = service_host
