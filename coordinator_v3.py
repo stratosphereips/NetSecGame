@@ -97,20 +97,20 @@ class GameCoordinator:
         asyncio.run(self.start_tasks())
 
     async def _fetch_initialization_objects(self):
-        """Send a REST request to MAIN and fetch initialization objects."""
+        """Send a REST request to MAIN and fetch initialization objects of CYST simulator."""
         async with ClientSession() as session:
-            #try:
-            async with session.get(f"http://{self._service_host}:{self._service_port}/cyst_init_objects") as response:
-                if response.status == 200:
-                    response = await response.json()
-                    self.logger.debug(response)
-                    env = Environment.create()
-                    self._cyst_objects = env.configuration.general.load_configuration(response)
-                    self.logger.debug(f"Initialization objects received:{self._cyst_objects}")
-                else:
-                    self.logger.error(f"Failed to fetch initialization objects. Status: {response.status}")
-            #except Exception as e:
-            #    self.logger.error(f"Error fetching initialization objects: {e}")
+            try:
+                async with session.get(f"http://{self._service_host}:{self._service_port}/cyst_init_objects") as response:
+                    if response.status == 200:
+                        response = await response.json()
+                        self.logger.debug(response)
+                        env = Environment.create()
+                        self._cyst_objects = env.configuration.general.load_configuration(response)
+                        self.logger.debug(f"Initialization objects received:{self._cyst_objects}")
+                    else:
+                        self.logger.error(f"Failed to fetch initialization objects. Status: {response.status}")
+            except Exception as e:
+               self.logger.error(f"Error fetching initialization objects: {e}")
 
     async def start_tcp_server(self):
         try:
