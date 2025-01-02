@@ -22,24 +22,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment
 
-@enum.unique
-class AgentStatus(str, enum.Enum):
-    """
-    Class representing the current status for each agent connected to the coordinator
-    """
-    JoinRequested = "JoinRequested"
-    Ready = "Ready"
-    Playing = "Playing"
-    PlayingActive = "PlayingActive"
-    FinishedMaxSteps = "FinishedMaxSteps"
-    FinishedBlocked = "FinishedBlocked"
-    FinishedGoalReached = "FinishedGoalReached"
-    FinishedGameLost = "FinishedGameLost"
-    ResetRequested = "ResetRequested"
-    Quitting = "Quitting"
-
-
-
 class GameCoordinator:
     def __init__(self, game_host: str, game_port: int, service_host, service_port, world_type, allowed_roles=["Attacker", "Defender", "Benign"]) -> None:
         self.host = game_host
@@ -53,6 +35,9 @@ class GameCoordinator:
         self._cyst_object_string = None
         self._tasks = set()
         self.shutdown_flag = asyncio.Event()
+        self._reset_event = asyncio.Event()
+        self._reset_lock = asyncio.Lock()
+        self._agents_lock = asyncio.Lock()
         self._semaphore = asyncio.Semaphore(2) 
         
         # prepare agent communication
@@ -72,8 +57,6 @@ class GameCoordinator:
         self._agent_states = {}
         # last action played by agent (Action)
         self._agent_last_action = {}
-        # agent status dict {agent_addr: AgentStatus}
-        self._agent_statuses = {}
         # agent status dict {agent_addr: int}
         self._agent_rewards = {}
         # trajectories per agent_addr
@@ -266,9 +249,14 @@ class GameCoordinator:
                             self.logger.debug(f"{action.type}, {action.type.value}, {action.type == ActionType.JoinGame}")
                             await self.spawn_task(self._process_join_game_action, agent_addr, action)
                         case ActionType.QuitGame:
-                            self.logger.info(f"Coordinator received from QUIT message from agent {agent_addr}")
-                            # forward the message to the world
-                            await self.spawn_task(self._process_quit_game_action, agent_addr, action)
+                            self.logger.debug(f"Start processing of ActionType.QuitGame by {agent_addr}")
+                            await self.spawn_task(self._process_quit_game_action, agent_addr)
+                        case ActionType.ResetGame:
+                            self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
+                            await self.spawn_task(self._process_reset_game_action, agent_addr, action)
+                        case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
+                            self.logger.debug(f"Start processing of{action.type} by {agent_addr}")
+                            await self.spawn_task(self._process_game_action, agent_addr, action)
                         # case ActionType.ResetGame:
                         #     self._reset_requests[agent_addr] = True
                         #     self._agent_statuses[agent_addr] = AgentStatus.ResetRequested
@@ -286,7 +274,7 @@ class GameCoordinator:
                         # case _:
                         #     # actions in the game
                         #     await self._process_generic_action(agent_addr, action)
-                #await asyncio.sleep(0.5)
+                    await asyncio.sleep(0.001)
         except asyncio.CancelledError:
            self.logger.info("Coordinator run cancelled")
         finally:
@@ -307,80 +295,111 @@ class GameCoordinator:
         try:
             async with self._semaphore:
                 self.logger.info(f"New Join request by  {agent_addr}.")
-                async with asyncio.Lock():
-                    if agent_addr not in self.agents:
-                        agent_name = action.parameters["agent_info"].name
-                        agent_role = action.parameters["agent_info"].role
-                        if agent_role in self.ALLOWED_ROLES:
-                            # add agent to the world
-                            new_agent_game_state = self.register_agent(agent_addr, agent_role)
-                            if new_agent_game_state: # successful registration
+                if agent_addr not in self.agents:
+                    agent_name = action.parameters["agent_info"].name
+                    agent_role = action.parameters["agent_info"].role
+                    if agent_role in self.ALLOWED_ROLES:
+                        # add agent to the world
+                        new_agent_game_state = await self.register_agent(agent_addr, agent_role)
+                        if new_agent_game_state: # successful registration
+                            async with self._agents_lock:
                                 self.agents[agent_addr] = (agent_name, agent_role)
                                 observation = self._initialize_new_player(agent_addr, new_agent_game_state)
-                                agent_name, agent_role = self.agents[agent_addr]
-                                output_message_dict = {
-                                    "to_agent": agent_addr,
-                                    "status": str(GameStatus.CREATED),
-                                    "observation": observation_as_dict(observation),
-                                    "message": {
-                                        "message": f"Welcome {agent_name}, registred as {agent_role}",
-                                        "max_steps": self._steps_limit_per_role[agent_role],
-                                        "goal_description": self._goal_description_per_role[agent_role],
-                                        "actions": [str(a) for a in ActionType],
-                                        "configuration_hash": self._CONFIG_FILE_HASH
-                                        },
-                                }
-                                # await self._world_action_queue.put((agent_addr, Action(action_type=ActionType.JoinGame, params=action.parameters), self._starting_positions_per_role[agent_role]))
-                                await self._agent_response_queues[agent_addr].put(self.convert_msg_dict_to_json(output_message_dict))
-                        else:
-                            self.logger.info(
-                                f"\tError in registration, unknown agent role: {agent_role}!"
-                            )
                             output_message_dict = {
                                 "to_agent": agent_addr,
-                                "status": str(GameStatus.BAD_REQUEST),
-                                "message": f"Incorrect agent_role {agent_role}",
+                                "status": str(GameStatus.CREATED),
+                                "observation": observation_as_dict(observation),
+                                "message": {
+                                    "message": f"Welcome {agent_name}, registred as {agent_role}",
+                                    "max_steps": self._steps_limit_per_role[agent_role],
+                                    "goal_description": self._goal_description_per_role[agent_role],
+                                    "actions": [str(a) for a in ActionType],
+                                    "configuration_hash": self._CONFIG_FILE_HASH
+                                    },
                             }
-                            response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
-                            await self._agent_response_queues[agent_addr].put(response_msg_json)
+                            # await self._world_action_queue.put((agent_addr, Action(action_type=ActionType.JoinGame, params=action.parameters), self._starting_positions_per_role[agent_role]))
+                            await self._agent_response_queues[agent_addr].put(self.convert_msg_dict_to_json(output_message_dict))
                     else:
-                        self.logger.info("\tError in registration, agent already exists!")
+                        self.logger.info(
+                            f"\tError in registration, unknown agent role: {agent_role}!"
+                        )
                         output_message_dict = {
-                                "to_agent": agent_addr,
-                                "status": str(GameStatus.BAD_REQUEST),
-                                "message": "Agent already exists.",
-                            }
+                            "to_agent": agent_addr,
+                            "status": str(GameStatus.BAD_REQUEST),
+                            "message": f"Incorrect agent_role {agent_role}",
+                        }
                         response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
                         await self._agent_response_queues[agent_addr].put(response_msg_json)
+                else:
+                    self.logger.info("\tError in registration, agent already exists!")
+                    output_message_dict = {
+                            "to_agent": agent_addr,
+                            "status": str(GameStatus.BAD_REQUEST),
+                            "message": "Agent already exists.",
+                        }
+                    response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                    await self._agent_response_queues[agent_addr].put(response_msg_json)
         except asyncio.CancelledError:
             self.logger.debug(f"Proccessing JoinAction of agent {agent_addr} interrupted")
             raise  # Ensure the exception propagates
         finally:
             self.logger.debug(f"Cleaning up after JoinGame for {agent_addr}.")
     
-    async def _process_quit_game_action(self, agent_addr: tuple, action: Action)->None:
+    async def _process_quit_game_action(self, agent_addr: tuple)->None:
         """
         Method for processing Action of type ActionType.QuitGame
         Inputs: 
             -   agent_addr (tuple)
-            -   JoingGame Action
         Outputs: None
         """
         try:
-            self.logger.info(f"New Quit request by  {agent_addr}.")
-            async with asyncio.Lock():
-                if agent_addr in self.agents:
-                    # notify the world the world
-                    self.remove_agent(agent_addr, self._agent_states[agent_addr])
-                    agent_info = self._remove_agent_from_game(agent_addr)
-                    self.logger.info(f"Agent {agent_addr} ({agent_info}) removed from the game")
-                else:
-                    self.logger.info("\tError in when removing, agent does not exist!")
+            await self.remove_agent(agent_addr, self._agent_states[agent_addr])
+            agent_info = await self._remove_agent_from_game(agent_addr)
+            self.logger.info(f"Agent {agent_addr} removed from the game. {agent_info}")
         except asyncio.CancelledError:
             self.logger.debug(f"Proccessing QuitAction of agent {agent_addr} interrupted")
             raise  # Ensure the exception propagates
         finally:
             self.logger.debug(f"Cleaning up after QuitGame for {agent_addr}.")
+    
+    async def _process_reset_game_action(self, agent_addr: tuple, action:Action)->None:
+        async with self._reset_lock:
+             # add reset request for this agent
+            self._reset_requests[agent_addr] = True
+            if all(self._reset_requests.values()):
+                # all agents want reset - reset the world
+                new_state = self.reset_agent(agent_addr)
+                self._reset_event.set()
+        # wait until the event is set
+        await self._reset_event.wait()
+        new_state = await self.reset_agent(agent_addr)
+        new_observation = Observation(self._agent_states[agent_addr], 0, False, {})
+        async with self._agents_lock:
+            self._agent_states[agent_addr] = new_state
+            self._agent_observations[agent_addr] = new_observation
+        output_message_dict = {
+            "to_agent": agent_addr,
+            "status": str(GameStatus.RESET_DONE),
+            "observation": observation_as_dict(new_observation),
+            "message": {
+                        "message": "Resetting Game and starting again.",
+                        "max_steps": self._steps_limit_per_role[self.agents[agent_addr][1]],
+                        "goal_description": self._goal_description_per_role[self.agents[agent_addr][1]],
+                         "configuration_hash": self._CONFIG_FILE_HASH
+                        },
+        }
+        response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+        await self._agent_response_queues[agent_addr].put(response_msg_json)
+        self.logger.debug("Reset approved by all agents")
+        async with self._reset_lock:
+            # remove reset request for this agent
+            self._reset_requests[agent_addr] = False
+            if not any(self._reset_requests.values()):
+                # all agents resetted.Clear the rest event
+                self._reset_event.clear()
+
+    async def _process_game_action(self, agent_addr: tuple, action:Action)->None:
+        pass
     
     def _initialize_new_player(self, agent_addr:tuple, agent_current_state:GameState) -> Observation:
         """
@@ -392,7 +411,6 @@ class GameCoordinator:
         self._agent_steps[agent_addr] = 0
         self._reset_requests[agent_addr] = False
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
-        self._agent_statuses[agent_addr] = AgentStatus.PlayingActive if agent_role == "Attacker" else AgentStatus.Playing
         self._agent_states[agent_addr] = agent_current_state
 
         if self.task_config.get_store_trajectories() or self._use_global_defender:
@@ -400,36 +418,44 @@ class GameCoordinator:
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
-    def register_agent(self, agent_addr:tuple, agent_role:str)->GameState:
+    async def register_agent(self, agent_addr:tuple, agent_role:str)->GameState:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         """
         self.logger.debug("Registering agent in the world.")
         return GameState()
     
-    def remove_agent(self, agent_addr:tuple, agent_state:GameState)->GameState:
+    async def remove_agent(self, agent_addr:tuple, agent_state:GameState)->bool:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         """
         self.logger.debug("Registering agent in the world.")
         return True
     
-    def _remove_agent_from_game(self, agent_addr):
+    async def reset_agent(self, agent_addr)->GameState:
+        return GameState()
+
+    async def _remove_agent_from_game(self, agent_addr):
         """
         Removes player from the game. Should be called AFTER QuitGame action was processed by the world.
         """
         self.logger.info(f"Removing player {agent_addr} from the GameCoordinator")
         agent_info = {}
-        if agent_addr in self.agents:
-            agent_info["state"] = self._agent_states.pop(agent_addr)
-            agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
-            agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
-            agent_info["end_reward"] = self._agent_rewards.pop(agent_addr, None)
-            agent_info["agent_info"] = self.agents.pop(agent_addr)
-            self.logger.debug(f"\t{agent_info}")
-        else:
-            self.logger.info(f"\t Player {agent_addr} not present in the game!")
-        return agent_info
+        async with self._agents_lock:
+            if agent_addr in self.agents:
+                agent_info["state"] = self._agent_states.pop(agent_addr)
+                agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
+                async with self._reset_lock:
+                    agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
+                    # check if this agent was not preventing reset 
+                    if any(self._reset_requests.values()):
+                        self._reset_event.set()
+                agent_info["end_reward"] = self._agent_rewards.pop(agent_addr, None)
+                agent_info["agent_info"] = self.agents.pop(agent_addr)
+                self.logger.debug(f"\t{agent_info}")
+            else:
+                self.logger.info(f"\t Player {agent_addr} not present in the game!")
+            return agent_info
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -447,7 +473,7 @@ if __name__ == "__main__":
         type=str,
         default="DEBUG",
     )
-
+    
     parser.add_argument(
         "-w",
         "--world_type",
@@ -457,7 +483,7 @@ if __name__ == "__main__":
         type=str,
         default="cyst",
     )
-
+    
     parser.add_argument(
         "-gh",
         "--game_host",
@@ -467,6 +493,7 @@ if __name__ == "__main__":
         type=str,
         default="127.0.0.1",
     )
+    
     parser.add_argument(
         "-gp",
         "--game_port",
@@ -476,6 +503,7 @@ if __name__ == "__main__":
         type=int,
         default="9000",
     )
+    
     parser.add_argument(
         "-sh",
         "--service_host",
@@ -485,6 +513,7 @@ if __name__ == "__main__":
         type=str,
         default="127.0.0.1",
     )
+    
     parser.add_argument(
         "-sp",
         "--service_port",
@@ -514,6 +543,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
   
-    ai_dojo = GameCoordinator(args.game_host, args.game_port, args.service_host , args.service_port, args.world_type)
+    game_server = GameCoordinator(args.game_host, args.game_port, args.service_host , args.service_port, args.world_type)
     # Run it!
-    ai_dojo.run()
+    game_server.run()
