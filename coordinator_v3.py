@@ -264,13 +264,11 @@ class GameCoordinator:
                         case ActionType.JoinGame:
                             self.logger.debug(f"Start processing of ActionType.JoinGame by {agent_addr}")
                             self.logger.debug(f"{action.type}, {action.type.value}, {action.type == ActionType.JoinGame}")
-                            await  self.spawn_task(self._process_join_game_action, agent_addr, action)
-                        # case ActionType.QuitGame:
-                        #     self.logger.info(f"Coordinator received from QUIT message from agent {agent_addr}")
-                        #     # update agent status
-                        #     self._agent_statuses[agent_addr] = AgentStatus.Quitting
-                        #     # forward the message to the world
-                        #     await self._world_action_queue.put((agent_addr, action, self._agent_states[agent_addr]))
+                            await self.spawn_task(self._process_join_game_action, agent_addr, action)
+                        case ActionType.QuitGame:
+                            self.logger.info(f"Coordinator received from QUIT message from agent {agent_addr}")
+                            # forward the message to the world
+                            await self.spawn_task(self._process_quit_game_action, agent_addr, action)
                         # case ActionType.ResetGame:
                         #     self._reset_requests[agent_addr] = True
                         #     self._agent_statuses[agent_addr] = AgentStatus.ResetRequested
@@ -358,7 +356,31 @@ class GameCoordinator:
             self.logger.debug(f"Proccessing JoinAction of agent {agent_addr} interrupted")
             raise  # Ensure the exception propagates
         finally:
-            self.logger.debug(f"Cleaning up JoinGame for {agent_addr}.")
+            self.logger.debug(f"Cleaning up after JoinGame for {agent_addr}.")
+    
+    async def _process_quit_game_action(self, agent_addr: tuple, action: Action)->None:
+        """
+        Method for processing Action of type ActionType.QuitGame
+        Inputs: 
+            -   agent_addr (tuple)
+            -   JoingGame Action
+        Outputs: None
+        """
+        try:
+            self.logger.info(f"New Quit request by  {agent_addr}.")
+            async with asyncio.Lock():
+                if agent_addr in self.agents:
+                    # notify the world the world
+                    self.remove_agent(agent_addr, self._agent_states[agent_addr])
+                    agent_info = self._remove_agent_from_game(agent_addr)
+                    self.logger.info(f"Agent {agent_addr} ({agent_info}) removed from the game")
+                else:
+                    self.logger.info("\tError in when removing, agent does not exist!")
+        except asyncio.CancelledError:
+            self.logger.debug(f"Proccessing QuitAction of agent {agent_addr} interrupted")
+            raise  # Ensure the exception propagates
+        finally:
+            self.logger.debug(f"Cleaning up after QuitGame for {agent_addr}.")
     
     def _initialize_new_player(self, agent_addr:tuple, agent_current_state:GameState) -> Observation:
         """
@@ -378,12 +400,36 @@ class GameCoordinator:
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
-    def register_agent(self, agent_addr:tuple, agent_role=str)->GameState:
+    def register_agent(self, agent_addr:tuple, agent_role:str)->GameState:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         """
         self.logger.debug("Registering agent in the world.")
         return GameState()
+    
+    def remove_agent(self, agent_addr:tuple, agent_state:GameState)->GameState:
+        """
+        Domain specific method of the environment. Creates the initial state of the agent.
+        """
+        self.logger.debug("Registering agent in the world.")
+        return True
+    
+    def _remove_agent_from_game(self, agent_addr):
+        """
+        Removes player from the game. Should be called AFTER QuitGame action was processed by the world.
+        """
+        self.logger.info(f"Removing player {agent_addr} from the GameCoordinator")
+        agent_info = {}
+        if agent_addr in self.agents:
+            agent_info["state"] = self._agent_states.pop(agent_addr)
+            agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
+            agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
+            agent_info["end_reward"] = self._agent_rewards.pop(agent_addr, None)
+            agent_info["agent_info"] = self.agents.pop(agent_addr)
+            self.logger.debug(f"\t{agent_info}")
+        else:
+            self.logger.info(f"\t Player {agent_addr} not present in the game!")
+        return agent_info
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
