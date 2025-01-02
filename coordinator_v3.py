@@ -366,9 +366,10 @@ class GameCoordinator:
         async with self._reset_lock:
              # add reset request for this agent
             self._reset_requests[agent_addr] = True
+            self.logger.warning(self._reset_requests.values())
             if all(self._reset_requests.values()):
                 # all agents want reset - reset the world
-                new_state = self.reset_agent(agent_addr)
+                new_state = await self.reset_agent(agent_addr)
                 self._reset_event.set()
         # wait until the event is set
         await self._reset_event.wait()
@@ -396,6 +397,7 @@ class GameCoordinator:
             self._reset_requests[agent_addr] = False
             if not any(self._reset_requests.values()):
                 # all agents resetted.Clear the rest event
+                self.logger.debug(f"Clearing the reset event.{agent_addr}")
                 self._reset_event.clear()
 
     async def _process_game_action(self, agent_addr: tuple, action:Action)->None:
