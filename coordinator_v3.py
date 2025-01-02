@@ -85,12 +85,15 @@ class GameCoordinator:
             self._agent_response_queues[addr] = asyncio.Queue()
             self.logger.info(f"Created queue for agent {addr}. {len(self._agent_response_queues)} queues in total.")
 
-    async def _send_REST_request(self, request_dict)->dict:
-        async with ClientSession() as session:
-            async with session.post(f"{self._service_host}:{self._service_port}/coordinator", json=request_dict) as resp:
-                response = await resp.json()
-            print("MAIN response:", response)
-            return response
+    def convert_msg_dict_to_json(self, msg_dict)->str:
+            try:
+                # Convert message into string representation
+                output_message = json.dumps(msg_dict)
+            except Exception as e:
+                self.logger.error(f"Error when converting msg to Json:{e}")
+                raise e
+                # Send to anwer_queue
+            return output_message
     
     def run(self)->None:
         """
@@ -107,6 +110,7 @@ class GameCoordinator:
                         response = await response.json()
                         self.logger.debug(response)
                         env = Environment.create()
+                        self._CONFIG_FILE_HASH = hash(response)
                         self._cyst_objects = env.configuration.general.load_configuration(response)
                         self.logger.debug(f"Initialization objects received:{self._cyst_objects}")
                     else:
@@ -114,6 +118,65 @@ class GameCoordinator:
             except Exception as e:
                self.logger.error(f"Error fetching initialization objects: {e}")
 
+    def _get_starting_position_per_role(self)->dict:
+        """
+        Method for finding starting position for each agent role in the game.
+        """
+        starting_positions = {}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                starting_positions[agent_role] = self.task_config.get_start_position(agent_role=agent_role)
+                self.logger.info(f"Starting position for role '{agent_role}': {starting_positions[agent_role]}")
+            except KeyError:
+                starting_positions[agent_role] = {}
+        return starting_positions
+    
+    def _get_win_condition_per_role(self)-> dict:
+        """
+        Method for finding wininng conditions for each agent role in the game.
+        """
+        win_conditions = {}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                # win_conditions[agent_role] = self._world.update_goal_dict(
+                #     self.task_config.get_win_conditions(agent_role=agent_role)
+                # )
+                win_conditions[agent_role] = self.task_config.get_win_conditions(agent_role=agent_role)
+            except KeyError:
+                win_conditions[agent_role] = {}
+            self.logger.info(f"Win condition for role '{agent_role}': {win_conditions[agent_role]}")
+        return win_conditions
+    
+    def _get_goal_description_per_role(self)->dict:
+        """
+        Method for finding goal description for each agent role in the game.
+        """
+        goal_descriptions ={}
+        for agent_role in self.ALLOWED_ROLES:
+            try:
+                goal_descriptions[agent_role] = self.task_config.get_goal_description(agent_role=agent_role)
+            except KeyError:
+                goal_descriptions[agent_role] = ""
+            self.logger.info(f"Goal description for role '{agent_role}': {goal_descriptions[agent_role]}")
+        return goal_descriptions
+    
+    def _get_max_steps_per_role(self)->dict:
+        """
+        Method for finding max amount of steps in 1 episode for each agent role in the game.
+        """
+        max_steps = {
+            "Attacker":20,
+            "Defender":20,
+            "Benign":20,
+        }
+        # for agent_role in self.ALLOWED_ROLES:
+        #     try:
+        #         max_steps[agent_role] = self.task_config.get_max_steps(agent_role)
+        #     except KeyError:
+        #         max_steps[agent_role] = None
+        #     self.logger.info(f"Max steps in episode for '{agent_role}': {max_steps[agent_role]}")
+        return max_steps
+    
     async def start_tcp_server(self):
         try:
             self.logger.info("Starting the server listening for agents")
@@ -147,12 +210,22 @@ class GameCoordinator:
         - Creates queues
         - Start the main part of the coordinator
         - Start a server that listens for agents
-        """      
+        """
+        # initialize the game
         self.logger.info("Requesting CYST configuration")
         if self._world_type == "cyst":
             await self._fetch_initialization_objects()
         else: # read it from a file
             pass
+        
+        ##### REMOVE LATER #####
+        self.task_config = ConfigParser("./env/netsecevn_conf_cyst_integration.yaml")
+        self._starting_positions_per_role = self._get_starting_position_per_role()
+        self._win_conditions_per_role = self._get_win_condition_per_role()
+        self._goal_description_per_role = self._get_goal_description_per_role()
+        self._steps_limit_per_role = self._get_max_steps_per_role()
+        self._use_global_defender = self.task_config.get_use_global_defender()
+
 
         # start server for agent communication
         tcp_server_task = asyncio.create_task(self.start_tcp_server())
@@ -212,53 +285,60 @@ class GameCoordinator:
             self.logger.info("GameCoordinator termination completed")
 
     async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
-        """ "
+        """
         Method for processing Action of type ActionType.JoinGame
+        Inputs: 
+            -   agent_addr (tuple)
+            -   JoingGame Action
+        Outputs: None
         """
         async with self._semaphore:
             self.logger.info(f"New Join request by  {agent_addr}.")
-            if agent_addr not in self.agents:
-                agent_name = action.parameters["agent_info"].name
-                agent_role = action.parameters["agent_info"].role
-                if agent_role in self.ALLOWED_ROLES:
-                    self.agents[agent_addr] = (agent_name, agent_role)
-                    self._agent_statuses[agent_addr] = AgentStatus.JoinRequested
-                    new_agent_game_state = await self.register_agent(agent_addr, agent_role, self._starting_positions_per_role[agent_role])
-                    observation = self._initialize_new_player(agent_addr, new_agent_game_state)
-                    agent_name, agent_role = self.agents[agent_addr]
-                    output_message_dict = {
-                        "to_agent": agent_addr,
-                        "status": str(GameStatus.CREATED),
-                        "observation": observation_as_dict(observation),
-                        "message": {
-                            "message": f"Welcome {agent_name}, registred as {agent_role}",
-                            "max_steps": self._steps_limit_per_role[agent_role],
-                            "goal_description": self._goal_description_per_role[agent_role],
-                            "actions": [str(a) for a in ActionType],
-                            "configuration_hash": self._CONFIG_FILE_HASH
-                            },
-                    }
-                    # await self._world_action_queue.put((agent_addr, Action(action_type=ActionType.JoinGame, params=action.parameters), self._starting_positions_per_role[agent_role]))
+            async with asyncio.Lock():
+                if agent_addr not in self.agents:
+                    agent_name = action.parameters["agent_info"].name
+                    agent_role = action.parameters["agent_info"].role
+                    if agent_role in self.ALLOWED_ROLES:
+                        # add agent to the world
+                        new_agent_game_state = self.register_agent(agent_addr, agent_role)
+                        if new_agent_game_state: # successful registration
+                            self.agents[agent_addr] = (agent_name, agent_role)
+                            observation = self._initialize_new_player(agent_addr, new_agent_game_state)
+                            agent_name, agent_role = self.agents[agent_addr]
+                            output_message_dict = {
+                                "to_agent": agent_addr,
+                                "status": str(GameStatus.CREATED),
+                                "observation": observation_as_dict(observation),
+                                "message": {
+                                    "message": f"Welcome {agent_name}, registred as {agent_role}",
+                                    "max_steps": self._steps_limit_per_role[agent_role],
+                                    "goal_description": self._goal_description_per_role[agent_role],
+                                    "actions": [str(a) for a in ActionType],
+                                    "configuration_hash": self._CONFIG_FILE_HASH
+                                    },
+                            }
+                            # await self._world_action_queue.put((agent_addr, Action(action_type=ActionType.JoinGame, params=action.parameters), self._starting_positions_per_role[agent_role]))
+                            await self._agent_response_queues[agent_addr].put(self.convert_msg_dict_to_json(output_message_dict))
+                    else:
+                        self.logger.info(
+                            f"\tError in registration, unknown agent role: {agent_role}!"
+                        )
+                        output_message_dict = {
+                            "to_agent": agent_addr,
+                            "status": str(GameStatus.BAD_REQUEST),
+                            "message": f"Incorrect agent_role {agent_role}",
+                        }
+                        response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                        await self._agent_response_queues[agent_addr].put(response_msg_json)
                 else:
-                    self.logger.info(
-                        f"\tError in registration, unknown agent role: {agent_role}!"
-                    )
+                    self.logger.info("\tError in registration, agent already exists!")
                     output_message_dict = {
-                        "to_agent": agent_addr,
-                        "status": str(GameStatus.BAD_REQUEST),
-                        "message": f"Incorrect agent_role {agent_role}",
-                    }
+                            "to_agent": agent_addr,
+                            "status": str(GameStatus.BAD_REQUEST),
+                            "message": "Agent already exists.",
+                        }
                     response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
-                    await self._answers_queues[agent_addr].put(response_msg_json)
-            else:
-                self.logger.info("\tError in registration, agent already exists!")
-                output_message_dict = {
-                        "to_agent": agent_addr,
-                        "status": str(GameStatus.BAD_REQUEST),
-                        "message": "Agent already exists.",
-                    }
-                response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
-                await self._answers_queues[agent_addr].put(response_msg_json)
+                    await self._agent_response_queues[agent_addr].put(response_msg_json)
 
     def _initialize_new_player(self, agent_addr:tuple, agent_current_state:GameState) -> Observation:
         """
@@ -277,6 +357,14 @@ class GameCoordinator:
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
+
+
+    def register_agent(self, agent_addr:tuple, agent_role=str)->GameState:
+        """
+        Domain specific method of the environment. Creates the initial state of the agent.
+        """
+        self.logger.debug("Registering agent in the world.")
+        return GameState()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
