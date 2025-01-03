@@ -416,7 +416,6 @@ class GameCoordinator:
                 self._episode_ends[agent_addr] = any([goal_reached, detected,timeout_reached])
                 # check if this is the last agent that was playing
                 if all(self._episode_ends.values()):
-                    self.assign_episode_rewards()
                     self._episode_end_event.set()
             if self._episode_ends[agent_addr]:
                 async with self._episode_rewards_condition:
@@ -441,8 +440,11 @@ class GameCoordinator:
             async with self._agents_lock:
                 for agent in self.agents:
                     self.logger.debug(f"Processing reward for agent {agent}")          
+            # clear the episode end event
+            self._episode_end_event.clear()
             # notify all waiting agents
-            self._episode_rewards_condition.notify_all()
+            async with self._episode_rewards_condition:
+                self._episode_rewards_condition.notify_all()
     
     async def _reset_game(self):
         """Task that waits for all agents to request resets"""
@@ -512,10 +514,13 @@ class GameCoordinator:
                 agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
                 async with self._reset_lock:
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
-                    agent_info["episode_end"] = self._episode_ends.pop(agent_addr)
                     # check if this agent was not preventing reset 
                     if any(self._reset_requests.values()):
                         self._reset_event.set()
+                    agent_info["episode_end"] = self._episode_ends.pop(agent_addr)
+                    #check if this agent was not preventing episode end
+                    if all(self._episode_ends.values()):
+                        self._episode_end_event.set()
                 agent_info["end_reward"] = self._agent_rewards.pop(agent_addr, None)
                 agent_info["agent_info"] = self.agents.pop(agent_addr)
                 self.logger.debug(f"\t{agent_info}")
