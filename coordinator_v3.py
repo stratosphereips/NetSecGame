@@ -439,7 +439,8 @@ class GameCoordinator:
             self.logger.info("Episode finished. Assigning final rewards to agents.")
             async with self._agents_lock:
                 for agent in self.agents:
-                    self.logger.debug(f"Processing reward for agent {agent}")          
+                    self.logger.debug(f"Processing reward for agent {agent}")
+                    # TODO assign rewards          
             # clear the episode end event
             self._episode_end_event.clear()
             # notify all waiting agents
@@ -453,6 +454,7 @@ class GameCoordinator:
             # wait until episode is finished by all agents
             await self._reset_event.wait()
             self.logger.info("Resetting game to initial state.")
+            await self.reset()
             for agent in self.agents:
                 self.logger.debug(f"Resetting agent {agent}")
                 new_state = await self.reset_agent(agent)
@@ -530,6 +532,44 @@ class GameCoordinator:
 
     async def step(self, agent_addr, agent_state):
         return GameState()
+    
+    async def reset(self):
+        return True
+
+    def goal_check(self, agent_addr:tuple)->bool:
+        """
+        Check if the goal conditons were satisfied in a given game state
+        """
+        def goal_dict_satistfied(goal_dict:dict, known_dict: dict)-> bool:
+            """
+            Helper function for checking if a goal dictionary condition is satisfied
+            """
+            # check if we have all IPs that should have some values (are keys in goal_dict)
+            if goal_dict.keys() <= known_dict.keys():
+                try:
+                    # Check if values (sets) for EACH key (host) in goal_dict are subsets of known_dict, keep matching_keys
+                    matching_keys = [host for host in goal_dict.keys() if goal_dict[host]<= known_dict[host]]
+                    # Check we have the amount of mathing keys as in the goal_dict
+                    if len(matching_keys) == len(goal_dict.keys()):
+                        return True
+                except KeyError:
+                    # some keys are missing in the known_dict
+                    return False
+            return False
+        self.logger.debug("Checking goal for agent {aget_addr}.")
+        goal_conditions = self._win_conditions_per_role[self.agents[agent_addr][1]]
+        state = self._agent_states[agent_addr]
+        # For each part of the state of the game, check if the conditions are met
+        goal_reached = {}    
+        goal_reached["networks"] = set(goal_conditions["known_networks"]) <= set(state.known_networks)
+        goal_reached["known_hosts"] = set(goal_conditions["known_hosts"]) <= set(state.known_hosts)
+        goal_reached["controlled_hosts"] = set(goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
+        goal_reached["services"] = goal_dict_satistfied(goal_conditions["known_services"], state.known_services)
+        goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
+        goal_reached["known_blocks"] = goal_dict_satistfied(goal_conditions["known_blocks"], state.known_blocks)
+        self.logger.debug(f"\t{goal_reached}")
+        return all(goal_reached.values())
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
