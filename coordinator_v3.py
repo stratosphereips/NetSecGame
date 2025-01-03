@@ -293,7 +293,7 @@ class GameCoordinator:
                     agent_role = action.parameters["agent_info"].role
                     if agent_role in self.ALLOWED_ROLES:
                         # add agent to the world
-                        new_agent_game_state, status = await self.register_agent(agent_addr, agent_role)
+                        new_agent_game_state, status = await self.register_agent(agent_addr, agent_role, self._agent_starting_position[agent_role])
                         if new_agent_game_state: # successful registration
                             async with self._agents_lock:
                                 self.agents[agent_addr] = (agent_name, agent_role)
