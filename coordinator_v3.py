@@ -31,6 +31,11 @@ class GameCoordinator:
         self.logger = logging.getLogger("AIDojo-GameCoordinator")
         self._world_type = world_type
         self.ALLOWED_ROLES = allowed_roles
+        self._rewards = {
+            "step":-1,
+            "win":100,
+            "loss":-10,
+        }
         self._cyst_objects = None
         self._cyst_object_string = None
         self._tasks = set()
@@ -229,7 +234,7 @@ class GameCoordinator:
         self._goal_description_per_role = self._get_goal_description_per_role()
         self._steps_limit_per_role = self._get_max_steps_per_role()
         self._use_global_defender = self.task_config.get_use_global_defender()
-
+        ########################
 
         # start server for agent communication
         await  self.spawn_task(self.start_tcp_server)
@@ -409,9 +414,9 @@ class GameCoordinator:
             # update agent's values
             async with self._agents_lock:
                 goal_reached = self.goal_check(agent_addr, new_state)
-                detected = self.detected(agent_addr, new_state)
+                detected = self.is_detected(agent_addr, new_state)
                 timeout_reached = self._agent_steps[agent_addr] >= self._steps_limit_per_role[self.agents[agent_addr][1]]
-                self._agent_rewards[agent_addr] = self._assign_reward(agent_addr, goal_reached, detected, timeout_reached)
+                self._agent_rewards[agent_addr] = self.assign_reward(agent_addr, goal_reached, detected, timeout_reached)
                 # check if the episode ends for this agent
                 self._episode_ends[agent_addr] = any([goal_reached, detected,timeout_reached])
                 # check if this is the last agent that was playing
@@ -570,6 +575,14 @@ class GameCoordinator:
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
+    def is_detected(self, agent_addr:tuple)->bool:
+        return False
+
+    def assign_reward(self, goal_reached, detected, timeout_reached):
+        reward = self._rewards["step"]
+        reward += self._rewards["win"] if goal_reached else 0
+        reward += self._rewards["loss"] if detected else 0
+        return reward
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
