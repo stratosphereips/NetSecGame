@@ -3,22 +3,14 @@ import argparse
 import logging
 import json
 import asyncio
-import enum
 from datetime import datetime
-from env.worlds.network_security_game import NetworkSecurityEnvironment
-from env.worlds.network_security_game_real_world import NetworkSecurityEnvironmentRealWorld
-from env.worlds.aidojo_world import AIDojoWorld
-from env.worlds.cyst_wrapper import CYSTWrapper
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState
 from utils.utils import observation_as_dict, get_logging_level, get_file_hash
 from pathlib import Path
 import os
-import signal
-from env.global_defender import stochastic_with_threshold
 from utils.utils import ConfigParser
 
-from coordinator import Coordinator, ConnectionLimitProtocol
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from coordinator import ConnectionLimitProtocol
 from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment
 
@@ -301,7 +293,7 @@ class GameCoordinator:
                     agent_role = action.parameters["agent_info"].role
                     if agent_role in self.ALLOWED_ROLES:
                         # add agent to the world
-                        new_agent_game_state = await self.register_agent(agent_addr, agent_role)
+                        new_agent_game_state, status = await self.register_agent(agent_addr, agent_role)
                         if new_agent_game_state: # successful registration
                             async with self._agents_lock:
                                 self.agents[agent_addr] = (agent_name, agent_role)
@@ -492,12 +484,11 @@ class GameCoordinator:
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
-    async def register_agent(self, agent_addr:tuple, agent_role:str)->GameState:
+    async def register_agent(self, agent_addr:tuple, agent_role:str, agent_initial_view:dict)->GameState:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         """
-        self.logger.debug("Registering agent in the world.")
-        return GameState()
+        raise NotImplementedError
     
     async def remove_agent(self, agent_addr:tuple, agent_state:GameState)->bool:
         """

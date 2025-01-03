@@ -17,6 +17,7 @@ from game_components import GameState, Action, ActionType, GameStatus, IP
 from coordinator_v3 import GameCoordinator
 from cyst.api.environment.environment import Environment
 from cyst.api.environment.platform_specification import PlatformSpecification, PlatformType
+
 from utils.utils import get_starting_position_from_cyst_config, get_logging_level
 
 class CYSTCoordinator(GameCoordinator):
@@ -39,7 +40,7 @@ class CYSTCoordinator(GameCoordinator):
             cyst_id = None
         return cyst_id
     
-    async def register_agent(self, agent_id, agent_role)->GameState:
+    async def register_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
         self.logger.debug(f"Registering agent {agent_id} in the world.")
         agent_role = "Attacker"
         if not self._starting_positions:
@@ -85,74 +86,9 @@ class CYSTCoordinator(GameCoordinator):
     async def reset(self)->bool:
         return True
 
-    parser = argparse.ArgumentParser(
-        description="NetSecGame Coordinator Server Author: Ondrej Lukas ondrej.lukas@aic.fel.cvut.cz",
-        usage="%(prog)s [options]",
-    )
-  
-    parser.add_argument(
-        "-l",
-        "--debug_level",
-        help="Define the debug level for the logs. DEBUG, INFO, WARNING, ERROR, CRITICAL",
-        action="store",
-        required=False,
-        type=str,
-        default="DEBUG",
-    )
-    
-    parser.add_argument(
-        "-w",
-        "--world_type",
-        help="Define the world which is used as backed. Default NSE",
-        action="store",
-        required=False,
-        type=str,
-        default="cyst",
-    )
-    
-    parser.add_argument(
-        "-gh",
-        "--game_host",
-        help="host where to run the game server",
-        action="store",
-        required=False,
-        type=str,
-        default="127.0.0.1",
-    )
-    
-    parser.add_argument(
-        "-gp",
-        "--game_port",
-        help="Port where to run the game server",
-        action="store",
-        required=False,
-        type=int,
-        default="9000",
-    )
-    
-    parser.add_argument(
-        "-sh",
-        "--service_host",
-        help="Host where to run the config server",
-        action="store",
-        required=False,
-        type=str,
-        default="127.0.0.1",
-    )
-    
-    parser.add_argument(
-        "-sp",
-        "--service_port",
-        help="Port where to listen for cyst config",
-        action="store",
-        required=False,
-        type=int,
-        default="9009",
-    )
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="NetSecGame Coordinator Server Author: Ondrej Lukas ondrej.lukas@aic.fel.cvut.cz",
+        description="CYST-NetSecGame Coordinator Server Author: Ondrej Lukas ondrej.lukas@aic.fel.cvut.cz",
         usage="%(prog)s [options]",
     )
   
