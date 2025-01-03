@@ -220,12 +220,13 @@ class GameCoordinator:
             pass
         
         ##### REMOVE LATER #####
-        self.task_config = ConfigParser("./env/netsecevn_conf_cyst_integration.yaml")
+        self.task_config = ConfigParser("./netsecevn_conf_cyst_integration.yaml")
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
         self._steps_limit_per_role = self._get_max_steps_per_role()
         self._use_global_defender = self.task_config.get_use_global_defender()
+        self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
         ########################
 
         # start server for agent communication
@@ -293,7 +294,7 @@ class GameCoordinator:
                     agent_role = action.parameters["agent_info"].role
                     if agent_role in self.ALLOWED_ROLES:
                         # add agent to the world
-                        new_agent_game_state, status = await self.register_agent(agent_addr, agent_role, self._agent_starting_position[agent_role])
+                        new_agent_game_state = await self.register_agent(agent_addr, agent_role, self._starting_positions_per_role[agent_role])
                         if new_agent_game_state: # successful registration
                             async with self._agents_lock:
                                 self.agents[agent_addr] = (agent_name, agent_role)
@@ -310,7 +311,6 @@ class GameCoordinator:
                                     "configuration_hash": self._CONFIG_FILE_HASH
                                     },
                             }
-                            # await self._world_action_queue.put((agent_addr, Action(action_type=ActionType.JoinGame, params=action.parameters), self._starting_positions_per_role[agent_role]))
                             await self._agent_response_queues[agent_addr].put(self.convert_msg_dict_to_json(output_message_dict))
                     else:
                         self.logger.info(
@@ -454,7 +454,7 @@ class GameCoordinator:
             await self.reset()
             for agent in self.agents:
                 self.logger.debug(f"Resetting agent {agent}")
-                new_state = await self.reset_agent(agent)
+                new_state = await self.reset_agent(agent, self.agents[agent][1], self._agent_starting_position[agent])
                 new_observation = Observation(self._agent_states[agent], 0, False, {})
                 async with self._agents_lock:
                     self._agent_states[agent] = new_state
