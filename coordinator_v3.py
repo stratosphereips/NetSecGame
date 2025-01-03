@@ -36,6 +36,9 @@ class GameCoordinator:
         self._tasks = set()
         self.shutdown_flag = asyncio.Event()
         self._reset_event = asyncio.Event()
+        self._episode_end_event = asyncio.Event()
+        self._episode_rewards_condition = asyncio.Condition()
+        self._reset_done_condition = asyncio.Condition()
         self._reset_lock = asyncio.Lock()
         self._agents_lock = asyncio.Lock()
         self._semaphore = asyncio.Semaphore(2) 
@@ -50,6 +53,7 @@ class GameCoordinator:
         self._agent_steps = {}
         # reset request per agent_addr (bool)
         self._reset_requests = {}
+        self._episode_ends = {}
         self._agent_observations = {}
         # starting per agent_addr (dict)
         self._agent_starting_position = {}
@@ -229,7 +233,14 @@ class GameCoordinator:
 
         # start server for agent communication
         await  self.spawn_task(self.start_tcp_server)
-       
+
+        # start episode rewards task
+        await self.spawn_task(self._assign_rewards_episode_end)
+
+        # start episode rewards task
+        await self.spawn_task(self._reset_game)
+
+
         try:
             while not self.shutdown_flag.is_set():
                 # Read message from the queue
@@ -257,23 +268,8 @@ class GameCoordinator:
                         case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
                             self.logger.debug(f"Start processing of{action.type} by {agent_addr}")
                             await self.spawn_task(self._process_game_action, agent_addr, action)
-                        # case ActionType.ResetGame:
-                        #     self._reset_requests[agent_addr] = True
-                        #     self._agent_statuses[agent_addr] = AgentStatus.ResetRequested
-                        #     self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
-                        #     if all(self._reset_requests.values()):
-                        #         # should we discard the queue here?
-                        #         self.logger.info("All active agents requested reset")
-                        #         # send WORLD reset request to the world
-                        #         await self._world_action_queue.put(("world", Action(ActionType.ResetGame, params={}), None))
-                        #         # send request for each of the agents (to get new initial state)
-                        #         for agent in self._reset_requests:
-                        #             await self._world_action_queue.put((agent, Action(ActionType.ResetGame, params={}), self._agent_starting_position[agent]))
-                        #     else:
-                        #         self.logger.info("\t Waiting for other agents to request reset")
-                        # case _:
-                        #     # actions in the game
-                        #     await self._process_generic_action(agent_addr, action)
+                        case _:
+                            self.logger.warning(f"Unsupported action type: {action}!")
                     await asyncio.sleep(0.001)
         except asyncio.CancelledError:
            self.logger.info("Coordinator run cancelled")
@@ -366,43 +362,109 @@ class GameCoordinator:
         async with self._reset_lock:
              # add reset request for this agent
             self._reset_requests[agent_addr] = True
-            self.logger.warning(self._reset_requests.values())
             if all(self._reset_requests.values()):
                 # all agents want reset - reset the world
-                new_state = await self.reset_agent(agent_addr)
                 self._reset_event.set()
-        # wait until the event is set
-        await self._reset_event.wait()
-        new_state = await self.reset_agent(agent_addr)
-        new_observation = Observation(self._agent_states[agent_addr], 0, False, {})
+        
+        # wait until reset is done
+        async with self._reset_done_condition:
+            await self._reset_done_condition.wait()
         async with self._agents_lock:
-            self._agent_states[agent_addr] = new_state
-            self._agent_observations[agent_addr] = new_observation
-        output_message_dict = {
-            "to_agent": agent_addr,
-            "status": str(GameStatus.RESET_DONE),
-            "observation": observation_as_dict(new_observation),
-            "message": {
-                        "message": "Resetting Game and starting again.",
-                        "max_steps": self._steps_limit_per_role[self.agents[agent_addr][1]],
-                        "goal_description": self._goal_description_per_role[self.agents[agent_addr][1]],
-                         "configuration_hash": self._CONFIG_FILE_HASH
-                        },
-        }
+            output_message_dict = {
+                "to_agent": agent_addr,
+                "status": str(GameStatus.RESET_DONE),
+                "observation": observation_as_dict(self._agent_observations[agent_addr]),
+                "message": {
+                            "message": "Resetting Game and starting again.",
+                            "max_steps": self._steps_limit_per_role[self.agents[agent_addr][1]],
+                            "goal_description": self._goal_description_per_role[self.agents[agent_addr][1]],
+                            "configuration_hash": self._CONFIG_FILE_HASH
+                            },
+            }
         response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
         await self._agent_response_queues[agent_addr].put(response_msg_json)
-        self.logger.debug("Reset approved by all agents")
-        async with self._reset_lock:
-            # remove reset request for this agent
-            self._reset_requests[agent_addr] = False
-            if not any(self._reset_requests.values()):
-                # all agents resetted.Clear the rest event
-                self.logger.debug(f"Clearing the reset event.{agent_addr}")
-                self._reset_event.clear()
 
     async def _process_game_action(self, agent_addr: tuple, action:Action)->None:
-        pass
+        if self._episode_ends[agent_addr]:
+            # agent can't play any more actions in the game
+            current_observation = self._agent_observations[agent_addr]
+            reward = self._agent_rewards[agent_addr]
+            end_reason = str(self._agent_statuses[agent_addr])
+            new_observation = Observation(
+                current_observation.state,
+                reward=reward,
+                end=True,
+                info={'end_reason': end_reason, "info":"Episode ended. Request reset for starting new episode."})
+            output_message_dict = {
+                "to_agent": agent_addr,
+                "observation": observation_as_dict(new_observation),
+                "status": str(GameStatus.FORBIDDEN),
+            }
+        else:
+            async with self._agents_lock:
+                self._agent_last_action[agent_addr] = action
+                self._agent_steps[agent_addr] += 1
+            # wait for the new state from the world
+            new_state = await self.step(agent_addr, self._agent_states[agent_addr])
+            # update agent's values
+            async with self._agents_lock:
+                goal_reached = self.goal_check(agent_addr, new_state)
+                detected = self.detected(agent_addr, new_state)
+                timeout_reached = self._agent_steps[agent_addr] >= self._steps_limit_per_role[self.agents[agent_addr][1]]
+                self._agent_rewards[agent_addr] = self._assign_reward(agent_addr, goal_reached, detected, timeout_reached)
+                # check if the episode ends for this agent
+                self._episode_ends[agent_addr] = any([goal_reached, detected,timeout_reached])
+                # check if this is the last agent that was playing
+                if all(self._episode_ends.values()):
+                    self.assign_episode_rewards()
+                    self._episode_end_event.set()
+            if self._episode_ends[agent_addr]:
+                async with self._episode_rewards_condition:
+                    await self._episode_rewards_condition.wait()
+                # process rewards       
+            new_observation = Observation(self._agent_states[agent_addr], self._agent_rewards[agent_addr], self._episode_ends[agent_addr], info={})
+            output_message_dict = {
+                "to_agent": agent_addr,
+                "observation": observation_as_dict(new_observation),
+                "status": str(GameStatus.OK),
+            }
+            response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+            await self._agent_response_queues[agent_addr].put(response_msg_json)
+
+    async def _assign_rewards_episode_end(self):
+        """Task that waits for all agents to finish and assigns rewards."""
+        self.logger.debug("Starting task for episode end reward assigning.")
+        while not self.shutdown_flag.is_set():
+            # wait until episode is finished by all agents
+            await self._episode_end_event.wait()
+            self.logger.info("Episode finished. Assigning final rewards to agents.")
+            async with self._agents_lock:
+                for agent in self.agents:
+                    self.logger.debug(f"Processing reward for agent {agent}")          
+            # notify all waiting agents
+            self._episode_rewards_condition.notify_all()
     
+    async def _reset_game(self):
+        """Task that waits for all agents to request resets"""
+        self.logger.debug("Starting task for game reset handelling.")
+        while not self.shutdown_flag.is_set():
+            # wait until episode is finished by all agents
+            await self._reset_event.wait()
+            self.logger.info("Resetting game to initial state.")
+            for agent in self.agents:
+                self.logger.debug(f"Resetting agent {agent}")
+                new_state = await self.reset_agent(agent)
+                new_observation = Observation(self._agent_states[agent], 0, False, {})
+                async with self._agents_lock:
+                    self._agent_states[agent] = new_state
+                    self._agent_observations[agent] = new_observation
+                    self._episode_ends[agent] = False
+                    self._reset_requests[agent] = False
+            self._reset_event.clear()  
+            # notify all waiting agents
+            async with self._reset_done_condition:
+                self._reset_done_condition.notify_all()
+
     def _initialize_new_player(self, agent_addr:tuple, agent_current_state:GameState) -> Observation:
         """
         Method to initialize new player upon joining the game.
@@ -412,6 +474,7 @@ class GameCoordinator:
         agent_name, agent_role = self.agents[agent_addr]
         self._agent_steps[agent_addr] = 0
         self._reset_requests[agent_addr] = False
+        self._episode_ends[agent_addr] = False
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = agent_current_state
 
@@ -449,6 +512,7 @@ class GameCoordinator:
                 agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
                 async with self._reset_lock:
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
+                    agent_info["episode_end"] = self._episode_ends.pop(agent_addr)
                     # check if this agent was not preventing reset 
                     if any(self._reset_requests.values()):
                         self._reset_event.set()
@@ -459,13 +523,15 @@ class GameCoordinator:
                 self.logger.info(f"\t Player {agent_addr} not present in the game!")
             return agent_info
 
+    async def step(self, agent_addr, agent_state):
+        return GameState()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="NetSecGame Coordinator Server Author: Ondrej Lukas ondrej.lukas@aic.fel.cvut.cz",
         usage="%(prog)s [options]",
     )
-    
-    
+  
     parser.add_argument(
         "-l",
         "--debug_level",
