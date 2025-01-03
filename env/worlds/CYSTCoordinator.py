@@ -74,10 +74,10 @@ class CYSTCoordinator(GameCoordinator):
                 self.logger.error(f"Unknown agent ID: {agent_id}!")
                 return False
         
-    async def step(self, agent_addr, agent_state):
-        return super().step(agent_addr, agent_state)
+    async def step(self, agent_id, agent_state)->GameState:
+        return super().step(agent_id, agent_state)
     
-    async def reset_agent(self, agent_id)->GameState:
+    async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
         cyst_id = self._id_to_cystid[agent_id]
         kh = self._starting_positions[cyst_id]["known_hosts"]
         kn = self._starting_positions[cyst_id]["known_networks"]
