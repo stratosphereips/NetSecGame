@@ -45,19 +45,16 @@ class NSGCoordinator(GameCoordinator):
         self._seed = seed
         self.logger.info(f'Setting env seed to {seed}')
 
-        # Check if dynamic network and ip adddresses are required
-        if self.task_config.get_use_dynamic_addresses():
-            self.logger.info("Dynamic change of the IP and network addresses enabled")
-            self._faker_object = Faker()
-            Faker.seed(seed)  
-
     def _initialize(self)->None:
         # Load CYST configuration
         self._process_cyst_config(self._cyst_objects)
-
+                # Check if dynamic network and ip adddresses are required
+        if self._use_dynamic_ips:
+            self.logger.info("Dynamic change of the IP and network addresses enabled")
+            self._faker_object = Faker()
+            Faker.seed(self._seed)  
         # store initial values for parts which are modified during the game
         self._data_original = copy.deepcopy(self._data)
-        self._data_content_original = copy.deepcopy(self._data_content)
         self._firewall_original = copy.deepcopy(self._firewall)
         self.logger.info("Environment initialization finished")
 
@@ -164,6 +161,9 @@ class NSGCoordinator(GameCoordinator):
                 net_ip, net_mask = str(interface.net).split("/")
                 net = Network(net_ip,int(net_mask))
                 ip = IP(str(interface.ip))
+                if len(node_obj.active_services)>0:
+                    self.logger.info(f"\tAdding as potential start point")
+                    self.hosts_to_start.append(ip)
                 self._ip_to_hostname[ip] = node_obj.id
                 if net not in self._networks:
                     self._networks[net] = []
@@ -196,7 +196,6 @@ class NSGCoordinator(GameCoordinator):
                 except AttributeError:
                     pass
                     #service does not contain any data
-
         def process_router_config(router_obj:RouterConfig)->None:
             self.logger.info(f"\tProcessing config of router '{router_obj.id}'")
             # Process a router
@@ -735,8 +734,8 @@ class NSGCoordinator(GameCoordinator):
         if len(self._networks) == 0:
             self._initialize()
         game_state = self._create_state_from_view(agent_initial_view)
-        
-    
+        return game_state
+         
     async def remove_agent(self, agent_id, agent_state)->bool:
         # No action is required
         return True
@@ -761,7 +760,6 @@ class NSGCoordinator(GameCoordinator):
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
-        self._data_content_original = copy.deepcopy(self._data_content_original)
         self._firewall = copy.deepcopy(self._firewall_original)
         self._fw_blocks = {}
         return True
@@ -836,7 +834,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
     # Set the logging
-    log_filename = Path("CYST_coordinator.log")
+    log_filename = Path("NSG_coordinator.log")
     if not log_filename.parent.exists():
         os.makedirs(log_filename.parent)
 
