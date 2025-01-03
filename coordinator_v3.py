@@ -484,20 +484,20 @@ class GameCoordinator:
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
-    async def register_agent(self, agent_addr:tuple, agent_role:str, agent_initial_view:dict)->GameState:
+    async def register_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         """
         raise NotImplementedError
     
-    async def remove_agent(self, agent_addr:tuple, agent_state:GameState)->bool:
+    async def remove_agent(self, agent_id:tuple, agent_state:GameState)->bool:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         """
         self.logger.debug("Registering agent in the world.")
         return True
     
-    async def reset_agent(self, agent_addr)->GameState:
+    async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
         return GameState()
 
     async def _remove_agent_from_game(self, agent_addr):
@@ -526,7 +526,7 @@ class GameCoordinator:
                 self.logger.info(f"\t Player {agent_addr} not present in the game!")
             return agent_info
 
-    async def step(self, agent_addr, agent_state):
+    async def step(self, agent_id, agent_state):
         return GameState()
     
     async def reset(self):
