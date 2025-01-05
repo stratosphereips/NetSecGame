@@ -14,7 +14,7 @@ import netaddr
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from game_components import GameState, Action, ActionType, GameStatus, IP, Network, Data, Service
+from env.game_components import GameState, Action, ActionType, GameStatus, IP, Network, Data, Service
 from coordinator_v3 import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
@@ -470,19 +470,20 @@ class NSGCoordinator(GameCoordinator):
 
         Returns: A new GameState
         """
+        self.logger.warning(f"{action}, {action.type},{type(action.type), {action.type is ActionType.ScanNetwork}}")
         next_state = None
         match action.type:
             case ActionType.ScanNetwork:
                 next_state = self._execute_scan_network_action(current_state, action)
-            case ActionType.FindServices:   
+            case "ActionType.FindServices":   
                 next_state = self._execute_find_services_action(current_state, action)
-            case ActionType.FindData:
+            case "ActionType.FindData":
                 next_state = self._execute_find_data_action(current_state, action)
-            case ActionType.ExploitService:
+            case "ActionType.ExploitService":
                 next_state = self._execute_exploit_service_action(current_state, action)
-            case ActionType.ExfiltrateData:
+            case "ActionType.ExfiltrateData":
                 next_state = self._execute_exfiltrate_data_action(current_state, action)
-            case ActionType.BlockIP:
+            case "ActionType.BlockIP":
                 next_state = self._execute_block_ip_action(current_state, action)
             case _:
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
@@ -734,14 +735,16 @@ class NSGCoordinator(GameCoordinator):
         if len(self._networks) == 0:
             self._initialize()
         game_state = self._create_state_from_view(agent_initial_view)
+        self.logger.warning(f"{IP('192.168.0.2') in game_state.controlled_hosts}")
         return game_state
          
     async def remove_agent(self, agent_id, agent_state)->bool:
         # No action is required
         return True
         
-    async def step(self, agent_addr, agent_state):
-        raise NotImplementedError
+    async def step(self, agent_id, agent_state, action)->GameState:
+        self.logger.warning(f"Inside task: {action.type}, module: {action.type.__class__.__module__},  action id={id(action)}")
+        return self._execute_action(agent_state, action)
     
     async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
        game_state = self._create_state_from_view(agent_initial_view)
