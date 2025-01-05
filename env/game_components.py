@@ -276,10 +276,6 @@ class Action:
     @property
     def type(self):
         return self.action_type
-    
-    @property
-    def parameters(self)->dict:
-        return self._parameters
 
     def to_json(self) -> str:
         """Serialize the Action to a JSON string."""
