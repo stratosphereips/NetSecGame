@@ -17,9 +17,9 @@ class Service():
     Service represents the service object in the NetSecGame
     """
     name: str
-    type: str
-    version: str
-    is_local: bool
+    type: str = "unknown"
+    version: str = "unknown"
+    is_local: bool = True
 
     @classmethod
     def from_dict(cls, data: dict):
