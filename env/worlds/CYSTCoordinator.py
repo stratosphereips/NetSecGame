@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from game_components import GameState, Action, ActionType, GameStatus, IP
+from env.game_components import GameState, Action, ActionType, GameStatus, IP, Service
 from coordinator_v3 import GameCoordinator
 from cyst.api.environment.environment import Environment
 from cyst.api.environment.platform_specification import PlatformSpecification, PlatformType
@@ -33,7 +33,10 @@ class CYSTCoordinator(GameCoordinator):
         self._starting_positions = None
         self._availabe_cyst_agents = None
 
-    def _map_to_cyst(self, agent_id, agent_role):
+    def get_cyst_id(self, agent_role):
+        """
+        Returns ID of the CYST agent based on the agent's role.
+        """
         try:
             cyst_id = self._availabe_cyst_agents[agent_role].pop()
         except KeyError:
@@ -47,7 +50,7 @@ class CYSTCoordinator(GameCoordinator):
             self._starting_positions = get_starting_position_from_cyst_config(self._cyst_objects)
             self._availabe_cyst_agents = {"Attacker":set([k for k in self._starting_positions.keys()])}
         async with self._agents_lock:
-            cyst_id = self._map_to_cyst(agent_id, agent_role)
+            cyst_id = self.get_cyst_id(agent_role)
             if cyst_id:
                 self._cystid_to_id[cyst_id] = agent_id
                 self._id_to_cystid[agent_id] = cyst_id
@@ -74,9 +77,104 @@ class CYSTCoordinator(GameCoordinator):
                 self.logger.error(f"Unknown agent ID: {agent_id}!")
                 return False
         
-    async def step(self, agent_id, agent_state)->GameState:
-        return super().step(agent_id, agent_state)
+    async def step(self, agent_id:tuple, agent_state:GameState, action:Action)->GameState:
+        self.logger.info(f"Processing {action} from {agent_id}({self._id_to_cystid[agent_id]})")
+        next_state = None
+        match action.type:
+            case ActionType.ScanNetwork:
+                next_state = await self._execute_scan_network_action(agent_id, agent_state, action)
+            case ActionType.FindServices:   
+                next_state = await self._execute_find_services_action(agent_id, agent_state, action)
+            case ActionType.FindData:
+                next_state = await self._execute_find_data_action(agent_id, agent_state, action)
+            case ActionType.ExploitService:
+                next_state = await self._execute_exploit_service_action(agent_id, agent_state, action)
+            case ActionType.ExfiltrateData:
+                next_state = await self._execute_exfiltrate_data_action(agent_id, agent_state, action)
+            case ActionType.BlockIP:
+                next_state = await self._execute_block_ip_action(agent_id, agent_state, action)
+            case _:
+                raise ValueError(f"Unknown Action type or other error: '{action.type}'")
+        return next_state
+
     
+    async def _cyst_request(self, cyst_id, msg)->tuple:
+        url = f"http://localhost:8282/execute/{cyst_id}/" # Replace with your server's URL
+        data = msg        # The JSON data you want to send
+        self.logger.info(f"Sedning request {msg} to {url}")
+        try:
+            # Send the POST request with JSON data
+            response = requests.post(url, json=data)
+
+            # Print the response from the server
+            self.logger.debug(f'Status code:{response.status_code}')
+            self.logger.debug(f'Response body:{response.text}')
+            return int(response.status_code), json.loads(response.text)
+        except requests.exceptions.RequestException as e:
+            print(f'An error occurred: {e}')
+
+    async def _execute_scan_network_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
+        action_dict = {
+            "action":"dojo:scan_network",
+            "params":
+                {
+                    "dst_ip":str(action.parameters["source_host"]),
+                    "dst_service":"",
+                    "to_network":str(action.parameters["target_network"])
+                }
+        }
+        cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)
+        extended_kh = copy.deepcopy(agent_state.known_hosts)
+        extended_kn = copy.deepcopy(agent_state.known_networks)
+        extended_ch = copy.deepcopy(agent_state.controlled_hosts)
+        extended_ks = copy.deepcopy(agent_state.known_services)
+        extended_kd = copy.deepcopy(agent_state.known_data)
+        extended_kb = copy.deepcopy(agent_state.known_blocks)
+        
+        if cyst_rsp_status == 200:
+            self.logger.debug("Valid response from CYST")
+            data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
+            for ip_str in data:
+                ip = IP(ip_str)
+                self.logger.debug(f"Adding {ip} to known_hosts")
+                extended_kh.add(ip)
+            return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
+    
+    async def _execute_find_services_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
+        action_dict = {
+            "action":"dojo:find_services",
+            "params":
+                {
+                    "dst_ip":str(action.parameters["target_host"]),
+                    "dst_service":""
+                }
+        }
+        cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)
+        extended_kh = copy.deepcopy(agent_state.known_hosts)
+        extended_kn = copy.deepcopy(agent_state.known_networks)
+        extended_ch = copy.deepcopy(agent_state.controlled_hosts)
+        extended_ks = copy.deepcopy(agent_state.known_services)
+        extended_kd = copy.deepcopy(agent_state.known_data)
+        extended_kb = copy.deepcopy(agent_state.known_blocks)
+        
+        if cyst_rsp_status == 200:
+            self.logger.debug("Valid response from CYST")
+            data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
+            self.logger.warning(data)
+            for item in data:
+                ip = IP(item["ip"])
+                # Add IP in case it was discovered by the scan
+                extended_kh.add(ip)
+                if len(item["services"]) > 0:
+                    if ip not in extended_ks.keys():
+                        extended_ks[ip] = set()
+                for service_dict in item["services"]:
+                    service = Service.from_dict(service_dict)
+                    extended_ks[ip].add(service)
+            return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
+    
+
+
     async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
         cyst_id = self._id_to_cystid[agent_id]
         kh = self._starting_positions[cyst_id]["known_hosts"]
