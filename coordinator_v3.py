@@ -502,11 +502,10 @@ class GameCoordinator:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         """
-        self.logger.debug("Registering agent in the world.")
-        return True
+        raise NotImplementedError
     
     async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
-        return GameState()
+        raise NotImplementedError
 
     async def _remove_agent_from_game(self, agent_addr):
         """
@@ -536,10 +535,10 @@ class GameCoordinator:
             return agent_info
 
     async def step(self, agent_id, agent_state, action):
-        return GameState()
+        raise NotImplementedError
     
     async def reset(self):
-        return True
+        return NotImplemented
 
     def goal_check(self, agent_addr:tuple)->bool:
         """
