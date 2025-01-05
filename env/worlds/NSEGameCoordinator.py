@@ -475,15 +475,15 @@ class NSGCoordinator(GameCoordinator):
         match action.type:
             case ActionType.ScanNetwork:
                 next_state = self._execute_scan_network_action(current_state, action)
-            case "ActionType.FindServices":   
+            case ActionType.FindServices:   
                 next_state = self._execute_find_services_action(current_state, action)
-            case "ActionType.FindData":
+            case ActionType.FindData:
                 next_state = self._execute_find_data_action(current_state, action)
-            case "ActionType.ExploitService":
+            case ActionType.ExploitService:
                 next_state = self._execute_exploit_service_action(current_state, action)
-            case "ActionType.ExfiltrateData":
+            case ActionType.ExfiltrateData:
                 next_state = self._execute_exfiltrate_data_action(current_state, action)
-            case "ActionType.BlockIP":
+            case ActionType.BlockIP:
                 next_state = self._execute_block_ip_action(current_state, action)
             case _:
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
