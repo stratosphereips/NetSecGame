@@ -64,7 +64,7 @@ class GameCoordinator:
         # trajectories per agent_addr
         self._agent_trajectories = {}
     
-    async def spawn_task(self, coroutine, *args, **kwargs):
+    async def _spawn_task(self, coroutine, *args, **kwargs)->asyncio.Task:
         "Helper function to make sure all tasks are registered for proper termination"
         self.logger.debug(f"action IDs={[id(a) for a in args]}")
         task = asyncio.create_task(coroutine(*args, **kwargs))
@@ -74,23 +74,26 @@ class GameCoordinator:
         task.add_done_callback(remove_task)  # Remove task when done
         return task
 
-    async def create_agent_queue(self, addr):
+    async def create_agent_queue(self, addr)->None:
         """
-        Create a queue for the given agent address if it doesn't already exist.
+        Creates a queue for the given agent address if it doesn't already exist.
         """
         if addr not in self._agent_response_queues:
             self._agent_response_queues[addr] = asyncio.Queue()
             self.logger.info(f"Created queue for agent {addr}. {len(self._agent_response_queues)} queues in total.")
 
     def convert_msg_dict_to_json(self, msg_dict)->str:
-            try:
-                # Convert message into string representation
-                output_message = json.dumps(msg_dict)
-            except Exception as e:
-                self.logger.error(f"Error when converting msg to Json:{e}")
-                raise e
-                # Send to anwer_queue
-            return output_message
+        """
+        Helper function to create text-base messge from a dictionary. Used in the Agent-Game communication.
+        """
+        try:
+            # Convert message into string representation
+            output_message = json.dumps(msg_dict)
+        except Exception as e:
+            self.logger.error(f"Error when converting msg to JSON:{e}")
+            raise e
+            # Send to anwer_queue
+        return output_message
     
     def run(self)->None:
         """
@@ -182,6 +185,9 @@ class GameCoordinator:
         return max_steps
     
     async def start_tcp_server(self):
+        """
+        Starts TPC sever for the agent communication.
+        """
         try:
             self.logger.info("Starting the server listening for agents")
             server = await asyncio.start_server(
@@ -232,13 +238,13 @@ class GameCoordinator:
         ########################
 
         # start server for agent communication
-        await  self.spawn_task(self.start_tcp_server)
+        await  self._spawn_task(self.start_tcp_server)
 
         # start episode rewards task
-        await self.spawn_task(self._assign_rewards_episode_end)
+        await self._spawn_task(self._assign_rewards_episode_end)
 
         # start episode rewards task
-        await self.spawn_task(self._reset_game)
+        await self._spawn_task(self._reset_game)
 
 
         try:
@@ -258,16 +264,16 @@ class GameCoordinator:
                         case ActionType.JoinGame:
                             self.logger.debug(f"Start processing of ActionType.JoinGame by {agent_addr}")
                             self.logger.debug(f"{action.type}, {action.type.value}, {action.type == ActionType.JoinGame}")
-                            await self.spawn_task(self._process_join_game_action, agent_addr, action)
+                            await self._spawn_task(self._process_join_game_action, agent_addr, action)
                         case ActionType.QuitGame:
                             self.logger.debug(f"Start processing of ActionType.QuitGame by {agent_addr}")
-                            await self.spawn_task(self._process_quit_game_action, agent_addr)
+                            await self._spawn_task(self._process_quit_game_action, agent_addr)
                         case ActionType.ResetGame:
                             self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
-                            await self.spawn_task(self._process_reset_game_action, agent_addr, action)
+                            await self._spawn_task(self._process_reset_game_action, agent_addr, action)
                         case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
                             self.logger.debug(f"Start processing of {action.type} by {agent_addr}")
-                            await self.spawn_task(self._process_game_action, agent_addr, action)
+                            await self._spawn_task(self._process_game_action, agent_addr, action)
                         case _:
                             self.logger.warning(f"Unsupported action type: {action}!")
                     await asyncio.sleep(0.001)
@@ -286,7 +292,7 @@ class GameCoordinator:
         Inputs: 
             -   agent_addr (tuple)
             -   JoingGame Action
-        Outputs: None
+        Outputs: None (MEthod stores reposnse in the agent's response queue)
         """
         try:
             async with self._semaphore:
@@ -578,92 +584,3 @@ class GameCoordinator:
         reward += self._rewards["win"] if goal_reached else 0
         reward += self._rewards["loss"] if detected else 0
         return reward
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="NetSecGame Coordinator Server Author: Ondrej Lukas ondrej.lukas@aic.fel.cvut.cz",
-        usage="%(prog)s [options]",
-    )
-  
-    parser.add_argument(
-        "-l",
-        "--debug_level",
-        help="Define the debug level for the logs. DEBUG, INFO, WARNING, ERROR, CRITICAL",
-        action="store",
-        required=False,
-        type=str,
-        default="DEBUG",
-    )
-    
-    parser.add_argument(
-        "-w",
-        "--world_type",
-        help="Define the world which is used as backed. Default NSE",
-        action="store",
-        required=False,
-        type=str,
-        default="cyst",
-    )
-    
-    parser.add_argument(
-        "-gh",
-        "--game_host",
-        help="host where to run the game server",
-        action="store",
-        required=False,
-        type=str,
-        default="127.0.0.1",
-    )
-    
-    parser.add_argument(
-        "-gp",
-        "--game_port",
-        help="Port where to run the game server",
-        action="store",
-        required=False,
-        type=int,
-        default="9000",
-    )
-    
-    parser.add_argument(
-        "-sh",
-        "--service_host",
-        help="Host where to run the config server",
-        action="store",
-        required=False,
-        type=str,
-        default="127.0.0.1",
-    )
-    
-    parser.add_argument(
-        "-sp",
-        "--service_port",
-        help="Port where to listen for cyst config",
-        action="store",
-        required=False,
-        type=int,
-        default="9009",
-    )
-
-
-    args = parser.parse_args()
-    print(args)
-    # Set the logging
-    log_filename = Path("coordinator.log")
-    if not log_filename.parent.exists():
-        os.makedirs(log_filename.parent)
-
-    # Convert the logging level in the args to the level to use
-    pass_level = get_logging_level(args.debug_level)
-
-    logging.basicConfig(
-        filename=log_filename,
-        filemode="w",
-        format="%(asctime)s %(name)s %(levelname)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        level=pass_level,
-    )
-  
-    game_server = GameCoordinator(args.game_host, args.game_port, args.service_host , args.service_port, args.world_type)
-    # Run it!
-    game_server.run()
