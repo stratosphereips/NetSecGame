@@ -66,7 +66,6 @@ class GameCoordinator:
     
     async def _spawn_task(self, coroutine, *args, **kwargs)->asyncio.Task:
         "Helper function to make sure all tasks are registered for proper termination"
-        self.logger.debug(f"action IDs={[id(a) for a in args]}")
         task = asyncio.create_task(coroutine(*args, **kwargs))
         self._tasks.add(task)
         def remove_task(t):
