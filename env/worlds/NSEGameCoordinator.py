@@ -470,7 +470,6 @@ class NSGCoordinator(GameCoordinator):
 
         Returns: A new GameState
         """
-        self.logger.warning(f"{action}, {action.type},{type(action.type), {action.type is ActionType.ScanNetwork}}")
         next_state = None
         match action.type:
             case ActionType.ScanNetwork:
