@@ -67,6 +67,7 @@ class IP():
     @classmethod
     def from_dict(cls, data: dict):
         return cls(**data)
+    
     def __hash__(self):
         return hash(self.ip)
 
@@ -111,6 +112,7 @@ class Network():
         except ipaddress.AddressValueError:
             # If we are dealing with strings, assume they are local networks
             return True
+    
     @classmethod
     def from_dict(cls, data: dict):
         return cls(**data)
@@ -274,6 +276,10 @@ class Action:
     @property
     def type(self):
         return self.action_type
+    
+    @property
+    def parameters(self)->dict:
+        return self._parameters
 
     def to_json(self) -> str:
         """Serialize the Action to a JSON string."""
@@ -312,6 +318,18 @@ class Action:
     def __str__(self) -> str:
         return f"Action <{self.action_type}|{self.parameters}>"
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Action):
+            return NotImplemented
+        return (
+            self.action_type == other.action_type and
+            self.parameters == other.parameters
+        )
+    
+    def __hash__(self) -> int:
+        # Convert parameters to a sorted tuple of key-value pairs for consistency
+        sorted_params = tuple(sorted((k, hash(v)) for k, v in self.parameters.items()))
+        return hash((self.action_type, sorted_params))
 
 # #Actions
 # class Action():
