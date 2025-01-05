@@ -4,11 +4,12 @@ import logging
 import json
 import asyncio
 from datetime import datetime
-from env.game_components import Action, Observation, ActionType, GameStatus, GameState
+from env.game_components import Action, Observation, ActionType, GameStatus, GameState, IP
 from utils.utils import observation_as_dict, get_logging_level, get_file_hash
 from pathlib import Path
 import os
 from utils.utils import ConfigParser
+import copy
 
 from coordinator import ConnectionLimitProtocol
 from aiohttp import ClientSession
@@ -65,6 +66,7 @@ class GameCoordinator:
     
     async def spawn_task(self, coroutine, *args, **kwargs):
         "Helper function to make sure all tasks are registered for proper termination"
+        self.logger.debug(f"action IDs={[id(a) for a in args]}")
         task = asyncio.create_task(coroutine(*args, **kwargs))
         self._tasks.add(task)
         def remove_task(t):
@@ -264,7 +266,7 @@ class GameCoordinator:
                             self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
                             await self.spawn_task(self._process_reset_game_action, agent_addr, action)
                         case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
-                            self.logger.debug(f"Start processing of{action.type} by {agent_addr}")
+                            self.logger.debug(f"Start processing of {action.type} by {agent_addr}")
                             await self.spawn_task(self._process_game_action, agent_addr, action)
                         case _:
                             self.logger.warning(f"Unsupported action type: {action}!")
@@ -402,13 +404,14 @@ class GameCoordinator:
                 self._agent_last_action[agent_addr] = action
                 self._agent_steps[agent_addr] += 1
             # wait for the new state from the world
-            new_state = await self.step(agent_addr, self._agent_states[agent_addr])
+            new_state = await self.step(agent_id=agent_addr, agent_state=self._agent_states[agent_addr], action=action)
             # update agent's values
             async with self._agents_lock:
-                goal_reached = self.goal_check(agent_addr, new_state)
-                detected = self.is_detected(agent_addr, new_state)
+                self._agent_states[agent_addr] = new_state
+                goal_reached = self.goal_check(agent_addr)
+                detected = self.is_detected(agent_addr)
                 timeout_reached = self._agent_steps[agent_addr] >= self._steps_limit_per_role[self.agents[agent_addr][1]]
-                self._agent_rewards[agent_addr] = self.assign_reward(agent_addr, goal_reached, detected, timeout_reached)
+                self._agent_rewards[agent_addr] = self.assign_reward(goal_reached, detected, timeout_reached)
                 # check if the episode ends for this agent
                 self._episode_ends[agent_addr] = any([goal_reached, detected,timeout_reached])
                 # check if this is the last agent that was playing
@@ -518,7 +521,8 @@ class GameCoordinator:
                     agent_info["episode_end"] = self._episode_ends.pop(agent_addr)
                     #check if this agent was not preventing episode end
                     if all(self._episode_ends.values()):
-                        self._episode_end_event.set()
+                        if len(self.agents) > 0:
+                            self._episode_end_event.set()
                 agent_info["end_reward"] = self._agent_rewards.pop(agent_addr, None)
                 agent_info["agent_info"] = self.agents.pop(agent_addr)
                 self.logger.debug(f"\t{agent_info}")
@@ -526,7 +530,7 @@ class GameCoordinator:
                 self.logger.info(f"\t Player {agent_addr} not present in the game!")
             return agent_info
 
-    async def step(self, agent_id, agent_state):
+    async def step(self, agent_id, agent_state, action):
         return GameState()
     
     async def reset(self):
