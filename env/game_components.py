@@ -1,6 +1,7 @@
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 # Library of helpful functions and objects to play the net sec game
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
+from typing import Dict, Any
 import dataclasses
 from collections import namedtuple
 import json
@@ -19,6 +20,10 @@ class Service():
     type: str
     version: str
     is_local: bool
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(**data)
 
 """
 IP represents the ip address object in the NetSecGame
@@ -59,6 +64,11 @@ class IP():
             if self.ip != 'external':
                 return True
             return False
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(**data)
+    def __hash__(self):
+        return hash(self.ip)
 
 @dataclass(frozen=True, eq=True)
 class Network():
@@ -101,7 +111,9 @@ class Network():
         except ipaddress.AddressValueError:
             # If we are dealing with strings, assume they are local networks
             return True
-
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(**data)
 """
 Data represents the data object in the NetSecGame
 """
@@ -119,66 +131,110 @@ class Data():
     
     def __hash__(self) -> int:
         return hash((self.owner, self.id, self.size, self.type))
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(**data)
+# @enum.unique
+# class ActionType(enum.Enum):
+#     """
+#     ActionType represents generic action for attacker in the game. Each transition has a default probability
+#     of success and probability of detection (if the defender is present).
+#     Currently 5 action types are implemented:
+#     - ScanNetwork
+#     - FindServices
+#     - FindData
+#     - ExploitService
+#     - ExfiltrateData
+#     - BlockIP
+#     - JoinGame
+#     - QuitGame
+#     """
+
+#     #override the __new__ method to enable multiple parameters
+#     def __new__(cls, *args, **kwargs):
+#         value = len(cls.__members__) + 1
+#         obj = object.__new__(cls)
+#         obj._value_ = value
+#         return obj
+
+#     def __init__(self, default_success_p: float):
+#         self.default_success_p = default_success_p
+
+#     @classmethod
+#     def from_string(cls, string:str):
+#         match string:
+#             case "ActionType.ExploitService":
+#                 return ActionType.ExploitService
+#             case "ActionType.ScanNetwork":
+#                 return  ActionType.ScanNetwork
+#             case "ActionType.FindServices":
+#                 return ActionType.FindServices
+#             case "ActionType.FindData":
+#                 return ActionType.FindData
+#             case "ActionType.ExfiltrateData":
+#                 return ActionType.ExfiltrateData
+#             case "ActionType.BlockIP":
+#                 return ActionType.BlockIP
+#             case "ActionType.JoinGame":
+#                 return ActionType.JoinGame
+#             case "ActionType.ResetGame":
+#                 return ActionType.ResetGame
+#             case "ActionType.QuitGame":
+#                 return ActionType.QuitGame
+#             case _:
+#                 raise ValueError("Uknown Action Type")
+
+#     #ActionTypes
+#     ScanNetwork = 0.9
+#     FindServices = 0.9
+#     FindData = 0.8
+#     ExploitService = 0.7
+#     ExfiltrateData = 0.8
+#     BlockIP = 1
+#     JoinGame = 1
+#     QuitGame = 1
+#     ResetGame = 1
+
 @enum.unique
 class ActionType(enum.Enum):
-    """
-    ActionType represents generic action for attacker in the game. Each transition has a default probability
-    of success and probability of detection (if the defender is present).
-    Currently 5 action types are implemented:
-    - ScanNetwork
-    - FindServices
-    - FindData
-    - ExploitService
-    - ExfiltrateData
-    - BlockIP
-    - JoinGame
-    - QuitGame
-    """
+    ScanNetwork = "ScanNetwork"
+    FindServices = "FindServices"
+    FindData = "FindData"
+    ExploitService = "ExploitService"
+    ExfiltrateData = "ExfiltrateData"
+    BlockIP = "BlockIP"
+    JoinGame = "JoinGame"
+    QuitGame = "QuitGame"
+    ResetGame = "ResetGame"
 
-    #override the __new__ method to enable multiple parameters
-    def __new__(cls, *args, **kwargs):
-        value = len(cls.__members__) + 1
-        obj = object.__new__(cls)
-        obj._value_ = value
-        return obj
+    def to_string(self):
+        """Convert enum to string."""
+        return self.value
+    
+    def __eq__(self, other):
+        # Compare with another ActionType
+        if isinstance(other, ActionType):
+            return self.value == other.value
+        # Compare with a string
+        elif isinstance(other, str):
+            return self.value == other
+        else:
+            print("Types are fucked up")
+        return False
 
-    def __init__(self, default_success_p: float):
-        self.default_success_p = default_success_p
+    def __hash__(self):
+        # Use the hash of the value for consistent behavior
+        return hash(self.value)
 
     @classmethod
-    def from_string(cls, string:str):
-        match string:
-            case "ActionType.ExploitService":
-                return ActionType.ExploitService
-            case "ActionType.ScanNetwork":
-                return  ActionType.ScanNetwork
-            case "ActionType.FindServices":
-                return ActionType.FindServices
-            case "ActionType.FindData":
-                return ActionType.FindData
-            case "ActionType.ExfiltrateData":
-                return ActionType.ExfiltrateData
-            case "ActionType.BlockIP":
-                return ActionType.BlockIP
-            case "ActionType.JoinGame":
-                return ActionType.JoinGame
-            case "ActionType.ResetGame":
-                return ActionType.ResetGame
-            case "ActionType.QuitGame":
-                return ActionType.QuitGame
-            case _:
-                raise ValueError("Uknown Action Type")
-
-    #ActionTypes
-    ScanNetwork = 0.9
-    FindServices = 0.9
-    FindData = 0.8
-    ExploitService = 0.7
-    ExfiltrateData = 0.8
-    BlockIP = 1
-    JoinGame = 1
-    QuitGame = 1
-    ResetGame = 1
+    def from_string(cls, name):
+        """Convert string to enum, stripping 'ActionType.' if present."""
+        if name.startswith("ActionType."):
+            name = name.split("ActionType.")[1]
+        try:
+            return cls[name]
+        except KeyError:
+            raise ValueError(f"Invalid ActionType: {name}")
 
 @dataclass(frozen=True, eq=True, order=True)
 class AgentInfo():
@@ -191,133 +247,198 @@ class AgentInfo():
     def __repr__(self):
         return f"{self.name}({self.role})"
 
-#Actions
-class Action():
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(**data)
+
+@dataclass(frozen=True)
+class Action:
     """
-    Actions are composed of the action type (see ActionTupe) and additional parameters listed in dictionary
-    - ScanNetwork {"target_network": Network object, "source_host": IP object}
-    - FindServices {"target_host": IP object, "source_host": IP object,}
-    - FindData {"target_host": IP object, "source_host": IP object}
-    - ExploitService {"target_host": IP object, "target_service": Service object, "source_host": IP object}
-    - ExfiltrateData {"target_host": IP object, "source_host": IP object, "data": Data object}
-    - BlockIP("target_host": IP object, "source_host": IP object, "blocked_host": IP object)
+    Immutable dataclass representing an Action.
     """
-    def __init__(self, action_type: ActionType, params: dict={}) -> None:
-        self._type = action_type
-        self._parameters = params
+    action_type: ActionType
+    parameters: Dict[str, Any] = field(default_factory=dict)
 
     @property
-    def type(self) -> ActionType:
-        return self._type
-    @property
-    def parameters(self)->dict:
-        return self._parameters
-
-    @property
-    def as_dict(self)->dict:
+    def as_dict(self) -> Dict[str, Any]:
+        """Return a dictionary representation of the Action."""
         params = {}
-        for k,v in self.parameters.items():
-            if isinstance(v, Service): 
-                params[k] = vars(v)
-            elif isinstance(v, Data):
-                params[k] = vars(v)
-            elif isinstance(v, AgentInfo):
-                params[k] = vars(v)
+        for k, v in self.parameters.items():
+            if hasattr(v, '__dict__'):  # Handle custom objects like Service, Data, AgentInfo
+                params[k] = asdict(v)
             else:
                 params[k] = str(v)
-        return {"type": str(self.type), "params": params}
+        return {"action_type": str(self.action_type), "parameters": params}
     
+    @property
+    def type(self):
+        return self.action_type
+
+    def to_json(self) -> str:
+        """Serialize the Action to a JSON string."""
+        return json.dumps(self.as_dict)
+
     @classmethod
-    def from_dict(cls, data_dict:dict):
-        action_type = ActionType.from_string(data_dict["type"])
+    def from_dict(cls, data_dict: Dict[str, Any]) -> "Action":
+        """Create an Action from a dictionary."""
+        action_type = ActionType.from_string(data_dict["action_type"])
         params = {}
-        for k,v in data_dict["params"].items():
+        for k, v in data_dict["parameters"].items():
             match k:
-                case "source_host":
-                    params[k] = IP(v)
-                case "target_host":
-                    params[k] = IP(v)
-                case "blocked_host":
-                    params[k] = IP(v)
+                case "source_host" | "target_host" | "blocked_host":
+                    params[k] = IP.from_dict(v)
                 case "target_network":
-                    net,mask = v.split("/")
-                    params[k] = Network(net ,int(mask))
+                    params[k] = Network.from_dict(v)
                 case "target_service":
-                    params[k] = Service(**v)
+                    params[k] = Service.from_dict(v)
                 case "data":
-                    params[k] = Data(**v)
+                    params[k] = Data.from_dict(v)
                 case "agent_info":
-                    params[k] = AgentInfo(**v)
+                    params[k] = AgentInfo.from_dict(v)
                 case _:
-                    raise ValueError(f"Unsupported Value in {k}:{v}")
-        action = Action(action_type=action_type, params=params)
-        return action
-    
+                    raise ValueError(f"Unsupported value in {k}: {v}")
+        return cls(action_type=action_type, parameters=params)
+
+    @classmethod
+    def from_json(cls, json_string: str) -> "Action":
+        """Create an Action from a JSON string."""
+        data_dict = json.loads(json_string)
+        return cls.from_dict(data_dict)
+
     def __repr__(self) -> str:
-        return f"Action <{self._type}|{self._parameters}>"
+        return f"Action <{self.action_type}|{self.parameters}>"
 
     def __str__(self) -> str:
-        return f"Action <{self._type}|{self._parameters}>"
+        return f"Action <{self.action_type}|{self.parameters}>"
 
-    def __eq__(self, __o: object) -> bool:
-        if isinstance(__o, Action):
-            return self._type == __o.type and self.parameters == __o.parameters
-        return False
 
-    def __hash__(self) -> int:
-        sorted_params  = sorted(self._parameters.items(), key= lambda x: x[0])
-        sorted_params = [f"{x}{str(y)}" for x,y in sorted_params]
-        return hash(self._type) + hash("".join(sorted_params))
+# #Actions
+# class Action():
+#     """
+#     Actions are composed of the action type (see ActionTupe) and additional parameters listed in dictionary
+#     - ScanNetwork {"target_network": Network object, "source_host": IP object}
+#     - FindServices {"target_host": IP object, "source_host": IP object,}
+#     - FindData {"target_host": IP object, "source_host": IP object}
+#     - ExploitService {"target_host": IP object, "target_service": Service object, "source_host": IP object}
+#     - ExfiltrateData {"target_host": IP object, "source_host": IP object, "data": Data object}
+#     - BlockIP("target_host": IP object, "source_host": IP object, "blocked_host": IP object)
+#     """
+#     def __init__(self, action_type: ActionType, params: dict={}) -> None:
+#         self._type = action_type
+#         self._parameters = params
 
-    def as_json(self)->str:
-        ret_dict = {"action_type":str(self.type)}
-        ret_dict["parameters"] = {k:dataclasses.asdict(v) for k,v in self.parameters.items()}
-        return json.dumps(ret_dict) 
+#     @property
+#     def type(self) -> ActionType:
+#         return self._type
+#     @property
+#     def parameters(self)->dict:
+#         return self._parameters
+
+#     @property
+#     def as_dict(self)->dict:
+#         params = {}
+#         for k,v in self.parameters.items():
+#             if isinstance(v, Service): 
+#                 params[k] = vars(v)
+#             elif isinstance(v, Data):
+#                 params[k] = vars(v)
+#             elif isinstance(v, AgentInfo):
+#                 params[k] = vars(v)
+#             else:
+#                 params[k] = str(v)
+#         return {"type": str(self.type), "params": params}
+    
+#     @classmethod
+#     def from_dict(cls, data_dict:dict):
+#         action_type = ActionType.from_string(data_dict["type"])
+#         params = {}
+#         for k,v in data_dict["params"].items():
+#             match k:
+#                 case "source_host":
+#                     params[k] = IP(v)
+#                 case "target_host":
+#                     params[k] = IP(v)
+#                 case "blocked_host":
+#                     params[k] = IP(v)
+#                 case "target_network":
+#                     net,mask = v.split("/")
+#                     params[k] = Network(net ,int(mask))
+#                 case "target_service":
+#                     params[k] = Service(**v)
+#                 case "data":
+#                     params[k] = Data(**v)
+#                 case "agent_info":
+#                     params[k] = AgentInfo(**v)
+#                 case _:
+#                     raise ValueError(f"Unsupported Value in {k}:{v}")
+#         action = Action(action_type=action_type, params=params)
+#         return action
+    
+#     def __repr__(self) -> str:
+#         return f"Action <{self._type}|{self._parameters}>"
+
+#     def __str__(self) -> str:
+#         return f"Action <{self._type}|{self._parameters}>"
+
+#     def __eq__(self, __o: object) -> bool:
+#         if isinstance(__o, Action):
+#             return self._type == __o.type and self.parameters == __o.parameters
+#         return False
+
+#     def __hash__(self) -> int:
+#         sorted_params  = sorted(self._parameters.items(), key= lambda x: x[0])
+#         sorted_params = [f"{x}{str(y)}" for x,y in sorted_params]
+#         return hash(self._type) + hash("".join(sorted_params))
+
+#     def as_json(self)->str:
+#         ret_dict = {"action_type":str(self.type)}
+#         ret_dict["parameters"] = {k:dataclasses.asdict(v) for k,v in self.parameters.items()}
+#         return json.dumps(ret_dict) 
     
 
 
-    @classmethod
-    def from_json(cls, json_string:str):
-        """
-        Classmethod to ccreate Action object from json string representation
-        """
-        parameters_dict = json.loads(json_string)
-        action_type = ActionType.from_string(parameters_dict["action_type"])
-        parameters = {}
-        parameters_dict = parameters_dict["parameters"]
-        match action_type:
-            case ActionType.ScanNetwork:
-                parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]),"target_network": Network(parameters_dict["target_network"]["ip"], parameters_dict["target_network"]["mask"])}
-            case ActionType.FindServices:
-                parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]), "target_host": IP(parameters_dict["target_host"]["ip"])}
-            case ActionType.FindData:
-                parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]), "target_host": IP(parameters_dict["target_host"]["ip"])}
-            case ActionType.ExploitService:
-                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
-                              "target_service": Service(parameters_dict["target_service"]["name"],
-                                    parameters_dict["target_service"]["type"],
-                                    parameters_dict["target_service"]["version"],
-                                    parameters_dict["target_service"]["is_local"]),
-                                    "source_host": IP(parameters_dict["source_host"]["ip"])}
-            case ActionType.ExfiltrateData:
-                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
-                                "source_host": IP(parameters_dict["source_host"]["ip"]),
-                              "data": Data(parameters_dict["data"]["owner"],parameters_dict["data"]["id"])}
-            case ActionType.BlockIP:
-                parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
-                              "source_host": IP(parameters_dict["source_host"]["ip"]),
-                              "blocked_host": IP(parameters_dict["blocked_host"]["ip"])}
-            case ActionType.JoinGame:
-                parameters = {"agent_info":AgentInfo(parameters_dict["agent_info"]["name"], parameters_dict["agent_info"]["role"])}
-            case ActionType.QuitGame:
-                parameters = {}
-            case ActionType.ResetGame:
-                parameters = {}
-            case _:
-                raise ValueError(f"Unknown Action type:{action_type}")
-        action = Action(action_type=action_type, params=parameters)
-        return action
-
+#     @classmethod
+#     def from_json(cls, json_string:str):
+#         """
+#         Classmethod to create Action object from json string representation
+#         """
+#         parameters_dict = json.loads(json_string)
+#         action_type = ActionType.from_string(parameters_dict["action_type"])
+#         parameters = {}
+#         parameters_dict = parameters_dict["parameters"]
+#         match action_type:
+#             case ActionType.ScanNetwork:
+#                 parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]),"target_network": Network(parameters_dict["target_network"]["ip"], parameters_dict["target_network"]["mask"])}
+#             case ActionType.FindServices:
+#                 parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]), "target_host": IP(parameters_dict["target_host"]["ip"])}
+#             case ActionType.FindData:
+#                 parameters = {"source_host": IP(parameters_dict["source_host"]["ip"]), "target_host": IP(parameters_dict["target_host"]["ip"])}
+#             case ActionType.ExploitService:
+#                 parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
+#                               "target_service": Service(parameters_dict["target_service"]["name"],
+#                                     parameters_dict["target_service"]["type"],
+#                                     parameters_dict["target_service"]["version"],
+#                                     parameters_dict["target_service"]["is_local"]),
+#                                     "source_host": IP(parameters_dict["source_host"]["ip"])}
+#             case ActionType.ExfiltrateData:
+#                 parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
+#                                 "source_host": IP(parameters_dict["source_host"]["ip"]),
+#                               "data": Data(parameters_dict["data"]["owner"],parameters_dict["data"]["id"])}
+#             case ActionType.BlockIP:
+#                 parameters = {"target_host": IP(parameters_dict["target_host"]["ip"]),
+#                               "source_host": IP(parameters_dict["source_host"]["ip"]),
+#                               "blocked_host": IP(parameters_dict["blocked_host"]["ip"])}
+#             case ActionType.JoinGame:
+#                 parameters = {"agent_info":AgentInfo(parameters_dict["agent_info"]["name"], parameters_dict["agent_info"]["role"])}
+#             case ActionType.QuitGame:
+#                 parameters = {}
+#             case ActionType.ResetGame:
+#                 parameters = {}
+#             case _:
+#                 raise ValueError(f"Unknown Action type:{action_type}")
+#         action = Action(action_type=action_type, params=parameters)
+#         return action
 @dataclass(frozen=True)
 class GameState():
     """
@@ -487,34 +608,7 @@ class GameStatus(enum.Enum):
     def __repr__(self) -> str:
         return str(self)
 if __name__ == "__main__":
-    import asyncio
-
-    async def create_ip(ip_str):
-        return IP(ip_str)
-
-    async def main():
-        ip_address = '192.168.0.1'
-        task1 = asyncio.create_task(create_ip(ip_address))
-        task2 = asyncio.create_task(create_ip(ip_address))
-
-        ip1 = await task1
-        ip2 = await task2
-
-        print(f"ip1 == ip2: {ip1 == ip2}")           # Expected: True
-        print(f"hash(ip1) == hash(ip2): {hash(ip1) == hash(ip2)}")  # Expected: True
-        print(f"ip1 is ip2: {ip1 is ip2}")           # Expected: False (different instances)
-
-        ip_set = set()
-        ip_set.add(ip1)
-        print(f"ip2 in ip_set: {ip2 in ip_set}")     # Expected: True
-
-    asyncio.run(main())
-    #data1 = Data(owner="test", id="test_data", content="content", type="db")
-    #data2 = Data(owner="test", id="test_data", content="content", type="db")
-    # print(data)
-    # print(data.size)
-
-    # s = set()
-    # s.add(data)
-    # s.add( Data("test", "test_data", content="new_content", type="db"))
-    # print(s)
+    action1 = Action(action_type=ActionType.ScanNetwork, parameters={"source_host":IP("192.168.1.1"), "target_network":Network("192.168.1.0",24)})
+    json_data = action1.to_json()
+    print(json_data)
+    action2 = Action.from_json(json_data)
