@@ -425,7 +425,11 @@ class GameCoordinator:
             if self._episode_ends[agent_addr]:
                 async with self._episode_rewards_condition:
                     await self._episode_rewards_condition.wait()
-                # process rewards       
+            
+            # append step to the trajectory if needed
+            if self.task_config.get_store_trajectories() or self._use_global_defender:
+                async with self._agents_lock:
+                    self._add_step_to_trajectory(agent_addr, action, self._agent_rewards[agent_addr], new_state,end_reason=None)
             new_observation = Observation(self._agent_states[agent_addr], self._agent_rewards[agent_addr], self._episode_ends[agent_addr], info={})
             output_message_dict = {
                 "to_agent": agent_addr,
@@ -461,6 +465,9 @@ class GameCoordinator:
             self.logger.info("Resetting game to initial state.")
             await self.reset()
             for agent in self.agents:
+                if self.task_config.get_store_trajectories() or self._use_global_defender:
+                    async with self._agents_lock:
+                        self._store_trajectory_to_file(agent)
                 self.logger.debug(f"Resetting agent {agent}")
                 new_state = await self.reset_agent(agent, self.agents[agent][1], self._agent_starting_position[agent])
                 new_observation = Observation(self._agent_states[agent], 0, False, {})
@@ -582,3 +589,38 @@ class GameCoordinator:
         reward += self._rewards["win"] if goal_reached else 0
         reward += self._rewards["loss"] if detected else 0
         return reward
+
+    def _reset_trajectory(self, agent_addr:tuple)->dict:
+        agent_name, agent_role = self.agents[agent_addr]
+        self.logger.debug(f"Resetting trajectory of {agent_addr}")
+        return {
+                "trajectory":{
+                    "states":[self._agent_states[agent_addr].as_dict],
+                    "actions":[],
+                    "rewards":[],
+                },
+                "end_reason":None,
+                "agent_role":agent_role,
+                "agent_name":agent_name
+            }
+
+    def _add_step_to_trajectory(self, agent_addr:tuple, action:Action, reward:float, next_state:GameState, end_reason:str=None)-> None:
+        """
+        Method for adding one step to the agent trajectory.
+        """
+        if agent_addr in self._agent_trajectories:
+            self.logger.debug(f"Adding step to trajectory of {agent_addr}")
+            self._agent_trajectories[agent_addr]["trajectory"]["actions"].append(action.as_dict)
+            self._agent_trajectories[agent_addr]["trajectory"]["rewards"].append(reward)
+            self._agent_trajectories[agent_addr]["trajectory"]["states"].append(next_state.as_dict)
+            if end_reason:
+                self._agent_trajectories[agent_addr]["end_reason"] = end_reason
+    
+    def _store_trajectory_to_file(self, agent_addr:tuple, location="./trajectories")-> None:
+        self.logger.debug(f"Storing Trajectory of {agent_addr}in file")
+        if agent_addr in self._agent_trajectories:
+            agent_name, agent_role = self.agents[agent_addr] 
+            filename = os.path.join(location, f"{datetime.now():%Y-%m-%d}_{agent_name}_{agent_role}.jsonl")
+            with jsonlines.open(filename, "a") as writer:
+                writer.write(self._agent_trajectories[agent_addr])
+            self.logger.info(f"Trajectory of {agent_addr} strored in {filename}")
