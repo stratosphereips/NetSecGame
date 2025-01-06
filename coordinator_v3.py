@@ -476,6 +476,8 @@ class GameCoordinator:
                     self._agent_observations[agent] = new_observation
                     self._episode_ends[agent] = False
                     self._reset_requests[agent] = False
+                    if self.task_config.get_store_trajectories() or self._use_global_defender:
+                        self._agent_trajectories[agent] = self._reset_trajectory(agent)
             self._reset_event.clear()  
             # notify all waiting agents
             async with self._reset_done_condition:
