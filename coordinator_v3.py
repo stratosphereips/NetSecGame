@@ -16,7 +16,7 @@ from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment
 
 class GameCoordinator:
-    def __init__(self, game_host: str, game_port: int, service_host, service_port, world_type, allowed_roles=["Attacker", "Defender", "Benign"]) -> None:
+    def __init__(self, game_host: str, game_port: int, service_host:str, service_port:int, world_type:str, allowed_roles=["Attacker", "Defender", "Benign"]) -> None:
         self.host = game_host
         self.port = game_port
         self._service_host = service_host
@@ -73,15 +73,15 @@ class GameCoordinator:
         task.add_done_callback(remove_task)  # Remove task when done
         return task
 
-    async def create_agent_queue(self, addr)->None:
+    async def create_agent_queue(self, agent_addr:tuple)->None:
         """
         Creates a queue for the given agent address if it doesn't already exist.
         """
-        if addr not in self._agent_response_queues:
-            self._agent_response_queues[addr] = asyncio.Queue()
-            self.logger.info(f"Created queue for agent {addr}. {len(self._agent_response_queues)} queues in total.")
+        if agent_addr not in self._agent_response_queues:
+            self._agent_response_queues[agent_addr] = asyncio.Queue()
+            self.logger.info(f"Created queue for agent {agent_addr}. {len(self._agent_response_queues)} queues in total.")
 
-    def convert_msg_dict_to_json(self, msg_dict)->str:
+    def convert_msg_dict_to_json(self, msg_dict:dict)->str:
         """
         Helper function to create text-base messge from a dictionary. Used in the Agent-Game communication.
         """
@@ -504,7 +504,7 @@ class GameCoordinator:
         """
         raise NotImplementedError
     
-    async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
+    async def reset_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
         raise NotImplementedError
 
     async def _remove_agent_from_game(self, agent_addr):
@@ -534,7 +534,7 @@ class GameCoordinator:
                 self.logger.info(f"\t Player {agent_addr} not present in the game!")
             return agent_info
 
-    async def step(self, agent_id, agent_state, action):
+    async def step(self, agent_id:tuple, agent_state:GameState, action:Action):
         raise NotImplementedError
     
     async def reset(self):
@@ -577,7 +577,7 @@ class GameCoordinator:
     def is_detected(self, agent_addr:tuple)->bool:
         return False
 
-    def assign_reward(self, goal_reached, detected, timeout_reached):
+    def assign_reward(self, goal_reached:bool, detected:bool, timeout_reached:bool):
         reward = self._rewards["step"]
         reward += self._rewards["win"] if goal_reached else 0
         reward += self._rewards["loss"] if detected else 0
