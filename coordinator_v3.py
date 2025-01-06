@@ -4,6 +4,7 @@ import logging
 import json
 import asyncio
 from datetime import datetime
+import signal
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState, IP
 from utils.utils import observation_as_dict, get_logging_level, get_file_hash
 from pathlib import Path
@@ -64,7 +65,7 @@ class GameCoordinator:
         # trajectories per agent_addr
         self._agent_trajectories = {}
     
-    async def _spawn_task(self, coroutine, *args, **kwargs)->asyncio.Task:
+    def _spawn_task(self, coroutine, *args, **kwargs)->asyncio.Task:
         "Helper function to make sure all tasks are registered for proper termination"
         task = asyncio.create_task(coroutine(*args, **kwargs))
         self._tasks.add(task)
@@ -72,6 +73,12 @@ class GameCoordinator:
             self._tasks.discard(t)
         task.add_done_callback(remove_task)  # Remove task when done
         return task
+
+    async def shutdown_signal_handler(self):
+        """Handle shutdown signals."""
+        self.logger.info("Shutdown signal received. Setting shutdown flag.")
+        self.shutdown_flag.set()
+
 
     async def create_agent_queue(self, agent_addr:tuple)->None:
         """
@@ -100,12 +107,10 @@ class GameCoordinator:
         """
         try:
             asyncio.run(self.start_tasks())
-        except KeyboardInterrupt:
-            self.logger.info("Shutdown requested by user.")
         except Exception as e:
             self.logger.error(f"Unexpected error: {e}")
         finally:
-            self.logger.info("Coordinator has exited.")
+            self.logger.info(f"{__class__.__name__} has exited.")
 
     async def _fetch_initialization_objects(self):
         """Send a REST request to MAIN and fetch initialization objects of CYST simulator."""
@@ -203,13 +208,13 @@ class GameCoordinator:
             while not self.shutdown_flag.is_set():
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError:
-            print("TCP server task was cancelled")
+            self.logger.debug("\tStopping TCP server task.")
         except Exception as e:
             self.logger.error(f"TCP server failed: {e}")
         finally:
             server.close()
             await server.wait_closed()
-            print("TCP server has been shut down")
+            self.logger.info("\tTCP server task stopped")
 
     async def start_tasks(self):
         """
@@ -219,6 +224,17 @@ class GameCoordinator:
         - Start the main part of the coordinator
         - Start a server that listens for agents
         """
+        loop = asyncio.get_running_loop()
+        
+        # Set up signal handlers for graceful shutdown
+        loop.add_signal_handler(
+            signal.SIGINT, lambda: asyncio.create_task(self.shutdown_signal_handler())
+        )
+        loop.add_signal_handler(
+            signal.SIGTERM, lambda: asyncio.create_task(self.shutdown_signal_handler())
+        )
+
+
         # initialize the game
         self.logger.info("Requesting CYST configuration")
         if self._world_type == "cyst":
@@ -237,54 +253,59 @@ class GameCoordinator:
         ########################
 
         # start server for agent communication
-        await  self._spawn_task(self.start_tcp_server)
+        self._spawn_task(self.start_tcp_server)
 
         # start episode rewards task
-        await self._spawn_task(self._assign_rewards_episode_end)
+        self._spawn_task(self._assign_rewards_episode_end)
 
         # start episode rewards task
-        await self._spawn_task(self._reset_game)
+        self._spawn_task(self._reset_game)
 
-
-        try:
-            while not self.shutdown_flag.is_set():
-                # Read message from the queue
-                agent_addr, message = await self._agent_action_queue.get()
-                if message is not None:
-                    self.logger.debug(f"Coordinator received: {message}.")
-                    try:  # Convert message to Action
-                        action = Action.from_json(message)
-                        self.logger.debug(f"\tConverted to: {action}.")
-                    except Exception as e:
-                        self.logger.error(
-                            f"Error when converting msg to Action using Action.from_json():{e}, {message}"
-                        )
-                    match action.type:  # process action based on its type
-                        case ActionType.JoinGame:
-                            self.logger.debug(f"Start processing of ActionType.JoinGame by {agent_addr}")
-                            self.logger.debug(f"{action.type}, {action.type.value}, {action.type == ActionType.JoinGame}")
-                            await self._spawn_task(self._process_join_game_action, agent_addr, action)
-                        case ActionType.QuitGame:
-                            self.logger.debug(f"Start processing of ActionType.QuitGame by {agent_addr}")
-                            await self._spawn_task(self._process_quit_game_action, agent_addr)
-                        case ActionType.ResetGame:
-                            self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
-                            await self._spawn_task(self._process_reset_game_action, agent_addr, action)
-                        case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
-                            self.logger.debug(f"Start processing of {action.type} by {agent_addr}")
-                            await self._spawn_task(self._process_game_action, agent_addr, action)
-                        case _:
-                            self.logger.warning(f"Unsupported action type: {action}!")
-                    await asyncio.sleep(0.001)
-        except asyncio.CancelledError:
-           self.logger.info("Coordinator run cancelled")
-        finally:
-            self.logger.info("Shutting down...")
-            for task in self._tasks:
-                task.cancel()  # Cancel each active task
-            await asyncio.gather(*self._tasks, return_exceptions=True)  # Wait for all tasks to finish
-            self.logger.info("All tasks shut down.")
+        # start action processing task
+        self._spawn_task(self.run_game)
+        
+        while not self.shutdown_flag.is_set():
+            # just wait until user terminates
+            await asyncio.sleep(1)
+        self.logger.debug("Final cleanup started")
+        # make sure there are no running tasks left
+        for task in self._tasks:
+            task.cancel()  # Cancel each active task
+        await asyncio.gather(*self._tasks, return_exceptions=True)  # Wait for all tasks to finish
+        self.logger.info("All tasks shut down.")
     
+    async def run_game(self):
+        while not self.shutdown_flag.is_set():
+            # Read message from the queue
+            agent_addr, message = await self._agent_action_queue.get()
+            if message is not None:
+                self.logger.debug(f"Coordinator received: {message}.")
+                try:  # Convert message to Action
+                    action = Action.from_json(message)
+                    self.logger.debug(f"\tConverted to: {action}.")
+                except Exception as e:
+                    self.logger.error(
+                        f"Error when converting msg to Action using Action.from_json():{e}, {message}"
+                    )
+                match action.type:  # process action based on its type
+                    case ActionType.JoinGame:
+                        self.logger.debug(f"Start processing of ActionType.JoinGame by {agent_addr}")
+                        self.logger.debug(f"{action.type}, {action.type.value}, {action.type == ActionType.JoinGame}")
+                        await self._spawn_task(self._process_join_game_action, agent_addr, action)
+                    case ActionType.QuitGame:
+                        self.logger.debug(f"Start processing of ActionType.QuitGame by {agent_addr}")
+                        await self._spawn_task(self._process_quit_game_action, agent_addr)
+                    case ActionType.ResetGame:
+                        self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
+                        await self._spawn_task(self._process_reset_game_action, agent_addr, action)
+                    case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
+                        self.logger.debug(f"Start processing of {action.type} by {agent_addr}")
+                        await self._spawn_task(self._process_game_action, agent_addr, action)
+                    case _:
+                        self.logger.warning(f"Unsupported action type: {action}!")
+            await asyncio.sleep(0.0001)
+        self.logger.info("\tAction processing task stopped.")
+            
     async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
         """
         Method for processing Action of type ActionType.JoinGame
@@ -444,7 +465,15 @@ class GameCoordinator:
         self.logger.debug("Starting task for episode end reward assigning.")
         while not self.shutdown_flag.is_set():
             # wait until episode is finished by all agents
-            await self._episode_end_event.wait()
+            done, pending = await asyncio.wait(
+               [asyncio.create_task(self._episode_end_event.wait()), 
+                asyncio.create_task(self.shutdown_flag.wait())],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+             # Check if shutdown_flag was set
+            if self.shutdown_flag.is_set():
+                self.logger.debug("\tExiting reward assignment task.")
+                break
             self.logger.info("Episode finished. Assigning final rewards to agents.")
             async with self._agents_lock:
                 for agent in self.agents:
@@ -455,13 +484,23 @@ class GameCoordinator:
             # notify all waiting agents
             async with self._episode_rewards_condition:
                 self._episode_rewards_condition.notify_all()
-    
+        self.logger.info("\tReward assignment task stopped.")
+
     async def _reset_game(self):
         """Task that waits for all agents to request resets"""
         self.logger.debug("Starting task for game reset handelling.")
         while not self.shutdown_flag.is_set():
             # wait until episode is finished by all agents
-            await self._reset_event.wait()
+            done, pending = await asyncio.wait(
+               [asyncio.create_task(self._reset_event.wait()), 
+                asyncio.create_task(self.shutdown_flag.wait())],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+             # Check if shutdown_flag was set
+            if self.shutdown_flag.is_set():
+                self.logger.debug("\tExiting reset_game task.")
+                break
+            # wait until episode is finished by all agents
             self.logger.info("Resetting game to initial state.")
             await self.reset()
             for agent in self.agents:
@@ -482,7 +521,8 @@ class GameCoordinator:
             # notify all waiting agents
             async with self._reset_done_condition:
                 self._reset_done_condition.notify_all()
-
+        self.logger.info("\tReset game task stopped.")
+    
     def _initialize_new_player(self, agent_addr:tuple, agent_current_state:GameState) -> Observation:
         """
         Method to initialize new player upon joining the game.
