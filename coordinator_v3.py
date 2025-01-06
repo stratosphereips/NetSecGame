@@ -12,9 +12,84 @@ import os
 from utils.utils import ConfigParser
 import copy
 
-from coordinator import ConnectionLimitProtocol
 from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment
+
+class AgentServer(asyncio.Protocol):
+    def __init__(self, actions_queue, agent_response_queues, max_connections):
+        self.actions_queue = actions_queue
+        self.answers_queues = agent_response_queues
+        self.max_connections = max_connections
+        self.current_connections = 0
+        self.logger = logging.getLogger("AIDojo-AgentServer")
+    
+    async def handle_new_agent(self, reader, writer):
+        async def send_data_to_agent(writer, data: str) -> None:
+            """
+            Send the world to the agent
+            """
+            writer.write(bytes(str(data).encode()))
+
+        # Check if the maximum number of connections has been reached
+        if self.current_connections >= self.max_connections:
+            self.logger.info(
+                f"Max connections reached. Rejecting new connection from {writer.get_extra_info('peername')}"
+            )
+            writer.close()
+            return
+
+        # Increment the count of current connections
+        self.current_connections += 1
+
+        # Handle the new agent
+        addr = writer.get_extra_info("peername")
+        self.logger.info(f"New agent connected: {addr}")
+        # Ensure a queue exists for this agent
+        if addr not in self.answers_queues:
+            self.answers_queues[addr] = asyncio.Queue(maxsize=2)
+            self.logger.info(f"Created queue for agent {addr}")
+
+        try:
+            while True:
+                # Step 1: Read data from the agent
+                data = await reader.read(500)
+                if not data:
+                    self.logger.info(f"Agent {addr} disconnected.")
+                    quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
+                    await self.actions_queue.put((addr, quit_message))
+                    break
+
+                raw_message = data.decode().strip()
+                self.logger.debug(f"Handler received from {addr}: {raw_message}")
+
+                # Step 2: Forward the message to the Coordinator
+                await self.actions_queue.put((addr, raw_message))
+                await asyncio.sleep(0)
+                # Step 3: Get a matching response from the answers queue
+                response_queue = self.answers_queues[addr]
+                response = await response_queue.get()
+                self.logger.info(f"Sending response to agent {addr}: {response}")
+
+                # Step 4: Send the response to the agent
+                writer.write(bytes(str(response).encode()))
+                await writer.drain()
+        except asyncio.CancelledError:
+            self.logger.debug("Terminating by KeyboardInterrupt")
+            raise
+        finally:
+            # Decrement the count of current connections
+            self.current_connections -= 1
+            if addr in self.answers_queues:
+                self.answers_queues.pop(addr)
+                self.logger.info(f"Removed queue for agent {addr}")
+            else:
+                self.logger.warning(f"Queue for agent {addr} not found during cleanup.")
+            writer.close()
+            return
+            
+    async def __call__(self, reader, writer):
+        await self.handle_new_agent(reader, writer)
+
 
 class GameCoordinator:
     def __init__(self, game_host: str, game_port: int, service_host:str, service_port:int, world_type:str, allowed_roles=["Attacker", "Defender", "Benign"]) -> None:
@@ -195,7 +270,7 @@ class GameCoordinator:
         try:
             self.logger.info("Starting the server listening for agents")
             server = await asyncio.start_server(
-                ConnectionLimitProtocol(
+                AgentServer(
                     self._agent_action_queue,
                     self._agent_response_queues,
                     max_connections=2
@@ -384,11 +459,13 @@ class GameCoordinator:
             self.logger.debug(f"Cleaning up after QuitGame for {agent_addr}.")
     
     async def _process_reset_game_action(self, agent_addr: tuple, action:Action)->None:
+        self.logger.debug("Beginning the _process_reset_game_action.")
         async with self._reset_lock:
              # add reset request for this agent
             self._reset_requests[agent_addr] = True
             if all(self._reset_requests.values()):
                 # all agents want reset - reset the world
+                self.logger.debug(f"All agents requested reset, setting the event")
                 self._reset_event.set()
         
         # wait until reset is done
@@ -446,7 +523,6 @@ class GameCoordinator:
             if self._episode_ends[agent_addr]:
                 async with self._episode_rewards_condition:
                     await self._episode_rewards_condition.wait()
-            
             # append step to the trajectory if needed
             if self.task_config.get_store_trajectories() or self._use_global_defender:
                 async with self._agents_lock:
