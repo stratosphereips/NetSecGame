@@ -734,7 +734,6 @@ class NSGCoordinator(GameCoordinator):
         if len(self._networks) == 0:
             self._initialize()
         game_state = self._create_state_from_view(agent_initial_view)
-        self.logger.warning(f"{IP('192.168.0.2') in game_state.controlled_hosts}")
         return game_state
          
     async def remove_agent(self, agent_id, agent_state)->bool:
@@ -742,7 +741,6 @@ class NSGCoordinator(GameCoordinator):
         return True
         
     async def step(self, agent_id, agent_state, action)->GameState:
-        self.logger.warning(f"Inside task: {action.type}, module: {action.type.__class__.__module__},  action id={id(action)}")
         return self._execute_action(agent_state, action)
     
     async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
