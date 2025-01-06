@@ -15,8 +15,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from env.game_components import GameState, Action, ActionType, GameStatus, IP, Service
 from coordinator_v3 import GameCoordinator
-from cyst.api.environment.environment import Environment
-from cyst.api.environment.platform_specification import PlatformSpecification, PlatformType
 
 from utils.utils import get_starting_position_from_cyst_config, get_logging_level
 
@@ -96,7 +94,6 @@ class CYSTCoordinator(GameCoordinator):
             case _:
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
-
     
     async def _cyst_request(self, cyst_id:str, msg:dict)->tuple:
         url = f"http://localhost:8282/execute/{cyst_id}/" # Replace with your server's URL
