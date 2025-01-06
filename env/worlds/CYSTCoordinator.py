@@ -22,7 +22,7 @@ from utils.utils import get_starting_position_from_cyst_config, get_logging_leve
 
 class CYSTCoordinator(GameCoordinator):
 
-    def __init__(self, game_host, game_port, service_host, service_port, world_type, allowed_roles=["Attacker", "Defender", "Benign"]):
+    def __init__(self, game_host:str, game_port:int, service_host:str, service_port:int, world_type, allowed_roles=["Attacker", "Defender", "Benign"]):
         super().__init__(game_host, game_port, service_host, service_port, world_type, allowed_roles)
         self._id_to_cystid = {}
         self._cystid_to_id  = {}
@@ -33,7 +33,7 @@ class CYSTCoordinator(GameCoordinator):
         self._starting_positions = None
         self._availabe_cyst_agents = None
 
-    def get_cyst_id(self, agent_role):
+    def get_cyst_id(self, agent_role:str):
         """
         Returns ID of the CYST agent based on the agent's role.
         """
@@ -43,7 +43,7 @@ class CYSTCoordinator(GameCoordinator):
             cyst_id = None
         return cyst_id
     
-    async def register_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
+    async def register_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
         self.logger.debug(f"Registering agent {agent_id} in the world.")
         agent_role = "Attacker"
         if not self._starting_positions:
@@ -61,7 +61,7 @@ class CYSTCoordinator(GameCoordinator):
             else:
                 return None
     
-    async def remove_agent(self, agent_id, agent_state)->bool:
+    async def remove_agent(self, agent_id, agent_state:GameState)->bool:
         print(f"Removing agent {agent_id} from the CYST World")
         async with self._agents_lock:
             try:
@@ -98,7 +98,7 @@ class CYSTCoordinator(GameCoordinator):
         return next_state
 
     
-    async def _cyst_request(self, cyst_id, msg)->tuple:
+    async def _cyst_request(self, cyst_id:str, msg:dict)->tuple:
         url = f"http://localhost:8282/execute/{cyst_id}/" # Replace with your server's URL
         data = msg        # The JSON data you want to send
         self.logger.info(f"Sedning request {msg} to {url}")
@@ -173,9 +173,19 @@ class CYSTCoordinator(GameCoordinator):
                     extended_ks[ip].add(service)
             return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
+    async def _execute_find_data_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
+        raise NotImplementedError
+    
+    async def _execute_exploit_service_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
+        raise NotImplementedError
+    
+    async def _execute_exfiltrate_data_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
+        raise NotImplementedError
 
+    async def _execute_block_ip_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
+        raise NotImplementedError
 
-    async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
+    async def reset_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
         cyst_id = self._id_to_cystid[agent_id]
         kh = self._starting_positions[cyst_id]["known_hosts"]
         kn = self._starting_positions[cyst_id]["known_networks"]
