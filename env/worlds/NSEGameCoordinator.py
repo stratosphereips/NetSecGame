@@ -22,8 +22,8 @@ from utils.utils import get_starting_position_from_cyst_config, get_logging_leve
 
 class NSGCoordinator(GameCoordinator):
 
-    def __init__(self, game_host, game_port, service_host, service_port, world_type, allowed_roles=["Attacker", "Defender", "Benign"], seed=42):
-        super().__init__(game_host, game_port, service_host, service_port, world_type, allowed_roles)
+    def __init__(self, game_host, game_port, service_host, service_port, allowed_roles=["Attacker", "Defender", "Benign"], seed=42):
+        super().__init__(game_host, game_port, service_host, service_port, allowed_roles)
 
         # Internal data structure of the NSG
         self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment

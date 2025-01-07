@@ -20,8 +20,8 @@ from utils.utils import get_starting_position_from_cyst_config, get_logging_leve
 
 class CYSTCoordinator(GameCoordinator):
 
-    def __init__(self, game_host:str, game_port:int, service_host:str, service_port:int, world_type, allowed_roles=["Attacker", "Defender", "Benign"]):
-        super().__init__(game_host, game_port, service_host, service_port, world_type, allowed_roles)
+    def __init__(self, game_host:str, game_port:int, service_host:str, service_port:int, allowed_roles=["Attacker", "Defender", "Benign"]):
+        super().__init__(game_host, game_port, service_host, service_port, allowed_roles)
         self._id_to_cystid = {}
         self._cystid_to_id  = {}
         self._known_agent_roles = {}

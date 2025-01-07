@@ -6,7 +6,7 @@ import asyncio
 from datetime import datetime
 import signal
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState, IP
-from utils.utils import observation_as_dict
+from utils.utils import observation_as_dict, get_str_hash
 import os
 from utils.utils import ConfigParser
 
@@ -87,7 +87,6 @@ class AgentServer(asyncio.Protocol):
             
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
-
 
 class GameCoordinator:
     def __init__(self, game_host: str, game_port: int, service_host:str, service_port:int, allowed_roles=["Attacker", "Defender", "Benign"]) -> None:
@@ -192,7 +191,7 @@ class GameCoordinator:
                         response = await response.json()
                         self.logger.debug(response)
                         env = Environment.create()
-                        self._CONFIG_FILE_HASH = hash(response)
+                        self._CONFIG_FILE_HASH = get_str_hash(response)
                         self._cyst_objects = env.configuration.general.load_configuration(response)
                         self.logger.debug(f"Initialization objects received:{self._cyst_objects}")
                     else:
@@ -206,7 +205,7 @@ class GameCoordinator:
         """
         data = ...
         try:
-            self._cyst_object_string = hash(data["cyst_init_objects"])
+            self._cyst_object_string = get_str_hash(data["cyst_init_objects"])
             env = Environment.create()
             self._cyst_objects = env.configuration.general.load_configuration(data["cyst_init_objects"])
         except Exception as e:
