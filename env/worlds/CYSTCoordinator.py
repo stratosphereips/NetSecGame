@@ -208,16 +208,6 @@ if __name__ == "__main__":
     )
     
     parser.add_argument(
-        "-w",
-        "--world_type",
-        help="Define the world which is used as backed. Default NSE",
-        action="store",
-        required=False,
-        type=str,
-        default="cyst",
-    )
-    
-    parser.add_argument(
         "-gh",
         "--game_host",
         help="host where to run the game server",
@@ -276,6 +266,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
   
-    game_server = CYSTCoordinator(args.game_host, args.game_port, args.service_host , args.service_port, args.world_type)
+    game_server = CYSTCoordinator(args.game_host, args.game_port, args.service_host , args.service_port)
     # Run it!
     game_server.run()

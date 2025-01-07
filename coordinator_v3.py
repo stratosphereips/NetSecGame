@@ -6,11 +6,9 @@ import asyncio
 from datetime import datetime
 import signal
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState, IP
-from utils.utils import observation_as_dict, get_logging_level, get_file_hash
-from pathlib import Path
+from utils.utils import observation_as_dict
 import os
 from utils.utils import ConfigParser
-import copy
 
 from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment
@@ -92,13 +90,12 @@ class AgentServer(asyncio.Protocol):
 
 
 class GameCoordinator:
-    def __init__(self, game_host: str, game_port: int, service_host:str, service_port:int, world_type:str, allowed_roles=["Attacker", "Defender", "Benign"]) -> None:
+    def __init__(self, game_host: str, game_port: int, service_host:str, service_port:int, allowed_roles=["Attacker", "Defender", "Benign"]) -> None:
         self.host = game_host
         self.port = game_port
         self._service_host = service_host
         self._service_port = service_port
         self.logger = logging.getLogger("AIDojo-GameCoordinator")
-        self._world_type = world_type
         self.ALLOWED_ROLES = allowed_roles
         self._rewards = {
             "step":-1,
@@ -154,7 +151,6 @@ class GameCoordinator:
         self.logger.info("Shutdown signal received. Setting shutdown flag.")
         self.shutdown_flag.set()
 
-
     async def create_agent_queue(self, agent_addr:tuple)->None:
         """
         Creates a queue for the given agent address if it doesn't already exist.
@@ -203,6 +199,18 @@ class GameCoordinator:
                         self.logger.error(f"Failed to fetch initialization objects. Status: {response.status}")
             except Exception as e:
                self.logger.error(f"Error fetching initialization objects: {e}")
+
+    def _load_initialization_objects(self, task_config_file:str)->None:
+        """
+        Loads task configuration from a local file.
+        """
+        data = ...
+        try:
+            self._cyst_object_string = hash(data["cyst_init_objects"])
+            env = Environment.create()
+            self._cyst_objects = env.configuration.general.load_configuration(data["cyst_init_objects"])
+        except Exception as e:
+            self.logger.error(f"Error load initialization objects: {e}")
 
     def _get_starting_position_per_role(self)->dict:
         """
@@ -310,13 +318,17 @@ class GameCoordinator:
         )
 
 
-        # initialize the game
-        self.logger.info("Requesting CYST configuration")
-        if self._world_type == "cyst":
+        # initialize the game objects
+        if self._service_host: #get the task config using REST API
+            self.logger.info(f"Fetching task configuration from {self._service_host}:{self._service_port}")
             await self._fetch_initialization_objects()
-        else: # read it from a file
-            pass
-        
+        elif self._task_config_file: # load task config locally from a file
+            self.logger.info(f"Loading task configuration from file: {self._task_config_file}")
+            self._load_initialization_objects()
+        else:
+            raise ValueError("Task configuration not specified")
+
+             
         ##### REMOVE LATER #####
         self.task_config = ConfigParser("./netsecevn_conf_cyst_integration.yaml")
         self._starting_positions_per_role = self._get_starting_position_per_role()
