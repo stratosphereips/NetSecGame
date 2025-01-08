@@ -6,7 +6,7 @@ import asyncio
 from datetime import datetime
 import signal
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState, IP
-from utils.utils import observation_as_dict, get_str_hash
+from utils.utils import observation_as_dict, get_str_hash, ConfigParser
 import os
 from utils.utils import ConfigParser
 
@@ -89,11 +89,24 @@ class AgentServer(asyncio.Protocol):
         await self.handle_new_agent(reader, writer)
 
 class GameCoordinator:
-    def __init__(self, game_host: str, game_port: int, service_host:str, service_port:int, allowed_roles=["Attacker", "Defender", "Benign"]) -> None:
+    def __init__(self, game_host: str, game_port: int, service_host:str, service_port:int, allowed_roles=["Attacker", "Defender", "Benign"], task_config_file:str=None) -> None:
         self.host = game_host
         self.port = game_port
+        self.logger = logging.getLogger("AIDojo-GameCoordinator")
+
+        self._tasks = set()
+        self.shutdown_flag = asyncio.Event()
+        self._reset_event = asyncio.Event()
+        self._episode_end_event = asyncio.Event()
+        self._episode_rewards_condition = asyncio.Condition()
+        self._reset_done_condition = asyncio.Condition()
+        self._reset_lock = asyncio.Lock()
+        self._agents_lock = asyncio.Lock()
+        self._semaphore = asyncio.Semaphore(2)
+        
         self._service_host = service_host
         self._service_port = service_port
+        self._task_config_file = task_config_file
         self.logger = logging.getLogger("AIDojo-GameCoordinator")
         self.ALLOWED_ROLES = allowed_roles
         self._rewards = {
@@ -194,6 +207,7 @@ class GameCoordinator:
                         self._CONFIG_FILE_HASH = get_str_hash(response)
                         self._cyst_objects = env.configuration.general.load_configuration(response)
                         self.logger.debug(f"Initialization objects received:{self._cyst_objects}")
+                        #self.task_config = ConfigParser(config_dict=response["task_configuration"])
                     else:
                         self.logger.error(f"Failed to fetch initialization objects. Status: {response.status}")
             except Exception as e:
@@ -208,6 +222,7 @@ class GameCoordinator:
             self._cyst_object_string = get_str_hash(data["cyst_init_objects"])
             env = Environment.create()
             self._cyst_objects = env.configuration.general.load_configuration(data["cyst_init_objects"])
+            self.task_config = ConfigParser(task_config_file)
         except Exception as e:
             self.logger.error(f"Error load initialization objects: {e}")
 
@@ -329,13 +344,13 @@ class GameCoordinator:
 
              
         ##### REMOVE LATER #####
-        self.task_config = ConfigParser("./netsecevn_conf_cyst_integration.yaml")
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
         self._steps_limit_per_role = self._get_max_steps_per_role()
         self._use_global_defender = self.task_config.get_use_global_defender()
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
+        self._rewards = self.task_config.get_rewards(["step", "win", "loss"])
         ########################
 
         # start server for agent communication
