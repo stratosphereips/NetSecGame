@@ -122,14 +122,19 @@ class ConfigParser():
     """
     Class to deal with the configuration file
     """
-    def __init__(self, task_config_file):
+    def __init__(self, task_config_file:str=None, config_dict:dict=None):
         """
         Init the class 
         """
         self.logger = logging.getLogger('configparser')
-        self.read_config_file(task_config_file)
+        if task_config_file:
+            self.read_config_file(task_config_file)
+        elif config_dict:
+            self.config = config_dict
+        else:
+            self.logger.error("You must provide either the configuration file or a dictionary with the configuration!")
 
-    def read_config_file(self, conf_file_name):
+    def read_config_file(self, conf_file_name:str):
         """
         reads configuration file
         """
@@ -286,7 +291,7 @@ class ConfigParser():
                     self.logger.error(f'Configuration problem with the controlled hosts: {e}')
         return controlled_hosts
 
-    def get_player_win_conditions(self, type_of_player):
+    def get_player_win_conditions(self, type_of_player:str):
         """
         Get the goal of the player
         type_of_player: Can be 'attackers' or 'defenders' 
@@ -322,7 +327,7 @@ class ConfigParser():
 
         return player_goal
     
-    def get_player_start_position(self, type_of_player):
+    def get_player_start_position(self, type_of_player:str):
         """
         Generate the starting position of an attacking agent
         type_of_player: Can be 'attackers' or 'defenders' 
@@ -351,7 +356,7 @@ class ConfigParser():
 
         return player_start_position
 
-    def get_start_position(self, agent_role):
+    def get_start_position(self, agent_role:str):
         match agent_role:
             case "Attacker":
                 return self.get_player_start_position(agent_role)
@@ -401,7 +406,6 @@ class ConfigParser():
             self.logger.warning(f"Unsupported value in 'coordinator.agents.{role}.max_steps': {e}. Setting value to default=None (no step limit)")
         return max_steps
 
-
     def get_goal_description(self, agent_role)->dict:
         """
         Get goal description per role
@@ -423,7 +427,6 @@ class ConfigParser():
                 raise ValueError(f"Unsupported agent role: {agent_role}")
         return description
        
-
     def get_goal_reward(self)->float:
         """
         Reads  what is the reward for reaching the goal.
@@ -462,6 +465,14 @@ class ConfigParser():
             return -1
         except ValueError:
             return -1
+
+    def get_rewards(self, reward_names:list,  default_value=0)->dict:
+        rewards = {}
+        for name in reward_names:
+            try:
+                rewards[name] = self.config['env'][name]
+            except KeyError:
+                rewards[name] = default_value
 
     def get_use_dynamic_addresses(self)->bool:
         """
@@ -570,8 +581,6 @@ def get_starting_position_from_cyst_config(cyst_objects):
                         networks.add(Network(net_ip,int(net_mask)))
                 starting_positions[f"{obj.id}.{active_service.name}"] = {"known_hosts":hosts, "known_networks":networks}
     return starting_positions
-
-
 
 
 if __name__ == "__main__":
