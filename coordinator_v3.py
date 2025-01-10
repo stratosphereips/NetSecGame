@@ -109,11 +109,6 @@ class GameCoordinator:
         self._task_config_file = task_config_file
         self.logger = logging.getLogger("AIDojo-GameCoordinator")
         self.ALLOWED_ROLES = allowed_roles
-        self._rewards = {
-            "step":-1,
-            "win":100,
-            "loss":-10,
-        }
         self._cyst_objects = None
         self._cyst_object_string = None
         self._tasks = set()
