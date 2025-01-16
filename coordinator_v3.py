@@ -535,7 +535,7 @@ class GameCoordinator:
                 goal_reached = self.goal_check(agent_addr)
                 detected = self.is_detected(agent_addr)
                 timeout_reached = self._agent_steps[agent_addr] >= self._steps_limit_per_role[self.agents[agent_addr][1]]
-                self._agent_rewards[agent_addr] = self.assign_reward(goal_reached, detected, timeout_reached)
+                self._agent_rewards[agent_addr] += self.assign_reward(goal_reached, detected, timeout_reached)
                 # check if the episode ends for this agent
                 self._episode_ends[agent_addr] = any([goal_reached, detected,timeout_reached])
                 # check if this is the last agent that was playing
