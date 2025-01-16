@@ -621,6 +621,44 @@ class GameStatus(enum.Enum):
                 return GameStatus.RESET_DONE
     def __repr__(self) -> str:
         return str(self)
+
+
+@enum.unique
+class AgentStatus(enum.Enum):
+    ActivePlayer = "ActivePlayer"
+    PassivePlayer = "PassivePlayer"
+    TimeoutReached = "TimeoutReached"
+    ResetRequested = "ResetRequested"
+    
+    def to_string(self):
+        """Convert enum to string."""
+        return self.value
+    
+    def __eq__(self, other):
+        # Compare with another ActionType
+        if isinstance(other, ActionType):
+            return self.value == other.value
+        # Compare with a string
+        elif isinstance(other, str):
+            return self.value == other
+        else:
+            print("Types are fucked up")
+        return False
+
+    def __hash__(self):
+        # Use the hash of the value for consistent behavior
+        return hash(self.value)
+
+    @classmethod
+    def from_string(cls, name):
+        """Convert string to enum, stripping 'ActionType.' if present."""
+        if name.startswith("ActionType."):
+            name = name.split("ActionType.")[1]
+        try:
+            return cls[name]
+        except KeyError:
+            raise ValueError(f"Invalid ActionType: {name}")
+
 if __name__ == "__main__":
     action1 = Action(action_type=ActionType.ScanNetwork, parameters={"source_host":IP("192.168.1.1"), "target_network":Network("192.168.1.0",24)})
     json_data = action1.to_json()
