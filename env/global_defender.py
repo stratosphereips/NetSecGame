@@ -42,36 +42,39 @@ def stochastic(action_type:ActionType)->bool:
     Simple random detection based on predefied probability and ActionType
     """
     roll = random()
-    return roll < DEFAULT_DETECTION_PROBS[action_type]
+    if roll < DEFAULT_DETECTION_PROBS[action_type]:
+        return True
+    else:
+        return False
 
-def stochastic_with_threshold(action:Action, episode_actions:list, tw_size:int=5)-> bool:
+def stochastic_with_threshold(action: Action, episode_actions:list, tw_size:int=5)-> bool:
     """
     Only detect based on set probabilities if pre-defined thresholds are crossed.
     """
     # extend the episode with the latest action
-    episode_actions.append(action)
-    if len(episode_actions) >= tw_size:
-        last_n_actions = episode_actions[-tw_size:]
-        last_n_action_types = [action.type for action in last_n_actions]
+    # We need to copy the list before the copying, so we avoid modifying it when it is returned. Modifycation of passed list is the default behavior in Python
+    temp_episode_actions = episode_actions.copy()
+    temp_episode_actions.append(action.as_dict)
+    if len(temp_episode_actions) >= tw_size:
+        last_n_actions = temp_episode_actions[-tw_size:]
+        last_n_action_types = [action['type'] for action in last_n_actions]
         # compute ratio of action type in the TW
-        tw_ratio = last_n_action_types.count(action.type)/tw_size
+        tw_ratio = last_n_action_types.count(str(action.type))/tw_size
         # Count how many times this exact (parametrized) action was played in episode
-        repeats_in_episode = episode_actions.count(action)
-        # Compute Action type ration in the TW
-        tw_ratio = last_n_action_types.count(action.type)/tw_size
+        repeats_in_episode = temp_episode_actions.count(action.as_dict)
         # compute the highest consecutive number of action type in TW
-        max_consecutive_action_type= max(sum(1 for item in grouped if item == action.type)
+        max_consecutive_action_type = max(sum(1 for item in grouped if item == str(action.type))
                                             for _, grouped in groupby(last_n_action_types))
         
-        if action.type in CONSECUTIVE_THRESHOLD.keys():
+        if action.type in TW_CONSECUTIVE_TYPE_THRESHOLD.keys():
             # ScanNetwork, FindServices, ExfiltrateData
-            if tw_ratio < TW_RATIOS[action.type] and max_consecutive_action_type < CONSECUTIVE_THRESHOLD[action.type]:
+            if tw_ratio < TW_TYPE_RATIOS_THRESHOLD[action.type] and max_consecutive_action_type < TW_CONSECUTIVE_TYPE_THRESHOLD[action.type]:
                 return False
             else:
                 return stochastic(action.type)
-        elif action.type in REPEATED_THRESHOLD.keys():
+        elif action.type in EPISODE_REPEATED_ACTION_THRESHOLD.keys():
             # FindData, Exploit service
-            if tw_ratio < TW_RATIOS[action.type] and repeats_in_episode < REPEATED_THRESHOLD[action.type]:
+            if tw_ratio < TW_TYPE_RATIOS_THRESHOLD[action.type] and repeats_in_episode < EPISODE_REPEATED_ACTION_THRESHOLD[action.type]:
                 return False
             else:
                 return stochastic(action.type)
