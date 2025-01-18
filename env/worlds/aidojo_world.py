@@ -100,7 +100,7 @@ class AIDojoWorld(object):
                         new_state = self.step(game_state, action,agent_id)
                         msg = (agent_id, (new_state, GameStatus.OK))
                 # new_state = self.step(state, action, agent_id)
-                self.logger.debug(f"Sending to{agent_id}: {msg}")
+                self.logger.debug(f"Sending to {agent_id}: {msg}")
                 await self._response_queue.put(msg)
                 await asyncio.sleep(0)
         except asyncio.CancelledError:
