@@ -725,7 +725,7 @@ class Coordinator:
                 self._remove_player(agent_addr)
             elif agent_status in [AgentStatus.Ready, AgentStatus.Playing, AgentStatus.PlayingActive]:
                 output_message_dict = self._process_world_response_step(agent_addr, game_status, agent_new_state)
-            elif agent_status in [AgentStatus.FinishedBlocked, AgentStatus.FinishedGameLost, AgentStatus.FinishedGoalReached, AgentStatus.FinishedMaxSteps]:
+            elif agent_status in [AgentStatus.FinishedBlocked, AgentStatus.FinishedGameLost, AgentStatus.FinishedGoalReached, AgentStatus.FinishedMaxSteps]: # This if does not make sense. Put together with the previous (sebas)
                 output_message_dict = self._process_world_response_step(agent_addr, game_status, agent_new_state)
             else:
                 self.logger.error(f"Unsupported value '{agent_status}'!")
