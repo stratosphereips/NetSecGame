@@ -806,7 +806,7 @@ class Coordinator:
             if not self.episode_end:
                 # increase the action counter
                 self._agent_steps[agent_addr] += 1
-                self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
+                self.logger.info(f"Agent {agent_addr} did #steps: {self._agent_steps[agent_addr]}")
                 # register the new state
                 self._agent_states[agent_addr] = agent_new_state
                 # load the action which lead to the new state
