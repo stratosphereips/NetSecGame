@@ -4,30 +4,35 @@ from .game_components import ActionType, Action
 from random import random
 
 
+# The probability of detecting an action is defined by the following dictionary
 DEFAULT_DETECTION_PROBS = {
     ActionType.ScanNetwork: 0.05,
     ActionType.FindServices: 0.075,
     ActionType.ExploitService: 0.1,
     ActionType.FindData: 0.025,
     ActionType.ExfiltrateData: 0.025,
-    ActionType.BlockIP:0
+    ActionType.BlockIP: 0.01
 }
 
-TW_RATIOS = {
+# Ratios of action types in the time window (TW) for each action type. The ratio should be higher than the defined value to trigger a detection check
+TW_TYPE_RATIOS_THRESHOLD = {
     ActionType.ScanNetwork: 0.25,
     ActionType.FindServices: 0.3,
     ActionType.ExploitService: 0.25,
     ActionType.FindData: 0.5,
     ActionType.ExfiltrateData: 0.25,
-    ActionType.BlockIP:1
+    ActionType.BlockIP: 1
 }
 
-CONSECUTIVE_THRESHOLD = {
+# Thresholds for consecutive actions of the same type in the TW. Only if the threshold is crossed, the detection check is triggered
+TW_CONSECUTIVE_TYPE_THRESHOLD = {
     ActionType.ScanNetwork: 2,
     ActionType.FindServices: 3,
-    ActionType.ExfiltrateData: 2,
+    ActionType.ExfiltrateData: 2
 }
-REPEATED_THRESHOLD = {
+
+# Thresholds for repeated actions in the episode. Only if the threshold is crossed, the detection check is triggered
+EPISODE_REPEATED_ACTION_THRESHOLD = {
     ActionType.ExploitService: 2,
     ActionType.FindData: 2,
 }
