@@ -617,7 +617,9 @@ class Coordinator:
         if last_action:
             if self._use_global_defender:
                 self.logger.warning("Global defender - ONLY use for backward compatibility!")
-                episode_actions = self._agent_trajectories[agent_addr]["actions"] if "actions" in self._agent_trajectories[agent_addr] else []
+                episode_actions = None
+                if (agent_addr in self._agent_trajectories and "trajectory" in self._agent_trajectories[agent_addr] and "actions" in self._agent_trajectories[agent_addr]["trajectory"]):
+                    episode_actions = self._agent_trajectories[agent_addr]["trajectory"]["actions"]
                 detection =  stochastic_with_threshold(last_action, episode_actions)
         if detection:
             self.logger.info("\tDetected!")
@@ -723,7 +725,7 @@ class Coordinator:
                 self._remove_player(agent_addr)
             elif agent_status in [AgentStatus.Ready, AgentStatus.Playing, AgentStatus.PlayingActive]:
                 output_message_dict = self._process_world_response_step(agent_addr, game_status, agent_new_state)
-            elif agent_status in [AgentStatus.FinishedBlocked, AgentStatus.FinishedGameLost, AgentStatus.FinishedGoalReached, AgentStatus.FinishedMaxSteps]:
+            elif agent_status in [AgentStatus.FinishedBlocked, AgentStatus.FinishedGameLost, AgentStatus.FinishedGoalReached, AgentStatus.FinishedMaxSteps]: # This if does not make sense. Put together with the previous (sebas)
                 output_message_dict = self._process_world_response_step(agent_addr, game_status, agent_new_state)
             else:
                 self.logger.error(f"Unsupported value '{agent_status}'!")
@@ -804,7 +806,7 @@ class Coordinator:
             if not self.episode_end:
                 # increase the action counter
                 self._agent_steps[agent_addr] += 1
-                self.logger.info(f"{agent_addr} steps: {self._agent_steps[agent_addr]}")
+                self.logger.info(f"Agent {agent_addr} did #steps: {self._agent_steps[agent_addr]}")
                 # register the new state
                 self._agent_states[agent_addr] = agent_new_state
                 # load the action which lead to the new state
