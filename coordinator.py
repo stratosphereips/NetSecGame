@@ -617,7 +617,9 @@ class Coordinator:
         if last_action:
             if self._use_global_defender:
                 self.logger.warning("Global defender - ONLY use for backward compatibility!")
-                episode_actions = self._agent_trajectories[agent_addr]["actions"] if "actions" in self._agent_trajectories[agent_addr] else []
+                episode_actions = None
+                if (agent_addr in self._agent_trajectories and "trajectory" in self._agent_trajectories[agent_addr] and "actions" in self._agent_trajectories[agent_addr]["trajectory"]):
+                    episode_actions = self._agent_trajectories[agent_addr]["trajectory"]["actions"]
                 detection =  stochastic_with_threshold(last_action, episode_actions)
         if detection:
             self.logger.info("\tDetected!")
