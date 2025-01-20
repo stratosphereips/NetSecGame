@@ -8,7 +8,14 @@ import random
 import copy
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 import numpy as np
-from faker import Faker
+
+
+
+# from faker import Faker
+
+
+
+
 from env.worlds.aidojo_world import AIDojoWorld
 
 class NetworkSecurityEnvironment(AIDojoWorld):
@@ -64,10 +71,15 @@ class NetworkSecurityEnvironment(AIDojoWorld):
 
         # At this point all 'random' values should be assigned to something
         # Check if dynamic network and ip adddresses are required
-        if self.task_config.get_use_dynamic_addresses():
-            self.logger.info("Dynamic change of the IP and network addresses enabled")
-            self._faker_object = Faker()
-            Faker.seed(seed)
+
+
+
+        # if self.task_config.get_use_dynamic_addresses():
+        #     self.logger.info("Dynamic change of the IP and network addresses enabled")
+        #     self._faker_object = Faker()
+        #     Faker.seed(seed)
+
+
         self._episode_replay_buffer = None
 
         # Make a copy of data placements so it is possible to reset to it when episode ends
@@ -257,118 +269,118 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         self.logger.info(f"\tintitial self._ip_mapping: {self._ip_mapping}")
         self.logger.info("CYST configuration processed successfully")
 
-    def _create_new_network_mapping(self)->tuple:
-        """ Method that generates random IP and Network addreses
-          while following the topology loaded in the environment.
-         All internal data structures are updated with the newly generated addresses."""
-        fake = self._faker_object
-        mapping_nets = {}
-        mapping_ips = {}
+    # def _create_new_network_mapping(self)->tuple:
+    #     """ Method that generates random IP and Network addreses
+    #       while following the topology loaded in the environment.
+    #      All internal data structures are updated with the newly generated addresses."""
+    #     fake = self._faker_object
+    #     mapping_nets = {}
+    #     mapping_ips = {}
         
-        # generate mapping for networks
-        private_nets = []
-        for net in self._networks.keys():
-            if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
-                private_nets.append(net)
-            else:
-                mapping_nets[net] = gc.Network(fake.ipv4_public(), net.mask)
+    #     # generate mapping for networks
+    #     private_nets = []
+    #     for net in self._networks.keys():
+    #         if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+    #             private_nets.append(net)
+    #         else:
+    #             mapping_nets[net] = gc.Network(fake.ipv4_public(), net.mask)
         
-        # for private networks, we want to keep the distances among them
-        private_nets_sorted = sorted(private_nets)
-        valid_valid_network_mapping = False
-        counter_iter = 0
-        while not valid_valid_network_mapping:
-            try:
-                # find the new lowest networks
-                new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets_sorted[0].mask}")
-                # store its new mapping
-                mapping_nets[private_nets[0]] = gc.Network(str(new_base.network), private_nets_sorted[0].mask)
-                base = netaddr.IPNetwork(str(private_nets_sorted[0]))
-                is_private_net_checks = []
-                for i in range(1,len(private_nets_sorted)):
-                    current = netaddr.IPNetwork(str(private_nets_sorted[i]))
-                    # find the distance before mapping
-                    diff_ip = current.ip - base.ip
-                    # find the new mapping 
-                    new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
-                    # evaluate if its still a private network
-                    is_private_net_checks.append(new_net_addr.is_ipv4_private_use())
-                    # store the new mapping
-                    mapping_nets[private_nets_sorted[i]] = gc.Network(str(new_net_addr), private_nets_sorted[i].mask)
-                if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
-                    valid_valid_network_mapping = True
-            except IndexError as e:
-                self.logger.info(f"Dynamic address sampling failed, re-trying. {e}")
-                counter_iter +=1
-                if counter_iter > 10:
-                    self.logger.error("Dynamic address failed more than 10 times - stopping.")
-                    exit(-1)
-                # Invalid IP address boundary
-        self.logger.info(f"New network mapping:{mapping_nets}")
+    #     # for private networks, we want to keep the distances among them
+    #     private_nets_sorted = sorted(private_nets)
+    #     valid_valid_network_mapping = False
+    #     counter_iter = 0
+    #     while not valid_valid_network_mapping:
+    #         try:
+    #             # find the new lowest networks
+    #             new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets_sorted[0].mask}")
+    #             # store its new mapping
+    #             mapping_nets[private_nets[0]] = gc.Network(str(new_base.network), private_nets_sorted[0].mask)
+    #             base = netaddr.IPNetwork(str(private_nets_sorted[0]))
+    #             is_private_net_checks = []
+    #             for i in range(1,len(private_nets_sorted)):
+    #                 current = netaddr.IPNetwork(str(private_nets_sorted[i]))
+    #                 # find the distance before mapping
+    #                 diff_ip = current.ip - base.ip
+    #                 # find the new mapping 
+    #                 new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
+    #                 # evaluate if its still a private network
+    #                 is_private_net_checks.append(new_net_addr.is_ipv4_private_use())
+    #                 # store the new mapping
+    #                 mapping_nets[private_nets_sorted[i]] = gc.Network(str(new_net_addr), private_nets_sorted[i].mask)
+    #             if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
+    #                 valid_valid_network_mapping = True
+    #         except IndexError as e:
+    #             self.logger.info(f"Dynamic address sampling failed, re-trying. {e}")
+    #             counter_iter +=1
+    #             if counter_iter > 10:
+    #                 self.logger.error("Dynamic address failed more than 10 times - stopping.")
+    #                 exit(-1)
+    #             # Invalid IP address boundary
+    #     self.logger.info(f"New network mapping:{mapping_nets}")
         
-        # genereate mapping for ips:
-        for net,ips in self._networks.items():
-            ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))[1:]
-            # remove broadcast and network ip from the list
-            random.shuffle(ip_list)
-            for i,ip in enumerate(ips):
-                mapping_ips[ip] = gc.IP(str(ip_list[i]))
-            # Always add random, in case random is selected for ips
-            mapping_ips['random'] = 'random'
-        self.logger.info(f"Mapping IPs done:{mapping_ips}")
+    #     # genereate mapping for ips:
+    #     for net,ips in self._networks.items():
+    #         ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))[1:]
+    #         # remove broadcast and network ip from the list
+    #         random.shuffle(ip_list)
+    #         for i,ip in enumerate(ips):
+    #             mapping_ips[ip] = gc.IP(str(ip_list[i]))
+    #         # Always add random, in case random is selected for ips
+    #         mapping_ips['random'] = 'random'
+    #     self.logger.info(f"Mapping IPs done:{mapping_ips}")
         
-        # update ALL data structure in the environment with the new mappings
-        # self._networks
-        new_self_networks = {}
-        for net, ips in self._networks.items():
-            new_self_networks[mapping_nets[net]] = set()
-            for ip in ips:
-                new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
-        self._networks = new_self_networks
+    #     # update ALL data structure in the environment with the new mappings
+    #     # self._networks
+    #     new_self_networks = {}
+    #     for net, ips in self._networks.items():
+    #         new_self_networks[mapping_nets[net]] = set()
+    #         for ip in ips:
+    #             new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
+    #     self._networks = new_self_networks
         
-        # Harpo says that here there is a problem that firewall.items() do not return an ip that can be used in the mapping
-        # His solution is: (check)
-        """
-        new_self_firewall = {}
-        for ip, dst_ips in self._firewall.items():
-            if ip not in mapping_ips:
-                self.logger.debug(f"IP {ip} not found in mapping_ips")
-                continue  # Skip this IP if it's not found in the mapping
+    #     # Harpo says that here there is a problem that firewall.items() do not return an ip that can be used in the mapping
+    #     # His solution is: (check)
+    #     """
+    #     new_self_firewall = {}
+    #     for ip, dst_ips in self._firewall.items():
+    #         if ip not in mapping_ips:
+    #             self.logger.debug(f"IP {ip} not found in mapping_ips")
+    #             continue  # Skip this IP if it's not found in the mapping
 
-            new_self_firewall[mapping_ips[ip]] = set()
+    #         new_self_firewall[mapping_ips[ip]] = set()
            
-            for dst_ip in dst_ips:
-                new_self_firewall[mapping_ips[ip]].add(mapping_ips[dst_ip])
-        self._firewall = new_self_firewall
-        """
+    #         for dst_ip in dst_ips:
+    #             new_self_firewall[mapping_ips[ip]].add(mapping_ips[dst_ip])
+    #     self._firewall = new_self_firewall
+    #     """
 
-        #self._firewall
-        new_self_firewall = {}
-        for ip, dst_ips in self._firewall.items():
-            new_self_firewall[mapping_ips[ip]] = set()
-            for dst_ip in dst_ips:
-                new_self_firewall[mapping_ips[ip]].add(mapping_ips[dst_ip])
-        self._firewall = new_self_firewall
+    #     #self._firewall
+    #     new_self_firewall = {}
+    #     for ip, dst_ips in self._firewall.items():
+    #         new_self_firewall[mapping_ips[ip]] = set()
+    #         for dst_ip in dst_ips:
+    #             new_self_firewall[mapping_ips[ip]].add(mapping_ips[dst_ip])
+    #     self._firewall = new_self_firewall
 
-        #self._ip_to_hostname
-        new_self_ip_to_hostname  = {}
-        for ip, hostname in self._ip_to_hostname.items():
-            new_self_ip_to_hostname[mapping_ips[ip]] = hostname
-        self._ip_to_hostname = new_self_ip_to_hostname
+    #     #self._ip_to_hostname
+    #     new_self_ip_to_hostname  = {}
+    #     for ip, hostname in self._ip_to_hostname.items():
+    #         new_self_ip_to_hostname[mapping_ips[ip]] = hostname
+    #     self._ip_to_hostname = new_self_ip_to_hostname
 
-        # Map hosts_to_start
-        new_self_host_to_start  = []
-        for ip in self.hosts_to_start:
-            new_self_host_to_start.append(mapping_ips[ip])
-        self.hosts_to_start = new_self_host_to_start
+    #     # Map hosts_to_start
+    #     new_self_host_to_start  = []
+    #     for ip in self.hosts_to_start:
+    #         new_self_host_to_start.append(mapping_ips[ip])
+    #     self.hosts_to_start = new_self_host_to_start
         
-        #update mappings stored in the environment
-        for net, mapping in self._network_mapping.items():
-            self._network_mapping[net] = mapping_nets[mapping]
-        self.logger.debug(f"self._network_mapping: {self._network_mapping}")
-        for ip, mapping in self._ip_mapping.items():
-            self._ip_mapping[ip] = mapping_ips[mapping]
-        self.logger.debug(f"self._ip_mapping: {self._ip_mapping}")
+    #     #update mappings stored in the environment
+    #     for net, mapping in self._network_mapping.items():
+    #         self._network_mapping[net] = mapping_nets[mapping]
+    #     self.logger.debug(f"self._network_mapping: {self._network_mapping}")
+    #     for ip, mapping in self._ip_mapping.items():
+    #         self._ip_mapping[ip] = mapping_ips[mapping]
+    #     self.logger.debug(f"self._ip_mapping: {self._ip_mapping}")
     
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
         """
