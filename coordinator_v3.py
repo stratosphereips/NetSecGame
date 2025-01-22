@@ -338,6 +338,7 @@ class GameCoordinator:
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
         self._steps_limit_per_role = self._get_max_steps_per_role()
+        self.logger.debug(f"Timeouts set to:{self._steps_limit_per_role}")
         self._use_global_defender = self.task_config.get_use_global_defender()
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
         self._rewards = self.task_config.get_rewards(["step", "win", "loss"])
@@ -531,7 +532,7 @@ class GameCoordinator:
                 goal_reached = self.goal_check(agent_addr)
                 detected = self.is_detected(agent_addr)
                 timeout_reached = self._agent_steps[agent_addr] >= self._steps_limit_per_role[self.agents[agent_addr][1]]
-                self._agent_rewards[agent_addr] += self.assign_reward(goal_reached, detected, timeout_reached)
+                self._agent_rewards[agent_addr] = self.assign_reward(goal_reached, detected, timeout_reached)
                 # check if the episode ends for this agent
                 self._episode_ends[agent_addr] = any([goal_reached, detected,timeout_reached])
                 # check if this is the last agent that was playing
