@@ -470,11 +470,11 @@ class ConfigParser():
         rewards = {}
         for name in reward_names:
             try:
-                rewards[name] = self.config['env'][name]
+                rewards[name] = self.config['env']["rewards"][name]
             except KeyError:
                 rewards[name] = default_value
         return rewards
-        
+
     def get_use_dynamic_addresses(self)->bool:
         """
         Reads if the IP and Network addresses should be dynamically changed.
