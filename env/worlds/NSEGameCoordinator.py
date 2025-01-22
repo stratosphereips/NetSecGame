@@ -22,8 +22,8 @@ from utils.utils import get_starting_position_from_cyst_config, get_logging_leve
 
 class NSGCoordinator(GameCoordinator):
 
-    def __init__(self, game_host, game_port, service_host, service_port, allowed_roles=["Attacker", "Defender", "Benign"], seed=42):
-        super().__init__(game_host, game_port, service_host, service_port, allowed_roles)
+    def __init__(self, game_host, game_port, task_config:str, allowed_roles=["Attacker", "Defender", "Benign"], seed=42):
+        super().__init__(game_host, game_port, service_host=None, service_port=None, allowed_roles=allowed_roles, task_config_file=task_config)
 
         # Internal data structure of the NSG
         self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
@@ -799,27 +799,16 @@ if __name__ == "__main__":
         type=int,
         default="9000",
     )
-    
-    parser.add_argument(
-        "-sh",
-        "--service_host",
-        help="Host where to run the config server",
-        action="store",
-        required=False,
-        type=str,
-        default="127.0.0.1",
-    )
-    
-    parser.add_argument(
-        "-sp",
-        "--service_port",
-        help="Port where to listen for cyst config",
-        action="store",
-        required=False,
-        type=int,
-        default="9009",
-    )
 
+    parser.add_argument(
+        "-c",
+        "--task_config",
+        help="File with the task configuration",
+        action="store",
+        required=True,
+        type=str,
+        default="netsecenv_conf.yaml",
+    )
 
     args = parser.parse_args()
     print(args)
@@ -839,6 +828,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
   
-    game_server = NSGCoordinator(args.game_host, args.game_port, args.service_host , args.service_port)
+    game_server = NSGCoordinator(args.game_host, args.game_port, args.task_config)
     # Run it!
     game_server.run()

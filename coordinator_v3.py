@@ -208,18 +208,13 @@ class GameCoordinator:
             except Exception as e:
                self.logger.error(f"Error fetching initialization objects: {e}")
 
-    def _load_initialization_objects(self, task_config_file:str)->None:
+    def _load_initialization_objects(self)->None:
         """
         Loads task configuration from a local file.
         """
-        data = ...
-        try:
-            self._cyst_object_string = get_str_hash(data["cyst_init_objects"])
-            env = Environment.create()
-            self._cyst_objects = env.configuration.general.load_configuration(data["cyst_init_objects"])
-            self.task_config = ConfigParser(task_config_file)
-        except Exception as e:
-            self.logger.error(f"Error load initialization objects: {e}")
+        self.task_config = ConfigParser(self._task_config_file)
+        self._cyst_objects = self.task_config.get_scenario()
+        self._cyst_object_string = get_str_hash(str(self._cyst_objects))
 
     def _get_starting_position_per_role(self)->dict:
         """
