@@ -372,7 +372,7 @@ class GameCoordinator:
             # Read message from the queue
             agent_addr, message = await self._agent_action_queue.get()
             if message is not None:
-                self.logger.debug(f"Coordinator received: {message}.")
+                self.logger.info(f"Coordinator received: {message}.")
                 try:  # Convert message to Action
                     action = Action.from_json(message)
                     self.logger.debug(f"\tConverted to: {action}.")
@@ -626,6 +626,7 @@ class GameCoordinator:
                     self._episode_ends[agent] = False
                     self._reset_requests[agent] = False
                     self._agent_rewards[agent] = 0
+                    self._agent_steps[agent] = 0
                     if self.task_config.get_store_trajectories() or self._use_global_defender:
                         self._agent_trajectories[agent] = self._reset_trajectory(agent)
             self._reset_event.clear()  
