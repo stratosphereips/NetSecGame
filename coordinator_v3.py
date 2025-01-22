@@ -643,6 +643,7 @@ class GameCoordinator:
         self._episode_ends[agent_addr] = False
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = agent_current_state
+        self._agent_rewards[agent_addr] = 0
 
         if self.task_config.get_store_trajectories() or self._use_global_defender:
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
