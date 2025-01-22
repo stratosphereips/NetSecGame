@@ -214,7 +214,7 @@ class GameCoordinator:
         """
         self.task_config = ConfigParser(self._task_config_file)
         self._cyst_objects = self.task_config.get_scenario()
-        self._cyst_object_string = get_str_hash(str(self._cyst_objects))
+        self._CONFIG_FILE_HASH = get_str_hash(str(self._cyst_objects))
 
     def _get_starting_position_per_role(self)->dict:
         """
