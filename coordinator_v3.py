@@ -573,9 +573,25 @@ class GameCoordinator:
                 break
             self.logger.info("Episode finished. Assigning final rewards to agents.")
             async with self._agents_lock:
-                for agent in self.agents:
+                attackers = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "attacker"]
+                defenders = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "defender"]
+                successful_attack = False
+                # award attackers
+                for agent in attackers:
                     self.logger.debug(f"Processing reward for agent {agent}")
-                    # TODO assign rewards          
+                    if self.goal_check(agent):
+                        self._agent_rewards[agent] += self._rewards["win"]
+                        successful_attack = True
+                    else:
+                        self._agent_rewards[agent] += self._rewards["loss"]
+                # award defenders
+                for agent in defenders:
+                    self.logger.debug(f"Processing reward for agent {agent}")
+                    if not successful_attack:
+                        self._agent_rewards[agent] += self._rewards["win"]
+                    else:
+                        self._agent_rewards[agent] += self._rewards["loss"]
+                    # TODO Add penalty for False positives 
             # clear the episode end event
             self._episode_end_event.clear()
             # notify all waiting agents
@@ -725,7 +741,6 @@ class GameCoordinator:
 
     def assign_reward(self, goal_reached:bool, detected:bool, timeout_reached:bool):
         reward = self._rewards["step"]
-        reward += self._rewards["win"] if goal_reached else 0
         reward += self._rewards["loss"] if detected else 0
         return reward
 
