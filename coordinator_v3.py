@@ -341,6 +341,7 @@ class GameCoordinator:
         self._use_global_defender = self.task_config.get_use_global_defender()
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
         self._rewards = self.task_config.get_rewards(["step", "win", "loss"])
+        self.logger.debug(f"Rewards set to:{self._rewards}")
         ########################
 
         # start server for agent communication
@@ -623,6 +624,7 @@ class GameCoordinator:
                     self._agent_observations[agent] = new_observation
                     self._episode_ends[agent] = False
                     self._reset_requests[agent] = False
+                    self._agent_rewards[agent] = 0
                     if self.task_config.get_store_trajectories() or self._use_global_defender:
                         self._agent_trajectories[agent] = self._reset_trajectory(agent)
             self._reset_event.clear()  
