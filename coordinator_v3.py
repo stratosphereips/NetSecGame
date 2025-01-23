@@ -62,7 +62,7 @@ class AgentServer(asyncio.Protocol):
 
                 # Step 2: Forward the message to the Coordinator
                 await self.actions_queue.put((addr, raw_message))
-                await asyncio.sleep(0)
+                # await asyncio.sleep(0)
                 # Step 3: Get a matching response from the answers queue
                 response_queue = self.answers_queues[addr]
                 response = await response_queue.get()
@@ -293,7 +293,7 @@ class GameCoordinator:
             addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
             self.logger.info(f"\tServing on {addrs}")
             while not self.shutdown_flag.is_set():
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(1)
         except asyncio.CancelledError:
             self.logger.debug("\tStopping TCP server task.")
         except Exception as e:
@@ -396,7 +396,7 @@ class GameCoordinator:
                         await self._spawn_task(self._process_game_action, agent_addr, action)
                     case _:
                         self.logger.warning(f"Unsupported action type: {action}!")
-            await asyncio.sleep(0.0001)
+            #await asyncio.sleep(0.0001)
         self.logger.info("\tAction processing task stopped.")
             
     async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
