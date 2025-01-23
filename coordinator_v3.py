@@ -6,6 +6,7 @@ import asyncio
 from datetime import datetime
 import signal
 from env.game_components import Action, Observation, ActionType, GameStatus, GameState, IP, AgentStatus
+from env.global_defender import GlobalDefender
 from utils.utils import observation_as_dict, get_str_hash, ConfigParser
 import os
 from utils.utils import ConfigParser
@@ -340,7 +341,10 @@ class GameCoordinator:
         self._goal_description_per_role = self._get_goal_description_per_role()
         self._steps_limit_per_role = self._get_max_steps_per_role()
         self.logger.debug(f"Timeouts set to:{self._steps_limit_per_role}")
-        self._use_global_defender = self.task_config.get_use_global_defender()
+        if self.task_config.get_use_global_defender():
+            self._global_defender = GlobalDefender()
+        else:
+            self._global_defender = None
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
         self._rewards = self.task_config.get_rewards(["step", "win", "loss"])
         self.logger.debug(f"Rewards set to:{self._rewards}")
@@ -553,7 +557,7 @@ class GameCoordinator:
                 async with self._episode_rewards_condition:
                     await self._episode_rewards_condition.wait()
             # append step to the trajectory if needed
-            if self.task_config.get_store_trajectories() or self._use_global_defender:
+            if self.task_config.get_store_trajectories() or self._global_defender:
                 async with self._agents_lock:
                     self._add_step_to_trajectory(agent_addr, action, self._agent_rewards[agent_addr], new_state,end_reason=None)
             new_observation = Observation(self._agent_states[agent_addr], self._agent_rewards[agent_addr], self._episode_ends[agent_addr], info={})
@@ -628,7 +632,7 @@ class GameCoordinator:
             self.logger.info("Resetting game to initial state.")
             await self.reset()
             for agent in self.agents:
-                if self.task_config.get_store_trajectories() or self._use_global_defender:
+                if self.task_config.get_store_trajectories() or self._global_defender:
                     async with self._agents_lock:
                         self._store_trajectory_to_file(agent)
                 self.logger.debug(f"Resetting agent {agent}")
@@ -645,7 +649,7 @@ class GameCoordinator:
                         self._agent_status[agent] = AgentStatus.PlayingWithTimeout
                     else:
                         self._agent_status[agent] = AgentStatus.Playing
-                    if self.task_config.get_store_trajectories() or self._use_global_defender:
+                    if self.task_config.get_store_trajectories() or self._global_defender:
                         self._agent_trajectories[agent] = self._reset_trajectory(agent)
             self._reset_event.clear()  
             # notify all waiting agents
@@ -670,7 +674,7 @@ class GameCoordinator:
             self._agent_status[agent_addr] = AgentStatus.PlayingWithTimeout
         else:
             self._agent_status[agent_addr] = AgentStatus.Playing
-        if self.task_config.get_store_trajectories() or self._use_global_defender:
+        if self.task_config.get_store_trajectories() or self._global_defender:
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
@@ -758,8 +762,14 @@ class GameCoordinator:
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
-    def is_detected(self, agent_addr:tuple)->bool:
-        return False
+    def is_detected(self, agent:tuple)->bool:
+        if self._global_defender:
+            detection = self._global_defender.stochastic_with_threshold(self._agent_last_action[agent], self._agent_trajectories[agent]["trajectory"]["actions"])
+            self.logger.debug(f"Global Detection result: {detection}")
+            return detection
+        else:
+            # No global defender
+            return False
 
     def _reset_trajectory(self, agent_addr:tuple)->dict:
         agent_name, agent_role = self.agents[agent_addr]
