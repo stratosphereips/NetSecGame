@@ -220,8 +220,6 @@ class ActionType(enum.Enum):
         # Compare with a string
         elif isinstance(other, str):
             return self.value == other
-        else:
-            print("Types are fucked up")
         return False
 
     def __hash__(self):
@@ -512,13 +510,11 @@ class AgentStatus(enum.Enum):
     
     def __eq__(self, other):
         # Compare with another ActionType
-        if isinstance(other, ActionType):
+        if isinstance(other, AgentStatus):
             return self.value == other.value
         # Compare with a string
         elif isinstance(other, str):
             return self.value == other
-        else:
-            print("Types are fucked up")
         return False
 
     def __hash__(self):
@@ -527,13 +523,13 @@ class AgentStatus(enum.Enum):
 
     @classmethod
     def from_string(cls, name):
-        """Convert string to enum, stripping 'ActionType.' if present."""
-        if name.startswith("ActionType."):
-            name = name.split("ActionType.")[1]
+        """Convert string to enum, stripping 'AgentStatus.' if present."""
+        if name.startswith("AgentStatus."):
+            name = name.split("AgentStatus.")[1]
         try:
             return cls[name]
         except KeyError:
-            raise ValueError(f"Invalid ActionType: {name}")
+            raise ValueError(f"Invalid AgentStatus: {name}")
 
 if __name__ == "__main__":
     action1 = Action(action_type=ActionType.ScanNetwork, parameters={"source_host":IP("192.168.1.1"), "target_network":Network("192.168.1.0",24)})
