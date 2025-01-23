@@ -326,6 +326,22 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
         self._networks = new_self_networks
         
+        # Harpo says that here there is a problem that firewall.items() do not return an ip that can be used in the mapping
+        # His solution is: (check)
+        """
+        new_self_firewall = {}
+        for ip, dst_ips in self._firewall.items():
+            if ip not in mapping_ips:
+                self.logger.debug(f"IP {ip} not found in mapping_ips")
+                continue  # Skip this IP if it's not found in the mapping
+
+            new_self_firewall[mapping_ips[ip]] = set()
+           
+            for dst_ip in dst_ips:
+                new_self_firewall[mapping_ips[ip]].add(mapping_ips[dst_ip])
+        self._firewall = new_self_firewall
+        """
+
         #self._firewall
         new_self_firewall = {}
         for ip, dst_ips in self._firewall.items():

@@ -348,5 +348,25 @@ This will load and run the unit tests in the `tests` folder.
 ## Code adaptation for new configurations
 The code can be adapted to new configurations of games and for new agents. See [Agent repository](https://github.com/stratosphereips/NetSecGameAgents/tree/main) for more details.
 
+## Function calling diagram
+
+```
+_handle_world_responses
+    ├── _world_response_queue.get()  # Called continuously to get a response from the World Response Queue.
+    ├── _process_world_response      # Called to process the response from the world.
+    │       ├── _process_world_response_created  # Called if agent status is JoinRequested. Processes agent creation.
+    │       ├── _process_world_response_reset_done  # Called if agent status is ResetRequested. Processes agent reset.
+    │       ├── _remove_player  # Called if agent status is Quitting. Removes the agent from the world.
+    │       └── _process_world_response_step  # Called if agent status is Ready, Playing, or PlayingActive. Processes a game step.
+    ├── _answers_queues[agent_id].put()  # Called to place the processed response in the agent's answer queue.
+    └── asyncio.sleep()  # Called to yield control back to the event loop.
+
+_process_world_response
+    ├── _process_world_response_created  # Called if agent status is JoinRequested. Processes agent creation.
+    ├── _process_world_response_reset_done  # Called if agent status is ResetRequested. Processes agent reset.
+    ├── _remove_player  # Called if agent status is Quitting. Removes the agent from the world.
+    └── _process_world_response_step  # Called if agent status is Ready, Playing, or PlayingActive. Processes a game step.
+    ```
+
 ## About us
 This code was developed at the [Stratosphere Laboratory at the Czech Technical University in Prague](https://www.stratosphereips.org/).

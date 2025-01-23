@@ -57,6 +57,29 @@ class AIDojoWorld(object):
         raise NotImplementedError
 
     async def handle_incoming_action(self)->None:
+        """
+        Asynchronously handles incoming actions from agents and processes them accordingly.
+
+        This method continuously listens for actions from the `_action_queue`, processes them based on their type,
+        and sends the appropriate response to the `_response_queue`. It handles different types of actions such as
+        joining a game, quitting a game, and resetting the game. For other actions, it updates the game state by
+        calling the `step` method.
+
+        Raises:
+            asyncio.CancelledError: If the task is cancelled, it logs the termination message.
+
+        Action Types:
+            - ActionType.JoinGame: Creates a new game state and sends a CREATED status.
+            - ActionType.QuitGame: Sends an OK status with an empty game state.
+            - ActionType.ResetGame: Resets the world if the agent is "world", otherwise resets the game state and sends a RESET_DONE status.
+            - Other: Updates the game state using the `step` method and sends an OK status.
+
+        Logging:
+            - Logs the start of the task.
+            - Logs received actions and game states from agents.
+            - Logs the messages being sent to agents.
+            - Logs termination due to `asyncio.CancelledError`.
+        """
         try:
             self.logger.info(f"\tStaring {self.world_name} task.")
             while True:
@@ -77,7 +100,7 @@ class AIDojoWorld(object):
                         new_state = self.step(game_state, action,agent_id)
                         msg = (agent_id, (new_state, GameStatus.OK))
                 # new_state = self.step(state, action, agent_id)
-                self.logger.debug(f"Sending to{agent_id}: {msg}")
+                self.logger.debug(f"Sending to {agent_id}: {msg}")
                 await self._response_queue.put(msg)
                 await asyncio.sleep(0)
         except asyncio.CancelledError:
