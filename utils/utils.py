@@ -547,10 +547,10 @@ class ConfigParser():
 
     def get_use_global_defender(self)->bool:
         try:
-            use_firewall = self.config['env']['use_global_defender']
+            use_global_defender = self.config['env']['use_global_defender']
         except KeyError:
-            use_firewall = False
-        return use_firewall
+            use_global_defender = False
+        return use_global_defender
     
 def get_logging_level(debug_level):
     """
