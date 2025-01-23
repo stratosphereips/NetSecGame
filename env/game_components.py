@@ -499,10 +499,12 @@ class GameStatus(enum.Enum):
 
 @enum.unique
 class AgentStatus(enum.Enum):
-    ActivePlayer = "ActivePlayer"
-    PassivePlayer = "PassivePlayer"
+    Playing = "Playing"
+    PlayingWithTimeout = "PlayingWithTimeout"
     TimeoutReached = "TimeoutReached"
     ResetRequested = "ResetRequested"
+    Success = "Success"
+    Fail = "Fail"
     
     def to_string(self):
         """Convert enum to string."""

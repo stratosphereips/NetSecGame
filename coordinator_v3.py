@@ -5,7 +5,7 @@ import json
 import asyncio
 from datetime import datetime
 import signal
-from env.game_components import Action, Observation, ActionType, GameStatus, GameState, IP
+from env.game_components import Action, Observation, ActionType, GameStatus, GameState, IP, AgentStatus
 from utils.utils import observation_as_dict, get_str_hash, ConfigParser
 import os
 from utils.utils import ConfigParser
@@ -131,6 +131,7 @@ class GameCoordinator:
         self._agent_steps = {}
         # reset request per agent_addr (bool)
         self._reset_requests = {}
+        self._agent_status = {}
         self._episode_ends = {}
         self._agent_observations = {}
         # starting per agent_addr (dict)
@@ -509,7 +510,7 @@ class GameCoordinator:
             # agent can't play any more actions in the game
             current_observation = self._agent_observations[agent_addr]
             reward = self._agent_rewards[agent_addr]
-            end_reason = str(self._agent_statuses[agent_addr])
+            end_reason = str(self._agent_status[agent_addr])
             new_observation = Observation(
                 current_observation.state,
                 reward=reward,
@@ -526,16 +527,26 @@ class GameCoordinator:
                 self._agent_steps[agent_addr] += 1
             # wait for the new state from the world
             new_state = await self.step(agent_id=agent_addr, agent_state=self._agent_states[agent_addr], action=action)
+            
             # update agent's values
             async with self._agents_lock:
                 self._agent_states[agent_addr] = new_state
-                goal_reached = self.goal_check(agent_addr)
-                detected = self.is_detected(agent_addr)
-                timeout_reached = self._agent_steps[agent_addr] >= self._steps_limit_per_role[self.agents[agent_addr][1]]
-                self._agent_rewards[agent_addr] = self.assign_reward(goal_reached, detected, timeout_reached)
+                if self.goal_check(agent_addr):
+                    # Goal has been reached
+                    self._agent_status[agent_addr] = AgentStatus.Success
+                elif self.is_detected(agent_addr):
+                    # Detection by Global Defender
+                    self._agent_status[agent_addr] = AgentStatus.Fail
+                elif self._agent_steps[agent_addr] >= self._steps_limit_per_role[self.agents[agent_addr][1]]:
+                    # Timout Reached
+                    self._agent_status[agent_addr] = AgentStatus.Fail
+                # add reward for step (other rewards are added at the end of the episode)
+                self._agent_rewards[agent_addr] = self._rewards["step"]
+                
                 # check if the episode ends for this agent
-                self._episode_ends[agent_addr] = any([goal_reached, detected,timeout_reached])
-                # check if this is the last agent that was playing
+                if  self._agent_status[agent_addr] in [AgentStatus.Success, AgentStatus.Fail]:
+                    # For agents playing with timeout this episode ends with Success/Fail
+                    self._episode_ends[agent_addr] = True
                 if all(self._episode_ends.values()):
                     self._episode_end_event.set()
             if self._episode_ends[agent_addr]:
@@ -576,18 +587,21 @@ class GameCoordinator:
                 # award attackers
                 for agent in attackers:
                     self.logger.debug(f"Processing reward for agent {agent}")
-                    if self.goal_check(agent):
+                    if self._agent_status[agent] is AgentStatus.Success:
                         self._agent_rewards[agent] += self._rewards["win"]
                         successful_attack = True
                     else:
                         self._agent_rewards[agent] += self._rewards["loss"]
+                
                 # award defenders
                 for agent in defenders:
                     self.logger.debug(f"Processing reward for agent {agent}")
                     if not successful_attack:
                         self._agent_rewards[agent] += self._rewards["win"]
+                        self._agent_status[agent] = AgentStatus.Success
                     else:
                         self._agent_rewards[agent] += self._rewards["loss"]
+                        self._agent_status[agent] = AgentStatus.Fail
                     # TODO Add penalty for False positives 
             # clear the episode end event
             self._episode_end_event.clear()
@@ -648,7 +662,10 @@ class GameCoordinator:
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = agent_current_state
         self._agent_rewards[agent_addr] = 0
-
+        if agent_role.lower() == "attacker":
+            self._agent_status[agent_addr] = AgentStatus.PlayingWithTimeout
+        else:
+            self._agent_status[agent_addr] = AgentStatus.Playing
         if self.task_config.get_store_trajectories() or self._use_global_defender:
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
@@ -679,6 +696,7 @@ class GameCoordinator:
             if agent_addr in self.agents:
                 agent_info["state"] = self._agent_states.pop(agent_addr)
                 agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
+                agent_info["agent_status"] = self._agent_status.pop(agent_addr)
                 async with self._reset_lock:
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
                     # check if this agent was not preventing reset 
@@ -738,11 +756,6 @@ class GameCoordinator:
 
     def is_detected(self, agent_addr:tuple)->bool:
         return False
-
-    def assign_reward(self, goal_reached:bool, detected:bool, timeout_reached:bool):
-        reward = self._rewards["step"]
-        reward += self._rewards["loss"] if detected else 0
-        return reward
 
     def _reset_trajectory(self, agent_addr:tuple)->dict:
         agent_name, agent_role = self.agents[agent_addr]
