@@ -641,6 +641,10 @@ class GameCoordinator:
                     self._reset_requests[agent] = False
                     self._agent_rewards[agent] = 0
                     self._agent_steps[agent] = 0
+                    if self.agents[agent][1].lower() == "attacker":
+                        self._agent_status[agent] = AgentStatus.PlayingWithTimeout
+                    else:
+                        self._agent_status[agent] = AgentStatus.Playing
                     if self.task_config.get_store_trajectories() or self._use_global_defender:
                         self._agent_trajectories[agent] = self._reset_trajectory(agent)
             self._reset_event.clear()  
