@@ -65,14 +65,87 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 The defender does have the action to block an IP address in a target host. 
 
 
-> [!NOTE]  
-> The global defender, available in the previous environment versions, will not be supported in the future. To enable backward compatibility, the global defender functionality can be enabled by adding `use_global_defender: True` to the configuration YAML file in the `env` section. This option is disabled by default.
-
 The actions are:
 - BlockIP(). That takes as parameters:
   - "target_host": IP object where the block will be applied.
   - "source_host": IP object from which this action is executed.
   - "blocked_host": IP object to block in ANY direction as seen in the target_host.
+
+> [!NOTE]  
+> The global defender, available in the previous environment versions, will not be supported in the future. To enable backward compatibility, the global defender functionality can be enabled by adding `use_global_defender: True` to the configuration YAML file in the `env` section. This option is disabled by default.
+
+
+#### How the global defender detects
+
+The global defender is implemented as a stochastic detection, which means the detection is probabilistic.
+
+First, all the actions are analyzed in time windows (TW) (default is 5 actions). So the last 5 actions are analyzed together. Every new action moves the slides the TW by one position.
+
+
+##### Detection Thresholds
+
+- Detection Probabilities
+
+Each action type has a predefined probability of being detected. However, detection does not happen for every action; it depends on additional behavioral patterns.
+
+    - ScanNetwork: 0.05,
+    - FindServices: 0.075,
+    - ExploitService: 0.1,
+    - FindData: 0.025,
+    - ExfiltrateData: 0.025,
+    - BlockIP: 0.01
+
+This means that one action of the type ScanNetwork has a 5% probability of being detected by the defender. 
+This way we can define some basic probabilities based on how good we want the defender to be.
+
+- Type Ratio Threshold
+
+The Type Ratio Threshold defines how frequently an action must appear in the time window to be considered for detection. If the ratio is below this threshold, no detection occurs.
+
+For example, if the last action is ScanNetwork in a TW with [ScanNetwork, FindService, ScanNetwork, FindData, ScanNetwork], the ratio is 3/5 = 0.6
+
+The default values of the thresholds are:
+
+    - ScanNetwork: 0.25,
+    - FindServices: 0.3,
+    - ExploitService: 0.25,
+    - FindData: 0.5,
+    - ExfiltrateData: 0.25,
+    - BlockIP: 1
+
+- Consecutive Actions Threshold
+
+The Consecutive Actions Threshold determines the maximum number of consecutive occurrences of an action type within the time window before detection is triggered.
+
+The default values of the thresholds are:
+
+    - ScanNetwork: 2,
+    - FindServices: 3,
+    - ExfiltrateData: 2
+
+- Repeated Action Threshold
+
+The Repeated Action Threshold applies to certain action types and defines the number of times a specific action must appear in the __entire episode__ before it can be considered for detection.
+
+The default values are:
+
+    - ExploitService: 2
+    - FindData: 2
+
+
+##### Decision Logic
+
+The system monitors actions and maintains a history of recent ones within the time window.
+
+- If an action's Type Ratio Threshold is met within the time window or it exceeds the Consecutive Actions Threshold, it is evaluated for detection.
+
+- If the action type has a Repeated Action Threshold and has not been repeated enough times in the episode, it is ignored.
+
+- If an action meets the conditions above, it is subject to detection based on its predefined probability.
+
+- Actions that do not meet any threshold conditions are ignored, ensuring that occasional activity does not lead to unnecessary detections.
+
+This approach ensures that only repeated or excessive behavior is flagged, reducing false positives while maintaining a realistic monitoring system.
 
 
 ### Starting the game

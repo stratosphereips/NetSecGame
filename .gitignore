@@ -157,3 +157,4 @@ figures/*
 *trajectories*.json
 .vscode/settings.json
 trajectories/*
+*.tar.gz
