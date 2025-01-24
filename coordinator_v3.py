@@ -1,15 +1,13 @@
 import jsonlines
-import argparse
 import logging
 import json
 import asyncio
 from datetime import datetime
 import signal
-from env.game_components import Action, Observation, ActionType, GameStatus, GameState, IP, AgentStatus
+from env.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus
 from env.global_defender import GlobalDefender
 from utils.utils import observation_as_dict, get_str_hash, ConfigParser
 import os
-from utils.utils import ConfigParser
 
 from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment
