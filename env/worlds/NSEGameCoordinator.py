@@ -14,11 +14,11 @@ import netaddr
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from env.game_components import GameState, Action, ActionType, GameStatus, IP, Network, Data, Service
+from env.game_components import GameState, Action, ActionType, IP, Network, Data, Service
 from coordinator_v3 import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
-from utils.utils import get_starting_position_from_cyst_config, get_logging_level
+from utils.utils import get_logging_level
 
 class NSGCoordinator(GameCoordinator):
 
