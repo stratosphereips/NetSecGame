@@ -685,7 +685,7 @@ class TestGameState:
         assert game_state != game_state2
 
 
-    def test_game_state_to_json(self):
+    def test_game_state_as_json(self):
         game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
                 known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
                 known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
@@ -711,7 +711,7 @@ class TestGameState:
                 known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
                 known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
                             IP("192.168.1.2"):{Data("McGiver", "data2")}})
-        state_json = game_state.to_json()
+        state_json = game_state.as_json()
         deserialized_state = GameState.from_json(state_json)
         assert game_state is not deserialized_state
         assert game_state == deserialized_state
