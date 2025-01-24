@@ -344,11 +344,11 @@ class TestAction:
         #reverse parameters orders
         assert Action(action_type=ActionType.ExfiltrateData, parameters={"source_host": IP("172.16.1.2"), "target_host":IP("172.16.1.3"), "data":Data("User2", "PublicKey")}) in action_set
     
-    def test_action_as_json(self):
+    def test_action_to_json(self):
         # Scan Network
         action = Action(action_type=ActionType.ScanNetwork,
                         parameters={"target_network":Network("172.16.1.12", 24)})
-        action_json = action.as_json()
+        action_json = action.to_json()
         try:
             data = json.loads(action_json)
         except ValueError:
@@ -360,7 +360,7 @@ class TestAction:
         # Find services
         action = Action(action_type=ActionType.FindServices,
                         parameters={"target_host":IP("172.16.1.22")})
-        action_json = action.as_json()
+        action_json = action.to_json()
         try:
             data = json.loads(action_json)
         except ValueError:
@@ -372,7 +372,7 @@ class TestAction:
         # Find Data
         action = Action(action_type=ActionType.FindData,
                         parameters={"target_host":IP("172.16.1.22")})
-        action_json = action.as_json()
+        action_json = action.to_json()
         try:
             data = json.loads(action_json)
         except ValueError:
@@ -384,7 +384,7 @@ class TestAction:
         # Exploit Service
         action = Action(action_type=ActionType.ExploitService,
                         parameters={"target_host":IP("172.16.1.24"), "target_service": Service("ssh", "passive", "0.23", False)})
-        action_json = action.as_json()
+        action_json = action.to_json()
         try:
             data = json.loads(action_json)
         except ValueError:
@@ -397,7 +397,7 @@ class TestAction:
         # Exfiltrate Data
         action = Action(action_type=ActionType.ExfiltrateData, parameters={"target_host":IP("172.16.1.3"),
                          "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey", size=42, type="pub")})
-        action_json = action.as_json()
+        action_json = action.to_json()
         try:
             data = json.loads(action_json)
         except ValueError:
@@ -411,21 +411,21 @@ class TestAction:
     def test_action_scan_network_serialization(self):
         action = Action(action_type=ActionType.ScanNetwork,
                         parameters={"target_network":Network("172.16.1.12", 24),"source_host": IP("172.16.1.2") })
-        action_json = action.as_json()
+        action_json = action.to_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
     
     def test_action_find_services_serialization(self):
         action = Action(action_type=ActionType.FindServices,
                         parameters={"target_host":IP("172.16.1.22"), "source_host": IP("172.16.1.2")})
-        action_json = action.as_json()
+        action_json = action.to_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
 
     def test_action_find_data_serialization(self):
         action = Action(action_type=ActionType.FindData,
                         parameters={"target_host":IP("172.16.1.22"), "source_host": IP("172.16.1.2")})
-        action_json = action.as_json()
+        action_json = action.to_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
 
@@ -434,14 +434,14 @@ class TestAction:
                         parameters={"source_host": IP("172.16.1.2"),
                                 "target_host":IP("172.16.1.24"),
                                 "target_service": Service("ssh", "passive", "0.23", False)})
-        action_json = action.as_json()
+        action_json = action.to_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
     
     def test_action_exfiltrate_serialization(self):
         action = Action(action_type=ActionType.ExfiltrateData, parameters={"target_host":IP("172.16.1.3"),
                          "source_host": IP("172.16.1.2"), "data":Data("User2", "PublicKey")})
-        action_json = action.as_json()
+        action_json = action.to_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
     
@@ -452,7 +452,7 @@ class TestAction:
                     "agent_info": AgentInfo(name="TestingAgent", role="attacker"),
                     }
             )
-        action_json = action.as_json()
+        action_json = action.to_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
     
@@ -461,7 +461,7 @@ class TestAction:
                 action_type=ActionType.ResetGame,
                 parameters={}
             )
-        action_json = action.as_json()
+        action_json = action.to_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
     
@@ -470,7 +470,7 @@ class TestAction:
                 action_type=ActionType.QuitGame,
                 parameters={}
             )
-        action_json = action.as_json()
+        action_json = action.to_json()
         new_action = Action.from_json(action_json)
         assert action == new_action
     
@@ -685,13 +685,13 @@ class TestGameState:
         assert game_state != game_state2
 
 
-    def test_game_state_as_json(self):
+    def test_game_state_to_json(self):
         game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
                 known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
                 known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
                 known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
                             IP("192.168.1.2"):{Data("McGiver", "data2", 42, "txt")}})
-        game_json = game_state.as_json()
+        game_json = game_state.to_json()
         try:
             data = json.loads(game_json)
         except ValueError:
@@ -711,7 +711,7 @@ class TestGameState:
                 known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
                 known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
                             IP("192.168.1.2"):{Data("McGiver", "data2")}})
-        state_json = game_state.as_json()
+        state_json = game_state.to_json()
         deserialized_state = GameState.from_json(state_json)
         assert game_state is not deserialized_state
         assert game_state == deserialized_state
