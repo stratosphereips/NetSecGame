@@ -308,7 +308,7 @@ class Coordinator:
                         case ActionType.ResetGame:
                             self._reset_requests[agent_addr] = True
                             self._agent_statuses[agent_addr] = AgentStatus.ResetRequested
-                            self.logger.info(f"Coordinator received from RESET request from agent {agent_addr}")
+                            self.logger.info(f"Coordinator received from RESET request from agent {agent_addr} ({self.agents[agent_addr]})")
                             if all(self._reset_requests.values()):
                                 # should we discard the queue here?
                                 self.logger.info("All active agents requested reset")
@@ -320,6 +320,7 @@ class Coordinator:
                             else:
                                 self.logger.info("\t Waiting for other agents to request reset")
                         case _:
+                            self.logger.debug(f"Agent {self.agents[agent_addr]}, played Action {action}.")
                             # actions in the game
                             await self._process_generic_action(agent_addr, action)
                 await asyncio.sleep(0)
@@ -358,7 +359,9 @@ class Coordinator:
         if self.task_config.get_store_trajectories() or self._use_global_defender:
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
-        return Observation(self._agent_states[agent_addr], 0, False, {})
+        # Initializeing the player, also sets the end_episode to false for the Observation of the agent
+        end_episode = False
+        return Observation(self._agent_states[agent_addr], 0, end_episode, {})
 
     def _remove_player(self, agent_addr:tuple)->dict:
         """
@@ -549,7 +552,8 @@ class Coordinator:
         """
         Method for generating response when agent attemps to make a step after episode ended.
         """
-        current_observation = self._agent_observations[agent_addr]
+        # There is a case when a defender agent connects first and is alone that it doesnt receive an observation because the game may not have started. 
+        current_observation = self._agent_observations.get(agent_addr, Observation(self._agent_states[agent_addr], 0, True, {}))
         reward = self._agent_rewards[agent_addr]
         end_reason = str(self._agent_statuses[agent_addr])
         new_observation = Observation(
@@ -635,7 +639,7 @@ class Coordinator:
         agent_role = self.agents[agent_addr][1]
         if self._steps_limit_per_role[agent_role]:
             if self._agent_steps[agent_addr] >= self._steps_limit_per_role[agent_role]:
-                self.logger.info("Timeout reached by {self.agents[agent_addr]}!")
+                self.logger.info(f"Timeout reached by {self.agents[agent_addr]}!")
                 return True
         else:
             self.logger.debug(f"No max steps defined for role {agent_role}")
@@ -665,7 +669,7 @@ class Coordinator:
                         self._agent_rewards[agent] = 0
                     else:
                         if is_episode_over: #only assign defender's reward when episode ends
-                            sucessful_attacks = list(self._agent_statuses.values).count("goal_reached")
+                            sucessful_attacks = list(self._agent_statuses.values()).count("goal_reached")
                             if sucessful_attacks > 0:
                                 self._agent_rewards[agent] = sucessful_attacks*self._world._rewards["detection"]
                                 self._agent_statuses[agent] = "game_lost"
@@ -694,7 +698,7 @@ class Coordinator:
                     response_msg_json = self._process_world_response(agent_id, response)
                     # Notify the agent if there is message
                     if len(response_msg_json) > 2: # we have NON EMPTY JSON  (len('{}') = 2)
-                        self.logger.info(f"Generated response for agent {agent_id}: {response_msg_json}") 
+                        self.logger.info(f"Generated response for agent {agent_id} ({self.agents[agent_id]}): {response_msg_json}") 
                         await self._answers_queues[agent_id].put(response_msg_json)
                         self.logger.info(f"Placed response in answers queue for agent {agent_id}")
                     else:
@@ -806,7 +810,7 @@ class Coordinator:
             if not self.episode_end:
                 # increase the action counter
                 self._agent_steps[agent_addr] += 1
-                self.logger.info(f"Agent {agent_addr} did #steps: {self._agent_steps[agent_addr]}")
+                self.logger.info(f"Agent {agent_addr} ({self.agents[agent_addr]}) did #steps: {self._agent_steps[agent_addr]}")
                 # register the new state
                 self._agent_states[agent_addr] = agent_new_state
                 # load the action which lead to the new state
