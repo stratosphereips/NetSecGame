@@ -691,7 +691,7 @@ class TestGameState:
                 known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
                 known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
                             IP("192.168.1.2"):{Data("McGiver", "data2", 42, "txt")}})
-        game_json = game_state.to_json()
+        game_json = game_state.as_json()
         try:
             data = json.loads(game_json)
         except ValueError:
