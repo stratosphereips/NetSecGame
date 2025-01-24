@@ -116,6 +116,7 @@ class Network():
     @classmethod
     def from_dict(cls, data: dict):
         return cls(**data)
+
 """
 Data represents the data object in the NetSecGame
 """
@@ -136,66 +137,6 @@ class Data():
     @classmethod
     def from_dict(cls, data: dict):
         return cls(**data)
-# @enum.unique
-# class ActionType(enum.Enum):
-#     """
-#     ActionType represents generic action for attacker in the game. Each transition has a default probability
-#     of success and probability of detection (if the defender is present).
-#     Currently 5 action types are implemented:
-#     - ScanNetwork
-#     - FindServices
-#     - FindData
-#     - ExploitService
-#     - ExfiltrateData
-#     - BlockIP
-#     - JoinGame
-#     - QuitGame
-#     """
-
-#     #override the __new__ method to enable multiple parameters
-#     def __new__(cls, *args, **kwargs):
-#         value = len(cls.__members__) + 1
-#         obj = object.__new__(cls)
-#         obj._value_ = value
-#         return obj
-
-#     def __init__(self, default_success_p: float):
-#         self.default_success_p = default_success_p
-
-#     @classmethod
-#     def from_string(cls, string:str):
-#         match string:
-#             case "ActionType.ExploitService":
-#                 return ActionType.ExploitService
-#             case "ActionType.ScanNetwork":
-#                 return  ActionType.ScanNetwork
-#             case "ActionType.FindServices":
-#                 return ActionType.FindServices
-#             case "ActionType.FindData":
-#                 return ActionType.FindData
-#             case "ActionType.ExfiltrateData":
-#                 return ActionType.ExfiltrateData
-#             case "ActionType.BlockIP":
-#                 return ActionType.BlockIP
-#             case "ActionType.JoinGame":
-#                 return ActionType.JoinGame
-#             case "ActionType.ResetGame":
-#                 return ActionType.ResetGame
-#             case "ActionType.QuitGame":
-#                 return ActionType.QuitGame
-#             case _:
-#                 raise ValueError("Uknown Action Type")
-
-#     #ActionTypes
-#     ScanNetwork = 0.9
-#     FindServices = 0.9
-#     FindData = 0.8
-#     ExploitService = 0.7
-#     ExfiltrateData = 0.8
-#     BlockIP = 1
-#     JoinGame = 1
-#     QuitGame = 1
-#     ResetGame = 1
 
 @enum.unique
 class ActionType(enum.Enum):
@@ -530,9 +471,3 @@ class AgentStatus(enum.Enum):
             return cls[name]
         except KeyError:
             raise ValueError(f"Invalid AgentStatus: {name}")
-
-if __name__ == "__main__":
-    action1 = Action(action_type=ActionType.ScanNetwork, parameters={"source_host":IP("192.168.1.1"), "target_network":Network("192.168.1.0",24)})
-    json_data = action1.to_json()
-    print(json_data)
-    action2 = Action.from_json(json_data)
