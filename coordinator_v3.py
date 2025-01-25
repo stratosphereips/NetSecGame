@@ -530,7 +530,7 @@ class GameCoordinator:
                 elif self.is_detected(agent_addr):
                     # Detection by Global Defender
                     self._agent_status[agent_addr] = AgentStatus.Fail
-                elif self._agent_steps[agent_addr] >= self._steps_limit_per_role[self.agents[agent_addr][1]]:
+                elif self.is_timout(agent_addr):
                     # Timout Reached
                     self._agent_status[agent_addr] = AgentStatus.Fail
                 # add reward for step (other rewards are added at the end of the episode)
@@ -539,6 +539,11 @@ class GameCoordinator:
                 # check if the episode ends for this agent
                 if  self._agent_status[agent_addr] in [AgentStatus.Success, AgentStatus.Fail]:
                     # For agents playing with timeout this episode ends with Success/Fail
+                    self._episode_ends[agent_addr] = True
+                # check if there are any agents playing with timeout
+                if AgentStatus.PlayingWithTimeout not in self._agent_status.values():
+                    # all attackers have finised - terminate episode
+                    self.logger.info(f"Stopping episode for {agent_addr} because the is no ACTIVE agent anymore")
                     self._episode_ends[agent_addr] = True
                 if all(self._episode_ends.values()):
                     self._episode_end_event.set()
@@ -742,7 +747,7 @@ class GameCoordinator:
                     # some keys are missing in the known_dict
                     return False
             return False
-        self.logger.debug("Checking goal for agent {aget_addr}.")
+        self.logger.debug(f"Checking goal for agent {agent_addr}.")
         goal_conditions = self._win_conditions_per_role[self.agents[agent_addr][1]]
         state = self._agent_states[agent_addr]
         # For each part of the state of the game, check if the conditions are met
@@ -764,6 +769,13 @@ class GameCoordinator:
         else:
             # No global defender
             return False
+
+    def is_timout(self, agent:tuple)->bool:
+        timeout_reached = False
+        if self._steps_limit_per_role[self.agents[agent][1]]:
+            if self._agent_steps[agent] >= self._steps_limit_per_role[self.agents[agent][1]]:
+                timeout_reached = True
+        return timeout_reached
 
     def _reset_trajectory(self, agent_addr:tuple)->dict:
         agent_name, agent_role = self.agents[agent_addr]
