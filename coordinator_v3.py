@@ -336,7 +336,7 @@ class GameCoordinator:
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
         self._rewards = self.task_config.get_rewards(["step", "sucess", "fail"])
         self.logger.debug(f"Rewards set to:{self._rewards}")
-        
+
         # start server for agent communication
         self._spawn_task(self.start_tcp_server)
 
@@ -412,6 +412,7 @@ class GameCoordinator:
                             async with self._agents_lock:
                                 self.agents[agent_addr] = (agent_name, agent_role)
                                 observation = self._initialize_new_player(agent_addr, new_agent_game_state)
+                                self._agent_observations[agent_addr] = observation
                             output_message_dict = {
                                 "to_agent": agent_addr,
                                 "status": str(GameStatus.CREATED),
@@ -498,6 +499,7 @@ class GameCoordinator:
 
     async def _process_game_action(self, agent_addr: tuple, action:Action)->None:
         if self._episode_ends[agent_addr]:
+            self.logger.warning(f"Agent {agent_addr}({self.agents[agent_addr]}) is attempting to play action {action} after the end of the episode!")
             # agent can't play any more actions in the game
             current_observation = self._agent_observations[agent_addr]
             reward = self._agent_rewards[agent_addr]
@@ -547,14 +549,19 @@ class GameCoordinator:
             if self.task_config.get_store_trajectories() or self._global_defender:
                 async with self._agents_lock:
                     self._add_step_to_trajectory(agent_addr, action, self._agent_rewards[agent_addr], new_state,end_reason=None)
-            new_observation = Observation(self._agent_states[agent_addr], self._agent_rewards[agent_addr], self._episode_ends[agent_addr], info={})
+            # add information to 'info' field if needed
+            info = {}
+            if self._agent_status[agent_addr] not in [AgentStatus.Playing, AgentStatus.PlayingWithTimeout]:
+                info["reason"] = str(self._agent_status[agent_addr])
+            new_observation = Observation(self._agent_states[agent_addr], self._agent_rewards[agent_addr], self._episode_ends[agent_addr], info=info)
+            self._agent_observations[agent_addr] = new_observation
             output_message_dict = {
                 "to_agent": agent_addr,
                 "observation": observation_as_dict(new_observation),
                 "status": str(GameStatus.OK),
             }
-            response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
-            await self._agent_response_queues[agent_addr].put(response_msg_json)
+        response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+        await self._agent_response_queues[agent_addr].put(response_msg_json)
 
     async def _assign_rewards_episode_end(self):
         """Task that waits for all agents to finish and assigns rewards."""
