@@ -323,7 +323,7 @@ class GameCoordinator:
             raise ValueError("Task configuration not specified")
 
              
-        ##### REMOVE LATER #####
+        # Read configuration
         self._starting_positions_per_role = self._get_starting_position_per_role()
         self._win_conditions_per_role = self._get_win_condition_per_role()
         self._goal_description_per_role = self._get_goal_description_per_role()
@@ -336,8 +336,7 @@ class GameCoordinator:
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
         self._rewards = self.task_config.get_rewards(["step", "sucess", "fail"])
         self.logger.debug(f"Rewards set to:{self._rewards}")
-        ########################
-
+        
         # start server for agent communication
         self._spawn_task(self.start_tcp_server)
 
