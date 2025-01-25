@@ -123,7 +123,7 @@ class ConfigParser():
     """
     def __init__(self, task_config_file:str=None, config_dict:dict=None):
         """
-        Init the class 
+        Initializes the configuration parser. Required either path to a confgiuration file or a dict with configuraitons.
         """
         self.logger = logging.getLogger('configparser')
         if task_config_file:
@@ -196,18 +196,6 @@ class ConfigParser():
                 known_blocks[target_host] = block_list
             else:
                 raise ValueError(f"Unsupported value in 'known_blocks': {known_blocks_conf}")
-            # try:
-            #     # Check the host is a good ip
-            #     _ = netaddr.IPAddress(target_host)
-            #     target_host_ip = IP(target_host)
-            #     for known_blocked_host in dict_blocked_hosts.values():
-            #         known_blocked_host_ip = IP(known_blocked_host)
-            #         known_blocks[target_host_ip].append(known_blocked_host_ip)
-            # except (ValueError, netaddr.AddrFormatError):
-            #     if target_host.lower() == "all_routers":
-            #         known_blocks["all_routers"] = dict_blocked_hosts
-            # except (ValueError):
-            #     known_blocks = {}
         return known_blocks
     
     def read_agents_known_services(self, type_agent: str, type_data: str) -> dict:
@@ -425,52 +413,15 @@ class ConfigParser():
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
         return description
-       
-    def get_goal_reward(self)->float:
-        """
-        Reads  what is the reward for reaching the goal.
-        default: 100
-        """
-        try:
-            goal_reward = self.config['env']['goal_reward']
-            return float(goal_reward)
-        except KeyError:
-            return 100
-        except ValueError:
-            return 100
-    
-    def get_detection_reward(self)->float:
-        """
-        Reads what is the reward for detection.
-        default: -50
-        """
-        try:
-            detection_reward = self.config['env']['detection_reward']
-            return float(detection_reward)
-        except KeyError:
-            return -50
-        except ValueError:
-            return -50
-    
-    def get_step_reward(self)->float:
-        """
-        Reads what is the reward for detection.
-        default: -1
-        """
-        try:
-            step_reward = self.config['env']['step_reward']
-            return float(step_reward)
-        except KeyError:
-            return -1
-        except ValueError:
-            return -1
 
     def get_rewards(self, reward_names:list,  default_value=0)->dict:
+        "Reads configuration for rewards for cases listed in 'rewards_names'"
         rewards = {}
         for name in reward_names:
             try:
                 rewards[name] = self.config['env']["rewards"][name]
             except KeyError:
+                self.logger.warning(f"No reward value found for '{name}'. Usinng default reward({name})={default_value}")
                 rewards[name] = default_value
         return rewards
 
