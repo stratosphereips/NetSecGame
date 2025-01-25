@@ -262,17 +262,7 @@ class GameCoordinator:
         """
         Method for finding max amount of steps in 1 episode for each agent role in the game.
         """
-        max_steps = {
-            "Attacker":20,
-            "Defender":20,
-            "Benign":20,
-        }
-        # for agent_role in self.ALLOWED_ROLES:
-        #     try:
-        #         max_steps[agent_role] = self.task_config.get_max_steps(agent_role)
-        #     except KeyError:
-        #         max_steps[agent_role] = None
-        #     self.logger.info(f"Max steps in episode for '{agent_role}': {max_steps[agent_role]}")
+        max_steps = {role:self.task_config.get_max_steps(role) for role in self.ALLOWED_ROLES}
         return max_steps
     
     async def start_tcp_server(self):
@@ -344,7 +334,7 @@ class GameCoordinator:
         else:
             self._global_defender = None
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
-        self._rewards = self.task_config.get_rewards(["step", "win", "loss"])
+        self._rewards = self.task_config.get_rewards(["step", "sucess", "fail"])
         self.logger.debug(f"Rewards set to:{self._rewards}")
         ########################
 
@@ -590,19 +580,19 @@ class GameCoordinator:
                 for agent in attackers:
                     self.logger.debug(f"Processing reward for agent {agent}")
                     if self._agent_status[agent] is AgentStatus.Success:
-                        self._agent_rewards[agent] += self._rewards["win"]
+                        self._agent_rewards[agent] += self._rewards["sucess"]
                         successful_attack = True
                     else:
-                        self._agent_rewards[agent] += self._rewards["loss"]
+                        self._agent_rewards[agent] += self._rewards["fail"]
                 
                 # award defenders
                 for agent in defenders:
                     self.logger.debug(f"Processing reward for agent {agent}")
                     if not successful_attack:
-                        self._agent_rewards[agent] += self._rewards["win"]
+                        self._agent_rewards[agent] += self._rewards["sucess"]
                         self._agent_status[agent] = AgentStatus.Success
                     else:
-                        self._agent_rewards[agent] += self._rewards["loss"]
+                        self._agent_rewards[agent] += self._rewards["fail"]
                         self._agent_status[agent] = AgentStatus.Fail
                     # TODO Add penalty for False positives 
             # clear the episode end event
