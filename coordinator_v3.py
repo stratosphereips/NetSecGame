@@ -13,6 +13,9 @@ from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment
 
 class AgentServer(asyncio.Protocol):
+    """
+    Class used for serving the agents when conneting to the game run by th GameCoordinator.
+    """
     def __init__(self, actions_queue, agent_response_queues, max_connections):
         self.actions_queue = actions_queue
         self.answers_queues = agent_response_queues
@@ -110,15 +113,6 @@ class GameCoordinator:
         self.ALLOWED_ROLES = allowed_roles
         self._cyst_objects = None
         self._cyst_object_string = None
-        self._tasks = set()
-        self.shutdown_flag = asyncio.Event()
-        self._reset_event = asyncio.Event()
-        self._episode_end_event = asyncio.Event()
-        self._episode_rewards_condition = asyncio.Condition()
-        self._reset_done_condition = asyncio.Condition()
-        self._reset_lock = asyncio.Lock()
-        self._agents_lock = asyncio.Lock()
-        self._semaphore = asyncio.Semaphore(2) 
         
         # prepare agent communication
         self._agent_action_queue = asyncio.Queue()
