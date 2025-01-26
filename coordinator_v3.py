@@ -535,12 +535,17 @@ class GameCoordinator:
                     # For agents playing with timeout this episode ends with Success/Fail
                     self._episode_ends[agent_addr] = True
                 # check if there are any agents playing with timeout
-                if AgentStatus.PlayingWithTimeout not in self._agent_status.values():
+                elif all(
+                        status != AgentStatus.PlayingWithTimeout
+                        for status in self._agent_status.values()
+                    ):
                     # all attackers have finised - terminate episode
                     self.logger.info(f"Stopping episode for {agent_addr} because the is no ACTIVE agent anymore")
                     self._episode_ends[agent_addr] = True
                 if all(self._episode_ends.values()):
                     self._episode_end_event.set()
+                else:
+                    self.logger.warning(self._episode_ends)
             if self._episode_ends[agent_addr]:
                 async with self._episode_rewards_condition:
                     await self._episode_rewards_condition.wait()
