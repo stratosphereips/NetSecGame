@@ -370,16 +370,16 @@ class GameCoordinator:
                     case ActionType.JoinGame:
                         self.logger.debug(f"Start processing of ActionType.JoinGame by {agent_addr}")
                         self.logger.debug(f"{action.type}, {action.type.value}, {action.type == ActionType.JoinGame}")
-                        await self._spawn_task(self._process_join_game_action, agent_addr, action)
+                        self._spawn_task(self._process_join_game_action, agent_addr, action)
                     case ActionType.QuitGame:
                         self.logger.debug(f"Start processing of ActionType.QuitGame by {agent_addr}")
-                        await self._spawn_task(self._process_quit_game_action, agent_addr)
+                        self._spawn_task(self._process_quit_game_action, agent_addr)
                     case ActionType.ResetGame:
                         self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
-                        await self._spawn_task(self._process_reset_game_action, agent_addr, action)
+                        self._spawn_task(self._process_reset_game_action, agent_addr, action)
                     case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
                         self.logger.debug(f"Start processing of {action.type} by {agent_addr}")
-                        await self._spawn_task(self._process_game_action, agent_addr, action)
+                        self._spawn_task(self._process_game_action, agent_addr, action)
                     case _:
                         self.logger.warning(f"Unsupported action type: {action}!")
             #await asyncio.sleep(0.0001)
