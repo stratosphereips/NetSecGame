@@ -524,7 +524,7 @@ class GameCoordinator:
                 elif self.is_detected(agent_addr):
                     # Detection by Global Defender
                     self._agent_status[agent_addr] = AgentStatus.Fail
-                elif self.is_timout(agent_addr):
+                elif self.is_timeout(agent_addr):
                     # Timout Reached
                     self._agent_status[agent_addr] = AgentStatus.Fail
                 # add reward for step (other rewards are added at the end of the episode)
@@ -764,7 +764,7 @@ class GameCoordinator:
             # No global defender
             return False
 
-    def is_timout(self, agent:tuple)->bool:
+    def is_timeout(self, agent:tuple)->bool:
         timeout_reached = False
         if self._steps_limit_per_role[self.agents[agent][1]]:
             if self._agent_steps[agent] >= self._steps_limit_per_role[self.agents[agent][1]]:
