@@ -527,6 +527,7 @@ class GameCoordinator:
             
             # update agent's values
             async with self._agents_lock:
+                # store new state of the agent
                 self._agent_states[agent_addr] = new_state
                 
                 # store new state of the agent using the new state
@@ -536,22 +537,13 @@ class GameCoordinator:
                 self._agent_rewards[agent_addr] = self._rewards["step"]
                 
                 # check if the episode ends for this agent
-                if  self._agent_status[agent_addr] in [AgentStatus.Success, AgentStatus.Fail]:
-                    # For agents playing with timeout this episode ends with Success/Fail
-                    self._episode_ends[agent_addr] = True
-                # check if there are any agents playing with timeout
-                elif all(
-                        status != AgentStatus.PlayingWithTimeout
-                        for status in self._agent_status.values()
-                    ):
-                    # all attackers have finised - terminate episode
-                    self.logger.info(f"Stopping episode for {agent_addr} because the is no ACTIVE agent anymore")
-                    self._episode_ends[agent_addr] = True
+                self._episode_ends[agent_addr] = self._update_agent_episode_end(agent_addr)
+
+                # check if the episode ends
                 if all(self._episode_ends.values()):
                     self._episode_end_event.set()
-                else:
-                    self.logger.warning(self._episode_ends)
             if self._episode_ends[agent_addr]:
+                # episode ended for this agent - wait for the others to finish
                 async with self._episode_rewards_condition:
                     await self._episode_rewards_condition.wait()
             # append step to the trajectory if needed
@@ -797,6 +789,21 @@ class GameCoordinator:
             # Timout Reached
             next_status = AgentStatus.Fail
         return next_status
+
+    def _update_agent_episode_end(self, agent:tuple)->bool:
+        episode_end = False
+        if  self._agent_status[agent] in [AgentStatus.Success, AgentStatus.Fail]:
+            # agent reached goal, timeout or was detected
+            episode_end = True
+        # check if there are any agents playing with timeout
+        elif all(
+                status != AgentStatus.PlayingWithTimeout
+                for status in self._agent_status.values()
+            ):
+            # all attackers have finised - terminate episode
+            self.logger.info(f"Stopping episode for {agent} because the is no ACTIVE agent playing.")
+            episode_end = True
+        return episode_end
 
     def _reset_trajectory(self, agent_addr:tuple)->dict:
         agent_name, agent_role = self.agents[agent_addr]
