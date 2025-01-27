@@ -528,15 +528,10 @@ class GameCoordinator:
             # update agent's values
             async with self._agents_lock:
                 self._agent_states[agent_addr] = new_state
-                if self.goal_check(agent_addr):
-                    # Goal has been reached
-                    self._agent_status[agent_addr] = AgentStatus.Success
-                elif self.is_detected(agent_addr):
-                    # Detection by Global Defender
-                    self._agent_status[agent_addr] = AgentStatus.Fail
-                elif self.is_timeout(agent_addr):
-                    # Timout Reached
-                    self._agent_status[agent_addr] = AgentStatus.Fail
+                
+                # store new state of the agent using the new state
+                self._agent_status[agent_addr] = self._update_agent_status(agent_addr)
+                
                 # add reward for step (other rewards are added at the end of the episode)
                 self._agent_rewards[agent_addr] = self._rewards["step"]
                 
@@ -785,6 +780,23 @@ class GameCoordinator:
             if self._agent_steps[agent] >= self._steps_limit_per_role[self.agents[agent][1]]:
                 timeout_reached = True
         return timeout_reached
+
+    def _update_agent_status(self, agent:tuple)->AgentStatus:
+        """
+        Update the status of an agent based on reaching the goal, timeout or detection.
+        """
+        # read current status of the agent
+        next_status = self._agent_status[agent]
+        if self.goal_check(agent):
+            # Goal has been reached
+            next_status = AgentStatus.Success
+        elif self.is_detected(agent):
+            # Detection by Global Defender
+            next_status = AgentStatus.Fail
+        elif self.is_timeout(agent):
+            # Timout Reached
+            next_status = AgentStatus.Fail
+        return next_status
 
     def _reset_trajectory(self, agent_addr:tuple)->dict:
         agent_name, agent_role = self.agents[agent_addr]
