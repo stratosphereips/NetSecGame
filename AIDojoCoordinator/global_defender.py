@@ -1,6 +1,6 @@
 # Author: Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 from itertools import groupby
-from .game_components import ActionType, Action
+from AIDojoGameCoordinator.game_components import ActionType, Action
 from random import random
 
 
