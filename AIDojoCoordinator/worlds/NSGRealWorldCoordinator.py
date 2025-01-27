@@ -10,9 +10,9 @@ import os
 import sys
 from pathlib import Path
 
-from AIDojoGameCoordinator.utils.utils import get_logging_level
+from AIDojoCoordinator.utils.utils import get_logging_level
 from AIDojoCoordinator.game_components import GameState, Action, ActionType, Service,IP
-from AIDojoGameCoordinator.worlds.NSEGameCoordinator import NSGCoordinator
+from AIDojoCoordinator.worlds.NSEGameCoordinator import NSGCoordinator
 
 class NSERealWorldGameCoordinator(NSGCoordinator):
     
