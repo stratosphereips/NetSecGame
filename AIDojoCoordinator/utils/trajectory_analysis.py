@@ -10,9 +10,6 @@ import umap
 import plotly.graph_objects as go
 from sklearn.preprocessing import StandardScaler
 
-
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
 from AIDojoCoordinator.game_components import GameState, Action, ActionType
 
    

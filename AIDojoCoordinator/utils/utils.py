@@ -1,12 +1,10 @@
 # Utility functions for then env and for the agents
 # Author: Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
 # Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
-#import configparser
+
 import yaml
-import sys
 from os import path
 # This is used so the agent can see the environment and game components
-sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 from AIDojoCoordinator.scenarios import scenario_configuration
 from AIDojoCoordinator.scenarios import smaller_scenario_configuration
 from AIDojoCoordinator.scenarios import tiny_scenario_configuration

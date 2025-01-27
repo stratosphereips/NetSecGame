@@ -1,13 +1,11 @@
 from trajectory_analysis import read_json
 import numpy as np
-import sys
 import os 
 import utils
 import argparse
 import matplotlib.pyplot as plt
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
-from AIDojoCoordinator.game_components import GameState, Action
+from AIDojoGameCoordinator.game_components import GameState, Action
 
 class TrajectoryGraph:
     def __init__(self)->None:
