@@ -7,7 +7,6 @@ import xml.etree.ElementTree as ElementTree
 import logging
 import argparse
 import os
-import sys
 from pathlib import Path
 
 from AIDojoCoordinator.utils.utils import get_logging_level
