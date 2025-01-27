@@ -53,10 +53,5 @@ requires-python = ">=3.12"
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "flake8",
-    "black",
+    "ruff",
 ]
-
-[tool.black]
-line-length = 88
-target-version = ["py38"]
