@@ -3,7 +3,6 @@
 # Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
 
 import yaml
-from os import path
 # This is used so the agent can see the environment and game components
 from AIDojoCoordinator.scenarios import scenario_configuration
 from AIDojoCoordinator.scenarios import smaller_scenario_configuration

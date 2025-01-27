@@ -1,6 +1,5 @@
 import jsonlines
 import numpy as np
-import sys
 import os 
 import utils
 import matplotlib.pyplot as plt

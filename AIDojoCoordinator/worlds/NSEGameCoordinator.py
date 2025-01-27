@@ -1,6 +1,4 @@
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
-
-import sys
 import os
 import logging
 import argparse
