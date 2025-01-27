@@ -7,11 +7,11 @@ import sys
 from os import path
 # This is used so the agent can see the environment and game components
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-from env.scenarios import scenario_configuration
-from env.scenarios import smaller_scenario_configuration
-from env.scenarios import tiny_scenario_configuration
-from env.scenarios import three_net_scenario
-from env.game_components import IP, Data, Network, Service, GameState, Action, Observation
+from AIDojoCoordinator.scenarios import scenario_configuration
+from AIDojoCoordinator.scenarios import smaller_scenario_configuration
+from AIDojoCoordinator.scenarios import tiny_scenario_configuration
+from AIDojoCoordinator.scenarios import three_net_scenario
+from AIDojoCoordinator.game_components import IP, Data, Network, Service, GameState, Action, Observation
 import netaddr
 import logging
 import csv

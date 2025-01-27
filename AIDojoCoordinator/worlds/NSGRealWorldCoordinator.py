@@ -11,8 +11,8 @@ import sys
 from pathlib import Path
 
 from utils.utils import get_logging_level
-from env.game_components import GameState, Action, ActionType, Service,IP
-from env.worlds.NSEGameCoordinator import NSGCoordinator
+from AIDojoCoordinator.game_components import GameState, Action, ActionType, Service,IP
+from AIDojoCoordinator.worlds.NSEGameCoordinator import NSGCoordinator
 
 class NSERealWorldGameCoordinator(NSGCoordinator):
     

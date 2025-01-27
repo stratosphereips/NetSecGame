@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from env.game_components import GameState, Action, ActionType,  IP, Service
+from ..game_components import GameState, Action, ActionType,  IP, Service
 from coordinator import GameCoordinator
 
 from utils.utils import get_starting_position_from_cyst_config, get_logging_level

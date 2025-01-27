@@ -6,7 +6,7 @@ import sys
 import json
 from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
-from env.game_components import ActionType, Action, IP, Data, Network, Service, GameState, AgentInfo
+from AIDojoCoordinator.game_components import ActionType, Action, IP, Data, Network, Service, GameState, AgentInfo
 
 class TestComponentsIP:
     """

@@ -4,8 +4,8 @@ import json
 import asyncio
 from datetime import datetime
 import signal
-from env.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus
-from env.global_defender import GlobalDefender
+from AIDojoCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus
+from AIDojoCoordinator.global_defender import GlobalDefender
 from utils.utils import observation_as_dict, get_str_hash, ConfigParser
 import os
 

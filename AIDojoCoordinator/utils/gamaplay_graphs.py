@@ -7,7 +7,7 @@ import argparse
 import matplotlib.pyplot as plt
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
-from env.game_components import GameState, Action
+from AIDojoCoordinator.game_components import GameState, Action
 
 class TrajectoryGraph:
     def __init__(self)->None:
