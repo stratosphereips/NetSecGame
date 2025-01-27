@@ -1,6 +1,5 @@
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 
-import sys
 import os
 import requests
 import json
@@ -9,13 +8,10 @@ import ast
 import logging
 import argparse
 from pathlib import Path
+from AIDojoGameCoordinator.game_components import GameState, Action, ActionType,  IP, Service
+from AIDojoGameCoordinator.coordinator import GameCoordinator
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from ..game_components import GameState, Action, ActionType,  IP, Service
-from coordinator import GameCoordinator
-
-from utils.utils import get_starting_position_from_cyst_config, get_logging_level
+from AIDojoGameCoordinator.utils.utils import get_starting_position_from_cyst_config, get_logging_level
 
 class CYSTCoordinator(GameCoordinator):
 

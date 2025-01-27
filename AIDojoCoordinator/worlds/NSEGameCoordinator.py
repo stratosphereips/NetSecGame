@@ -11,14 +11,11 @@ from faker import Faker
 from pathlib import Path
 import netaddr
 
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP, Network, Data, Service
-from AIDojoCoordinator.coordinator import GameCoordinator
+from AIDojoGameCoordinator.coordinator import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
-from utils.utils import get_logging_level
+from AIDojoGameCoordinator.utils.utils import get_logging_level
 
 class NSGCoordinator(GameCoordinator):
 
