@@ -149,8 +149,13 @@ This approach ensures that only repeated or excessive behavior is flagged, reduc
 
 
 ### Starting the game
-The environment should be created before starting the agents. The properties of the environment can be defined in a YAML file. The game server can be started by running:
-```python3 coordinator.py```
+The environment should be created before starting the agents. The properties of the game, the task and the topology can be either read from a local file or via REST request to the GameDashboard.
+
+#### To start the game with local configuration file
+```python3 -m AIDojoCoordinator.worlds.NSEGameCoordinator --task_config=<PATH TO CONFIGURATION FILE>```
+
+#### To start the game with remotely defined configuration
+```python3 -m AIDojoCoordinator.worlds.CYSTCoordinator --service_host=<URL OF THE REMOTE HOST> --service_port=<PORT FOR THE CONFIGURATION REST API> ```
 
 When created, the environment:
 1. reads the configuration file
