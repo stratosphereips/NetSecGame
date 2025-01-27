@@ -91,6 +91,9 @@ class AgentServer(asyncio.Protocol):
         await self.handle_new_agent(reader, writer)
 
 class GameCoordinator:
+    """
+    Class for creation, and management of agent interactions in AI Dojo.
+    """
     def __init__(self, game_host: str, game_port: int, service_host:str, service_port:int, allowed_roles=["Attacker", "Defender", "Benign"], task_config_file:str=None) -> None:
         self.host = game_host
         self.port = game_port
@@ -106,8 +109,10 @@ class GameCoordinator:
         self._agents_lock = asyncio.Lock()
         self._semaphore = asyncio.Semaphore(2)
         
+        # for accessing configuration remotely
         self._service_host = service_host
         self._service_port = service_port
+        # for reading configuration locally
         self._task_config_file = task_config_file
         self.logger = logging.getLogger("AIDojo-GameCoordinator")
         self.ALLOWED_ROLES = allowed_roles
@@ -230,9 +235,6 @@ class GameCoordinator:
         win_conditions = {}
         for agent_role in self.ALLOWED_ROLES:
             try:
-                # win_conditions[agent_role] = self._world.update_goal_dict(
-                #     self.task_config.get_win_conditions(agent_role=agent_role)
-                # )
                 win_conditions[agent_role] = self.task_config.get_win_conditions(agent_role=agent_role)
             except KeyError:
                 win_conditions[agent_role] = {}
@@ -354,6 +356,9 @@ class GameCoordinator:
         self.logger.info("All tasks shut down.")
     
     async def run_game(self):
+        """
+        Task responsible for reading messages from the agent queue and processing them based on the ActionType.
+        """
         while not self.shutdown_flag.is_set():
             # Read message from the queue
             agent_addr, message = await self._agent_action_queue.get()
@@ -376,13 +381,12 @@ class GameCoordinator:
                         self._spawn_task(self._process_quit_game_action, agent_addr)
                     case ActionType.ResetGame:
                         self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
-                        self._spawn_task(self._process_reset_game_action, agent_addr, action)
+                        self._spawn_task(self._process_reset_game_action, agent_addr)
                     case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
                         self.logger.debug(f"Start processing of {action.type} by {agent_addr}")
                         self._spawn_task(self._process_game_action, agent_addr, action)
                     case _:
                         self.logger.warning(f"Unsupported action type: {action}!")
-            #await asyncio.sleep(0.0001)
         self.logger.info("\tAction processing task stopped.")
             
     async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
@@ -390,8 +394,8 @@ class GameCoordinator:
         Method for processing Action of type ActionType.JoinGame
         Inputs: 
             -   agent_addr (tuple)
-            -   JoingGame Action
-        Outputs: None (MEthod stores reposnse in the agent's response queue)
+            -   JoinGame Action
+        Outputs: None (Method stores reposnse in the agent's response queue)
         """
         try:
             async with self._semaphore:
@@ -463,7 +467,13 @@ class GameCoordinator:
         finally:
             self.logger.debug(f"Cleaning up after QuitGame for {agent_addr}.")
     
-    async def _process_reset_game_action(self, agent_addr: tuple, action:Action)->None:
+    async def _process_reset_game_action(self, agent_addr: tuple)->None:
+        """
+        Method for processing Action of type ActionType.ResetGame
+        Inputs: 
+            -   agent_addr (tuple)
+        Outputs: None
+        """
         self.logger.debug("Beginning the _process_reset_game_action.")
         async with self._reset_lock:
              # add reset request for this agent
