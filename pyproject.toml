@@ -18,6 +18,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "Ondrej Lukas", email = "ondrej.lukas@aic.fel.cvut.cz" }]
 dependencies = [
 ]
+python = ">=3.12"
 
 [project.optional-dependencies]
 dev = [
