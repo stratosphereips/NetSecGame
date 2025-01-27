@@ -2,7 +2,7 @@ name: Python Checks
 
 on:
   pull_request:
-    branches: [ main, multi-agent, cyst-integration]
+    branches: [ main ]
 
 jobs:
   build:
