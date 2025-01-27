@@ -553,7 +553,7 @@ class GameCoordinator:
             # add information to 'info' field if needed
             info = {}
             if self._agent_status[agent_addr] not in [AgentStatus.Playing, AgentStatus.PlayingWithTimeout]:
-                info["reason"] = str(self._agent_status[agent_addr])
+                info["end_reason"] = str(self._agent_status[agent_addr])
             new_observation = Observation(self._agent_states[agent_addr], self._agent_rewards[agent_addr], self._episode_ends[agent_addr], info=info)
             self._agent_observations[agent_addr] = new_observation
             output_message_dict = {
@@ -790,12 +790,12 @@ class GameCoordinator:
         elif self.is_timeout(agent):
             # Timout Reached
             self.logger.info(f"Agent {agent}{self.agents[agent]} reached timeout ({self._agent_steps[agent]} steps).")
-            next_status = AgentStatus.Fail
+            next_status = AgentStatus.TimeoutReached
         return next_status
 
     def _update_agent_episode_end(self, agent:tuple)->bool:
         episode_end = False
-        if  self._agent_status[agent] in [AgentStatus.Success, AgentStatus.Fail]:
+        if  self._agent_status[agent] in [AgentStatus.Success, AgentStatus.Fail, AgentStatus.TimeoutReached]:
             # agent reached goal, timeout or was detected
             episode_end = True
         # check if there are any agents playing with timeout
