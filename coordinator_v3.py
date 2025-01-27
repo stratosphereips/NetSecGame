@@ -781,12 +781,15 @@ class GameCoordinator:
         next_status = self._agent_status[agent]
         if self.goal_check(agent):
             # Goal has been reached
+            self.logger.info(f"Agent {agent}{self.agents[agent]} reached the goal!")
             next_status = AgentStatus.Success
         elif self.is_detected(agent):
             # Detection by Global Defender
+            self.logger.info(f"Agent {agent}{self.agents[agent]} detected by GlobalDefender!")
             next_status = AgentStatus.Fail
         elif self.is_timeout(agent):
             # Timout Reached
+            self.logger.info(f"Agent {agent}{self.agents[agent]} reached timeout ({self._agent_steps[agent]} steps).")
             next_status = AgentStatus.Fail
         return next_status
 
