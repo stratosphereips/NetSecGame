@@ -4,9 +4,9 @@ import json
 import asyncio
 from datetime import datetime
 import signal
-from AIDojoGameCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus
-from AIDojoGameCoordinator.global_defender import GlobalDefender
-from AIDojoGameCoordinator.utils.utils import observation_as_dict, get_str_hash, ConfigParser
+from AIDojoCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus
+from AIDojoCoordinator.global_defender import GlobalDefender
+from AIDojoCoordinator.utils.utils import observation_as_dict, get_str_hash, ConfigParser
 import os
 
 from aiohttp import ClientSession
