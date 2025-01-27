@@ -1,21 +1,21 @@
-from cyst.api.configuration import *
+import cyst.api.configuration as cyst_cfg
 
 
-target = NodeConfig(
+target = cyst_cfg.NodeConfig(
     active_services=[],
     passive_services=[
-        PassiveServiceConfig(
+        cyst_cfg.PassiveServiceConfig(
             name="bash",
             owner="root",
             version="8.1.0",
-            access_level=AccessLevel.LIMITED,
+            access_level=cyst_cfg.AccessLevel.LIMITED,
             local=True,
         ),
-        PassiveServiceConfig(
+        cyst_cfg.PassiveServiceConfig(
             name="lighttpd",
             owner="www",
             version="1.4.62",
-            access_level=AccessLevel.LIMITED,
+            access_level=cyst_cfg.AccessLevel.LIMITED,
             local=False,
         )
     ],
@@ -25,15 +25,15 @@ target = NodeConfig(
     name="target"
 )
 
-attacker_service = ActiveServiceConfig(
+attacker_service = cyst_cfg.ActiveServiceConfig(
     type="netsecenv_agent",
     name="attacker",
     owner="attacker",
-    access_level=AccessLevel.LIMITED,
+    access_level=cyst_cfg.AccessLevel.LIMITED,
     ref="attacker_service"
 )
 
-attacker = NodeConfig(
+attacker = cyst_cfg.NodeConfig(
     active_services=[attacker_service()],
     passive_services=[],
     interfaces=[],
@@ -42,7 +42,7 @@ attacker = NodeConfig(
     name="attacker_node"
 )
 
-attacker2 = NodeConfig(
+attacker2 = cyst_cfg.NodeConfig(
     active_services=[attacker_service()],
     passive_services=[],
     interfaces=[],
@@ -51,31 +51,31 @@ attacker2 = NodeConfig(
     name="attacker_node_2"
 )
 
-router = RouterConfig(
+router = cyst_cfg.RouterConfig(
     interfaces=[
-        InterfaceConfig(
-            ip=IPAddress("192.168.0.1"),
-            net=IPNetwork("192.168.0.1/24"),
+        cyst_cfg.InterfaceConfig(
+            ip=cyst_cfg.IPAddress("192.168.0.1"),
+            net=cyst_cfg.IPNetwork("192.168.0.1/24"),
             index=0
         ),
-        InterfaceConfig(
-            ip=IPAddress("192.168.0.1"),
-            net=IPNetwork("192.168.0.1/24"),
+        cyst_cfg.InterfaceConfig(
+            ip=cyst_cfg.IPAddress("192.168.0.1"),
+            net=cyst_cfg.IPNetwork("192.168.0.1/24"),
             index=1
         ),
-        InterfaceConfig(
-            ip=IPAddress("192.168.0.1"),
-            net=IPNetwork("192.168.0.1/24"),
+        cyst_cfg.InterfaceConfig(
+            ip=cyst_cfg.IPAddress("192.168.0.1"),
+            net=cyst_cfg.IPNetwork("192.168.0.1/24"),
             index=2
         )
     ],
     traffic_processors=[
-        FirewallConfig(
-            default_policy=FirewallPolicy.ALLOW,
+        cyst_cfg.FirewallConfig(
+            default_policy=cyst_cfg.FirewallPolicy.ALLOW,
             chains=[
-                FirewallChainConfig(
-                    type=FirewallChainType.FORWARD,
-                    policy=FirewallPolicy.ALLOW,
+                cyst_cfg.FirewallChainConfig(
+                    type=cyst_cfg.FirewallChainType.FORWARD,
+                    policy=cyst_cfg.FirewallPolicy.ALLOW,
                     rules=[]
                 )
             ]
@@ -84,34 +84,34 @@ router = RouterConfig(
     id="router"
 )
 
-exploit1 = ExploitConfig(
+exploit1 = cyst_cfg.ExploitConfig(
     services=[
-        VulnerableServiceConfig(
+        cyst_cfg.VulnerableServiceConfig(
             service="lighttpd",
             min_version="1.4.62",
             max_version="1.4.62"
         )
     ],
-    locality=ExploitLocality.REMOTE,
-    category=ExploitCategory.CODE_EXECUTION,
+    locality=cyst_cfg.ExploitLocality.REMOTE,
+    category=cyst_cfg.ExploitCategory.CODE_EXECUTION,
     id="http_exploit"
 )
 
-connection1 = ConnectionConfig(
+connection1 = cyst_cfg.ConnectionConfig(
     src_ref=target,
     src_port=-1,
     dst_ref=router,
     dst_port=0
 )
 
-connection2 = ConnectionConfig(
+connection2 = cyst_cfg.ConnectionConfig(
     src_ref=attacker,
     src_port=-1,
     dst_ref=router,
     dst_port=1
 )
 
-connection3 = ConnectionConfig(
+connection3 = cyst_cfg.ConnectionConfig(
     src_ref=attacker2,
     src_port=-1,
     dst_ref=router,
