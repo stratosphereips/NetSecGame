@@ -19,17 +19,17 @@ python -m venv ai-dojo-venv-<yourusername>
 source ai-dojo-venv<yourusername>/bin/activate
 ```
 
-- Install the requirements with 
+- Install using pip by running following in the **root** directory
 
 ```bash
-python3 -m pip install -r requirements.txt
+pip install -e .
 ```
 
 - If you use conda use
 ```bash
 conda create --name aidojo python==3.10
 conda activate aidojo
-python3 -m pip install -r requirements.txt
+pip install -e .
 ```
 
 ## Architecture
