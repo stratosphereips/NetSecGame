@@ -5,7 +5,7 @@ import utils
 import argparse
 import matplotlib.pyplot as plt
 
-from AIDojoGameCoordinator.game_components import GameState, Action
+from AIDojoCoordinator.game_components import GameState, Action
 
 class TrajectoryGraph:
     def __init__(self)->None:
