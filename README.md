@@ -27,7 +27,7 @@ pip install -e .
 
 - If you use conda use
 ```bash
-conda create --name aidojo python==3.10
+conda create --name aidojo python==3.12
 conda activate aidojo
 pip install -e .
 ```
