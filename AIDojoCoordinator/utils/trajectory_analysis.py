@@ -1,6 +1,5 @@
 import jsonlines
 import numpy as np
-import sys
 import os 
 import utils
 import matplotlib.pyplot as plt
@@ -10,10 +9,7 @@ import umap
 import plotly.graph_objects as go
 from sklearn.preprocessing import StandardScaler
 
-
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
-from env.game_components import GameState, Action, ActionType
+from AIDojoCoordinator.game_components import GameState, Action, ActionType
 
    
 

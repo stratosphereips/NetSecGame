@@ -1,17 +1,16 @@
 from trajectory_analysis import read_json
 import numpy as np
-import sys
 import os 
 import utils
 import argparse
 import matplotlib.pyplot as plt
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__) )))
-from env.game_components import GameState, Action
+from AIDojoCoordinator.game_components import GameState, Action
 
 class TrajectoryGraph:
     def __init__(self)->None:
         self._checkpoints = {}
+        self._checkpoint_size = {}
         self._checkpoint_edges = {}
         self._checkpoint_simple_edges = {}
         self._wins_per_checkpoint = {}
@@ -54,6 +53,7 @@ class TrajectoryGraph:
         wins = []
         edges = {}
         simple_edges = {}
+        self._checkpoint_size[self.num_checkpoints] = len(trajectories)
         for play in trajectories:
             if end_reason and play["end_reason"] not in end_reason:
                 continue
@@ -63,11 +63,13 @@ class TrajectoryGraph:
                 wins.append(1)
             else:
                 wins.append(0)
+            # get the id of the first state
             state_id = self.get_state_id(GameState.from_dict(play["trajectory"]["states"][0]))
-            #print(f'Trajectory len: {len(play["trajectory"]["actions"])}')
-            for i in range(1, len(play["trajectory"]["actions"])):
+            # iterate over the trajectory
+            assert len(play["trajectory"]["states"]) == len(play["trajectory"]["actions"]) +1
+            for i in range(1, len(play["trajectory"]["states"])):
                 next_state_id = self.get_state_id(GameState.from_dict(play["trajectory"]["states"][i]))
-                action_id = self.get_action_id(Action.from_dict((play["trajectory"]["actions"][i])))
+                action_id = self.get_action_id(Action.from_dict((play["trajectory"]["actions"][i-1])))
                 # fullgraph
                 if (state_id, next_state_id, action_id) not in edges:
                     edges[state_id, next_state_id, action_id] = 0
@@ -155,19 +157,95 @@ class TrajectoryGraph:
         return super_graph
 
     def get_graph_structure_probabilistic_progress(self)->dict:
-
+        # collect all edeges from all checkpoints
         all_edges = set().union(*(inner_dict.keys() for inner_dict in self._checkpoint_edges.values()))
+        # prepare data straucture for the probabiliites per edge
         super_graph = {key:np.zeros(self.num_checkpoints) for key in all_edges}
-        for i, edge_list in self._checkpoint_edges.items():
-            total_out_edges_use = {}
-            for (src, _, _), frequency in edge_list.items():
-                if src not in total_out_edges_use:
-                    total_out_edges_use[src] = 0
-                total_out_edges_use[src] += frequency
-            for (src,dst,edge), value in edge_list.items():
-                super_graph[(src,dst,edge)][i] = value/total_out_edges_use[src]
+        for i, edges in self._checkpoint_edges.items():
+            total_edge_count_cp = sum(edges.values())
+            # print(f"Processing timestamp {i}")
+            # # total_out_edges_use = {}
+            # # for (src, _, _), frequency in edge_list.items():
+            # #     if src not in total_out_edges_use:
+            # #         total_out_edges_use[src] = 0
+            # #     total_out_edges_use[src] += frequency
+            # # for (src,dst,edge), value in edge_list.items():
+            # #     super_graph[(src,dst,edge)][i] = value/total_out_edges_use[src]
+            # src_nodes = set([x for (x, _, _ ) in edge_list.keys()])
+            # print(f"\t{len(src_nodes)} source nodes")
+            # num_outgoing_edges  = {}
+            # for node in src_nodes:
+            #     num_outgoing_edges[node] = sum([v for k,v in edge_list.items() if k[0] == node])
+            #     print(f"\t{num_outgoing_edges[node]}")
+            # for (src,dst,action), occurence in edge_list.items():
+            #     print(f"\tedge:{(src,dst,self._id_to_action[action])}, occurence={occurence}, prob={occurence/num_outgoing_edges[src]}")
+            #     super_graph[(src,dst,action)][i] = occurence/num_outgoing_edges[src]
+            for edge, occurence in edges.items():
+                super_graph[edge][i] = occurence/total_edge_count_cp
         return super_graph
+    def calculate_source_node_likelihoods(self) -> dict:
+        """
+        Calculates the likelihood of each edge originating from its source node 
+        in each checkpoint.
 
+        Returns:
+            source_likelihoods (dict): A nested dictionary where the outer keys are checkpoint numbers,
+                                    and the inner dictionaries map edges to their likelihoods.
+        """
+        all_edges = set().union(*(inner_dict.keys() for inner_dict in self._checkpoint_edges.values()))
+        # prepare data straucture for the probabiliites per edge
+        source_likelihoods = {key:np.zeros(self.num_checkpoints) for key in all_edges}
+
+        for checkpoint, edges in self._checkpoint_edges.items():
+            # Map to store total occurrences of edges for each source node
+            source_totals = {}
+            
+            # Calculate total occurrences for each source node
+            for (source, destination, action), count in edges.items():
+                if source not in source_totals:
+                    source_totals[source] = 0
+                source_totals[source] += count
+            
+            # Calculate likelihoods for each edge
+
+            for (source, destination, action), count in edges.items():
+                if source_totals[source] > 0:
+                    source_likelihoods[(source, destination, action)][checkpoint] = count / source_totals[source]
+        return source_likelihoods
+    
+    def calculate_edge_play_likelihoods(self) -> dict:
+        """
+        Calculates the likelihood of each edge being present in a play for each checkpoint.
+
+        Returns:
+            play_likelihoods (dict): A nested dictionary where the outer keys are checkpoint numbers,
+                                    and the inner dictionaries map edges to their likelihoods.
+        """
+        all_edges = set().union(*(inner_dict.keys() for inner_dict in self._checkpoint_edges.values()))
+        # prepare data straucture for the probabiliites per edge
+        play_likelihoods = {key:np.zeros(self.num_checkpoints) for key in all_edges}
+        for checkpoint, edges in self._checkpoint_edges.items():
+            # Get the total number of trajectories (plays) in this checkpoint
+            total_plays = self._checkpoint_size.get(checkpoint, 0)
+            if total_plays == 0:
+                continue  # Skip checkpoints with no trajectories
+            
+            # Calculate likelihood for each edge
+            for edge, count in edges.items():
+                play_likelihoods[edge][checkpoint] = min(count / total_plays, 1)
+
+        return play_likelihoods
+    def get_graph_entropies(self)->dict:
+        def compute_entropy(probs, epsilon_value=1e-10):
+            probs = np.array(probs)
+            normalized_probs = probs / np.sum(probs)
+            entropy = -np.sum(normalized_probs * np.log(normalized_probs +epsilon_value))  # Avoid log(0)
+            return entropy
+        probabilistic_graph = self.get_graph_structure_probabilistic_progress
+        edge_entropy = {}
+        for e, probs in probabilistic_graph:
+            edge_entropy[e] = compute_entropy(probs)
+        
 def gameplay_graph(game_plays:list, states, actions, end_reason=None)->tuple:
     edges = {}
     nodes_timestamps = {}
@@ -255,55 +333,27 @@ if __name__ == '__main__':
     # parser.add_argument("--t1", help="Trajectory file #1", action='store', required=True)
     # parser.add_argument("--t2", help="Trajectory file #2", action='store', required=True)
     parser.add_argument("--end_reason", help="Filter options for trajectories", default=None, type=str, action='store', required=False)
-    parser.add_argument("--n_trajectories", help="Limit of how many trajectories to use", action='store', default=10000, required=False)
+    parser.add_argument("--n_trajectories", help="Limit of how many trajectories to use", action='store', default=2000, required=False)
     
     args = parser.parse_args()
-    # trajectories1 = read_json(args.t1, max_lines=args.n_trajectories)
-    # trajectories2 = read_json(args.t2, max_lines=args.n_trajectories)
-    # states = {}
-    # actions = {}
-    
-    # graph_t1, g1_timestaps, t1_wr_mean, t1_wr_std = gameplay_graph(trajectories1, states, actions,end_reason=args.end_reason)
-    # graph_t2, g2_timestaps, t2_wr_mean, t2_wr_std = gameplay_graph(trajectories2, states, actions,end_reason=args.end_reason)
-    
-    # state_to_id = {v:k for k,v in states.items()}
-    # action_to_id = {v:k for k,v in states.items()}
-
-    # print(f"Trajectory 1: {args.t1}")
-    # print(f"WR={t1_wr_mean}±{t1_wr_std}")
-    # get_graph_stats(graph_t1, state_to_id, action_to_id)
-    # print(f"Trajectory 2: {args.t2}")
-    # print(f"WR={t2_wr_mean}±{t2_wr_std}")
-    # get_graph_stats(graph_t2, state_to_id, action_to_id)
-
-    # a_edges, d_edges, a_nodes, d_nodes = get_graph_modificiation(graph_t1, graph_t2)
-    # print(f"AE:{len(a_edges)},DE:{len(d_edges)}, AN:{len(a_nodes)},DN:{len(d_nodes)}")
-    # # print("positions of same states:")
-    # # for node in node_set(graph_t1).intersection(node_set(graph_t2)):
-    # #     print(g1_timestaps[node], g2_timestaps[node])
-    # #     print("-----------------------")
-    # tg_no_blocks = TrajectoryGraph()
-    
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-2000.jsonl",max_lines=args.n_trajectories))
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-4000.jsonl",max_lines=args.n_trajectories))
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-6000.jsonl",max_lines=args.n_trajectories))
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-8000.jsonl",max_lines=args.n_trajectories))
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-10000.jsonl",max_lines=args.n_trajectories))
-    # # tg.add_checkpoint(read_json("./trajectories/experiment0002/2024-08-02_QAgent_Attacker_experiment0002-episodes-12000.jsonl",max_lines=args.n_trajectories))
-    
-    # tg_no_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-5000_no_blocks.jsonl",max_lines=args.n_trajectories))
-    # tg_no_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-10000_no_blocks.jsonl",max_lines=args.n_trajectories))
-    # tg_no_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-15000_no_blocks.jsonl",max_lines=args.n_trajectories))
-    # tg_no_blocks.plot_graph_stats_progress()
-   
+       
     tg_blocks = TrajectoryGraph()
-    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-5000_blocks.jsonl",max_lines=args.n_trajectories))
-    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-10000_blocks.jsonl",max_lines=args.n_trajectories))
-    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-15000_blocks.jsonl",max_lines=args.n_trajectories))
-    tg_blocks.add_checkpoint(read_json("./trajectories/2024-11-12_QAgent_Attacker-episodes-20000_blocks.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-2000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-4000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-6000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-8000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-10000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-12000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-14000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-16000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-18000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-20000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-22000.jsonl",max_lines=args.n_trajectories))
+    tg_blocks.add_checkpoint(read_json("./trajectories/2025-01-16_experimentsarsa_005-episodes-24000.jsonl",max_lines=args.n_trajectories))
     tg_blocks.plot_graph_stats_progress()
 
-    super_graph = tg_blocks.get_graph_structure_probabilistic_progress()
-    print(len(super_graph))
-    edges_present_everycheckpoint = [k for k,v in super_graph.items() if np.min(v) > 0]
-    print(len(edges_present_everycheckpoint))
+    #edge_probabilies_per_cp = tg_blocks.get_graph_structure_probabilistic_progress()
+    #edge_probabilies_per_cp = tg_blocks.calculate_source_node_likelihoods()
+    edge_play_likelihoods = tg_blocks.calculate_edge_play_likelihoods()
+    for k,v in edge_play_likelihoods.items():
+        print(f"{k}, {','.join(map(str, v.tolist()))}")

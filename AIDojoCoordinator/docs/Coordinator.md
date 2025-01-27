@@ -12,11 +12,8 @@ Coordinator is the centerpiece of the game orchestration. It provides an interfa
 ## Connction to other game components
 Coordinator, having the role of the middle man in all communication between the agent and the world uses several queues for massing passing and handelling.
 
-1. `Actions queue` is a queue in which the agents submit their actions. It provides N:1 communication channel in which the coordinator receives the inputs.
-2. `Answer queue` is a separeate queue **per agent** in which the results of the actions are send to the agent.
-3.  `World action queue` is a queue used for sending the acions from coordinator to the AI Dojo world
-4. `World response queue` is a channel used for wolrd -> coordinator communicaiton (responses to the agents' action)
-<img src="/docs/figures/message_passing_coordinator.jpg" alt="Message passing overview" width="100%"/>
+1. `Action queue` is a queue in which the agents submit their actions. It provides N:1 communication channel in which the coordinator receives the inputs.
+2. `Answer queues` is a separeate queue **per agent** in which the results of the actions are send to the agent.
 
 
 ## Main components of the coordinator
@@ -45,3 +42,7 @@ Coordinator, having the role of the middle man in all communication between the 
 `self._agent_statuses`: status of each agent. One of AgentStatus
 `self._agent_rewards`: dictionary of final reward of each agent in the current episod. Only agent's which can't participate in the ongoing episode are listed.
 `self._agent_trajectories`: complete trajectories for each agent in the ongoing episode
+
+
+## Episode
+The episode starts with sufficient amount of agents registering in the game. Each agent role has a maximum allowed number of steps defined in the task configuration. An episode ends if all agents reach the goal 

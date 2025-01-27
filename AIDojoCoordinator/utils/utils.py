@@ -1,23 +1,21 @@
 # Utility functions for then env and for the agents
 # Author: Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
 # Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
-#import configparser
+
 import yaml
-import sys
-from os import path
 # This is used so the agent can see the environment and game components
-sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
-from env.scenarios import scenario_configuration
-from env.scenarios import smaller_scenario_configuration
-from env.scenarios import tiny_scenario_configuration
-from env.scenarios import three_net_scenario
-from env.game_components import IP, Data, Network, Service, GameState, Action, Observation
+from AIDojoCoordinator.scenarios import scenario_configuration
+from AIDojoCoordinator.scenarios import smaller_scenario_configuration
+from AIDojoCoordinator.scenarios import tiny_scenario_configuration
+from AIDojoCoordinator.scenarios import three_net_scenario
+from AIDojoCoordinator.game_components import IP, Data, Network, Service, GameState, Action, Observation
 import netaddr
 import logging
 import csv
 from random import randint
 import json
 import hashlib
+from cyst.api.configuration.network.node import NodeConfig
 
 def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
     """
@@ -29,6 +27,14 @@ def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
         while chunk:
             hash_algorithm.update(chunk)
             chunk = file.read(chunk_size)
+    return hash_algorithm.hexdigest()
+
+def get_str_hash(string, hash_func='sha256', chunk_size=4096):
+    """
+    Computes hash of a given file.
+    """
+    hash_algorithm = hashlib.new(hash_func)
+    hash_algorithm.update(string.encode('utf-8'))
     return hash_algorithm.hexdigest()
 
 def read_replay_buffer_from_csv(csvfile:str)->list:
@@ -112,14 +118,19 @@ class ConfigParser():
     """
     Class to deal with the configuration file
     """
-    def __init__(self, task_config_file):
+    def __init__(self, task_config_file:str=None, config_dict:dict=None):
         """
-        Init the class 
+        Initializes the configuration parser. Required either path to a confgiuration file or a dict with configuraitons.
         """
         self.logger = logging.getLogger('configparser')
-        self.read_config_file(task_config_file)
+        if task_config_file:
+            self.read_config_file(task_config_file)
+        elif config_dict:
+            self.config = config_dict
+        else:
+            self.logger.error("You must provide either the configuration file or a dictionary with the configuration!")
 
-    def read_config_file(self, conf_file_name):
+    def read_config_file(self, conf_file_name:str):
         """
         reads configuration file
         """
@@ -182,18 +193,6 @@ class ConfigParser():
                 known_blocks[target_host] = block_list
             else:
                 raise ValueError(f"Unsupported value in 'known_blocks': {known_blocks_conf}")
-            # try:
-            #     # Check the host is a good ip
-            #     _ = netaddr.IPAddress(target_host)
-            #     target_host_ip = IP(target_host)
-            #     for known_blocked_host in dict_blocked_hosts.values():
-            #         known_blocked_host_ip = IP(known_blocked_host)
-            #         known_blocks[target_host_ip].append(known_blocked_host_ip)
-            # except (ValueError, netaddr.AddrFormatError):
-            #     if target_host.lower() == "all_routers":
-            #         known_blocks["all_routers"] = dict_blocked_hosts
-            # except (ValueError):
-            #     known_blocks = {}
         return known_blocks
     
     def read_agents_known_services(self, type_agent: str, type_data: str) -> dict:
@@ -276,7 +275,7 @@ class ConfigParser():
                     self.logger.error(f'Configuration problem with the controlled hosts: {e}')
         return controlled_hosts
 
-    def get_player_win_conditions(self, type_of_player):
+    def get_player_win_conditions(self, type_of_player:str):
         """
         Get the goal of the player
         type_of_player: Can be 'attackers' or 'defenders' 
@@ -312,7 +311,7 @@ class ConfigParser():
 
         return player_goal
     
-    def get_player_start_position(self, type_of_player):
+    def get_player_start_position(self, type_of_player:str):
         """
         Generate the starting position of an attacking agent
         type_of_player: Can be 'attackers' or 'defenders' 
@@ -341,7 +340,7 @@ class ConfigParser():
 
         return player_start_position
 
-    def get_start_position(self, agent_role):
+    def get_start_position(self, agent_role:str):
         match agent_role:
             case "Attacker":
                 return self.get_player_start_position(agent_role)
@@ -391,7 +390,6 @@ class ConfigParser():
             self.logger.warning(f"Unsupported value in 'coordinator.agents.{role}.max_steps': {e}. Setting value to default=None (no step limit)")
         return max_steps
 
-
     def get_goal_description(self, agent_role)->dict:
         """
         Get goal description per role
@@ -412,46 +410,17 @@ class ConfigParser():
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
         return description
-       
 
-    def get_goal_reward(self)->float:
-        """
-        Reads  what is the reward for reaching the goal.
-        default: 100
-        """
-        try:
-            goal_reward = self.config['env']['goal_reward']
-            return float(goal_reward)
-        except KeyError:
-            return 100
-        except ValueError:
-            return 100
-    
-    def get_detection_reward(self)->float:
-        """
-        Reads what is the reward for detection.
-        default: -50
-        """
-        try:
-            detection_reward = self.config['env']['detection_reward']
-            return float(detection_reward)
-        except KeyError:
-            return -50
-        except ValueError:
-            return -50
-    
-    def get_step_reward(self)->float:
-        """
-        Reads what is the reward for detection.
-        default: -1
-        """
-        try:
-            step_reward = self.config['env']['step_reward']
-            return float(step_reward)
-        except KeyError:
-            return -1
-        except ValueError:
-            return -1
+    def get_rewards(self, reward_names:list,  default_value=0)->dict:
+        "Reads configuration for rewards for cases listed in 'rewards_names'"
+        rewards = {}
+        for name in reward_names:
+            try:
+                rewards[name] = self.config['env']["rewards"][name]
+            except KeyError:
+                self.logger.warning(f"No reward value found for '{name}'. Usinng default reward({name})={default_value}")
+                rewards[name] = default_value
+        return rewards
 
     def get_use_dynamic_addresses(self)->bool:
         """
@@ -525,10 +494,10 @@ class ConfigParser():
 
     def get_use_global_defender(self)->bool:
         try:
-            use_firewall = self.config['env']['use_global_defender']
+            use_global_defender = self.config['env']['use_global_defender']
         except KeyError:
-            use_firewall = False
-        return use_firewall
+            use_global_defender = False
+        return use_global_defender
     
 def get_logging_level(debug_level):
     """
@@ -544,6 +513,23 @@ def get_logging_level(debug_level):
     
     level = log_levels.get(debug_level.upper(), logging.ERROR)
     return level
+
+def get_starting_position_from_cyst_config(cyst_objects):
+    starting_positions = {}
+    for obj in cyst_objects:
+        if isinstance(obj, NodeConfig):
+            for active_service in obj.active_services:
+                if active_service.type == "netsecenv_agent":
+                    print(f"startig processing {obj.id}.{active_service.name}")
+                    hosts = set()
+                    networks = set()
+                    for interface in obj.interfaces:
+                        hosts.add(IP(str(interface.ip)))
+                        net_ip, net_mask = str(interface.net).split("/")
+                        networks.add(Network(net_ip,int(net_mask)))
+                starting_positions[f"{obj.id}.{active_service.name}"] = {"known_hosts":hosts, "known_networks":networks}
+    return starting_positions
+
 
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},

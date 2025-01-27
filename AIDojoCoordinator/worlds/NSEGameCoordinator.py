@@ -1,94 +1,126 @@
-#Authors
-# Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
-# Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
-
-import netaddr
-import env.game_components as gc
+# Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
+import os
+import logging
+import argparse
 import random
-import copy
-from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 import numpy as np
+import copy
 from faker import Faker
-from env.worlds.aidojo_world import AIDojoWorld
+from pathlib import Path
+import netaddr
 
-class NetworkSecurityEnvironment(AIDojoWorld):
-    """
-    Class to manage the whole network security game
-    It uses some Cyst libraries for the network topology
-    It presents a env environment to play
-    """
-    def __init__(self, task_config_file, action_queue, response_queue, world_name="NetSecEnv") -> None:
-        super().__init__(task_config_file, action_queue, response_queue, world_name)
-        self.logger.info("Initializing NetSetGame environment")
-        # Prepare data structures for all environment components (to be filled in self._process_cyst_config())
+from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP, Network, Data, Service
+from AIDojoCoordinator.coordinator import GameCoordinator
+from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
+
+from AIDojoCoordinator.utils.utils import get_logging_level
+
+class NSGCoordinator(GameCoordinator):
+
+    def __init__(self, game_host, game_port, task_config:str, allowed_roles=["Attacker", "Defender", "Benign"], seed=42):
+        super().__init__(game_host, game_port, service_host=None, service_port=None, allowed_roles=allowed_roles, task_config_file=task_config)
+
+        # Internal data structure of the NSG
         self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
         self._networks = {} # A `dict` of the networks present in the environment. Keys: `Network` objects, values `set` of `IP` objects.
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
         self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         self._fw_blocks = {}
-        self._data_content = {} #content of each datapoint from self._data
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
         self.hosts_to_start = []
         self._network_mapping = {}
         self._ip_mapping = {}
-        # Load CYST configuration
-        self._process_cyst_config(self.task_config.get_scenario())
         
-        # Set the seed 
-        seed = self.task_config.get_seed('env')
+        
         np.random.seed(seed)
         random.seed(seed)
         self._seed = seed
         self.logger.info(f'Setting env seed to {seed}')
 
-        
-        # Set rewards for goal/detection/step
-        self._rewards = {
-            "goal": self.task_config.get_goal_reward(),
-            "detection": self.task_config.get_detection_reward(),
-            "step": self.task_config.get_step_reward()
-        }
-        self.logger.info(f"\tSetting rewards - {self._rewards}")
-
-        # Set the default parameters of all actionss
-        # if the values of the actions were updated in the configuration file
-        gc.ActionType.ScanNetwork.default_success_p = self.task_config.read_env_action_data('scan_network')
-        gc.ActionType.FindServices.default_success_p = self.task_config.read_env_action_data('find_services')
-        gc.ActionType.ExploitService.default_success_p = self.task_config.read_env_action_data('exploit_service')
-        gc.ActionType.FindData.default_success_p = self.task_config.read_env_action_data('find_data')
-        gc.ActionType.ExfiltrateData.default_success_p = self.task_config.read_env_action_data('exfiltrate_data')
-        gc.ActionType.BlockIP.default_success_p = self.task_config.read_env_action_data('block_ip')
-
-        # At this point all 'random' values should be assigned to something
-        # Check if dynamic network and ip adddresses are required
-        if self.task_config.get_use_dynamic_addresses():
+    def _initialize(self)->None:
+        # Load CYST configuration
+        self._process_cyst_config(self._cyst_objects)
+                # Check if dynamic network and ip adddresses are required
+        if self._use_dynamic_ips:
             self.logger.info("Dynamic change of the IP and network addresses enabled")
             self._faker_object = Faker()
-            Faker.seed(seed)
-        self._episode_replay_buffer = None
-
-        # Make a copy of data placements so it is possible to reset to it when episode ends
+            Faker.seed(self._seed)  
+        # store initial values for parts which are modified during the game
         self._data_original = copy.deepcopy(self._data)
-        self._data_content_original = copy.deepcopy(self._data_content)
         self._firewall_original = copy.deepcopy(self._firewall)
-        
-        self._actions_played = []
         self.logger.info("Environment initialization finished")
 
-    @property
-    def seed(self)->int:
+    def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->GameState:
         """
-        Can be used by agents to use the same random seed as the environment
+        Builds a GameState from given view.
+        If there is a keyword 'random' used, it is replaced by a valid option at random.
+
+        Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
         """
-        return self._seed
-    
-    @property
-    def num_actions(self)->int:
-        return len(self.get_all_actions())
-    
+        self.logger.info(f'Generating state from view:{view}')
+        # re-map all networks based on current mapping in self._network_mapping
+        known_networks = set([self._network_mapping[net] for net in  view["known_networks"]])
+            
+        controlled_hosts = set()
+        # controlled_hosts
+        for host in view['controlled_hosts']:
+            if isinstance(host, IP):
+                controlled_hosts.add(self._ip_mapping[host])
+                self.logger.debug(f'\tThe attacker has control of host {self._ip_mapping[host]}.')
+            elif host == 'random':
+                # Random start
+                self.logger.debug('\tAdding random starting position of agent')
+                self.logger.debug(f'\t\tChoosing from {self.hosts_to_start}')
+                selected = random.choice(self.hosts_to_start)
+                controlled_hosts.add(selected)
+                self.logger.debug(f'\t\tMaking agent start in {selected}')
+            elif host == "all_local":
+                # all local ips
+                self.logger.debug('\t\tAdding all local hosts to agent')
+                controlled_hosts = controlled_hosts.union(self._get_all_local_ips())
+            else:
+                self.logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {host}")
+        # re-map all known based on current mapping in self._ip_mapping
+        known_hosts = set([self._ip_mapping[ip] for ip in view["known_hosts"]])
+        # Add all controlled hosts to known_hosts
+        known_hosts = known_hosts.union(controlled_hosts)
+       
+        if add_neighboring_nets:
+            # Extend the known networks with the neighbouring networks
+            # This is to solve in the env (and not in the agent) the problem
+            # of not knowing other networks appart from the one the agent is in
+            # This is wrong and should be done by the agent, not here
+            # TODO remove this!
+            for controlled_host in controlled_hosts:
+                for net in self._get_networks_from_host(controlled_host): #TODO
+                    net_obj = netaddr.IPNetwork(str(net))
+                    if net_obj.ip.is_ipv4_private_use(): #TODO
+                        known_networks.add(net)
+                        net_obj.value += 256
+                        if net_obj.ip.is_ipv4_private_use():
+                            ip = Network(str(net_obj.ip), net_obj.prefixlen)
+                            self.logger.debug(f'\tAdding {ip} to agent')
+                            known_networks.add(ip)
+                        net_obj.value -= 2*256
+                        if net_obj.ip.is_ipv4_private_use():
+                            ip = Network(str(net_obj.ip), net_obj.prefixlen)
+                            self.logger.debug(f'\tAdding {ip} to agent')
+                            known_networks.add(ip)
+                        #return value back to the original
+                        net_obj.value += 256
+        known_services ={}
+        for ip, service_list in view["known_services"]:
+            known_services[self._ip_mapping[ip]] = service_list
+        known_data = {}
+        for ip, data_list in view["known_data"]:
+            known_data[self._ip_mapping[ip]] = data_list
+        game_state = GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
+        self.logger.info(f"Generated GameState:{game_state}")
+        return game_state
+
     def _process_cyst_config(self, configuration_objects:list)-> None:
         """
         Process the cyst configuration file
@@ -122,8 +154,11 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             self.logger.info(f"\t\tProcessing interfaces in node '{node_obj.id}'")
             for interface in node_obj.interfaces:
                 net_ip, net_mask = str(interface.net).split("/")
-                net = gc.Network(net_ip,int(net_mask))
-                ip = gc.IP(str(interface.ip))
+                net = Network(net_ip,int(net_mask))
+                ip = IP(str(interface.ip))
+                if len(node_obj.active_services)>0:
+                    self.logger.info(f"\tAdding as potential start point")
+                    self.hosts_to_start.append(ip)
                 self._ip_to_hostname[ip] = node_obj.id
                 if net not in self._networks:
                     self._networks[net] = []
@@ -136,27 +171,26 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             for service in node_obj.passive_services:
                 # Check if it is a candidate for random start
                 # Becareful, it will add all the IPs for this node
-                if service.type == "can_attack_start_here":
-                    self.hosts_to_start.append(gc.IP(str(interface.ip)))
+                if service.name == "can_attack_start_here":
+                    self.hosts_to_start.append(IP(str(interface.ip)))
                     continue
 
                 if node_obj.id not in self._services:
                     self._services[node_obj.id] = []
-                self._services[node_obj.id].append(gc.Service(service.type, "passive", service.version, service.local))
+                self._services[node_obj.id].append(Service(service.name, "passive", service.version, service.local))
                 #data
-                self.logger.info(f"\t\t\tProcessing data in node '{node_obj.id}':'{service.type}' service")
+                self.logger.info(f"\t\t\tProcessing data in node '{node_obj.id}':'{service.name}' service")
                 try:
                     for data in service.private_data:
                         if node_obj.id not in self._data:
                             self._data[node_obj.id] = set()
-                        datapoint = gc.Data(data.owner, data.description)
+                        datapoint = Data(data.owner, data.description)
                         self._data[node_obj.id].add(datapoint)
                         # add content
                         self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
                 except AttributeError:
                     pass
                     #service does not contain any data
-
         def process_router_config(router_obj:RouterConfig)->None:
             self.logger.info(f"\tProcessing config of router '{router_obj.id}'")
             # Process a router
@@ -173,8 +207,8 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             self.logger.info(f"\t\tProcessing interfaces in router '{router_obj.id}'")
             for interface in r.interfaces:
                 net_ip, net_mask = str(interface.net).split("/")
-                net = gc.Network(net_ip,int(net_mask))
-                ip = gc.IP(str(interface.ip))
+                net = Network(net_ip,int(net_mask))
+                ip = IP(str(interface.ip))
                 self._ip_to_hostname[ip] = router_obj.id
                 if net not in self._networks:
                     self._networks[net] = []
@@ -271,7 +305,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
                 private_nets.append(net)
             else:
-                mapping_nets[net] = gc.Network(fake.ipv4_public(), net.mask)
+                mapping_nets[net] = Network(fake.ipv4_public(), net.mask)
         
         # for private networks, we want to keep the distances among them
         private_nets_sorted = sorted(private_nets)
@@ -282,7 +316,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 # find the new lowest networks
                 new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets_sorted[0].mask}")
                 # store its new mapping
-                mapping_nets[private_nets[0]] = gc.Network(str(new_base.network), private_nets_sorted[0].mask)
+                mapping_nets[private_nets[0]] = Network(str(new_base.network), private_nets_sorted[0].mask)
                 base = netaddr.IPNetwork(str(private_nets_sorted[0]))
                 is_private_net_checks = []
                 for i in range(1,len(private_nets_sorted)):
@@ -294,7 +328,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                     # evaluate if its still a private network
                     is_private_net_checks.append(new_net_addr.is_ipv4_private_use())
                     # store the new mapping
-                    mapping_nets[private_nets_sorted[i]] = gc.Network(str(new_net_addr), private_nets_sorted[i].mask)
+                    mapping_nets[private_nets_sorted[i]] = Network(str(new_net_addr), private_nets_sorted[i].mask)
                 if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
                     valid_valid_network_mapping = True
             except IndexError as e:
@@ -312,7 +346,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             # remove broadcast and network ip from the list
             random.shuffle(ip_list)
             for i,ip in enumerate(ips):
-                mapping_ips[ip] = gc.IP(str(ip_list[i]))
+                mapping_ips[ip] = IP(str(ip_list[i]))
             # Always add random, in case random is selected for ips
             mapping_ips['random'] = 'random'
         self.logger.info(f"Mapping IPs done:{mapping_ips}")
@@ -326,22 +360,6 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
         self._networks = new_self_networks
         
-        # Harpo says that here there is a problem that firewall.items() do not return an ip that can be used in the mapping
-        # His solution is: (check)
-        """
-        new_self_firewall = {}
-        for ip, dst_ips in self._firewall.items():
-            if ip not in mapping_ips:
-                self.logger.debug(f"IP {ip} not found in mapping_ips")
-                continue  # Skip this IP if it's not found in the mapping
-
-            new_self_firewall[mapping_ips[ip]] = set()
-           
-            for dst_ip in dst_ips:
-                new_self_firewall[mapping_ips[ip]].add(mapping_ips[dst_ip])
-        self._firewall = new_self_firewall
-        """
-
         #self._firewall
         new_self_firewall = {}
         for ip, dst_ips in self._firewall.items():
@@ -431,12 +449,12 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             if (hostname, data_id) in self._data_content:
                 content = self._data_content[hostname,data_id]
             else:
-                self.logger.info(f"\tData '{data_id}' not found in host '{hostname}'({host_ip})")
+                self.logger.debug(f"\tData '{data_id}' not found in host '{hostname}'({host_ip})")
         else:
             self.logger.debug("Data content not found because target IP does not exists.")
         return content
     
-    def _execute_action(self, current_state:gc.GameState, action:gc.Action, agent_id)-> gc.GameState:
+    def _execute_action(self, current_state:GameState, action:Action)-> GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
@@ -449,23 +467,23 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         """
         next_state = None
         match action.type:
-            case gc.ActionType.ScanNetwork:
+            case ActionType.ScanNetwork:
                 next_state = self._execute_scan_network_action(current_state, action)
-            case gc.ActionType.FindServices:   
+            case ActionType.FindServices:   
                 next_state = self._execute_find_services_action(current_state, action)
-            case gc.ActionType.FindData:
+            case ActionType.FindData:
                 next_state = self._execute_find_data_action(current_state, action)
-            case gc.ActionType.ExploitService:
+            case ActionType.ExploitService:
                 next_state = self._execute_exploit_service_action(current_state, action)
-            case gc.ActionType.ExfiltrateData:
+            case ActionType.ExfiltrateData:
                 next_state = self._execute_exfiltrate_data_action(current_state, action)
-            case gc.ActionType.BlockIP:
+            case ActionType.BlockIP:
                 next_state = self._execute_block_ip_action(current_state, action)
             case _:
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
         
-    def _state_parts_deep_copy(self, current:gc.GameState)->tuple:
+    def _state_parts_deep_copy(self, current:GameState)->tuple:
         next_nets = copy.deepcopy(current.known_networks)
         next_known_h = copy.deepcopy(current.known_hosts)
         next_controlled_h = copy.deepcopy(current.controlled_hosts)
@@ -474,7 +492,7 @@ class NetworkSecurityEnvironment(AIDojoWorld):
         next_blocked = copy.deepcopy(current.known_blocks)
         return next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked
 
-    def _firewall_check(self, src_ip:gc.IP, dst_ip:gc.IP)->bool:
+    def _firewall_check(self, src_ip:IP, dst_ip:IP)->bool:
         """Checks if firewall allows connection from 'src_ip to ''dst_ip'"""
         try:
             connection_allowed = dst_ip in self._firewall[src_ip]
@@ -482,12 +500,12 @@ class NetworkSecurityEnvironment(AIDojoWorld):
             connection_allowed = False
         return connection_allowed
 
-    def _execute_scan_network_action(self, current_state:gc.GameState, action:gc.Action)->gc.GameState:
+    def _execute_scan_network_action(self, current_state:GameState, action:Action)->GameState:
         """
         Executes the ScanNetwork action in the environment
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
-        self.logger.info(f"\t\tScanning {action.parameters['target_network']}")
+        self.logger.debug(f"\t\tScanning {action.parameters['target_network']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             new_ips = set()
             for ip in self._ip_to_hostname.keys(): #check if IP exists
@@ -500,15 +518,15 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                         self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {ip} blocked by FW. Skipping")
             next_known_h = next_known_h.union(new_ips)
         else:
-            self.logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return gc.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
+            self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+        return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _execute_find_services_action(self, current_state:gc.GameState, action:gc.Action)->gc.GameState:
+    def _execute_find_services_action(self, current_state:GameState, action:Action)->GameState:
         """
         Executes the FindServices action in the environment
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
-        self.logger.info(f"\t\tSearching for services in {action.parameters['target_host']}")
+        self.logger.debug(f"\t\tSearching for services in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
                 found_services = self._get_services_from_host(action.parameters["target_host"], current_state.controlled_hosts)
@@ -525,14 +543,14 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return gc.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
+        return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_find_data_action(self, current:gc.GameState, action:gc.Action)->gc.GameState:
+    def _execute_find_data_action(self, current:GameState, action:Action)->GameState:
         """
         Executes the FindData action in the environment
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current)
-        self.logger.info(f"\t\tSearching for data in {action.parameters['target_host']}")
+        self.logger.debug(f"\t\tSearching for data in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
                 new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
@@ -553,9 +571,9 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return gc.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
+        return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_exfiltrate_data_action(self, current_state:gc.GameState, action:gc.Action)->gc.GameState:
+    def _execute_exfiltrate_data_action(self, current_state:GameState, action:Action)->GameState:
         """
         Executes the ExfiltrateData action in the environment
         """
@@ -597,9 +615,9 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 self.logger.debug("\t\t\tCan not exfiltrate. Source host is not controlled.")
         else:
             self.logger.debug("\t\t\tCan not exfiltrate. Target host is not controlled.")
-        return gc.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
+        return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_exploit_service_action(self, current_state:gc.GameState, action:gc.Action)->gc.GameState:
+    def _execute_exploit_service_action(self, current_state:GameState, action:Action)->GameState:
         """
         Executes the ExploitService action in the environment
         """
@@ -634,9 +652,9 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                 self.logger.debug("\t\t\tCan not exploit. Target host does not exist.")
         else:
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return gc.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
+        return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_block_ip_action(self, current_state:gc.GameState, action:gc.Action)->gc.GameState:
+    def _execute_block_ip_action(self, current_state:GameState, action:Action)->GameState:
         """
         Executes the BlockIP action 
         - The action has BlockIP("target_host": IP object, "source_host": IP object, "blocked_host": IP object)
@@ -689,14 +707,14 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                         next_blocked[action.parameters["target_host"]].add(action.parameters["blocked_host"])           
                         next_blocked[action.parameters["blocked_host"]].add(action.parameters["target_host"])
                     else:
-                        self.logger.info(f"\t\t\t Cant block connection form :'{action.parameters['target_host']}' to '{action.parameters['blocked_host']}'")
+                        self.logger.debug(f"\t\t\t Cant block connection form :'{action.parameters['target_host']}' to '{action.parameters['blocked_host']}'")
                 else:
                     self.logger.debug(f"\t\t\t Connection from '{action.parameters['source_host']}->'{action.parameters['target_host']} is blocked blocked by FW")
             else:
-                self.logger.info(f"\t\t\t Invalid target_host:'{action.parameters['target_host']}'")
+                self.logger.debug(f"\t\t\t Invalid target_host:'{action.parameters['target_host']}'")
         else:
-            self.logger.info(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
-        return gc.GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
+            self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
+        return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
     def _get_all_local_ips(self)->set:
         local_ips = set()
@@ -706,179 +724,105 @@ class NetworkSecurityEnvironment(AIDojoWorld):
                     local_ips.add(self._ip_mapping[ip])
         self.logger.info(f"\t\t\tLocal ips: {local_ips}")
         return local_ips
-
-    def create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->gc.GameState:
-        """
-        Builds a GameState from given view.
-        If there is a keyword 'random' used, it is replaced by a valid option at random.
-
-        Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
-        """
-        self.logger.info(f'Generating state from view:{view}')
-        # re-map all networks based on current mapping in self._network_mapping
-        known_networks = set([self._network_mapping[net] for net in  view["known_networks"]])
-        
-        
-        controlled_hosts = set()
-        # controlled_hosts
-        for host in view['controlled_hosts']:
-            if isinstance(host, gc.IP):
-                controlled_hosts.add(self._ip_mapping[host])
-                self.logger.info(f'\tThe attacker has control of host {self._ip_mapping[host]}.')
-            elif host == 'random':
-                # Random start
-                self.logger.info('\tAdding random starting position of agent')
-                self.logger.info(f'\t\tChoosing from {self.hosts_to_start}')
-                selected = random.choice(self.hosts_to_start)
-                controlled_hosts.add(selected)
-                self.logger.info(f'\t\tMaking agent start in {selected}')
-            elif host == "all_local":
-                # all local ips
-                self.logger.info('\t\tAdding all local hosts to agent')
-                controlled_hosts = controlled_hosts.union(self._get_all_local_ips())
-            else:
-                self.logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {host}")
-        # re-map all known based on current mapping in self._ip_mapping
-        known_hosts = set([self._ip_mapping[ip] for ip in view["known_hosts"]])
-        # Add all controlled hosts to known_hosts
-        known_hosts = known_hosts.union(controlled_hosts)
-       
-        if add_neighboring_nets:
-            # Extend the known networks with the neighbouring networks
-            # This is to solve in the env (and not in the agent) the problem
-            # of not knowing other networks appart from the one the agent is in
-            # This is wrong and should be done by the agent, not here
-            # TODO remove this!
-            for controlled_host in controlled_hosts:
-                for net in self._get_networks_from_host(controlled_host): #TODO
-                    net_obj = netaddr.IPNetwork(str(net))
-                    if net_obj.ip.is_ipv4_private_use(): #TODO
-                        known_networks.add(net)
-                        net_obj.value += 256
-                        if net_obj.ip.is_ipv4_private_use():
-                            ip = gc.Network(str(net_obj.ip), net_obj.prefixlen)
-                            self.logger.info(f'\tAdding {ip} to agent')
-                            known_networks.add(ip)
-                        net_obj.value -= 2*256
-                        if net_obj.ip.is_ipv4_private_use():
-                            ip = gc.Network(str(net_obj.ip), net_obj.prefixlen)
-                            self.logger.info(f'\tAdding {ip} to agent')
-                            known_networks.add(ip)
-                        #return value back to the original
-                        net_obj.value += 256
-        known_services ={}
-        for ip, service_list in view["known_services"]:
-            known_services[self._ip_mapping[ip]] = service_list
-        known_data = {}
-        for ip, data_list in view["known_data"]:
-            known_data[self._ip_mapping[ip]] = data_list
-        game_state = gc.GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
-        self.logger.info(f"Generated GameState:{game_state}")
+     
+    async def register_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
+        if len(self._networks) == 0:
+            self._initialize()
+        game_state = self._create_state_from_view(agent_initial_view)
         return game_state
+         
+    async def remove_agent(self, agent_id, agent_state)->bool:
+        # No action is required
+        return True
+        
+    async def step(self, agent_id, agent_state, action)->GameState:
+        return self._execute_action(agent_state, action)
+    
+    async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
+       game_state = self._create_state_from_view(agent_initial_view)
+       return game_state
 
-    def update_goal_dict(self, goal_dict:dict)->dict:
-        """
-        Updates goal dict based on the current values
-        in self._network_mapping and self._ip_mapping.
-        """
-        new_dict = {
-            "known_networks":set(),
-            "known_hosts":set(),
-            "controlled_hosts":set(),
-            "known_services": {},
-            "known_data": {},
-            "known_blocks": {}
-        }
-        for net in goal_dict["known_networks"]:
-            if net in self._network_mapping:
-                new_dict["known_networks"].add(self._network_mapping[net])
-            else:
-                # Unknown net, do not map
-                new_dict["known_networks"].add(net)
-        for host in goal_dict["known_hosts"]:
-            if host in self._ip_mapping:
-                new_dict["known_hosts"].add(self._ip_mapping[host])
-            else:
-                # Unknown IP, do not map
-                new_dict["known_hosts"].add(host)
-        for host in goal_dict["controlled_hosts"]:
-            if host in self._ip_mapping:
-                new_dict["controlled_hosts"].add(self._ip_mapping[host])
-            else:
-                # Unknown IP, do not map
-                new_dict["controlled_hosts"].add(host)
-        for host, items in goal_dict["known_services"].items():
-            if host in self._ip_mapping:
-                new_dict["known_services"][self._ip_mapping[host]] = items
-            else:
-                # Unknown IP, do not map
-                new_dict["known_services"][host] = items
-        for host, items in goal_dict["known_data"].items():
-            if host in self._ip_mapping:
-                new_dict["known_data"][self._ip_mapping[host]] = items
-            else:
-                # Unknown IP, do not map
-                new_dict["known_data"][host] = items
-        for host, items in goal_dict["known_blocks"].items():
-            if host in self._ip_mapping:
-                new_dict["known_blocks"][self._ip_mapping[host]] = items
-            else:
-                # Unknown IP, do not map
-                new_dict["known_blocks"][host] = items
-        return new_dict    
-
-    def update_goal_descriptions(self, goal_description:str)->str:
-        new_description = goal_description
-        for ip in self._ip_mapping:
-            new_description = new_description.replace(str(ip), str(self._ip_mapping[ip]))
-        return new_description
-            
-    def reset(self)->None: 
+    async def reset(self)->bool:
         """
         Function to reset the state of the game
         and prepare for a new episode
         """
         # write all steps in the episode replay buffer in the file
-        self.logger.info('--- Reseting env to its initial state ---')
+        self.logger.info('--- Reseting NSG Environment to its initial state ---')
         # change IPs if needed
         if self.task_config.get_use_dynamic_addresses():
             self._create_new_network_mapping()
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
-        self._data_content_original = copy.deepcopy(self._data_content_original)
         self._firewall = copy.deepcopy(self._firewall_original)
         self._fw_blocks = {}
-      
+        return True
 
-        self._actions_played = []
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="NetSecGame Coordinator Server Author: Ondrej Lukas ondrej.lukas@aic.fel.cvut.cz",
+        usage="%(prog)s [options]",
+    )
+  
+    parser.add_argument(
+        "-l",
+        "--debug_level",
+        help="Define the debug level for the logs. DEBUG, INFO, WARNING, ERROR, CRITICAL",
+        action="store",
+        required=False,
+        type=str,
+        default="INFO",
+    )
+    
+    parser.add_argument(
+        "-gh",
+        "--game_host",
+        help="host where to run the game server",
+        action="store",
+        required=False,
+        type=str,
+        default="127.0.0.1",
+    )
+    
+    parser.add_argument(
+        "-gp",
+        "--game_port",
+        help="Port where to run the game server",
+        action="store",
+        required=False,
+        type=int,
+        default="9000",
+    )
 
-    def step(self, state:gc.GameState, action:gc.Action, agent_id:tuple)-> gc.GameState:
-        """
-        Take a step in the environment given an action
-        in: action
-        out: observation of the state of the env
-        """
-        self.logger.info(f"Agent {agent_id}. Action: {action}")
-        # Reward for taking an action
-        reward = self._rewards["step"]
+    parser.add_argument(
+        "-c",
+        "--task_config",
+        help="File with the task configuration",
+        action="store",
+        required=True,
+        type=str,
+        default="netsecenv_conf.yaml",
+    )
 
-        # 1. Perform the action
-        self._actions_played.append(action)
-        if random.random() <= action.type.default_success_p:
-            next_state = self._execute_action(state, action, agent_id)
-        else:
-            self.logger.info("\tAction NOT sucessful")
-            next_state = state
+    args = parser.parse_args()
+    print(args)
+    # Set the logging
+    log_filename = Path("NSG_coordinator.log")
+    if not log_filename.parent.exists():
+        os.makedirs(log_filename.parent)
 
-        
-        # Make the state we just got into, our current state
-        current_state = state
-        self.logger.info(f'New state: {next_state} ')
+    # Convert the logging level in the args to the level to use
+    pass_level = get_logging_level(args.debug_level)
 
-
-        # Save the transition to the episode replay buffer if there is any
-        if self._episode_replay_buffer is not None:
-            self._episode_replay_buffer.append((current_state, action, reward, next_state))
-        # Return an observation
-        return next_state
+    logging.basicConfig(
+        filename=log_filename,
+        filemode="w",
+        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        level=pass_level,
+    )
+  
+    game_server = NSGCoordinator(args.game_host, args.game_port, args.task_config)
+    # Run it!
+    game_server.run()

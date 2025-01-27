@@ -236,8 +236,8 @@
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from coordinator import Coordinator, AgentStatus, Action, ActionType
-from env.game_components import AgentInfo, Network, IP
+from AIDojoCoordinator.coordinator import Coordinator, AgentStatus, Action, ActionType
+from AIDojoCoordinator.game_components import AgentInfo, Network, IP
 
 CONFIG_FILE = "tests/netsecenv-task-for-testing.yaml"
 ALLOWED_ROLES = ["Attacker", "Defender", "Benign"]
