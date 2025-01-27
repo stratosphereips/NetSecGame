@@ -361,11 +361,11 @@ In the current state, we support a single scenario: Data exfiltration to a remot
 For the data exfiltration we support 3 variants. The full scenario contains 5 clients (where the attacker can start) and 5 servers where the data that is supposed to be exfiltrated can be located. *scenario1_small* is a variant with a single client (the attacker always starts there) and all 5 servers. *scenario1_tiny* contains only a single server with data. The tiny scenario is trivial and intended only for debugging purposes.
 <table>
   <tr><th>Scenario 1</th><th>Scenario 1 - small</th><th>Scenario 1 -tiny</th></tr>
-  <tr><td><img src="docs/figures/scenarios/scenario_1.png" alt="Scenario 1 - Data exfiltration" width="300"></td><td><img src="docs/figures/scenarios/scenario 1_small.png" alt="Scenario 1 - small" width="300"</td><td><img src="docs/figures/scenarios/scenario_1_tiny.png" alt="Scenario 1 - tiny" width="300"></td></tr>
+  <tr><td><img src="AIDojoCoordinator/docs/figures/scenarios/scenario_1.png" alt="Scenario 1 - Data exfiltration" width="300"></td><td><img src="AIDojoCoordinator/docs/figures/scenarios/scenario 1_small.png" alt="Scenario 1 - small" width="300"</td><td><img src="AIDojoCoordinator/docs/figures/scenarios/scenario_1_tiny.png" alt="Scenario 1 - tiny" width="300"></td></tr>
   <tr><th>3-nets scenario</th></tr>
   <tr>
     <td>
-       <img src="docs/figures/scenarios/three_nets.png" alt="Scenario 1 - Data exfiltration" width="300">
+       <img src="AIDojoCoordinator/docs/figures/scenarios/three_nets.png" alt="Scenario 1 - Data exfiltration" width="300">
     </td>
   </tr>
 </table>
