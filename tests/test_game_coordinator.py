@@ -1,7 +1,7 @@
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, Mock
-from coordinator_v3 import AgentServer, GameCoordinator
+from AIDojoCoordinator.coordinator import AgentServer, GameCoordinator
 
 def test_game_coordinator_initialization():
     """

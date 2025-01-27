@@ -2,10 +2,7 @@
 Tests related to the game components in the Network Security Game Environment
 Author: Maria Rigaki - maria.rigaki@fel.cvut.cz
 """
-import sys
 import json
-from os import path
-sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
 from AIDojoCoordinator.game_components import ActionType, Action, IP, Data, Network, Service, GameState, AgentInfo
 
 class TestComponentsIP:
