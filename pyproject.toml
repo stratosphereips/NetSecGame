@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["find:"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*"]
+
+[project]
+name = "AIDojoGameCoordinator"
+version = "0.1.0"
+description = "A package for coordinating AI-driven network simulation games."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Ondrej Lukas", email = "ondrej.lukas@aic.fel.cvut.cz" }]
+dependencies = [
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "flake8",
+    "black",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
