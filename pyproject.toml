@@ -12,7 +12,11 @@ version = "0.1.0"
 description = "A package for coordinating AI-driven network simulation games."
 readme = "README.md"
 license = { file = "LICENSE" }
-authors = [{ name = "Ondrej Lukas", email = "ondrej.lukas@aic.fel.cvut.cz" }]
+authors = [
+    { name = "Ondrej Lukas", email = "ondrej.lukas@aic.fel.cvut.cz" },
+    { name = "Sebastian Garcia", email = "sebastian.garcia@agents.fel.cvut.cz" },
+    { name = "Maria Rigaki", email = "maria.rigaki@aic.fel.cvut.cz" }
+]
 dependencies = [
     "aiohttp==3.11.8",
     "attrs==23.2.0",
