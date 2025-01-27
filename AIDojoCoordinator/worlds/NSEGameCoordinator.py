@@ -774,7 +774,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=str,
-        default="DEBUG",
+        default="INFO",
     )
     
     parser.add_argument(
