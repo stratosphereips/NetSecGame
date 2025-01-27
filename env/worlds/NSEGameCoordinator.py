@@ -15,7 +15,7 @@ import netaddr
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from env.game_components import GameState, Action, ActionType, IP, Network, Data, Service
-from coordinator_v3 import GameCoordinator
+from coordinator import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
 from utils.utils import get_logging_level
