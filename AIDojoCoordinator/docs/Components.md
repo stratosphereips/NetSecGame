@@ -1,5 +1,5 @@
 # Game Components
-Here, you can see the details of all components of the NetSetEnvironment and their usage. These components are located in [game_components.py](/env/game_components.py).
+Here, you can see the details of all components of the NetSetEnvironment and their usage. These components are located in [game_components.py](game_components.py).
 
 ## Building blocks
 The following classes are used in the game to hold information about the state of the game. They are used both in the [Actions](#actions) and [GameState](#gamestate).
