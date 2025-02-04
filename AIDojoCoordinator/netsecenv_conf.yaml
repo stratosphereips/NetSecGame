@@ -4,7 +4,7 @@ coordinator:
   # Define the conf for all the 'attacker' agents.
   agents:
     Attacker:
-      max_steps: 20
+      max_steps: 25
       goal:
         description: "Exfiltrate data to '213.47.23.195'"
         is_any_part_of_goal_random: True
@@ -103,9 +103,9 @@ env:
   use_firewall: True
   save_trajectories: False
   rewards:
-    win: 100
+    success: 100
     step: -1
-    loss: -10
+    fail: -10
   actions:
     scan_network:
       prob_success: 1.0

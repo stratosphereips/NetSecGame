@@ -206,7 +206,8 @@ class GameCoordinator:
                         self.logger.error(f"Failed to fetch initialization objects. Status: {response.status}")
             except Exception as e:
                self.logger.error(f"Error fetching initialization objects: {e}")
-
+        # Temporary fix
+        self.task_config = ConfigParser(self._task_config_file)
     def _load_initialization_objects(self)->None:
         """
         Loads task configuration from a local file.
@@ -330,8 +331,8 @@ class GameCoordinator:
         else:
             self._global_defender = None
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
-        self._rewards = self.task_config.get_rewards(["step", "sucess", "fail"])
-        self.logger.debug(f"Rewards set to:{self._rewards}")
+        self._rewards = self.task_config.get_rewards(["step", "success", "fail"])
+        self.logger.info(f"Rewards set to:{self._rewards}")
 
         # start server for agent communication
         self._spawn_task(self.start_tcp_server)
@@ -587,7 +588,7 @@ class GameCoordinator:
                 for agent in attackers:
                     self.logger.debug(f"Processing reward for agent {agent}")
                     if self._agent_status[agent] is AgentStatus.Success:
-                        self._agent_rewards[agent] += self._rewards["sucess"]
+                        self._agent_rewards[agent] += self._rewards["success"]
                         successful_attack = True
                     else:
                         self._agent_rewards[agent] += self._rewards["fail"]
@@ -596,7 +597,7 @@ class GameCoordinator:
                 for agent in defenders:
                     self.logger.debug(f"Processing reward for agent {agent}")
                     if not successful_attack:
-                        self._agent_rewards[agent] += self._rewards["sucess"]
+                        self._agent_rewards[agent] += self._rewards["success"]
                         self._agent_status[agent] = AgentStatus.Success
                     else:
                         self._agent_rewards[agent] += self._rewards["fail"]
