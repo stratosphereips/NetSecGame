@@ -25,6 +25,8 @@ class CYSTCoordinator(GameCoordinator):
         self._last_msg_per_agent = {}
         self._starting_positions = None
         self._availabe_cyst_agents = None
+        # TEMPORARY FIX
+        self._task_config_file = "/home/ondra/aidojo/game_coordinator/AIDojoCoordinator/netsecenv_conf.yaml"
 
     def get_cyst_id(self, agent_role:str):
         """
@@ -152,7 +154,6 @@ class CYSTCoordinator(GameCoordinator):
         if cyst_rsp_status == 200:
             self.logger.debug("Valid response from CYST")
             data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
-            self.logger.warning(data)
             for item in data:
                 ip = IP(item["ip"])
                 # Add IP in case it was discovered by the scan
