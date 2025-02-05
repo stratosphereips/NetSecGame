@@ -71,7 +71,8 @@ class AgentServer(asyncio.Protocol):
                 self.logger.info(f"Sending response to agent {addr}: {response}")
 
                 # Step 4: Send the response to the agent
-                writer.write(bytes(str(response).encode()))
+                response = str(response) + "EOF"
+                writer.write(response.encode())
                 await writer.drain()
         except asyncio.CancelledError:
             self.logger.debug("Terminating by KeyboardInterrupt")
