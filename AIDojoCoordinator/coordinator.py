@@ -382,7 +382,7 @@ class GameCoordinator:
                         self._spawn_task(self._process_quit_game_action, agent_addr)
                     case ActionType.ResetGame:
                         self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
-                        self._spawn_task(self._process_reset_game_action, agent_addr)
+                        self._spawn_task(self._process_reset_game_action, agent_addr, action)
                     case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
                         self.logger.debug(f"Start processing of {action.type} by {agent_addr}")
                         self._spawn_task(self._process_game_action, agent_addr, action)
@@ -468,7 +468,7 @@ class GameCoordinator:
         finally:
             self.logger.debug(f"Cleaning up after QuitGame for {agent_addr}.")
     
-    async def _process_reset_game_action(self, agent_addr: tuple)->None:
+    async def _process_reset_game_action(self, agent_addr: tuple, reset_action:Action)->None:
         """
         Method for processing Action of type ActionType.ResetGame
         Inputs: 
