@@ -237,6 +237,8 @@ class Action:
                     params[k] = Data.from_dict(v)
                 case "agent_info":
                     params[k] = AgentInfo.from_dict(v)
+                case "request_trajectory":
+                    params[k] = bool(v)
                 case _:
                     raise ValueError(f"Unsupported value in {k}: {v}")
         return cls(action_type=action_type, parameters=params)
