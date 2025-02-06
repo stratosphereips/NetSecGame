@@ -53,7 +53,7 @@ Actions are the objects sent by the agents to the environment. Each action is ev
 
 In all cases, when an agent sends an action to AIDojo, it is given a response.
 ### Action format
-The Action class is defined in `env.game_components.py`. It has two basic parts:
+The Action class is defined in `game_components.py`. It has two basic parts:
 1. ActionType:Enum
 2. parameters:dict
 
@@ -61,7 +61,7 @@ ActionType is unique Enum that determines what kind of action is agent playing. 
 ### List of actions
 - **JoinGame**, params={`agent_info`:AgentInfo(\<name\>, \<role\>)}: Used to register agent in a game with a given \<role\>.
 - **QuitGame**, params={}: Used for termination of agent's interaction.
-- **ResetGame**, params={}: Used for requesting reset of the game to it's initial position.
+- **ResetGame**, params={`request_trajectory`:`bool`}: Used for requesting reset of the game to it's initial position. If `request_trajectory = True`, the coordinator will send back the complete trajectory of the previous run in the next message.
 ---
 - **ScanNetwork**, params{`source_host`:\<IP\>, `target_network`:\<Network\>}: Scans the given \<Network\> from a specified source host. Discovers ALL hosts in a network that are accessible from \<IP\>. If successful, returns set of discovered \<IP\> objects.
 - **FindServices**, params={`source_host`:\<IP\>, `target_host`:\<IP\>}: Used to discover ALL services running in the `target_host` if the host is accessible from `source_host`. If successful, returns a set of all discovered \<Service\> objects.
