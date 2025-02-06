@@ -2,6 +2,7 @@ from AIDojoCoordinator.game_components import ActionType, Action
 from AIDojoCoordinator.global_defender import GlobalDefender
 import pytest
 from unittest.mock import patch
+import random
 
 @pytest.fixture
 def defender():
@@ -55,8 +56,8 @@ def test_other_actions_never_detected(defender, episode_actions):
 def test_mock_stochastic_probabilities(defender, episode_actions):
     """Test stochastic function is only called when thresholds are crossed."""
     action = Action(ActionType.ScanNetwork, {})
-    episode_actions += [{"action_type": str(ActionType.ScanNetwork)}] * 3  # Exceed threshold
+    episode_actions += [{"action_type": str(ActionType.ScanNetwork)}] * 4  # Exceed threshold
     
-    with patch("random.random", return_value=0.01):  # Force detection probability
+    with patch("AIDojoCoordinator.global_defender.random", return_value=0.01):  # Force detection probability
         result = defender.stochastic_with_threshold(action, episode_actions, tw_size=5)
         assert result  # Should be True since we forced a low probability value
