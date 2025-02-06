@@ -495,6 +495,8 @@ class GameCoordinator:
         # wait until reset is done
         async with self._reset_done_condition:
             await self._reset_done_condition.wait()
+        # # make sure there is still enough players to play.
+        await self._episode_start_event.wait()
         async with self._agents_lock:
             output_message_dict = {
                 "to_agent": agent_addr,
@@ -640,7 +642,7 @@ class GameCoordinator:
             self.logger.info("Resetting game to initial state.")
             await self.reset()
             for agent in self.agents:
-                if self.task_config.get_store_trajectories() or self._global_defender:
+                if self.task_config.get_store_trajectories():
                     async with self._agents_lock:
                         self._store_trajectory_to_file(agent)
                 self.logger.debug(f"Resetting agent {agent}")
@@ -657,8 +659,6 @@ class GameCoordinator:
                         self._agent_status[agent] = AgentStatus.PlayingWithTimeout
                     else:
                         self._agent_status[agent] = AgentStatus.Playing
-                    # if self.task_config.get_store_trajectories() or self._global_defender:
-                    #     self._agent_trajectories[agent] = self._reset_trajectory(agent)
             self._reset_event.clear()  
             # notify all waiting agents
             async with self._reset_done_condition:
@@ -725,6 +725,8 @@ class GameCoordinator:
                 agent_info["end_reward"] = self._agent_rewards.pop(agent_addr, None)
                 agent_info["agent_info"] = self.agents.pop(agent_addr)
                 self.logger.debug(f"\t{agent_info}")
+                # clear the sufficient number of players event
+                self._episode_start_event.clear()
             else:
                 self.logger.info(f"\t Player {agent_addr} not present in the game!")
             return agent_info
