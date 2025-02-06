@@ -1,8 +1,7 @@
+import pytest
 from AIDojoCoordinator.game_components import ActionType, Action
 from AIDojoCoordinator.global_defender import GlobalDefender
-import pytest
 from unittest.mock import patch
-import random
 
 @pytest.fixture
 def defender():
