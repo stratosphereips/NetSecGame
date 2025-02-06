@@ -4,11 +4,10 @@ import json
 import asyncio
 from datetime import datetime
 import signal
-from AIDojoCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus
+from AIDojoCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, ProtocolConfig
 from AIDojoCoordinator.global_defender import GlobalDefender
 from AIDojoCoordinator.utils.utils import observation_as_dict, get_str_hash, ConfigParser
 import os
-
 from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment
 
@@ -52,7 +51,7 @@ class AgentServer(asyncio.Protocol):
         try:
             while True:
                 # Step 1: Read data from the agent
-                data = await reader.read(500)
+                data = await reader.read(ProtocolConfig.BUFFER_SIZE)
                 if not data:
                     self.logger.info(f"Agent {addr} disconnected.")
                     quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
@@ -64,14 +63,15 @@ class AgentServer(asyncio.Protocol):
 
                 # Step 2: Forward the message to the Coordinator
                 await self.actions_queue.put((addr, raw_message))
-                # await asyncio.sleep(0)
+                # await asyncio.sleep(0)w
                 # Step 3: Get a matching response from the answers queue
                 response_queue = self.answers_queues[addr]
                 response = await response_queue.get()
                 self.logger.info(f"Sending response to agent {addr}: {response}")
 
                 # Step 4: Send the response to the agent
-                writer.write(bytes(str(response).encode()))
+                response = str(response).encode() + ProtocolConfig.END_OF_MESSAGE
+                writer.write(response)
                 await writer.drain()
         except asyncio.CancelledError:
             self.logger.debug("Terminating by KeyboardInterrupt")
@@ -382,7 +382,7 @@ class GameCoordinator:
                         self._spawn_task(self._process_quit_game_action, agent_addr)
                     case ActionType.ResetGame:
                         self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
-                        self._spawn_task(self._process_reset_game_action, agent_addr)
+                        self._spawn_task(self._process_reset_game_action, agent_addr, action)
                     case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
                         self.logger.debug(f"Start processing of {action.type} by {agent_addr}")
                         self._spawn_task(self._process_game_action, agent_addr, action)
@@ -468,7 +468,7 @@ class GameCoordinator:
         finally:
             self.logger.debug(f"Cleaning up after QuitGame for {agent_addr}.")
     
-    async def _process_reset_game_action(self, agent_addr: tuple)->None:
+    async def _process_reset_game_action(self, agent_addr: tuple, reset_action:Action)->None:
         """
         Method for processing Action of type ActionType.ResetGame
         Inputs: 
@@ -499,6 +499,10 @@ class GameCoordinator:
                             "configuration_hash": self._CONFIG_FILE_HASH
                             },
             }
+            # extend the message with last trajectory
+            if "request_trajectory" in reset_action.parameters and reset_action.parameters["request_trajectory"]:
+                output_message_dict["message"]["last_trajectory"] = self._agent_trajectories[agent_addr]
+            self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
         await self._agent_response_queues[agent_addr].put(response_msg_json)
 
@@ -548,9 +552,9 @@ class GameCoordinator:
                 async with self._episode_rewards_condition:
                     await self._episode_rewards_condition.wait()
             # append step to the trajectory if needed
-            if self.task_config.get_store_trajectories() or self._global_defender:
-                async with self._agents_lock:
-                    self._add_step_to_trajectory(agent_addr, action, self._agent_rewards[agent_addr], new_state,end_reason=None)
+           
+            async with self._agents_lock:
+                self._add_step_to_trajectory(agent_addr, action, self._agent_rewards[agent_addr], new_state,end_reason=None)
             # add information to 'info' field if needed
             info = {}
             if self._agent_status[agent_addr] not in [AgentStatus.Playing, AgentStatus.PlayingWithTimeout]:
@@ -645,8 +649,8 @@ class GameCoordinator:
                         self._agent_status[agent] = AgentStatus.PlayingWithTimeout
                     else:
                         self._agent_status[agent] = AgentStatus.Playing
-                    if self.task_config.get_store_trajectories() or self._global_defender:
-                        self._agent_trajectories[agent] = self._reset_trajectory(agent)
+                    # if self.task_config.get_store_trajectories() or self._global_defender:
+                    #     self._agent_trajectories[agent] = self._reset_trajectory(agent)
             self._reset_event.clear()  
             # notify all waiting agents
             async with self._reset_done_condition:
@@ -670,8 +674,7 @@ class GameCoordinator:
             self._agent_status[agent_addr] = AgentStatus.PlayingWithTimeout
         else:
             self._agent_status[agent_addr] = AgentStatus.Playing
-        if self.task_config.get_store_trajectories() or self._global_defender:
-            self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
+        self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
