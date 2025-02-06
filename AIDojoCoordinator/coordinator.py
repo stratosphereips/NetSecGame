@@ -647,7 +647,7 @@ class GameCoordinator:
                         self._store_trajectory_to_file(agent)
                 self.logger.debug(f"Resetting agent {agent}")
                 new_state = await self.reset_agent(agent, self.agents[agent][1], self._agent_starting_position[agent])
-                new_observation = Observation(self._agent_states[agent], 0, False, {})
+                new_observation = Observation(new_state, 0, False, {})
                 async with self._agents_lock:
                     self._agent_states[agent] = new_state
                     self._agent_observations[agent] = new_observation
