@@ -39,7 +39,6 @@ def test_game_coordinator_initialization():
     assert isinstance(coordinator._episode_end_event, asyncio.Event), "episode_end_event should be an asyncio.Event."
     assert isinstance(coordinator._reset_lock, asyncio.Lock), "reset_lock should be an asyncio.Lock."
     assert isinstance(coordinator._agents_lock, asyncio.Lock), "agents_lock should be an asyncio.Lock."
-    assert isinstance(coordinator._semaphore, asyncio.Semaphore), "semaphore should be an asyncio.Semaphore."
 
     # Assertions for agent-related data structures
     assert isinstance(coordinator._agent_action_queue, asyncio.Queue), "agent_action_queue should be an asyncio.Queue."
