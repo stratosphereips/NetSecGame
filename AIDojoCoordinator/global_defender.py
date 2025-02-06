@@ -62,7 +62,7 @@ class GlobalDefender:
         temp_episode_actions.append(action.as_dict)
         if len(temp_episode_actions) >= tw_size:
             last_n_actions = temp_episode_actions[-tw_size:]
-            last_n_action_types = [action['type'] for action in last_n_actions]
+            last_n_action_types = [action['action_type'] for action in last_n_actions]
             # compute ratio of action type in the TW
             tw_ratio = last_n_action_types.count(str(action.type))/tw_size
             # Count how many times this exact (parametrized) action was played in episode
