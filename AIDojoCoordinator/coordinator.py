@@ -8,7 +8,6 @@ from AIDojoCoordinator.game_components import Action, Observation, ActionType, G
 from AIDojoCoordinator.global_defender import GlobalDefender
 from AIDojoCoordinator.utils.utils import observation_as_dict, get_str_hash, ConfigParser
 import os
-
 from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment
 
@@ -500,6 +499,10 @@ class GameCoordinator:
                             "configuration_hash": self._CONFIG_FILE_HASH
                             },
             }
+            # extend the message with last trajectory
+            if "request_trajectory" in reset_action.parameters and reset_action.parameters["request_trajectory"]:
+                output_message_dict["message"]["last_trajectory"] = self._agent_trajectories[agent_addr]
+            self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
         await self._agent_response_queues[agent_addr].put(response_msg_json)
 
@@ -549,9 +552,9 @@ class GameCoordinator:
                 async with self._episode_rewards_condition:
                     await self._episode_rewards_condition.wait()
             # append step to the trajectory if needed
-            if self.task_config.get_store_trajectories() or self._global_defender:
-                async with self._agents_lock:
-                    self._add_step_to_trajectory(agent_addr, action, self._agent_rewards[agent_addr], new_state,end_reason=None)
+           
+            async with self._agents_lock:
+                self._add_step_to_trajectory(agent_addr, action, self._agent_rewards[agent_addr], new_state,end_reason=None)
             # add information to 'info' field if needed
             info = {}
             if self._agent_status[agent_addr] not in [AgentStatus.Playing, AgentStatus.PlayingWithTimeout]:
@@ -646,8 +649,8 @@ class GameCoordinator:
                         self._agent_status[agent] = AgentStatus.PlayingWithTimeout
                     else:
                         self._agent_status[agent] = AgentStatus.Playing
-                    if self.task_config.get_store_trajectories() or self._global_defender:
-                        self._agent_trajectories[agent] = self._reset_trajectory(agent)
+                    # if self.task_config.get_store_trajectories() or self._global_defender:
+                    #     self._agent_trajectories[agent] = self._reset_trajectory(agent)
             self._reset_event.clear()  
             # notify all waiting agents
             async with self._reset_done_condition:
@@ -671,8 +674,7 @@ class GameCoordinator:
             self._agent_status[agent_addr] = AgentStatus.PlayingWithTimeout
         else:
             self._agent_status[agent_addr] = AgentStatus.Playing
-        if self.task_config.get_store_trajectories() or self._global_defender:
-            self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
+        self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
