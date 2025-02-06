@@ -213,9 +213,10 @@ The environment part defines the properties of the environment for the task (see
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of **EVERY** episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)
 - `use_firewall` - if `True` firewall rules defined in `scenario` are used when executing actions. When `False`, the firewall is ignored, and all connections are allowed (Default)
 - `use_global_defender` - if `True`, enables global defendr which is part of the environment and can stop interaction of any playing agent.
+- `required_players` - Minimum required players for the game to start (default 1)
 - `rewards`:
-    - `win` - sets reward which agent gets when it reaches the goal (default 100)
-    - `loss` - sets the reward that which agent does not reach it's objective (default -10)
+    - `success` - sets reward which agent gets when it reaches the goal (default 100)
+    - `fail` - sets the reward that which agent does not reach it's objective (default -10)
     - `step_reward` - sets reward which agent gets for every step taken (default -1)
 - `actions` - defines the probability of success for every ActionType
 
