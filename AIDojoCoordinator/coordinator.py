@@ -103,11 +103,11 @@ class GameCoordinator:
         self.shutdown_flag = asyncio.Event()
         self._reset_event = asyncio.Event()
         self._episode_end_event = asyncio.Event()
+        self._episode_start_event = asyncio.Event()
         self._episode_rewards_condition = asyncio.Condition()
         self._reset_done_condition = asyncio.Condition()
         self._reset_lock = asyncio.Lock()
         self._agents_lock = asyncio.Lock()
-        self._semaphore = asyncio.Semaphore(2)
         
         # for accessing configuration remotely
         self._service_host = service_host
@@ -272,7 +272,7 @@ class GameCoordinator:
                 AgentServer(
                     self._agent_action_queue,
                     self._agent_response_queues,
-                    max_connections=2
+                    max_connections=self._min_required_players
                 ),
                 self.host,
                 self.port
@@ -333,7 +333,8 @@ class GameCoordinator:
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
         self._rewards = self.task_config.get_rewards(["step", "success", "fail"])
         self.logger.info(f"Rewards set to:{self._rewards}")
-
+        self._min_required_players = self.task_config.get_required_num_players()
+        self.logger.info(f"Min player requirement set to:{self._min_required_players}")
         # start server for agent communication
         self._spawn_task(self.start_tcp_server)
 
@@ -399,52 +400,59 @@ class GameCoordinator:
         Outputs: None (Method stores reposnse in the agent's response queue)
         """
         try:
-            async with self._semaphore:
-                self.logger.info(f"New Join request by  {agent_addr}.")
-                if agent_addr not in self.agents:
-                    agent_name = action.parameters["agent_info"].name
-                    agent_role = action.parameters["agent_info"].role
-                    if agent_role in self.ALLOWED_ROLES:
-                        # add agent to the world
-                        new_agent_game_state = await self.register_agent(agent_addr, agent_role, self._starting_positions_per_role[agent_role])
-                        if new_agent_game_state: # successful registration
-                            async with self._agents_lock:
-                                self.agents[agent_addr] = (agent_name, agent_role)
-                                observation = self._initialize_new_player(agent_addr, new_agent_game_state)
-                                self._agent_observations[agent_addr] = observation
-                            output_message_dict = {
-                                "to_agent": agent_addr,
-                                "status": str(GameStatus.CREATED),
-                                "observation": observation_as_dict(observation),
-                                "message": {
-                                    "message": f"Welcome {agent_name}, registred as {agent_role}",
-                                    "max_steps": self._steps_limit_per_role[agent_role],
-                                    "goal_description": self._goal_description_per_role[agent_role],
-                                    "actions": [str(a) for a in ActionType],
-                                    "configuration_hash": self._CONFIG_FILE_HASH
-                                    },
-                            }
-                            await self._agent_response_queues[agent_addr].put(self.convert_msg_dict_to_json(output_message_dict))
-                    else:
-                        self.logger.info(
-                            f"\tError in registration, unknown agent role: {agent_role}!"
-                        )
+            self.logger.info(f"New Join request by  {agent_addr}.")
+            if agent_addr not in self.agents:
+                agent_name = action.parameters["agent_info"].name
+                agent_role = action.parameters["agent_info"].role
+                if agent_role in self.ALLOWED_ROLES:
+                    # add agent to the world
+                    new_agent_game_state = await self.register_agent(agent_addr, agent_role, self._starting_positions_per_role[agent_role])
+                    if new_agent_game_state: # successful registration
+                        async with self._agents_lock:
+                            self.agents[agent_addr] = (agent_name, agent_role)
+                            observation = self._initialize_new_player(agent_addr, new_agent_game_state)
+                            self._agent_observations[agent_addr] = observation
+                            if len(self.agents) == self._min_required_players:
+                                # set the event so the episde can start
+                                self._episode_start_event.set()
+                                self.logger.info("Enough players joined. Starting the episode.")
+                            else:
+                                self.logger.debug("Waiting for other players to join.")
+                        # wait for required number of players
+                        await self._episode_start_event.wait()
                         output_message_dict = {
                             "to_agent": agent_addr,
-                            "status": str(GameStatus.BAD_REQUEST),
-                            "message": f"Incorrect agent_role {agent_role}",
+                            "status": str(GameStatus.CREATED),
+                            "observation": observation_as_dict(observation),
+                            "message": {
+                                "message": f"Welcome {agent_name}, registred as {agent_role}",
+                                "max_steps": self._steps_limit_per_role[agent_role],
+                                "goal_description": self._goal_description_per_role[agent_role],
+                                "actions": [str(a) for a in ActionType],
+                                "configuration_hash": self._CONFIG_FILE_HASH
+                                },
                         }
-                        response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
-                        await self._agent_response_queues[agent_addr].put(response_msg_json)
+                        await self._agent_response_queues[agent_addr].put(self.convert_msg_dict_to_json(output_message_dict))
                 else:
-                    self.logger.info("\tError in registration, agent already exists!")
+                    self.logger.info(
+                        f"\tError in registration, unknown agent role: {agent_role}!"
+                    )
                     output_message_dict = {
-                            "to_agent": agent_addr,
-                            "status": str(GameStatus.BAD_REQUEST),
-                            "message": "Agent already exists.",
-                        }
+                        "to_agent": agent_addr,
+                        "status": str(GameStatus.BAD_REQUEST),
+                        "message": f"Incorrect agent_role {agent_role}",
+                    }
                     response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
                     await self._agent_response_queues[agent_addr].put(response_msg_json)
+            else:
+                self.logger.info("\tError in registration, agent already exists!")
+                output_message_dict = {
+                        "to_agent": agent_addr,
+                        "status": str(GameStatus.BAD_REQUEST),
+                        "message": "Agent already exists.",
+                    }
+                response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                await self._agent_response_queues[agent_addr].put(response_msg_json)
         except asyncio.CancelledError:
             self.logger.debug(f"Proccessing JoinAction of agent {agent_addr} interrupted")
             raise  # Ensure the exception propagates
