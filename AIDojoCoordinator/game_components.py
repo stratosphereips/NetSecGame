@@ -9,6 +9,7 @@ import enum
 import sys
 import netaddr
 import ipaddress
+import ast
 
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -238,7 +239,7 @@ class Action:
                 case "agent_info":
                     params[k] = AgentInfo.from_dict(v)
                 case "request_trajectory":
-                    params[k] = bool(v)
+                    params[k] = ast.literal_eval(v)
                 case _:
                     raise ValueError(f"Unsupported value in {k}: {v}")
         return cls(action_type=action_type, parameters=params)
