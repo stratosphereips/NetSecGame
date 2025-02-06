@@ -160,7 +160,7 @@ class ActionType(enum.Enum):
             return self.value == other.value
         # Compare with a string
         elif isinstance(other, str):
-            return self.value == other
+           return self.value == other.replace("ActionType.", "")
         return False
 
     def __hash__(self):
@@ -455,7 +455,7 @@ class AgentStatus(enum.Enum):
             return self.value == other.value
         # Compare with a string
         elif isinstance(other, str):
-            return self.value == other
+           return self.value == other.replace("AgentStatus.", "")
         return False
 
     def __hash__(self):
