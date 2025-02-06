@@ -499,6 +499,15 @@ class ConfigParser():
             use_global_defender = False
         return use_global_defender
     
+    def get_required_num_players(self)->int:
+        try:
+            required_players = int(self.config['env']['required_players'])
+        except KeyError:
+            required_players = 1
+        except ValueError:
+            required_players = 1
+        return required_players
+
 def get_logging_level(debug_level):
     """
     Configure logging level based on the provided debug_level string.
