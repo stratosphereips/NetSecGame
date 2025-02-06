@@ -4,7 +4,7 @@ import json
 import asyncio
 from datetime import datetime
 import signal
-from AIDojoCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus
+from AIDojoCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, ProtocolConfig
 from AIDojoCoordinator.global_defender import GlobalDefender
 from AIDojoCoordinator.utils.utils import observation_as_dict, get_str_hash, ConfigParser
 import os
@@ -51,7 +51,7 @@ class AgentServer(asyncio.Protocol):
         try:
             while True:
                 # Step 1: Read data from the agent
-                data = await reader.read(500)
+                data = await reader.read(ProtocolConfig.BUFFER_SIZE)
                 if not data:
                     self.logger.info(f"Agent {addr} disconnected.")
                     quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
@@ -63,15 +63,15 @@ class AgentServer(asyncio.Protocol):
 
                 # Step 2: Forward the message to the Coordinator
                 await self.actions_queue.put((addr, raw_message))
-                # await asyncio.sleep(0)
+                # await asyncio.sleep(0)w
                 # Step 3: Get a matching response from the answers queue
                 response_queue = self.answers_queues[addr]
                 response = await response_queue.get()
                 self.logger.info(f"Sending response to agent {addr}: {response}")
 
                 # Step 4: Send the response to the agent
-                response = str(response) + "EOF"
-                writer.write(response.encode())
+                response = str(response).encode() + ProtocolConfig.END_OF_MESSAGE
+                writer.write(response)
                 await writer.drain()
         except asyncio.CancelledError:
             self.logger.debug("Terminating by KeyboardInterrupt")

@@ -473,3 +473,8 @@ class AgentStatus(enum.Enum):
             return cls[name]
         except KeyError:
             raise ValueError(f"Invalid AgentStatus: {name}")
+
+@dataclass(frozen=True)
+class ProtocolConfig:
+    END_OF_MESSAGE = b"EOF"
+    BUFFER_SIZE = 8192 
