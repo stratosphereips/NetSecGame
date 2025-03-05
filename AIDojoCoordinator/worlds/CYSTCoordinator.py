@@ -25,8 +25,6 @@ class CYSTCoordinator(GameCoordinator):
         self._last_msg_per_agent = {}
         self._starting_positions = None
         self._availabe_cyst_agents = None
-        # TEMPORARY FIX
-        self._task_config_file = "/home/ondra/aidojo/game_coordinator/AIDojoCoordinator/netsecenv_conf.yaml"
 
     def get_cyst_id(self, agent_role:str):
         """
@@ -57,7 +55,7 @@ class CYSTCoordinator(GameCoordinator):
                 return None
     
     async def remove_agent(self, agent_id, agent_state:GameState)->bool:
-        print(f"Removing agent {agent_id} from the CYST World")
+        self.logger.debug(f"Removing agent {agent_id} from the CYST World")
         async with self._agents_lock:
             try:
                 agent_role = self._known_agent_roles[agent_id]
@@ -67,6 +65,7 @@ class CYSTCoordinator(GameCoordinator):
                 self._cystid_to_id.pop(cyst_id)
                 # make cyst_agent avaiable again
                 self._availabe_cyst_agents[agent_role].add(cyst_id)
+                self.logger.debug(f"\tRemoval successful, was cyst_id:{cyst_id}")
                 return True
             except KeyError:
                 self.logger.error(f"Unknown agent ID: {agent_id}!")
