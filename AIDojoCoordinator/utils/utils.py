@@ -37,6 +37,15 @@ def get_str_hash(string, hash_func='sha256', chunk_size=4096):
     hash_algorithm.update(string.encode('utf-8'))
     return hash_algorithm.hexdigest()
 
+def get_dict_hash(dict, hash_func='sha256'):
+    """
+    Computes hash of a given dictionary. Keys are sorted for consistency.
+    """
+    hash_algorithm = hashlib.new(hash_func)
+    hash_algorithm.update(json.dumps(dict, sort_keys=True).encode('utf-8'))
+    return hash_algorithm.hexdigest()
+
+
 def read_replay_buffer_from_csv(csvfile:str)->list:
     """
     Function to read steps from a CSV file
