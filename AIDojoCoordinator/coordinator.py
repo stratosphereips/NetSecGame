@@ -194,7 +194,6 @@ class GameCoordinator:
         async with ClientSession() as session:
             try:
                 async with session.get(f"http://{self._service_host}:{self._service_port}/cyst_init_objects") as response:
-                    self.logger.warning(response)
                     if response.status == 200:
                         response = await response.json()
                         self.logger.debug(response)
