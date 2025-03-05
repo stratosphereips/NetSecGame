@@ -210,8 +210,6 @@ class GameCoordinator:
                         self.logger.error(f"Failed to fetch initialization objects. Status: {response.status}")
             except Exception as e:
                self.logger.error(f"Error fetching initialization objects: {e}")
-        # Temporary fix
-        self.task_config = ConfigParser(self._task_config_file)
     def _load_initialization_objects(self)->None:
         """
         Loads task configuration from a local file.
