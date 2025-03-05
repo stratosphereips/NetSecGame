@@ -205,7 +205,7 @@ class GameCoordinator:
                         self._CONFIG_FILE_HASH = get_dict_hash(task_config)
                         self._cyst_objects = env.configuration.general.load_configuration(response["cyst_objects"])
                         self.logger.debug(f"Initialization objects restored:{self._cyst_objects}")
-                        #self.task_config = ConfigParser(config_dict=response["task_configuration"])
+                        self.task_config = ConfigParser(config_dict=response["task_configuration"])
                     else:
                         self.logger.error(f"Failed to fetch initialization objects. Status: {response.status}")
             except Exception as e:
