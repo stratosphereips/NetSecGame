@@ -7,7 +7,7 @@ import numpy as np
 import copy
 from faker import Faker
 from pathlib import Path
-import netaddr
+import netaddr, re
 
 from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP, Network, Data, Service
 from AIDojoCoordinator.coordinator import GameCoordinator
@@ -387,10 +387,23 @@ class NSGCoordinator(GameCoordinator):
         dict_keys = ['known_data', 'blocked_ips', 'known_blocks']
         # Fields that are lists of IP strings
         list_keys = ['known_hosts', 'controlled_hosts']
-
+        ip_regex = re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b')
+        
         for agent in agents.values():
             for section_key in ['goal', 'start_position']:
                 section = agent.get(section_key, {})
+
+                # Remap IP addresses in the description field of the goal section
+                if section_key == 'goal' and 'description' in section:
+                    description = section['description']
+                    def repl(match):
+                        ip_str = match.group(0)
+                        try:
+                            new_ip = str(mapping_ips[IP(ip_str)])
+                            return new_ip
+                        except (ValueError, KeyError):
+                            return ip_str
+                    section['description'] = ip_regex.sub(repl, description)
 
                 # Remap dictionary keys
                 for key in dict_keys:
@@ -419,7 +432,7 @@ class NSGCoordinator(GameCoordinator):
                         section[key] = new_list                
             # update win conditions with the new IPs            
             self._win_conditions_per_role = self._get_win_condition_per_role()        
-        
+            self._goal_description_per_role = self._get_goal_description_per_role()   
         
         #update mappings stored in the environment
         for net, mapping in self._network_mapping.items():
