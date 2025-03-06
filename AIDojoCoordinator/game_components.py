@@ -451,6 +451,11 @@ class AgentStatus(enum.Enum):
     def to_string(self):
         """Convert enum to string."""
         return self.value
+    def __str__(self):
+        return self.value
+    
+    def __repr__(self):
+        return f'"{self.value}"'  # Ensures proper string representation
     
     def __eq__(self, other):
         # Compare with another ActionType
@@ -479,3 +484,15 @@ class AgentStatus(enum.Enum):
 class ProtocolConfig:
     END_OF_MESSAGE = b"EOF"
     BUFFER_SIZE = 8192 
+
+
+if __name__ == '__main__':
+    data = {"status": AgentStatus.Playing}
+
+    # Serialize to JSON
+    json_str = json.dumps(data)
+    print(json_str)  # Output: {"status": "Playing"}
+
+    # Deserialize from JSON
+    decoded_data = json.loads(json_str)
+    print(decoded_data)  # Output: {'status': 'Playing'}
