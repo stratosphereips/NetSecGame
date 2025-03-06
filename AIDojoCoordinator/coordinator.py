@@ -583,6 +583,10 @@ class GameCoordinator:
         response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
         await self._agent_response_queues[agent_addr].put(response_msg_json)
 
+        #if episode ended send infor to main service
+        if end_reason:
+            await self._report_episode_result(agent_addr)
+
     async def _assign_rewards_episode_end(self):
         """Task that waits for all agents to finish and assigns rewards."""
         self.logger.debug("Starting task for episode end reward assigning.")
@@ -598,6 +602,7 @@ class GameCoordinator:
                 self.logger.debug("\tExiting reward assignment task.")
                 break
             self.logger.info("Episode finished. Assigning final rewards to agents.")
+            # assign rewards to agents
             async with self._agents_lock:
                 attackers = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "attacker"]
                 defenders = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "defender"]
@@ -860,3 +865,32 @@ class GameCoordinator:
             with jsonlines.open(filename, "a") as writer:
                 writer.write(self._agent_trajectories[agent_addr])
             self.logger.info(f"Trajectory of {agent_addr} strored in {filename}")
+
+    async def _report_episode_result(self, agent:tuple)->None:
+        """
+        Method for reporting the results of the episode to the dashboard.
+        """
+        self.logger.info("Reporting the results of the episode")
+        if self._service_host:
+            episode_report = {}
+            self.logger.debug("Collecting results for each agent.")
+            episode_report[f"{agent[0]}:{agent[1]}"] = self._agent_trajectories[agent]
+            self.logger.debug(f"Episode report for agent{agent}: {episode_report}")
+            await self._send_episodes_results(episode_report)
+        else:
+            self.logger.info("No service host provided. Skipping the report.")
+   
+    async def _send_episodes_results(self, episode_results:dict)->bool:
+        """Sends episode results to MAIN service."""
+        async with ClientSession() as session:
+            try:
+                async with session.post(url=f"http://{self._service_host}:{self._service_port}/episode_results",json=episode_results) as response:
+                    if response.status == 200:
+                        response = await response.json()
+                        self.logger.debug(response)
+                        return True
+                    else:
+                        self.logger.error(f"Error sending episode results. Status: {response.status}")
+                        return False
+            except Exception as e:
+               self.logger.error(f"Error sending episode results: {e}")
