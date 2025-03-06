@@ -455,7 +455,7 @@ class AgentStatus(enum.Enum):
         return self.value
     
     def __repr__(self):
-        return f'"{self.value}"'  # Ensures proper string representation
+        return str(self)  # Ensures proper string representation
     
     def __eq__(self, other):
         # Compare with another ActionType
