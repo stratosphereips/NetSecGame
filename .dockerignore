@@ -16,3 +16,6 @@ readme_images/
 tests/
 *trajectories*.json
 README.md
+*.log
+*.cff
+LICENSE
