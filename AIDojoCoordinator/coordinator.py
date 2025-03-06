@@ -563,14 +563,16 @@ class GameCoordinator:
                 # episode ended for this agent - wait for the others to finish
                 async with self._episode_rewards_condition:
                     await self._episode_rewards_condition.wait()
-            # append step to the trajectory if needed
-           
-            async with self._agents_lock:
-                self._add_step_to_trajectory(agent_addr, action, self._agent_rewards[agent_addr], new_state,end_reason=None)
-            # add information to 'info' field if needed
+        
             info = {}
             if self._agent_status[agent_addr] not in [AgentStatus.Playing, AgentStatus.PlayingWithTimeout]:
-                info["end_reason"] = str(self._agent_status[agent_addr])
+                end_reason = str(self._agent_status[agent_addr])
+                info["end_reason"] = end_reason
+            else:
+                end_reason = None
+            # append step to the trajectory if needed
+            async with self._agents_lock:
+                self._add_step_to_trajectory(agent_addr, action, self._agent_rewards[agent_addr], new_state,end_reason=end_reason)
             new_observation = Observation(self._agent_states[agent_addr], self._agent_rewards[agent_addr], self._episode_ends[agent_addr], info=info)
             self._agent_observations[agent_addr] = new_observation
             output_message_dict = {
