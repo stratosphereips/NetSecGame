@@ -4,26 +4,33 @@ FROM python:3.12-slim
 # Set the working directory in the container
 ENV DESTINATION_DIR=/aidojo
 
-
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
 RUN pip install --upgrade pip
 
-COPY .  ${DESTINATION_DIR}/
+# Copy project files to container
+COPY . ${DESTINATION_DIR}/
 
 # Set the working directory in the container
-WORKDIR  ${DESTINATION_DIR}
+WORKDIR ${DESTINATION_DIR}
 
-# Install any necessary Python dependencies
-# If a requirements.txt file is in the repository
-RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+# Install the current project as a package (instead of using requirements.txt)
+RUN pip install -e .
 
-# change the server ip to 0.0.0.0
-RUN sed -i 's/"host": "127.0.0.1"/"host": "0.0.0.0"/' coordinator.conf
+# Clone the tmp-cyst-core repository
+#RUN git clone https://github.com/stratosphereips/tmp-cyst-core
+COPY tmp-cyst-core/ ${DESTINATION_DIR}/tmp-cyst-core/
+# Install the cloned repo as a package
+RUN pip install -e ./tmp-cyst-core/
+
+# Install the correct version of netaddr
+RUN pip install netaddr==1.3.0
 
 # Run the Python script when the container launches
-CMD ["python3", "coordinator.py"]
+CMD ["python3", "-m", "AIDojoCoordinator.worlds.NSEGameCoordinator", "--game_host=0.0.0.0", "--task_config=./AIDojoCoordinator/netsecenv_conf.yaml" ]
