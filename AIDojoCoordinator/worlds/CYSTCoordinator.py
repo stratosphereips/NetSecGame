@@ -25,6 +25,8 @@ class CYSTCoordinator(GameCoordinator):
         self._last_msg_per_agent = {}
         self._starting_positions = None
         self._availabe_cyst_agents = None
+        self._sessions_per_agent = {}
+        self._authorizations_per_agent = {}
 
     def get_cyst_id(self, agent_role:str):
         """
@@ -50,6 +52,12 @@ class CYSTCoordinator(GameCoordinator):
                 self._known_agent_roles[agent_id] = agent_role
                 kh = self._starting_positions[cyst_id]["known_hosts"]
                 kn = self._starting_positions[cyst_id]["known_networks"]
+                # TODO FIX LATER
+                # add differentiation for other types than attacker
+                # discover the session id from the cyst config
+                self._sessions_per_agent[agent_id] = {}
+                for h in kh:
+                    self._sessions_per_agent[agent_id][h] = "phishing_session"
                 return GameState(controlled_hosts=kh, known_hosts=kh, known_networks=kn)
             else:
                 return None
@@ -107,31 +115,31 @@ class CYSTCoordinator(GameCoordinator):
             print(f'An error occurred: {e}')
 
     async def _execute_scan_network_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
-        action_dict = {
-            "action":"dojo:scan_network",
-            "params":
-                {
-                    "dst_ip":str(action.parameters["source_host"]),
-                    "dst_service":"",
-                    "to_network":str(action.parameters["target_network"])
-                }
-        }
-        cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)
         extended_kh = copy.deepcopy(agent_state.known_hosts)
         extended_kn = copy.deepcopy(agent_state.known_networks)
         extended_ch = copy.deepcopy(agent_state.controlled_hosts)
         extended_ks = copy.deepcopy(agent_state.known_services)
         extended_kd = copy.deepcopy(agent_state.known_data)
         extended_kb = copy.deepcopy(agent_state.known_blocks)
-        
-        if cyst_rsp_status == 200:
-            self.logger.debug("Valid response from CYST")
-            data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
-            for ip_str in data:
-                ip = IP(ip_str)
-                self.logger.debug(f"Adding {ip} to known_hosts")
-                extended_kh.add(ip)
-            return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
+        if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
+           # Agent has session in the source host and can do actions
+            action_dict = {
+                "action":"dojo:scan_network",
+                "params":
+                    {
+                        "session":self._sessions_per_agent[agent_id][action.parameters["source_host"]],
+                        "to_network":str(action.parameters["target_network"]),
+                    }
+            }
+            response_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)
+            if response_status == 200:
+                cyst_status, cyst_rsp_content = cyst_rsp_data["result"][0],ast.literal_eval(cyst_rsp_data["result"][1]["content"])
+                self.logger.debug(f"CYST status: {cyst_status}")
+                for ip_str in cyst_rsp_content:
+                    ip = IP(ip_str)
+                    self.logger.debug(f"Adding {ip} to known_hosts")
+                    extended_kh.add(ip)
+        return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
     async def _execute_find_services_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
         action_dict = {
@@ -169,7 +177,37 @@ class CYSTCoordinator(GameCoordinator):
         raise NotImplementedError
     
     async def _execute_exploit_service_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
-        raise NotImplementedError
+        action_dict = {
+            "action":"dojo:exploit_service",
+            "params":
+                {
+                    "dst_ip":str(action.parameters["target_host"]),
+                    "dst_service":"",
+                    "exploit":"http_exploit"
+                }
+        }
+        cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)
+        extended_kh = copy.deepcopy(agent_state.known_hosts)
+        extended_kn = copy.deepcopy(agent_state.known_networks)
+        extended_ch = copy.deepcopy(agent_state.controlled_hosts)
+        extended_ks = copy.deepcopy(agent_state.known_services)
+        extended_kd = copy.deepcopy(agent_state.known_data)
+        extended_kb = copy.deepcopy(agent_state.known_blocks)
+        
+        if cyst_rsp_status == 200:
+            self.logger.debug("Valid response from CYST")
+            data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
+            for item in data:
+                ip = IP(item["ip"])
+                # Add IP in case it was discovered by the scan
+                extended_kh.add(ip)
+                if len(item["services"]) > 0:
+                    if ip not in extended_ks.keys():
+                        extended_ks[ip] = set()
+                for service_dict in item["services"]:
+                    service = Service.from_dict(service_dict)
+                    extended_ks[ip].add(service)
+            return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
     async def _execute_exfiltrate_data_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
         raise NotImplementedError
@@ -185,6 +223,10 @@ class CYSTCoordinator(GameCoordinator):
 
     async def reset(self)->bool:
         return True
+
+    async def report_episode_results(self)->bool:
+        return True
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -239,7 +281,7 @@ if __name__ == "__main__":
         action="store",
         required=False,
         type=int,
-        default="9009",
+        default="8000",
     )
 
 
