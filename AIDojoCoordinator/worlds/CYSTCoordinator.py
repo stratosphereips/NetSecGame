@@ -28,6 +28,8 @@ class CYSTCoordinator(GameCoordinator):
         self._sessions_per_agent = {}
         self._authorizations_per_agent = {}
 
+        self._exploit_map = {"ssh":"exploit_1", "python3":"phishing_exploit", "vsftpd":"exploit_0"}
+
     def get_cyst_id(self, agent_role:str):
         """
         Returns ID of the CYST agent based on the agent's role.
@@ -56,6 +58,7 @@ class CYSTCoordinator(GameCoordinator):
                 # add differentiation for other types than attacker
                 # discover the session id from the cyst config
                 self._sessions_per_agent[agent_id] = {}
+                self._authorizations_per_agent[agent_id] = {}
                 for h in kh:
                     self._sessions_per_agent[agent_id][h] = "phishing_session"
                 return GameState(controlled_hosts=kh, known_hosts=kh, known_networks=kn)
@@ -142,15 +145,6 @@ class CYSTCoordinator(GameCoordinator):
         return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
     async def _execute_find_services_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
-        action_dict = {
-            "action":"dojo:find_services",
-            "params":
-                {
-                    "dst_ip":str(action.parameters["target_host"]),
-                    "dst_service":""
-                }
-        }
-        cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)
         extended_kh = copy.deepcopy(agent_state.known_hosts)
         extended_kn = copy.deepcopy(agent_state.known_networks)
         extended_ch = copy.deepcopy(agent_state.controlled_hosts)
@@ -187,37 +181,42 @@ class CYSTCoordinator(GameCoordinator):
         raise NotImplementedError
     
     async def _execute_exploit_service_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
-        action_dict = {
-            "action":"dojo:exploit_service",
-            "params":
-                {
-                    "dst_ip":str(action.parameters["target_host"]),
-                    "dst_service":"",
-                    "exploit":"http_exploit"
-                }
-        }
-        cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)
         extended_kh = copy.deepcopy(agent_state.known_hosts)
         extended_kn = copy.deepcopy(agent_state.known_networks)
         extended_ch = copy.deepcopy(agent_state.controlled_hosts)
         extended_ks = copy.deepcopy(agent_state.known_services)
         extended_kd = copy.deepcopy(agent_state.known_data)
         extended_kb = copy.deepcopy(agent_state.known_blocks)
-        
-        if cyst_rsp_status == 200:
-            self.logger.debug("Valid response from CYST")
-            data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
-            for item in data:
-                ip = IP(item["ip"])
-                # Add IP in case it was discovered by the scan
-                extended_kh.add(ip)
-                if len(item["services"]) > 0:
-                    if ip not in extended_ks.keys():
-                        extended_ks[ip] = set()
-                for service_dict in item["services"]:
-                    service = Service.from_dict(service_dict)
-                    extended_ks[ip].add(service)
-            return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
+        if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
+            # Agent has session in the source host and can do actions
+            if action.parameters["target_service"].name in self._exploit_map.keys():
+                # There is existing exploit for the service
+                action_dict = {
+                    "action":"dojo:exploit_server",
+                    "params":
+                        {
+                            "dst_ip":str(action.parameters["target_host"]),
+                            "session":self._sessions_per_agent[agent_id][action.parameters["source_host"]],
+                            "dst_service":action.parameters["target_service"].name,
+                            "exploit":self._exploit_map[action.parameters["target_service"].name]
+                        }
+                }
+                cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)          
+                if cyst_rsp_status == 200:
+                    self.logger.debug("Valid response from CYST")
+                    data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
+                    for item in data:
+                        if action.parameters["target_host"] not in self._authorizations_per_agent[agent_id].keys():
+                            self._authorizations_per_agent[agent_id][action.parameters["target_host"]] = set()
+                        self.logger.info(f"Adding new autorization for {agent_id} in {action.parameters['target_host']}: {item}")
+                        self._authorizations_per_agent[agent_id][action.parameters["target_host"]].add((item["username"], item["password"]))
+                        # register the new host (if not already known)
+                        extended_kh.add(action.parameters["target_host"])
+                        # register new control over the host
+                        extended_ch.add(action.parameters["target_host"])
+                        # register the new service (if not already known)
+                        extended_ks[action.parameters["target_host"]].add(action.parameters["target_service"])
+        return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
     async def _execute_exfiltrate_data_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
         raise NotImplementedError
