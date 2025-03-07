@@ -255,7 +255,46 @@ class CYSTCoordinator(GameCoordinator):
         return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
     async def _execute_exfiltrate_data_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
-        raise NotImplementedError
+        """
+        for now the exfiltration is done by the attacker from the source host to the target host (the attacker's host).
+        In order to succeed, the attacker must have control over the target host (have session there) 
+        and have authorization to access the source host (where the data is).
+
+        In other words, the action brings the data from the source host to the target host.
+        """
+        extended_kh = copy.deepcopy(agent_state.known_hosts)
+        extended_kn = copy.deepcopy(agent_state.known_networks)
+        extended_ch = copy.deepcopy(agent_state.controlled_hosts)
+        extended_ks = copy.deepcopy(agent_state.known_services)
+        extended_kd = copy.deepcopy(agent_state.known_data)
+        extended_kb = copy.deepcopy(agent_state.known_blocks)
+        if action.parameters["target_host"] in self._sessions_per_agent[agent_id].keys():
+            # Agent has session in the source host and can do actions
+            if agent_id in self._authorizations_per_agent and action.parameters["source_host"] in self._authorizations_per_agent[agent_id]:
+                # Agent has authorization to access the target host
+                action_dict = {
+                    "action": "dojo:exfiltrate_data",
+                    "params":
+                        {
+                            "dst_ip":str(action.parameters["source_host"]),
+                            "session":self._sessions_per_agent[agent_id][action.parameters["target_host"]],
+                            "dst_service":"ssh", # TODO
+                            "auth": "authorization_0", # TODO
+    	                    "path": action.parameters["data"].id
+                        }
+                }
+                cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)          
+                if cyst_rsp_status == 200:
+                    self.logger.debug("Valid response from CYST")
+                    data = ["content"]
+                    if len(data) > 0:
+                        # there is some data transferred, add it to the known data in the target host
+                        if action.parameters["target_host"] not in extended_kd:
+                            extended_kd[action.parameters["target_host"]] = set()
+                        extended_kd[action.parameters["target_host"]].add(action.parameters["data"])
+            else:
+                self.logger.debug("Agent does not have authorization to access the target host")
+        return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
 
     async def _execute_block_ip_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
         raise NotImplementedError
