@@ -264,7 +264,7 @@ class GameCoordinator:
             """
 
             async with ClientSession() as session:
-                url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/init/?id={env_id}"
+                url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/run/?id={env_id}"
                 headers = {"Content-Type": "application/json"}
                 try:
                     async with session.post(url, headers=headers) as response:
