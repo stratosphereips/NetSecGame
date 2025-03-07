@@ -191,25 +191,100 @@ class GameCoordinator:
 
     async def _fetch_initialization_objects(self):
         """Send a REST request to MAIN and fetch initialization objects of CYST simulator."""
-        async with ClientSession() as session:
-            try:
-                async with session.get(f"http://{self._service_host}:{self._service_port}/cyst_init_objects") as response:
-                    if response.status == 200:
-                        response = await response.json()
-                        self.logger.debug(response)
-                        cyst_objects = response.get("cyst_objects", None)
-                        task_config = response.get("task_configuration", {})
-                        self.logger.debug(f"CYST_Objects:{cyst_objects}")
-                        self.logger.debug(f"Task config:{task_config}")
-                        env = Environment.create()
-                        self._CONFIG_FILE_HASH = get_dict_hash(task_config)
-                        self._cyst_objects = env.configuration.general.load_configuration(response["cyst_objects"])
-                        self.logger.debug(f"Initialization objects restored:{self._cyst_objects}")
-                        self.task_config = ConfigParser(config_dict=response["task_configuration"])
-                    else:
-                        self.logger.error(f"Failed to fetch initialization objects. Status: {response.status}")
-            except Exception as e:
-               self.logger.error(f"Error fetching initialization objects: {e}")
+        
+        async def crate_cyst_env(env_id="coordinator_cyst")->list:
+            """
+            Crates a CYST environment and loads the initialization objects.
+            """
+
+            async with ClientSession() as session:
+                url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/create/"
+                payload = {
+                    "id": env_id,
+                    "platform": {
+                        "type": 2, # Real-time CYST
+                        "provider": "CYST"
+                    },
+                    "configuration": "demo_configuration" # which topology to use
+                }
+                headers = {"Content-Type": "application/json"}
+                try:
+                    async with session.post(url, json=payload, headers=headers) as response:
+                        if response.status == 201:
+                            response = await response.json()
+                            cyst_objects = response.get("aux", None)
+                            env = Environment.create()
+                            self._cyst_objects = env.configuration.general.load_configuration(cyst_objects)
+                        else:
+                            self.logger.error(f"Failed to create CYST envitonment. Status: {response.status}")
+                except Exception as e:
+                    self.logger.error(f"Failed to create CYST envitonment: {e}")
+
+        async def get_task_config()->list:
+            """
+            Fetches task configuration using the REST API.
+            """
+
+            async with ClientSession() as session:
+                try:
+                    async with session.get(f"http://{self._service_host}:{self._service_port}/task_config") as response:
+                        if response.status == 200:
+                            task_config_json = await response.json()
+                            task_config_dict = task_config_json
+                            self.logger.debug(f"Task config:{task_config_dict}")
+            
+                            self._CONFIG_FILE_HASH = get_dict_hash(task_config_dict)
+                            self.task_config = ConfigParser(config_dict=task_config_dict)
+                        else:
+                            self.logger.error(f"Failed to fetch task configuration. Status: {response.status}")
+                except Exception as e:
+                    self.logger.error(f"Failed to fetch task configuration: {e}")
+        
+        async def init_cyst(env_id="coordinator_cyst")->None:
+            """
+            Initializes a CYST environment.
+            """
+
+            async with ClientSession() as session:
+                url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/init/?id={env_id}"
+                headers = {"Content-Type": "application/json"}
+                try:
+                    async with session.post(url, headers=headers) as response:
+                        if response.status == 200:
+                            response = await response.json()
+                            self.logger.debug(response)
+                        else:
+                            self.logger.error(f"Failed to initialize CYST envitonment. Status: {response.status}")
+                except Exception as e:
+                    self.logger.error(f"Failed to initialize CYST envitonment: {e}")
+        
+        async def run_cyst(env_id="coordinator_cyst")->None:
+            """
+            Runs a CYST environment.
+            """
+
+            async with ClientSession() as session:
+                url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/init/?id={env_id}"
+                headers = {"Content-Type": "application/json"}
+                try:
+                    async with session.post(url, headers=headers) as response:
+                        if response.status == 200:
+                            response = await response.json()
+                            self.logger.debug(response)
+                        else:
+                            self.logger.error(f"Failed to run CYST envitonment. Status: {response.status}")
+                except Exception as e:
+                    self.logger.error(f"Failed to run CYST envitonment: {e}")
+
+        self.logger.info("Creating CYST environment.")
+        await crate_cyst_env()
+        self.logger.info("Fetching task configuration.")
+        await get_task_config()
+        self.logger.info("Initializing CYST environment.")
+        await init_cyst()
+        self.logger.info("Running CYST environment.")
+        await run_cyst()
+
     def _load_initialization_objects(self)->None:
         """
         Loads task configuration from a local file.
