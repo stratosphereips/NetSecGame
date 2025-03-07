@@ -157,21 +157,31 @@ class CYSTCoordinator(GameCoordinator):
         extended_ks = copy.deepcopy(agent_state.known_services)
         extended_kd = copy.deepcopy(agent_state.known_data)
         extended_kb = copy.deepcopy(agent_state.known_blocks)
-        
-        if cyst_rsp_status == 200:
-            self.logger.debug("Valid response from CYST")
-            data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
-            for item in data:
-                ip = IP(item["ip"])
-                # Add IP in case it was discovered by the scan
-                extended_kh.add(ip)
-                if len(item["services"]) > 0:
-                    if ip not in extended_ks.keys():
-                        extended_ks[ip] = set()
-                for service_dict in item["services"]:
-                    service = Service.from_dict(service_dict)
-                    extended_ks[ip].add(service)
-            return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
+        if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
+           # Agent has session in the source host and can do actions
+            action_dict = {
+                "action":"dojo:find_services",
+                "params":
+                    {
+                        "dst_ip":str(action.parameters["target_host"]),
+                        "session":self._sessions_per_agent[agent_id][action.parameters["source_host"]]
+                    }
+            }
+            response_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)
+            if response_status == 200:
+                cyst_status, cyst_rsp_content = cyst_rsp_data["result"][0],ast.literal_eval(cyst_rsp_data["result"][1]["content"])
+                self.logger.debug(f"CYST status: {cyst_status}")
+                for item in cyst_rsp_content:
+                    ip = IP(item["ip"])
+                    # Add IP in case it was discovered by the scan
+                    extended_kh.add(ip)
+                    if len(item["services"]) > 0:
+                        if ip not in extended_ks.keys():
+                            extended_ks[ip] = set()
+                    for service_dict in item["services"]:
+                        service = Service.from_dict(service_dict)
+                        extended_ks[ip].add(service)
+        return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
     async def _execute_find_data_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
         raise NotImplementedError
