@@ -8,7 +8,7 @@ import ast
 import logging
 import argparse
 from pathlib import Path
-from AIDojoCoordinator.game_components import GameState, Action, ActionType,  IP, Service
+from AIDojoCoordinator.game_components import GameState, Action, ActionType,  IP, Service, Data
 from AIDojoCoordinator.coordinator import GameCoordinator
 
 from AIDojoCoordinator.utils.utils import get_starting_position_from_cyst_config, get_logging_level
@@ -178,7 +178,43 @@ class CYSTCoordinator(GameCoordinator):
         return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
     async def _execute_find_data_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
-        raise NotImplementedError
+        extended_kh = copy.deepcopy(agent_state.known_hosts)
+        extended_kn = copy.deepcopy(agent_state.known_networks)
+        extended_ch = copy.deepcopy(agent_state.controlled_hosts)
+        extended_ks = copy.deepcopy(agent_state.known_services)
+        extended_kd = copy.deepcopy(agent_state.known_data)
+        extended_kb = copy.deepcopy(agent_state.known_blocks)
+        if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
+            # Agent has session in the source host and can do actions
+            if agent_id in self._authorizations_per_agent and action.parameters["target_host"] in self._authorizations_per_agent[agent_id]:
+                # Agent has authorization to access the target host
+                action_dict = {
+                    "action": "dojo:find_data",
+                    "params":
+                        {
+                            "dst_ip":str(action.parameters["target_host"]),
+                            "session":self._sessions_per_agent[agent_id][action.parameters["source_host"]],
+                            "dst_service":"ssh", # TODO
+                            "auth": "authorization_0", # TODO
+    	                    "directory": "/"
+                        }
+                }
+                cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)          
+                if cyst_rsp_status == 200:
+                    self.logger.debug("Valid response from CYST")
+                    data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
+                    for item in data:
+                        if action.parameters["target_host"] not in extended_kd:
+                            extended_kd[action.parameters["target_host"]] = set()
+                        # register the new host (if not already known)
+                        extended_kh.add(action.parameters["target_host"])
+                        # register new control over the host
+                        extended_ch.add(action.parameters["target_host"])
+                        # register the new service (if not already known)
+                        extended_kd[action.parameters["target_host"]].add(Data("unknown", item))
+            else:
+                self.logger.debug("Agent does not have authorization to access the target host")
+        return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
     async def _execute_exploit_service_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
         extended_kh = copy.deepcopy(agent_state.known_hosts)
