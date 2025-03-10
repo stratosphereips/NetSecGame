@@ -178,25 +178,76 @@ class CYSTCoordinator(GameCoordinator):
         return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
     async def _execute_find_data_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
+        if action.parameters["source_host"] == action.parameters["target_host"]:
+            # search is done by the existing session in the target host
+            return await self._execute_find_data_locally(agent_id, agent_state, action)
+        else:
+            # search is done by the existing authorization in the target host
+            extended_kh = copy.deepcopy(agent_state.known_hosts)
+            extended_kn = copy.deepcopy(agent_state.known_networks)
+            extended_ch = copy.deepcopy(agent_state.controlled_hosts)
+            extended_ks = copy.deepcopy(agent_state.known_services)
+            extended_kd = copy.deepcopy(agent_state.known_data)
+            extended_kb = copy.deepcopy(agent_state.known_blocks)
+            # Agent has session in the source host and can do actions
+            if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
+                # Agent has authorization in the target host
+                if action.parameters["target_host"] in self._authorizations_per_agent[agent_id]:
+                    authorization = self._authorizations_per_agent[agent_id].get(action.parameters["target_host"], None)
+                    if authorization:
+                        # Agent has authorization to access the target host
+                        action_dict = {
+                            "action": "dojo:find_data",
+                            "params":
+                                {
+                                    "dst_ip":str(action.parameters["target_host"]),
+                                    "session":self._sessions_per_agent[agent_id][action.parameters["source_host"]],
+                                    "dst_service": authorization["service"],
+                                    "auth": authorization["id"],
+                                    "directory": "/"
+                                }
+                        }
+                        cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)          
+                        if cyst_rsp_status == 200:
+                            self.logger.debug("Valid response from CYST")
+                            data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
+                            for item in data:
+                                if action.parameters["target_host"] not in extended_kd:
+                                    extended_kd[action.parameters["target_host"]] = set()
+                                # register the new host (if not already known)
+                                extended_kh.add(action.parameters["target_host"])
+                                # register new control over the host
+                                extended_ch.add(action.parameters["target_host"])
+                                # register the new service (if not already known)
+                                extended_kd[action.parameters["target_host"]].add(Data("unknown", item))
+                    else:
+                        self.logger.debug("Agent does not have authorization to access the target host")
+            return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
+
+    async def _execute_find_data_locally(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
+        """
+        Implementation of FindData action when source and target hosts are the same.
+        """
         extended_kh = copy.deepcopy(agent_state.known_hosts)
         extended_kn = copy.deepcopy(agent_state.known_networks)
         extended_ch = copy.deepcopy(agent_state.controlled_hosts)
         extended_ks = copy.deepcopy(agent_state.known_services)
         extended_kd = copy.deepcopy(agent_state.known_data)
         extended_kb = copy.deepcopy(agent_state.known_blocks)
-        if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
-            # Agent has session in the source host and can do actions
-            if agent_id in self._authorizations_per_agent and action.parameters["target_host"] in self._authorizations_per_agent[agent_id]:
+        # Only possible if there is an active session in the source host (= target host)
+        if action.parameters["source_host"] == action.parameters["target_host"]:
+            if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
+                session_id = self._sessions_per_agent[agent_id][action.parameters["source_host"]]
                 # Agent has authorization to access the target host
                 action_dict = {
                     "action": "dojo:find_data",
                     "params":
                         {
                             "dst_ip":str(action.parameters["target_host"]),
-                            "session":self._sessions_per_agent[agent_id][action.parameters["source_host"]],
-                            "dst_service":"ssh", # TODO
-                            "auth": "authorization_0", # TODO
-    	                    "directory": "/"
+                            "session":session_id,
+                            "dst_service":"",
+                            "auth": "",
+                            "directory": "/"
                         }
                 }
                 cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)          
