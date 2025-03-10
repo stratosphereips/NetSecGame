@@ -242,10 +242,20 @@ class CYSTCoordinator(GameCoordinator):
                     self.logger.debug("Valid response from CYST")
                     data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
                     for item in data:
-                        if action.parameters["target_host"] not in self._authorizations_per_agent[agent_id].keys():
-                            self._authorizations_per_agent[agent_id][action.parameters["target_host"]] = set()
-                        self.logger.info(f"Adding new autorization for {agent_id} in {action.parameters['target_host']}: {item}")
-                        self._authorizations_per_agent[agent_id][action.parameters["target_host"]].add((item["username"], item["password"]))
+                        session_id = item.get("session", None)
+                        if session_id: # session was created by the exploit
+                            if action.parameters["target_host"] not in self._sessions_per_agent[agent_id].keys():
+                                self._sessions_per_agent[agent_id][action.parameters["target_host"]] = set()
+                            # store the newnly accuired session
+                            self._sessions_per_agent[agent_id][action.parameters["target_host"]].add(session_id)
+                            self.logger.info(f"Adding new session for {agent_id} in {action.parameters['target_host']}: {session_id}")
+                        # add new authorization
+                        authorization = item.get("authorization", None)
+                        if authorization:
+                            if action.parameters["target_host"] not in self._authorizations_per_agent[agent_id].keys():
+                                self._sessions_per_agent[agent_id][action.parameters["target_host"]] = set()
+                            self._authorizations_per_agent[agent_id][action.parameters["target_host"]].add(authorization)
+                            self.logger.info(f"Adding new autorization for {agent_id} in {action.parameters['target_host']}: {authorization}")
                         # register the new host (if not already known)
                         extended_kh.add(action.parameters["target_host"])
                         # register new control over the host
