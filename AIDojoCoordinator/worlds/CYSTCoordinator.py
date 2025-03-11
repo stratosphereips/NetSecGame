@@ -229,6 +229,7 @@ class CYSTCoordinator(GameCoordinator):
         """
         Implementation of FindData action when source and target hosts are the same.
         """
+        self.logger.debug(f"Executing FindData locally for {agent_id}")
         extended_kh = copy.deepcopy(agent_state.known_hosts)
         extended_kn = copy.deepcopy(agent_state.known_networks)
         extended_ch = copy.deepcopy(agent_state.controlled_hosts)
@@ -238,7 +239,8 @@ class CYSTCoordinator(GameCoordinator):
         # Only possible if there is an active session in the source host (= target host)
         if action.parameters["source_host"] == action.parameters["target_host"]:
             if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
-                session_id = self._sessions_per_agent[agent_id][action.parameters["source_host"]]
+                self.logger.debug(f"Available session in {action.parameters["source_host"]}:{self._sessions_per_agent[agent_id][action.parameters["source_host"]]}")
+                session_id = list(self._sessions_per_agent[agent_id][action.parameters["source_host"]])[0]
                 # Agent has authorization to access the target host
                 action_dict = {
                     "action": "dojo:find_data",
@@ -265,7 +267,7 @@ class CYSTCoordinator(GameCoordinator):
                         # register the new service (if not already known)
                         extended_kd[action.parameters["target_host"]].add(Data("unknown", item))
             else:
-                self.logger.debug("Agent does not have authorization to access the target host")
+                self.logger.debug(f"Agent does not have a valid session to access the target host:{self._sessions_per_agent[agent_id]}")
         return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
     
     async def _execute_exploit_service_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
