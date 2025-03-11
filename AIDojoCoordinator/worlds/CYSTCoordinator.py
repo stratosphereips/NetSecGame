@@ -195,6 +195,7 @@ class CYSTCoordinator(GameCoordinator):
                 if action.parameters["target_host"] in self._authorizations_per_agent[agent_id]:
                     authorization = self._authorizations_per_agent[agent_id].get(action.parameters["target_host"], None)
                     if authorization:
+                        authorization = authorization[0]
                         # Agent has authorization to access the target host
                         action_dict = {
                             "action": "dojo:find_data",
@@ -291,22 +292,25 @@ class CYSTCoordinator(GameCoordinator):
                 cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)          
                 if cyst_rsp_status == 200:
                     self.logger.debug("Valid response from CYST")
-                    data = ast.literal_eval(cyst_rsp_data["result"][1]["content"])
-                    for item in data:
-                        session_id = item.get("session", None)
-                        if session_id: # session was created by the exploit
-                            if action.parameters["target_host"] not in self._sessions_per_agent[agent_id].keys():
-                                self._sessions_per_agent[agent_id][action.parameters["target_host"]] = set()
-                            # store the newnly accuired session
-                            self._sessions_per_agent[agent_id][action.parameters["target_host"]].add(session_id)
-                            self.logger.info(f"Adding new session for {agent_id} in {action.parameters['target_host']}: {session_id}")
-                        # add new authorization
-                        authorization = item.get("authorization", None)
-                        if authorization:
-                            if action.parameters["target_host"] not in self._authorizations_per_agent[agent_id].keys():
-                                self._sessions_per_agent[agent_id][action.parameters["target_host"]] = set()
-                            self._authorizations_per_agent[agent_id][action.parameters["target_host"]].add(authorization)
-                            self.logger.info(f"Adding new autorization for {agent_id} in {action.parameters['target_host']}: {authorization}")
+                    data = cyst_rsp_data["result"][1]
+                    # add new session and authorization
+                    new_session_id = data.get("new_session_id", None)
+                    if new_session_id:
+                        if action.parameters["target_host"] not in self._sessions_per_agent[agent_id].keys():
+                            self._sessions_per_agent[agent_id][action.parameters["target_host"]] = set()
+                        # store the newnly accuired session
+                        self._sessions_per_agent[agent_id][action.parameters["target_host"]].add(new_session_id)
+                        self.logger.info(f"Adding new session for {agent_id} in {action.parameters['target_host']}: {new_session_id}")
+                    new_auth_id = data.get("new_auth_id", None)
+                    if new_auth_id:
+                        creds = ast.literal_eval(data["content"])[0]
+                        username = creds["username"]
+                        password = creds["password"]
+                        if action.parameters["target_host"] not in self._authorizations_per_agent[agent_id].keys():
+                            self._authorizations_per_agent[agent_id][action.parameters["target_host"]] = []
+                        new_auth = {"id":new_auth_id, "service":action.parameters["target_service"].name, "username":username, "password":password}
+                        self._authorizations_per_agent[agent_id][action.parameters["target_host"]].append(new_auth)
+                        self.logger.info(f"Adding new autorization for {agent_id} in {action.parameters['target_host']}: {new_auth}")
                         # register the new host (if not already known)
                         extended_kh.add(action.parameters["target_host"])
                         # register new control over the host
