@@ -61,7 +61,7 @@ class CYSTCoordinator(GameCoordinator):
                 self._sessions_per_agent[agent_id] = {}
                 self._authorizations_per_agent[agent_id] = {}
                 for h in kh:
-                    self._sessions_per_agent[agent_id][h] = "phishing_session"
+                    self._sessions_per_agent[agent_id][h] = set({"phishing_session"})
                 return GameState(controlled_hosts=kh, known_hosts=kh, known_networks=kn)
             else:
                 return None
@@ -126,12 +126,13 @@ class CYSTCoordinator(GameCoordinator):
         extended_kd = copy.deepcopy(agent_state.known_data)
         extended_kb = copy.deepcopy(agent_state.known_blocks)
         if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
-           # Agent has session in the source host and can do actions
+            session_id = list(self._sessions_per_agent[agent_id][action.parameters["source_host"]])[0]
+            # Agent has session in the source host and can do actions
             action_dict = {
                 "action":"dojo:scan_network",
                 "params":
                     {
-                        "session":self._sessions_per_agent[agent_id][action.parameters["source_host"]],
+                        "session":session_id,
                         "to_network":str(action.parameters["target_network"]),
                     }
             }
@@ -153,13 +154,14 @@ class CYSTCoordinator(GameCoordinator):
         extended_kd = copy.deepcopy(agent_state.known_data)
         extended_kb = copy.deepcopy(agent_state.known_blocks)
         if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
-           # Agent has session in the source host and can do actions
+            session_id = list(self._sessions_per_agent[agent_id][action.parameters["source_host"]])[0]
+            # Agent has session in the source host and can do actions
             action_dict = {
                 "action":"dojo:find_services",
                 "params":
                     {
                         "dst_ip":str(action.parameters["target_host"]),
-                        "session":self._sessions_per_agent[agent_id][action.parameters["source_host"]]
+                        "session":session_id
                     }
             }
             response_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)
@@ -195,6 +197,7 @@ class CYSTCoordinator(GameCoordinator):
                 # Agent has authorization in the target host
                 if action.parameters["target_host"] in self._authorizations_per_agent[agent_id]:
                     authorization = self._authorizations_per_agent[agent_id].get(action.parameters["target_host"], None)
+                    session_id = list(self._sessions_per_agent[agent_id][action.parameters["source_host"]])[0]
                     if authorization:
                         authorization = authorization[0]
                         # Agent has authorization to access the target host
@@ -203,7 +206,7 @@ class CYSTCoordinator(GameCoordinator):
                             "params":
                                 {
                                     "dst_ip":str(action.parameters["target_host"]),
-                                    "session":self._sessions_per_agent[agent_id][action.parameters["source_host"]],
+                                    "session":session_id,
                                     "dst_service": authorization["service"],
                                     "auth": authorization["id"],
                                     "directory": "/"
@@ -338,6 +341,7 @@ class CYSTCoordinator(GameCoordinator):
         extended_kd = copy.deepcopy(agent_state.known_data)
         extended_kb = copy.deepcopy(agent_state.known_blocks)
         if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
+            session_id = list(self._sessions_per_agent[agent_id][action.parameters["source_host"]])[0]
             # Agent has session in the source host and can do actions
             if action.parameters["target_service"].name in self._exploit_map.keys():
                 # There is existing exploit for the service
@@ -346,7 +350,7 @@ class CYSTCoordinator(GameCoordinator):
                     "params":
                         {
                             "dst_ip":str(action.parameters["target_host"]),
-                            "session":self._sessions_per_agent[agent_id][action.parameters["source_host"]],
+                            "session":session_id,
                             "dst_service":action.parameters["target_service"].name,
                             "exploit":self._exploit_map[action.parameters["target_service"].name]
                         }
@@ -395,32 +399,63 @@ class CYSTCoordinator(GameCoordinator):
         extended_ks = copy.deepcopy(agent_state.known_services)
         extended_kd = copy.deepcopy(agent_state.known_data)
         extended_kb = copy.deepcopy(agent_state.known_blocks)
-        if action.parameters["target_host"] in self._sessions_per_agent[agent_id].keys():
+        if action.parameters["source_host"] in self._sessions_per_agent[agent_id].keys():
+            self.logger.debug("Agent has session in the source host")
             # Agent has session in the source host and can do actions
-            if agent_id in self._authorizations_per_agent and action.parameters["source_host"] in self._authorizations_per_agent[agent_id]:
-                # Agent has authorization to access the target host
-                action_dict = {
-                    "action": "dojo:exfiltrate_data",
-                    "params":
-                        {
-                            "dst_ip":str(action.parameters["source_host"]),
-                            "session":self._sessions_per_agent[agent_id][action.parameters["target_host"]],
-                            "dst_service":"ssh", # TODO
-                            "auth": "authorization_0", # TODO
-    	                    "path": action.parameters["data"].id
-                        }
-                }
-                cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)          
-                if cyst_rsp_status == 200:
-                    self.logger.debug("Valid response from CYST")
-                    data = ["content"]
-                    if len(data) > 0:
-                        # there is some data transferred, add it to the known data in the target host
-                        if action.parameters["target_host"] not in extended_kd:
-                            extended_kd[action.parameters["target_host"]] = set()
-                        extended_kd[action.parameters["target_host"]].add(action.parameters["data"])
+            session_id = list(self._sessions_per_agent[agent_id][action.parameters["source_host"]])[0]
+            action_dict = {
+                "action": "dojo:exfiltrate_data",
+                "params":
+                    {
+                        "dst_ip":str(action.parameters["source_host"]),
+                        "session":session_id,
+                        "dst_service":"",  
+                        "auth": "",
+                        "path": action.parameters["data"].id
+                    }
+            }
+            cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)          
+            if cyst_rsp_status == 200:
+                self.logger.debug("Valid response from CYST")
+                data = cyst_rsp_data["result"][1]["content"]
+                if len(data) > 0:
+                    # there is some data transferred, add it to the known data in the target host
+                    if action.parameters["target_host"] not in extended_kd:
+                        extended_kd[action.parameters["target_host"]] = set()
+                    extended_kd[action.parameters["target_host"]].add(action.parameters["data"])
             else:
                 self.logger.debug("Agent does not have authorization to access the target host")
+        # there is not valid session for the source_host,try authorizations
+        elif action.parameters["source_host"] in self._authorizations_per_agent[agent_id].keys():
+            self.logger.debug("Agent does not have session in the source host, using authorization")
+            # Agent has authorization in the source host
+            session_id = list(self._sessions_per_agent[agent_id][action.parameters["target_host"]])[0]
+            authorization = self._authorizations_per_agent[agent_id][action.parameters["source_host"]]
+            authorization = authorization[0]
+            # Agent has authorization to access the target host
+            action_dict = {
+                "action": "dojo:exfiltrate_data",
+                "params":
+                    {
+                        "dst_ip":str(action.parameters["source_host"]),
+                        # Use the initial session
+                        "session":session_id,
+                        "dst_service": authorization["service"],
+                        "auth": authorization["id"],
+                        "path": action.parameters["data"].id
+                    }
+            }
+            cyst_rsp_status, cyst_rsp_data = await self._cyst_request(self._id_to_cystid[agent_id], action_dict)          
+            if cyst_rsp_status == 200:
+                self.logger.debug("Valid response from CYST")
+                data = cyst_rsp_data["result"][1]["content"]
+                if len(data) > 0:
+                    # there is some data transferred, add it to the known data in the target host
+                    if action.parameters["target_host"] not in extended_kd:
+                        extended_kd[action.parameters["target_host"]] = set()
+                    extended_kd[action.parameters["target_host"]].add(action.parameters["data"])
+        else:
+            self.logger.debug("Agent does not have authorization to access the target")
         return GameState(extended_ch, extended_kh, extended_ks, extended_kd, extended_kn, extended_kb)
 
     async def _execute_block_ip_action(self, agent_id:tuple, agent_state: GameState, action:Action)->GameState:
