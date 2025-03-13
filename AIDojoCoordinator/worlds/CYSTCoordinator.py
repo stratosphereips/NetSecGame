@@ -44,8 +44,8 @@ class CYSTCoordinator(GameCoordinator):
         self.logger.debug(f"Registering agent {agent_id} in the world.")
         agent_role = "Attacker"
         if not self._starting_positions:
-            #self._starting_positions = get_starting_position_from_cyst_config(self._cyst_objects)
-            self._starting_positions = get_starting_position_from_cyst_config_dicts(json.loads(self._cyst_objects))
+            self._starting_positions = get_starting_position_from_cyst_config(self._cyst_objects)
+            #self._starting_positions = get_starting_position_from_cyst_config_dicts(json.loads(self._cyst_objects))
             self._availabe_cyst_agents = {"Attacker":set([k for k in self._starting_positions.keys()])}
         async with self._agents_lock:
             cyst_id = self.get_cyst_id(agent_role)
