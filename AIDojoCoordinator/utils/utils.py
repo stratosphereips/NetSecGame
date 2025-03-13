@@ -549,6 +549,30 @@ def get_starting_position_from_cyst_config(cyst_objects):
     return starting_positions
 
 
+def get_starting_position_from_cyst_config_dicts(object_list:list):
+    starting_positions = {}
+    for obj in object_list:
+        try:
+            (obj)
+            if obj["py/object"] == "cyst.api.configuration.network.node.NodeConfig":
+                for active_service in obj["active_services"]:
+                    if active_service["py/object"] ==  "cyst.api.configuration.host.service.ActiveServiceConfig":
+                        if active_service["type"] == "netsecenv_agent":
+                            print(f"startig processing {obj['id']}.{active_service['name']}")
+                            hosts = set()
+                            networks = set()
+                            for interface in obj["interfaces"]:
+                                ip_str = interface["ip"]["_value"]
+                                net_str = interface["net"]["_value"]
+                                hosts.add(IP(ip_str))
+                                net_ip, net_mask = net_str.split("/")
+                                networks.add(Network(net_ip,int(net_mask)))
+                        starting_positions[f"{obj['id']}.{active_service['name']}"] = {"known_hosts":hosts, "known_networks":networks}
+        except KeyError:
+            pass
+    return starting_positions
+
+
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
             known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
