@@ -676,31 +676,33 @@ class GameCoordinator:
             if self.shutdown_flag.is_set():
                 self.logger.debug("\tExiting reward assignment task.")
                 break
-            self.logger.info("Episode finished. Assigning final rewards to agents.")
             # assign rewards to agents
             async with self._agents_lock:
-                attackers = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "attacker"]
-                defenders = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "defender"]
-                successful_attack = False
-                # award attackers
-                for agent in attackers:
-                    self.logger.debug(f"Processing reward for agent {agent}")
-                    if self._agent_status[agent] is AgentStatus.Success:
-                        self._agent_rewards[agent] += self._rewards["success"]
-                        successful_attack = True
-                    else:
-                        self._agent_rewards[agent] += self._rewards["fail"]
-                
-                # award defenders
-                for agent in defenders:
-                    self.logger.debug(f"Processing reward for agent {agent}")
-                    if not successful_attack:
-                        self._agent_rewards[agent] += self._rewards["success"]
-                        self._agent_status[agent] = AgentStatus.Success
-                    else:
-                        self._agent_rewards[agent] += self._rewards["fail"]
-                        self._agent_status[agent] = AgentStatus.Fail
-                    # TODO Add penalty for False positives 
+                # only perform the reward assignment when there is at least 1 agent
+                if len(self.agents) > 0:
+                    self.logger.info("Episode finished. Assigning final rewards to agents.")
+                    attackers = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "attacker"]
+                    defenders = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "defender"]
+                    successful_attack = False
+                    # award attackers
+                    for agent in attackers:
+                        self.logger.debug(f"Processing reward for agent {agent}")
+                        if self._agent_status[agent] is AgentStatus.Success:
+                            self._agent_rewards[agent] += self._rewards["success"]
+                            successful_attack = True
+                        else:
+                            self._agent_rewards[agent] += self._rewards["fail"]
+                    
+                    # award defenders
+                    for agent in defenders:
+                        self.logger.debug(f"Processing reward for agent {agent}")
+                        if not successful_attack:
+                            self._agent_rewards[agent] += self._rewards["success"]
+                            self._agent_status[agent] = AgentStatus.Success
+                        else:
+                            self._agent_rewards[agent] += self._rewards["fail"]
+                            self._agent_status[agent] = AgentStatus.Fail
+                        # TODO Add penalty for False positives 
             # clear the episode end event
             self._episode_end_event.clear()
             # notify all waiting agents
