@@ -382,6 +382,14 @@ env:
 > [!CAUTION]
 > Trajectory files can grow very fast. It is recommended to use this feature on evaluation/testing runs only. By default, this feature is not enabled.
 
+## Building and running the coordinator in a container
+To use the NSG dockerize coordinator follow these steps:
+1. Build the image (from root directory): `docker build -t aidojo-coordinator-nsg .`
+2. Start the container:
+```
+ docker run -it -p <game-port>:9000 -v <directory-to-store-logs>:/aidojo/logs -v <configuration-yaml-file>:/aidojo/configuration.yaml  aidojo-coordinator-nsg
+```
+
 ## Testing the environment
 
 It is advised after every change you test if the env is running correctly by doing

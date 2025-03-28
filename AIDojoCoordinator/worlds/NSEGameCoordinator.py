@@ -859,11 +859,9 @@ if __name__ == "__main__":
         type=str,
         default="netsecenv_conf.yaml",
     )
-
     args = parser.parse_args()
-    print(args)
     # Set the logging
-    log_filename = Path("NSG_coordinator.log")
+    log_filename = Path("logs/NSG_coordinator.log")
     if not log_filename.parent.exists():
         os.makedirs(log_filename.parent)
 
@@ -877,7 +875,7 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
         level=pass_level,
     )
-  
+   
     game_server = NSGCoordinator(args.game_host, args.game_port, args.task_config)
     # Run it!
     game_server.run()
