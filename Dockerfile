@@ -21,16 +21,12 @@ COPY . ${DESTINATION_DIR}/
 WORKDIR ${DESTINATION_DIR}
 
 # Install the current project as a package (instead of using requirements.txt)
-RUN pip install -e .
+RUN pip install .
 
 # Clone the tmp-cyst-core repository
-#RUN git clone https://github.com/stratosphereips/tmp-cyst-core
-COPY tmp-cyst-core/ ${DESTINATION_DIR}/tmp-cyst-core/
+RUN git clone https://github.com/AI-Dojo-Public/cyst-core
 # Install the cloned repo as a package
-RUN pip install -e ./tmp-cyst-core/
-
-# Install the correct version of netaddr
-RUN pip install netaddr==1.3.0
+RUN pip install ./cyst-core/
 
 # Run the Python script when the container launches
-CMD ["python3", "-m", "AIDojoCoordinator.worlds.NSEGameCoordinator", "--game_host=0.0.0.0", "--task_config=./AIDojoCoordinator/netsecenv_conf.yaml" ]
+CMD ["python3", "-m", "AIDojoCoordinator.worlds.NSEGameCoordinator", "--game_host=0.0.0.0" , "--task_config=/aidojo/configuration.yaml"]
