@@ -534,7 +534,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
     # Set the logging
-    log_filename = Path("CYST_coordinator.log")
+    log_filename = Path("logs/CYST_coordinator.log")
     if not log_filename.parent.exists():
         os.makedirs(log_filename.parent)
 
