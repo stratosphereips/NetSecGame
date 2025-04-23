@@ -381,7 +381,7 @@ class GameState():
             controlled_hosts = {IP(x["ip"]) for x in data_dict["controlled_hosts"]},
             known_services = {IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
                 for s in services} for k,services in data_dict["known_services"].items()},  
-            known_data = {IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in data_dict["known_data"].items()},
+            known_data = {IP(k):{Data(v["owner"], v["id"], v["size"], v["type"], v["content"]) for v in values} for k,values in data_dict["known_data"].items()},
             known_blocks = known_blocks
                 )
         return state
