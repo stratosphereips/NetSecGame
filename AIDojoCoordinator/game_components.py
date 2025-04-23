@@ -132,8 +132,7 @@ class Data():
     id: str
     size: int = 0
     type: str = ""
-    content: str = field(default="", compare=False, hash=False)
-
+    content: str = field(compare=False, hash=False, repr=False, default_factory=str)
 
     def __hash__(self) -> int:
         return hash((self.owner, self.id, self.size, self.type))
