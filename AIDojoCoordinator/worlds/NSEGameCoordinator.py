@@ -281,6 +281,13 @@ class NSGCoordinator(GameCoordinator):
 
         #exploits
         self._exploits = exploits
+        
+        # create logfile in each nodes
+        for node in nodes:
+            if node.id not in self._data:
+                self._data[node.id] = set()
+            self.logger.info(f"\tAdding logfile to node {node.id}")
+            self._data[node.id].add(Data(owner="system", id="logfile", type="log", size=0, content=""))
         #create initial mapping
         self.logger.info("\tCreating initial mapping of IPs and Networks")
         for net in self._networks.keys():
