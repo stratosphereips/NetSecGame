@@ -576,6 +576,7 @@ class NSGCoordinator(GameCoordinator):
                     if self._firewall_check(action.parameters["source_host"], ip):
                         self.logger.debug(f"\t\t\tAdding {ip} to new_ips")
                         new_ips.add(ip)
+                        self.update_log_file(next_data,action, ip)
                     else:
                         self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {ip} blocked by FW. Skipping")
             next_known_h = next_known_h.union(new_ips)
@@ -601,6 +602,8 @@ class NSGCoordinator(GameCoordinator):
                         self.logger.debug(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
                         next_known_h.add(action.parameters["target_host"])
                         next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+                # update logs
+                self.update_log_file(next_data,action, action.parameters['target_host'])
             else:
                 self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
@@ -615,6 +618,8 @@ class NSGCoordinator(GameCoordinator):
         self.logger.debug(f"\t\tSearching for data in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
+                # update logs before getting the data so this action is listed there
+                self.update_log_file(next_data,action, action.parameters['target_host'])
                 new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
                 self.logger.debug(f"\t\t\t Found {len(new_data)}: {new_data}")
                 if len(new_data) > 0:
@@ -622,8 +627,6 @@ class NSGCoordinator(GameCoordinator):
                         next_data[action.parameters["target_host"]] = new_data
                     else:
                         next_data[action.parameters["target_host"]] = next_data[action.parameters["target_host"]].union(new_data)
-                # update logs
-                next_data = self.update_log_file(next_data,action)
                 # ADD KNOWN FW BLOCKS
                 new_blocks = self._get_known_blocks_in_host(action.parameters["target_host"], current.controlled_hosts)
                 if len(new_blocks) > 0:
@@ -653,6 +656,8 @@ class NSGCoordinator(GameCoordinator):
                 # Does the current state for THIS source already know about this data?
                 if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
                     if action.parameters['source_host'] in current_state.known_data.keys() and action.parameters["data"] in current_state.known_data[action.parameters["source_host"]]:
+                        # update logs
+                        self.update_log_file(next_data,action, action.parameters['target_host'])
                         # Does the source host have any data?
                         if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
                             # Does the source host have this data?
@@ -710,6 +715,8 @@ class NSGCoordinator(GameCoordinator):
                             self.logger.debug("\t\t\tCan not exploit. Target host does not the service that was attempted.")
                     else:
                         self.logger.debug("\t\t\tCan not exploit. Target host does not have any services.")
+                    # update logs
+                    self.update_log_file(next_data,action, action.parameters['target_host'])
                 else:
                     self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
             else:
@@ -772,6 +779,8 @@ class NSGCoordinator(GameCoordinator):
                         next_blocked[action.parameters["blocked_host"]].add(action.parameters["target_host"])
                     else:
                         self.logger.debug(f"\t\t\t Cant block connection form :'{action.parameters['target_host']}' to '{action.parameters['blocked_host']}'")
+                    # update logs
+                    self.update_log_file(next_data,action, action.parameters['target_host'])
                 else:
                     self.logger.debug(f"\t\t\t Connection from '{action.parameters['source_host']}->'{action.parameters['target_host']} is blocked blocked by FW")
             else:
@@ -789,10 +798,12 @@ class NSGCoordinator(GameCoordinator):
         self.logger.info(f"\t\t\tLocal ips: {local_ips}")
         return local_ips
     
-    def update_log_file(self, known_data:set, action):
+    def update_log_file(self, known_data:set, action, target_host:IP):
+        hostaname = self._ip_to_hostname[target_host]
+        self.logger.info(f"Updating log file in host {hostaname}")
         try:
-            current_log_file = list(filter(lambda x: x.owner == "system" and x.type == "log", known_data[action.parameters["target_host"]]))[0]
-            known_data[action.parameters["target_host"]].discard(current_log_file)
+            current_log_file = list(filter(lambda x: x.owner == "system" and x.type == "log",self._data[hostaname]))[0]
+            self._data[hostaname].discard(current_log_file)
             if current_log_file.size == 0:
                 content = []
             else: 
@@ -800,11 +811,10 @@ class NSGCoordinator(GameCoordinator):
             content.append({'source_host': str(action.parameters["source_host"]), 'action_type': str(action.type)})
             new_content = json.dumps(content)
         except KeyError:
-            self.logger.debug(f"\t\t\tLog not found in host {action.parameters['target_host']}")
+            self.logger.debug(f"\t\t\tLog not found in host {hostaname}. Creating new one.")
             new_content = [{'source_host': action.parameters["source_host"], 'action_type': str(action.type)}]
             new_content = json.dumps(new_content)
-        known_data[action.parameters['target_host']].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
-        return known_data
+        self._data[hostaname].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
 
     async def register_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
         if len(self._networks) == 0:
