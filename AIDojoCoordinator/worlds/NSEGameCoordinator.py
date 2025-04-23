@@ -8,6 +8,7 @@ import copy
 from faker import Faker
 from pathlib import Path
 import netaddr, re
+import json
 
 from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP, Network, Data, Service
 from AIDojoCoordinator.coordinator import GameCoordinator
@@ -287,7 +288,7 @@ class NSGCoordinator(GameCoordinator):
             if node.id not in self._data:
                 self._data[node.id] = set()
             self.logger.info(f"\tAdding logfile to node {node.id}")
-            self._data[node.id].add(Data(owner="system", id="logfile", type="log", size=0, content=""))
+            self._data[node.id].add(Data(owner="system", id="logfile", type="log", size=0))
         #create initial mapping
         self.logger.info("\tCreating initial mapping of IPs and Networks")
         for net in self._networks.keys():
@@ -621,6 +622,8 @@ class NSGCoordinator(GameCoordinator):
                         next_data[action.parameters["target_host"]] = new_data
                     else:
                         next_data[action.parameters["target_host"]] = next_data[action.parameters["target_host"]].union(new_data)
+                # update logs
+                next_data = self.update_log_file(next_data,action)
                 # ADD KNOWN FW BLOCKS
                 new_blocks = self._get_known_blocks_in_host(action.parameters["target_host"], current.controlled_hosts)
                 if len(new_blocks) > 0:
@@ -785,7 +788,24 @@ class NSGCoordinator(GameCoordinator):
                     local_ips.add(self._ip_mapping[ip])
         self.logger.info(f"\t\t\tLocal ips: {local_ips}")
         return local_ips
-     
+    
+    def update_log_file(self, known_data:set, action):
+        try:
+            current_log_file = list(filter(lambda x: x.owner == "system" and x.type == "log", known_data[action.parameters["target_host"]]))[0]
+            known_data[action.parameters["target_host"]].discard(current_log_file)
+            if current_log_file.size == 0:
+                content = []
+            else: 
+                content = json.loads(current_log_file.content)
+            content.append({'source_host': str(action.parameters["source_host"]), 'action_type': str(action.type)})
+            new_content = json.dumps(content)
+        except KeyError:
+            self.logger.debug(f"\t\t\tLog not found in host {action.parameters['target_host']}")
+            new_content = [{'source_host': action.parameters["source_host"], 'action_type': str(action.type)}]
+            new_content = json.dumps(new_content)
+        known_data[action.parameters['target_host']].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
+        return known_data
+
     async def register_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
         if len(self._networks) == 0:
             self._initialize()
