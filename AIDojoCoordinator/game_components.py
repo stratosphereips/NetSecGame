@@ -132,7 +132,9 @@ class Data():
     id: str
     size: int = 0
     type: str = ""
-    
+    content: str = field(default="", compare=False, hash=False)
+
+
     def __hash__(self) -> int:
         return hash((self.owner, self.id, self.size, self.type))
     @classmethod
