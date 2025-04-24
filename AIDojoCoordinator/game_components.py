@@ -130,12 +130,12 @@ class Data():
     """
     owner: str
     id: str
-    size: int = 0
+    size: int = field(compare=False, hash=False, default=0)
     type: str = ""
     content: str = field(compare=False, hash=False, repr=False, default_factory=str)
 
     def __hash__(self) -> int:
-        return hash((self.owner, self.id, self.size, self.type))
+        return hash((self.owner, self.id, self.type))
     @classmethod
     def from_dict(cls, data: dict):
         return cls(**data)
