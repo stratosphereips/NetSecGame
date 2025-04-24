@@ -403,7 +403,7 @@ class TestAction:
         assert "ActionType.ExfiltrateData" in data["action_type"]
         assert ("parameters", {"target_host": {"ip": "172.16.1.3"},
                     "source_host" : {"ip": "172.16.1.2"},
-                    "data":{"owner":"User2", "id":"PublicKey", "size":42 ,"type":"pub"}}) in data.items()
+                    "data":{"owner":"User2", "id":"PublicKey", "size":42 ,"type":"pub", "content":""}}) in data.items()
     
     def test_action_scan_network_serialization(self):
         action = Action(action_type=ActionType.ScanNetwork,
@@ -689,6 +689,7 @@ class TestGameState:
                 known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
                             IP("192.168.1.2"):{Data("McGiver", "data2", 42, "txt")}})
         game_json = game_state.as_json()
+        print(game_json)
         try:
             data = json.loads(game_json)
         except ValueError:
@@ -698,9 +699,9 @@ class TestGameState:
         assert {"ip": "192.168.1.3"} in data["known_hosts"]
         assert {"ip": "192.168.1.2"} in data["controlled_hosts"]
         assert ("192.168.1.3", [{"name": "service1", "type": "public", "version": "1.01", "is_local": True}]) in data["known_services"].items()
-        assert {"owner": "ChuckNorris", "id": "data1", "size":0, "type":""} in  data["known_data"]["192.168.1.3"]
-        assert {"owner": "ChuckNorris", "id": "data2", "size":0, "type":""} in  data["known_data"]["192.168.1.3"]
-        assert {"owner": "McGiver", "id": "data2", "size":42, "type":"txt"} in  data["known_data"]["192.168.1.2"]
+        assert {"owner": "ChuckNorris", "id": "data1", "size":0, "type":"", "content":""} in  data["known_data"]["192.168.1.3"]
+        assert {"owner": "ChuckNorris", "id": "data2", "size":0, "type":"", "content":""} in  data["known_data"]["192.168.1.3"]
+        assert {"owner": "McGiver", "id": "data2", "size":42, "type":"txt", "content":""} in  data["known_data"]["192.168.1.2"]
     
     def test_game_state_json_deserialized(self):
         game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
@@ -725,8 +726,8 @@ class TestGameState:
         assert {"ip": "192.168.1.3"} in game_dict["known_hosts"]
         assert {"ip": "192.168.1.2"} in game_dict["controlled_hosts"]
         assert ("192.168.1.3", [{"name": "service1", "type": "public", "version": "1.01", "is_local": True}]) in game_dict["known_services"].items()
-        assert {"owner": "ChuckNorris", "id": "data1", "size":0, "type":""} in  game_dict["known_data"]["192.168.1.3"]
-        assert {"owner": "ChuckNorris", "id": "data2", "size":0, "type":""} in  game_dict["known_data"]["192.168.1.3"]
+        assert {"owner": "ChuckNorris", "id": "data1", "size":0, "type":"", "content":""} in  game_dict["known_data"]["192.168.1.3"]
+        assert {"owner": "ChuckNorris", "id": "data2", "size":0, "type":"", "content":""} in  game_dict["known_data"]["192.168.1.3"]
     
     def test_game_state_from_dict(self):
         game_state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
