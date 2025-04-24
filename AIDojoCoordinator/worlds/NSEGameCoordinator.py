@@ -284,7 +284,7 @@ class NSGCoordinator(GameCoordinator):
         self._exploits = exploits
         
         # create logfile in each nodes
-        for node in nodes:
+        for node in nodes + routers:
             if node.id not in self._data:
                 self._data[node.id] = set()
             self.logger.info(f"\tAdding logfile to node {node.id}")
