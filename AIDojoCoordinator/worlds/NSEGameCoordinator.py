@@ -812,7 +812,7 @@ class NSGCoordinator(GameCoordinator):
             new_content = json.dumps(content)
         except KeyError:
             self.logger.debug(f"\t\t\tLog not found in host {hostaname}. Creating new one.")
-            new_content = [{'source_host': action.parameters["source_host"], 'action_type': str(action.type)}]
+            new_content = [{'source_host': str(action.parameters["source_host"]), 'action_type': str(action.type)}]
             new_content = json.dumps(new_content)
         self._data[hostaname].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
 
