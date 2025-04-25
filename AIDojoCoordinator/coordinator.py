@@ -467,7 +467,10 @@ class GameCoordinator:
         Outputs: None
         """
         try:
-            await self.remove_agent(agent_addr, self._agent_states[agent_addr])
+            if agent_addr in self._agent_states:
+                await self.remove_agent(agent_addr, self._agent_states[agent_addr])
+            else:
+                self.logger.warning(f"Agent address {agent_addr} not found in _agent_states. Skipping removal.")
             agent_info = await self._remove_agent_from_game(agent_addr)
             self.logger.info(f"Agent {agent_addr} removed from the game. {agent_info}")
         except asyncio.CancelledError:
