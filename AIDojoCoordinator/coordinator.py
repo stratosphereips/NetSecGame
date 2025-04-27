@@ -365,7 +365,7 @@ class GameCoordinator:
             # Read message from the queue
             agent_addr, message = await self._agent_action_queue.get()
             if message is not None:
-                self.logger.info(f"Coordinator received: {message}.")
+                self.logger.info(f"Coordinator received from agent {agent_addr}: {message}.")
                 try:  # Convert message to Action
                     action = Action.from_json(message)
                     self.logger.debug(f"\tConverted to: {action}.")
@@ -375,20 +375,23 @@ class GameCoordinator:
                     )
                 match action.type:  # process action based on its type
                     case ActionType.JoinGame:
-                        self.logger.debug(f"Start processing of ActionType.JoinGame by {agent_addr}")
+                        self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.JoinGame by {agent_addr}")
                         self.logger.debug(f"{action.type}, {action.type.value}, {action.type == ActionType.JoinGame}")
                         self._spawn_task(self._process_join_game_action, agent_addr, action)
                     case ActionType.QuitGame:
-                        self.logger.debug(f"Start processing of ActionType.QuitGame by {agent_addr}")
+                        self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.QuitGame by {agent_addr}")
                         self._spawn_task(self._process_quit_game_action, agent_addr)
                     case ActionType.ResetGame:
-                        self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
+                        self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.ResetGame by {agent_addr}")
                         self._spawn_task(self._process_reset_game_action, agent_addr, action)
                     case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
-                        self.logger.debug(f"Start processing of {action.type} by {agent_addr}")
+                        self.logger.debug(f"About agent {agent_addr}. Start processing of {action.type} by {agent_addr}")
+                        self._spawn_task(self._process_game_action, agent_addr, action)
+                    case ActionType.BlockIP:
+                        self.logger.debug(f"About agent {agent_addr}. Start processing of {action.type} by {agent_addr}")
                         self._spawn_task(self._process_game_action, agent_addr, action)
                     case _:
-                        self.logger.warning(f"Unsupported action type: {action}!")
+                        self.logger.warning(f"About agent {agent_addr}. Unsupported action type: {action}!")
         self.logger.info("\tAction processing task stopped.")
             
     async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
@@ -520,6 +523,13 @@ class GameCoordinator:
         await self._agent_response_queues[agent_addr].put(response_msg_json)
 
     async def _process_game_action(self, agent_addr: tuple, action:Action)->None:
+        """
+        Method for processing Action of type ActionType.GameAction
+        Inputs: 
+            -   agent_addr (tuple)
+            -   action (Action)
+        Outputs: None
+        """
         if self._episode_ends[agent_addr]:
             self.logger.warning(f"Agent {agent_addr}({self.agents[agent_addr]}) is attempting to play action {action} after the end of the episode!")
             # agent can't play any more actions in the game
