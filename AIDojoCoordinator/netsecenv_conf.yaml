@@ -102,6 +102,7 @@ env:
   use_dynamic_addresses: False
   use_firewall: True
   save_trajectories: False
+  required_players: 1
   rewards:
     success: 100
     step: -1
