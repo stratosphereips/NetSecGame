@@ -85,7 +85,7 @@ def summarize_json(ts, source_styled, level_styled, prefix: str, parsed: dict):
         if conf:
             console.print(f"{indent}Config Hash: {conf}")
 
-    # Observation state: networks, hosts, services, data
+    # Observation state: networks, hosts, services, data, blocks
     state = obs.get('state', {})
     if state:
         nets = state.get('known_networks', [])
@@ -110,6 +110,19 @@ def summarize_json(ts, source_styled, level_styled, prefix: str, parsed: dict):
             for host, entries in data.items():
                 ids = [e.get('id') for e in entries]
                 console.print(f"{indent}Data on {host}: {', '.join(ids)}")
+                # Known blocks
+        blocks = state.get('known_blocks', {})
+        # Always print blocks, even if empty
+        if isinstance(blocks, dict):
+            ips = list(blocks.keys())
+        elif isinstance(blocks, list):
+            ips = [b.get('ip') for b in blocks]
+        else:
+            ips = []
+        if ips:
+            console.print(f"{indent}Blocked Hosts: {', '.join(ips)}")
+        else:
+            console.print(f"{indent}Blocked Hosts: None")
 
     # Reward & End: top-level or under observation
     reward = parsed.get('reward', obs.get('reward'))
