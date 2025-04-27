@@ -19,11 +19,12 @@ from rich.text import Text
 # Force ANSI colors even when output is piped
 console = Console(force_terminal=True, color_system="truecolor")
 
-# Cycle of colors to assign to different agents
+# Cycle of colors to assign to different agents (background colors to avoid clashes)
+# We'll use text in black on these backgrounds so they're distinct from other log colors
 COLOR_CYCLE = ["cyan", "magenta", "green", "yellow", "blue", "red"]
 agent_colors = {}
-agent_names = {}  # map ip:port -> agent name
 color_picker = cycle(COLOR_CYCLE)
+agent_names = {}  # map ip:port -> agent name
 
 # Regex patterns
 timestamp_re = re.compile(r"^(?P<ts>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
@@ -38,28 +39,21 @@ action_re = re.compile(r"ActionType\.[A-Za-z]+")
 
 
 def get_agent_color(agent_id: str) -> str:
-    """Assign or retrieve a consistent color for an agent."""
+    """Assign or retrieve a consistent background style for an agent."""
     if agent_id not in agent_colors:
-        agent_colors[agent_id] = next(color_picker)
+        base = next(color_picker)
+        agent_colors[agent_id] = f"black on {base}"
     return agent_colors[agent_id]
 
 
 def summarize_json(ts, source_styled, level_styled, prefix: str, parsed: dict):
     """Interpret and display key fields from a JSON payload."""
-    console.print(f"[bold]{ts}[/bold] ", source_styled, level_styled, f"{prefix}:")
+    console.print(f"[bold]{ts}[/bold] ", source_styled, level_styled, f"{prefix}:" )
     indent = "    "
     # Status
     status = parsed.get('status')
     if status is not None:
         console.print(Text(f"{indent}Status: {status}", style="bold green"))
-
-    # Info and End Reason: top-level or under observation
-    info = parsed.get('info', {})
-    obs = parsed.get('observation', {})
-    obs_info = obs.get('info', {})
-    end_reason = info.get('end_reason') or obs_info.get('end_reason')
-    if end_reason:
-        console.print(Text(f"{indent}End Reason: {end_reason}", style="bold yellow"))
 
     # To agent
     to_agent = parsed.get('to_agent')
@@ -86,6 +80,7 @@ def summarize_json(ts, source_styled, level_styled, prefix: str, parsed: dict):
             console.print(f"{indent}Config Hash: {conf}")
 
     # Observation state: networks, hosts, services, data, blocks
+    obs = parsed.get('observation', {})
     state = obs.get('state', {})
     if state:
         nets = state.get('known_networks', [])
@@ -110,9 +105,8 @@ def summarize_json(ts, source_styled, level_styled, prefix: str, parsed: dict):
             for host, entries in data.items():
                 ids = [e.get('id') for e in entries]
                 console.print(f"{indent}Data on {host}: {', '.join(ids)}")
-                # Known blocks
+        # Known blocks
         blocks = state.get('known_blocks', {})
-        # Always print blocks, even if empty
         if isinstance(blocks, dict):
             ips = list(blocks.keys())
         elif isinstance(blocks, list):
@@ -131,6 +125,13 @@ def summarize_json(ts, source_styled, level_styled, prefix: str, parsed: dict):
     end = parsed.get('end', obs.get('end'))
     if end is not None:
         console.print(Text(f"{indent}End: {end}", style="bold red"))
+
+    # End Reason: after End
+    info = parsed.get('info', {})
+    obs_info = obs.get('info', {})
+    end_reason = info.get('end_reason') or obs_info.get('end_reason')
+    if end_reason:
+        console.print(Text(f"{indent}End Reason: {end_reason}", style="bold yellow"))
 
 
 def process_line(line: str):
@@ -169,10 +170,11 @@ def process_line(line: str):
     # Annotate agents
     def repl_agent(m):
         aid = f"{m.group('ip')}:{m.group('port')}"
-        col = get_agent_color(aid)
+        style = get_agent_color(aid)
         name = agent_names.get(aid)
         label = f"{name} {aid}" if name else aid
-        return f"[{col}]{label}[/{col}]"
+        # Use background style for agent label
+        return f"[{style}]{label}[/{style}]"
     msg_markup = agent_id_re.sub(repl_agent, msg)
 
     # Detect JSON and interpret
@@ -203,4 +205,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
