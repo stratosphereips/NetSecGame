@@ -48,50 +48,76 @@ def summarize_json(ts, source_styled, level_styled, prefix: str, parsed: dict):
     """Interpret and display key fields from a JSON payload."""
     console.print(f"[bold]{ts}[/bold] ", source_styled, level_styled, f"{prefix}:")
     indent = "    "
-    # Top-level fields
+    # Status
     status = parsed.get('status')
     if status is not None:
         console.print(Text(f"{indent}Status: {status}", style="bold green"))
+
+    # Info and End Reason: top-level or under observation
+    info = parsed.get('info', {})
+    obs = parsed.get('observation', {})
+    obs_info = obs.get('info', {})
+    end_reason = info.get('end_reason') or obs_info.get('end_reason')
+    if end_reason:
+        console.print(Text(f"{indent}End Reason: {end_reason}", style="bold yellow"))
+
+    # To agent
     to_agent = parsed.get('to_agent')
     if to_agent:
         console.print(Text(f"{indent}To Agent: {to_agent[0]}:{to_agent[1]}", style="bold cyan"))
-    obs = parsed.get('observation', {})
+
+    # Message payload (optional)
+    msg_block = parsed.get('message')
+    if isinstance(msg_block, dict):
+        text = msg_block.get('message')
+        if text:
+            console.print(Text(f"{indent}Message: {text}", style="bold"))
+        max_steps = msg_block.get('max_steps')
+        if max_steps is not None:
+            console.print(f"{indent}Max Steps: {max_steps}")
+        goal = msg_block.get('goal_description')
+        if goal:
+            console.print(f"{indent}Goal: {goal}")
+        actions = msg_block.get('actions')
+        if actions:
+            console.print(f"{indent}Actions: {', '.join(actions)}")
+        conf = msg_block.get('configuration_hash')
+        if conf:
+            console.print(f"{indent}Config Hash: {conf}")
+
+    # Observation state: networks, hosts, services, data
     state = obs.get('state', {})
     if state:
-        # Known networks
         nets = state.get('known_networks', [])
         if nets:
             items = [f"{n['ip']}/{n['mask']}" for n in nets]
             console.print(f"{indent}Known Networks: {', '.join(items)}")
-        # Known hosts
         hosts = state.get('known_hosts', [])
         if hosts:
             items = [h['ip'] for h in hosts]
             console.print(f"{indent}Known Hosts: {', '.join(items)}")
-        # Controlled hosts
         ctrl = state.get('controlled_hosts', [])
         if ctrl:
             items = [h['ip'] for h in ctrl]
             console.print(f"{indent}Controlled Hosts: {', '.join(items)}")
-        # Known services
         services = state.get('known_services', {})
         if services:
             for host, svcs in services.items():
                 names = [s['name'] for s in svcs]
                 console.print(f"{indent}Services on {host}: {', '.join(names)}")
-    # Reward and end
-    reward = parsed.get('reward')
+        data = state.get('known_data', {})
+        if data:
+            for host, entries in data.items():
+                ids = [e.get('id') for e in entries]
+                console.print(f"{indent}Data on {host}: {', '.join(ids)}")
+
+    # Reward & End: top-level or under observation
+    reward = parsed.get('reward', obs.get('reward'))
     if reward is not None:
-        console.print(f"{indent}Reward: {reward}")
-    end = parsed.get('end')
+        console.print(Text(f"{indent}Reward: {reward}", style="bold magenta"))
+    end = parsed.get('end', obs.get('end'))
     if end is not None:
-        console.print(f"{indent}End: {end}")
-    reward = parsed.get('reward')
-    if reward is not None:
-        console.print(f"Reward: {reward}")
-    end = parsed.get('end')
-    if end is not None:
-        console.print(f"End: {end}")
+        console.print(Text(f"{indent}End: {end}", style="bold red"))
 
 
 def process_line(line: str):
