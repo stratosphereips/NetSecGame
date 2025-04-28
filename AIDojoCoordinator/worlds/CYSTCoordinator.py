@@ -529,6 +529,26 @@ if __name__ == "__main__":
         type=int,
         default="8000",
     )
+    
+    parser.add_argument(
+        "-c",
+        "--cyst_config",
+        help="Path to the CYST config file",
+        action="store",
+        required=False,
+        type=str,
+        default="cyst_config.json",
+    )
+
+    parser.add_argument(
+        "-t",
+        "--task_config",
+        help="File with the task configuration",
+        action="store",
+        required=True,
+        type=str,
+        default="netsecenv_conf_cyst_integration.yaml",
+    )
 
 
     args = parser.parse_args()
