@@ -102,9 +102,10 @@ env:
   use_dynamic_addresses: False
   use_firewall: True
   save_trajectories: False
-  goal_reward: 100
-  detection_reward: -5
-  step_reward: -1
+  rewards:
+    success: 100
+    step: -1
+    fail: -10
   actions:
     scan_network:
       prob_success: 1.0
