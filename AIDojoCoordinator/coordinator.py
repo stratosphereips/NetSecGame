@@ -415,7 +415,8 @@ class GameCoordinator:
                             self.agents[agent_addr] = (agent_name, agent_role)
                             observation = self._initialize_new_player(agent_addr, new_agent_game_state)
                             self._agent_observations[agent_addr] = observation
-                            if len(self.agents) == self._min_required_players:
+                            #if len(self.agents) == self._min_required_players:
+                            if sum(1 for v in self._agent_status.values() if v == AgentStatus.PlayingWithTimeout) >= self._min_required_players:
                                 # set the event so the episde can start
                                 self._episode_start_event.set()
                                 self.logger.info("Enough players joined. Starting the episode.")
