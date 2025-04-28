@@ -189,101 +189,102 @@ class GameCoordinator:
         finally:
             self.logger.info(f"{__class__.__name__} has exited.")
 
-    async def _fetch_initialization_objects(self):
-        """Send a REST request to MAIN and fetch initialization objects of CYST simulator."""
+
+    # async def _fetch_initialization_objects(self):
+    #     """Send a REST request to MAIN and fetch initialization objects of CYST simulator."""
         
-        async def crate_cyst_env(env_id="coordinator_cyst")->list:
-            """
-            Crates a CYST environment and loads the initialization objects.
-            """
+    #     async def crate_cyst_env(env_id="coordinator_cyst")->list:
+    #         """
+    #         Crates a CYST environment and loads the initialization objects.
+    #         """
 
-            async with ClientSession() as session:
-                url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/create/"
-                payload = {
-                    "id": env_id,
-                    "platform": {
-                        "type": 2, # Real-time CYST
-                        "provider": "CYST"
-                    },
-                    "configuration": "demo_configuration" # which topology to use
-                }
-                headers = {"Content-Type": "application/json"}
-                try:
-                    async with session.post(url, json=payload, headers=headers) as response:
-                        if response.status == 201:
-                            response = await response.json()
-                            cyst_objects = response.get("aux", None)
-                            env = Environment.create()
-                            self._cyst_objects = env.configuration.general.load_configuration(cyst_objects)
-                        else:
-                            self.logger.error(f"Failed to create CYST envitonment. Status: {response.status}")
-                except Exception as e:
-                    self.logger.error(f"Failed to create CYST envitonment: {e}")
+    #         async with ClientSession() as session:
+    #             url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/create/"
+    #             payload = {
+    #                 "id": env_id,
+    #                 "platform": {
+    #                     "type": 2, # Real-time CYST
+    #                     "provider": "CYST"
+    #                 },
+    #                 "configuration": "demo_configuration" # which topology to use
+    #             }
+    #             headers = {"Content-Type": "application/json"}
+    #             try:
+    #                 async with session.post(url, json=payload, headers=headers) as response:
+    #                     if response.status == 201:
+    #                         response = await response.json()
+    #                         cyst_objects = response.get("aux", None)
+    #                         env = Environment.create()
+    #                         self._cyst_objects = env.configuration.general.load_configuration(cyst_objects)
+    #                     else:
+    #                         self.logger.error(f"Failed to create CYST envitonment. Status: {response.status}")
+    #             except Exception as e:
+    #                 self.logger.error(f"Failed to create CYST envitonment: {e}")
 
-        async def get_task_config()->list:
-            """
-            Fetches task configuration using the REST API.
-            """
+    #     async def get_task_config()->list:
+    #         """
+    #         Fetches task configuration using the REST API.
+    #         """
 
-            async with ClientSession() as session:
-                try:
-                    async with session.get(f"http://{self._service_host}:{self._service_port}/task_config") as response:
-                        if response.status == 200:
-                            task_config_json = await response.json()
-                            task_config_dict = task_config_json
-                            self.logger.debug(f"Task config:{task_config_dict}")
+    #         async with ClientSession() as session:
+    #             try:
+    #                 async with session.get(f"http://{self._service_host}:{self._service_port}/task_config") as response:
+    #                     if response.status == 200:
+    #                         task_config_json = await response.json()
+    #                         task_config_dict = task_config_json
+    #                         self.logger.debug(f"Task config:{task_config_dict}")
             
-                            self._CONFIG_FILE_HASH = get_dict_hash(task_config_dict)
-                            self.task_config = ConfigParser(config_dict=task_config_dict)
-                        else:
-                            self.logger.error(f"Failed to fetch task configuration. Status: {response.status}")
-                except Exception as e:
-                    self.logger.error(f"Failed to fetch task configuration: {e}")
+    #                         self._CONFIG_FILE_HASH = get_dict_hash(task_config_dict)
+    #                         self.task_config = ConfigParser(config_dict=task_config_dict)
+    #                     else:
+    #                         self.logger.error(f"Failed to fetch task configuration. Status: {response.status}")
+    #             except Exception as e:
+    #                 self.logger.error(f"Failed to fetch task configuration: {e}")
         
-        async def init_cyst(env_id="coordinator_cyst")->None:
-            """
-            Initializes a CYST environment.
-            """
+    #     async def init_cyst(env_id="coordinator_cyst")->None:
+    #         """
+    #         Initializes a CYST environment.
+    #         """
 
-            async with ClientSession() as session:
-                url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/init/?id={env_id}"
-                headers = {"Content-Type": "application/json"}
-                try:
-                    async with session.post(url, headers=headers) as response:
-                        if response.status == 200:
-                            response = await response.json()
-                            self.logger.debug(response)
-                        else:
-                            self.logger.error(f"Failed to initialize CYST envitonment. Status: {response.status}")
-                except Exception as e:
-                    self.logger.error(f"Failed to initialize CYST envitonment: {e}")
+    #         async with ClientSession() as session:
+    #             url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/init/?id={env_id}"
+    #             headers = {"Content-Type": "application/json"}
+    #             try:
+    #                 async with session.post(url, headers=headers) as response:
+    #                     if response.status == 200:
+    #                         response = await response.json()
+    #                         self.logger.debug(response)
+    #                     else:
+    #                         self.logger.error(f"Failed to initialize CYST envitonment. Status: {response.status}")
+    #             except Exception as e:
+    #                 self.logger.error(f"Failed to initialize CYST envitonment: {e}")
         
-        async def run_cyst(env_id="coordinator_cyst")->None:
-            """
-            Runs a CYST environment.
-            """
+    #     async def run_cyst(env_id="coordinator_cyst")->None:
+    #         """
+    #         Runs a CYST environment.
+    #         """
 
-            async with ClientSession() as session:
-                url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/run/?id={env_id}"
-                headers = {"Content-Type": "application/json"}
-                try:
-                    async with session.post(url, headers=headers) as response:
-                        if response.status == 200:
-                            response = await response.json()
-                            self.logger.debug(response)
-                        else:
-                            self.logger.error(f"Failed to run CYST envitonment. Status: {response.status}")
-                except Exception as e:
-                    self.logger.error(f"Failed to run CYST envitonment: {e}")
+    #         async with ClientSession() as session:
+    #             url = f"http://{self._service_host}:{self._service_port}/api/v1/environment/run/?id={env_id}"
+    #             headers = {"Content-Type": "application/json"}
+    #             try:
+    #                 async with session.post(url, headers=headers) as response:
+    #                     if response.status == 200:
+    #                         response = await response.json()
+    #                         self.logger.debug(response)
+    #                     else:
+    #                         self.logger.error(f"Failed to run CYST envitonment. Status: {response.status}")
+    #             except Exception as e:
+    #                 self.logger.error(f"Failed to run CYST envitonment: {e}")
 
-        self.logger.info("Creating CYST environment.")
-        await crate_cyst_env()
-        self.logger.info("Fetching task configuration.")
-        await get_task_config()
-        self.logger.info("Initializing CYST environment.")
-        await init_cyst()
-        self.logger.info("Running CYST environment.")
-        await run_cyst()
+    #     self.logger.info("Creating CYST environment.")
+    #     await crate_cyst_env()
+    #     self.logger.info("Fetching task configuration.")
+    #     await get_task_config()
+    #     self.logger.info("Initializing CYST environment.")
+    #     await init_cyst()
+    #     self.logger.info("Running CYST environment.")
+    #     await run_cyst()
 
     def _load_initialization_objects(self)->None:
         """
@@ -386,12 +387,13 @@ class GameCoordinator:
         )
 
 
-        # initialize the game objects
-        if self._service_host: #get the task config using REST API
-            self.logger.info(f"Fetching task configuration from {self._service_host}:{self._service_port}")
-            await self._fetch_initialization_objects()
-        elif self._task_config_file: # load task config locally from a file
-            self.logger.info(f"Loading task configuration from file: {self._task_config_file}")
+        # # initialize the game objects
+        # if self._service_host: #get the task config using REST API
+        #     self.logger.info(f"Fetching task configuration from {self._service_host}:{self._service_port}")
+        #     await self._fetch_initialization_objects()
+        # el
+        if self._task_config_file:
+            self.logger.info("Loading configuration")
             self._load_initialization_objects()
         else:
             raise ValueError("Task configuration not specified")
