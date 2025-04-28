@@ -10,12 +10,13 @@ import argparse
 from pathlib import Path
 from AIDojoCoordinator.game_components import GameState, Action, ActionType,  IP, Service, Data
 from AIDojoCoordinator.coordinator import GameCoordinator
+from cyst.api.environment.environment import Environment
 
-from AIDojoCoordinator.utils.utils import get_starting_position_from_cyst_config, get_logging_level, get_starting_position_from_cyst_config_dicts
+from AIDojoCoordinator.utils.utils import get_starting_position_from_cyst_config, get_logging_level, get_starting_position_from_cyst_config_dicts, ConfigParser, get_file_hash
 
 class CYSTCoordinator(GameCoordinator):
 
-    def __init__(self, game_host:str, game_port:int, service_host:str, service_port:int, allowed_roles=["Attacker", "Defender", "Benign"]):
+    def __init__(self, game_host:str, game_port:int, service_host:str, service_port:int, task_config_file, cyst_config_file, allowed_roles=["Attacker", "Defender", "Benign"]):
         super().__init__(game_host, game_port, service_host, service_port, allowed_roles)
         self._id_to_cystid = {}
         self._cystid_to_id  = {}
@@ -27,6 +28,8 @@ class CYSTCoordinator(GameCoordinator):
         self._availabe_cyst_agents = None
         self._sessions_per_agent = {}
         self._authorizations_per_agent = {}
+        self._task_config_file = task_config_file
+        self._cyst_config_file = cyst_config_file
 
         self._exploit_map = {"ssh":"exploit_1", "python3":"phishing_exploit", "vsftpd":"exploit_0"}
 
@@ -40,12 +43,39 @@ class CYSTCoordinator(GameCoordinator):
             cyst_id = None
         return cyst_id
     
+    def _load_initialization_objects(self):
+        """
+        Load the initialization objects from the CYST config file and the task config file.
+        The CYST config file is used to create the CYST environment and the task config file is used to create the task environment.
+        This method overrides the _load_initialization_objects method from the GameCoordinator class.
+        """
+        self.logger.info(f"Loading CYST config file: {self._cyst_config_file}")
+        try:
+            # load the CYST config file
+            with open(self._cyst_config_file, "r") as f:
+                self.logger.debug("Loading JSON CYST config file")
+                cyst_objects_str = f.read()
+                self.logger.debug("Create CYST environment")
+                env = Environment.create()
+                self.logger.debug("Loading cyst obejects")
+                self._cyst_objects = env.configuration.general.load_configuration(cyst_objects_str)
+        except FileNotFoundError:
+            self.logger.error(f"CYST config file not found: {self._task_config_file}")
+            raise
+        except Exception as e:
+            self.logger.error(f"Error loading CYST config file: {e}")
+            raise
+        # load task config file
+        self.logger.info(f"Loading task config file: {self._task_config_file}")
+        self.task_config = ConfigParser(self._task_config_file)
+        self._cyst_objects = self.task_config.get_scenario()
+        self._CONFIG_FILE_HASH = get_file_hash(self._task_config_file)
+    
     async def register_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
         self.logger.debug(f"Registering agent {agent_id} in the world.")
         agent_role = "Attacker"
         if not self._starting_positions:
             self._starting_positions = get_starting_position_from_cyst_config(self._cyst_objects)
-            #self._starting_positions = get_starting_position_from_cyst_config_dicts(json.loads(self._cyst_objects))
             self._availabe_cyst_agents = {"Attacker":set([k for k in self._starting_positions.keys()])}
         async with self._agents_lock:
             cyst_id = self.get_cyst_id(agent_role)
@@ -569,6 +599,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
   
-    game_server = CYSTCoordinator(args.game_host, args.game_port, args.service_host , args.service_port)
+    game_server = CYSTCoordinator(args.game_host, args.game_port, args.service_host , args.service_port, args.task_config, args.cyst_config)
     # Run it!
     game_server.run()
