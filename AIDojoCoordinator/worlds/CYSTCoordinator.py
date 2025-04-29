@@ -1,5 +1,4 @@
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
-
 import os
 import requests
 import json
@@ -12,7 +11,7 @@ from AIDojoCoordinator.game_components import GameState, Action, ActionType,  IP
 from AIDojoCoordinator.coordinator import GameCoordinator
 from cyst.api.environment.environment import Environment
 
-from AIDojoCoordinator.utils.utils import get_starting_position_from_cyst_config, get_logging_level, get_starting_position_from_cyst_config_dicts, ConfigParser, get_file_hash
+from AIDojoCoordinator.utils.utils import get_starting_position_from_cyst_config, get_logging_level, ConfigParser, get_file_hash
 
 class CYSTCoordinator(GameCoordinator):
 
