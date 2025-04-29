@@ -579,6 +579,16 @@ if __name__ == "__main__":
         default="netsecenv_conf_cyst_integration.yaml",
     )
 
+    parser.add_argument(
+        "-d",
+        "--local_testing",
+        help="Local run (testing only)",
+        action="store",
+        required=False,
+        type=bool,
+        default=False,
+    )
+
 
     args = parser.parse_args()
     print(args)
@@ -597,7 +607,9 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
         level=pass_level,
     )
-  
+    if args.local_testing:
+        logging.getLogger().info("Initializing CYST for local testing")
+        os.system("bash ./AIDojoCoordinator/worlds/init_cyst.sh")
     game_server = CYSTCoordinator(args.game_host, args.game_port, args.service_host , args.service_port, args.task_config, args.cyst_config)
     # Run it!
     game_server.run()
