@@ -34,6 +34,26 @@ conda activate aidojo
 pip install -e .
 ```
 
+### Running in Docker container
+Coordinator can be run in a container. 
+
+#### CYSTCoordinator
+To build the image (from the root)
+`docker build --no-cache -f Dockerfile_CYST -t aidojo-cyst-coordinator:1.0 .`
+
+To start the container:
+`docker run -d -v <LOG_DIR>:/aidojo/logs -v <TASK_CONFIG_YAML>:/aidojo/configuration.yaml -v <CYST_CONFIG_JSON:/aidojo/cyst_config.json --network host aidojo-cyst-coordinator:1.0`
+
+Be aware that CYSTCoordinator expects running CYST instance.
+
+
+#### NetSecGame Coordinator
+To build the image (from the root)
+`docker build --no-cache -f Dockerfile -t aidojo-nsg-coordinator:1.0 .`
+
+To start the container:
+`docker run -d -v <LOG_DIR>:/aidojo/logs -v <TASK_CONFIG_YAML>:/aidojo/configuration.yaml --port 9000:9000 aidojo-nsg-coordinator:1.0`
+
 ## Components of the NetSecGame Environment
 The architecture of the environment can be seen [here](docs/Architecture.md).
 The NetSecGame environment has several components in the following files:
