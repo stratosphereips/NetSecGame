@@ -68,7 +68,6 @@ class CYSTCoordinator(GameCoordinator):
         # load task config file
         self.logger.info(f"Loading task config file: {self._task_config_file}")
         self.task_config = ConfigParser(self._task_config_file)
-        self._cyst_objects = self.task_config.get_scenario()
         self._CONFIG_FILE_HASH = get_file_hash(self._task_config_file)
     
     async def register_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
