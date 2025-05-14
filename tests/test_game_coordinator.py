@@ -46,7 +46,7 @@ def test_game_coordinator_initialization():
     assert isinstance(coordinator.agents, dict), "agents should be a dictionary."
     assert isinstance(coordinator._agent_steps, dict), "agent_steps should be a dictionary."
     assert isinstance(coordinator._reset_requests, dict), "reset_requests should be a dictionary."
-    assert isinstance(coordinator._agent_status, dict), "agent_status should be a dictionary."
+    assert isinstance(coordinator._agents_status, dict), "agent_status should be a dictionary."
     assert isinstance(coordinator._agent_observations, dict), "agent_observations should be a dictionary."
     assert isinstance(coordinator._agent_rewards, dict), "agent_rewards should be a dictionary."
     assert isinstance(coordinator._agent_trajectories, dict), "agent_trajectories should be a dictionary."
