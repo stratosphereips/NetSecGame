@@ -138,6 +138,8 @@ class GameCoordinator:
         self._agent_states = {}
         # last action played by agent (Action)
         self._agent_last_action = {}
+        # False positives per agent (due to added blocks)
+        self._agent_false_positives = {}
         # agent status dict {agent_addr: int}
         self._agent_rewards = {}
         # trajectories per agent_addr
@@ -669,6 +671,7 @@ class GameCoordinator:
                     self._reset_requests[agent] = False
                     self._agent_rewards[agent] = 0
                     self._agent_steps[agent] = 0
+                    self._agent_false_positives[agent] = 0
                     if self.agents[agent][1].lower() == "attacker":
                         self._agent_status[agent] = AgentStatus.PlayingWithTimeout
                     else:
@@ -692,6 +695,7 @@ class GameCoordinator:
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = agent_current_state
         self._agent_rewards[agent_addr] = 0
+        self._agent_false_positives[agent_addr] = 0
         if agent_role.lower() == "attacker":
             self._agent_status[agent_addr] = AgentStatus.PlayingWithTimeout
         else:
@@ -726,6 +730,7 @@ class GameCoordinator:
                 agent_info["state"] = self._agent_states.pop(agent_addr)
                 agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
                 agent_info["agent_status"] = self._agent_status.pop(agent_addr)
+                agent_info["false_positives"] = self._agent_false_positives.pop(agent_addr)
                 async with self._reset_lock:
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
                     # check if this agent was not preventing reset 
