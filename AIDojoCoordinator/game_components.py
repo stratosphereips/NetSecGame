@@ -443,6 +443,7 @@ class GameStatus(enum.Enum):
 @enum.unique
 class AgentStatus(enum.Enum):
     Playing = "Playing"
+    # PlayingWithTimeout means an agent that has a timeout set and can not play forever. This is typical for attackers mostly. It also implies 'Playing'
     PlayingWithTimeout = "PlayingWithTimeout"
     TimeoutReached = "TimeoutReached"
     ResetRequested = "ResetRequested"
