@@ -333,7 +333,7 @@ class GameCoordinator:
         else:
             self._global_defender = None
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
-        self._rewards = self.task_config.get_rewards(["step", "success", "fail"])
+        self._rewards = self.task_config.get_rewards(["step", "success", "fail", "false_positive"])
         self.logger.info(f"Rewards set to:{self._rewards}")
         self._min_required_players = self.task_config.get_required_num_players()
         self.logger.info(f"Min player requirement set to:{self._min_required_players}")
@@ -632,7 +632,8 @@ class GameCoordinator:
                     else:
                         self._agent_rewards[agent] += self._rewards["fail"]
                         self._agent_status[agent] = AgentStatus.Fail
-                    # TODO Add penalty for False positives 
+                    # dicrease the reward for false positives
+                    self._agent_rewards[agent] -= self._agent_false_positives[agent] * self._rewards["false_positive"]
             # clear the episode end event
             self._episode_end_event.clear()
             # notify all waiting agents
