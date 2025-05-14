@@ -807,6 +807,17 @@ class GameCoordinator:
                 timeout_reached = True
         return timeout_reached
 
+    def add_false_positive(self, agent:tuple)->None:
+        """
+        Method for adding false positive to the agent.
+        """
+        self.logger.debug(f"Adding false positive to {agent}")
+        if agent in self._agent_false_positives:
+            self._agent_false_positives[agent] += 1
+        else:
+            self._agent_false_positives[agent] = 1
+        self.logger.debug(f"False positives for {agent}: {self._agent_false_positives[agent]}")
+
     def _update_agent_status(self, agent:tuple)->AgentStatus:
         """
         Update the status of an agent based on reaching the goal, timeout or detection.
