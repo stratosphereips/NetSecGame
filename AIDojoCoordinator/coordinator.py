@@ -129,7 +129,7 @@ class GameCoordinator:
         self._agent_steps = {}
         # reset request per agent_addr (bool)
         self._reset_requests = {}
-        self._agent_status = {}
+        self._agents_status = {}
         self._episode_ends = {}
         self._agent_observations = {}
         # starting per agent_addr (dict)
@@ -334,7 +334,9 @@ class GameCoordinator:
         self._rewards = self.task_config.get_rewards(["step", "success", "fail"])
         self.logger.info(f"Rewards set to:{self._rewards}")
         self._min_required_players = self.task_config.get_required_num_players()
+        self._min_required_active_players = self.task_config.get_required_num_active_players()
         self.logger.info(f"Min player requirement set to:{self._min_required_players}")
+        self.logger.info(f"Min active player requirement set to:{self._min_required_active_players}")
         # start server for agent communication
         self._spawn_task(self.start_tcp_server)
 
@@ -416,12 +418,20 @@ class GameCoordinator:
                             observation = self._initialize_new_player(agent_addr, new_agent_game_state)
                             self._agent_observations[agent_addr] = observation
                             #if len(self.agents) == self._min_required_players:
-                            if sum(1 for v in self._agent_status.values() if v == AgentStatus.PlayingWithTimeout) >= self._min_required_players:
-                                # set the event so the episde can start
+                            # Count the number of agents currently playing with a timeout
+                            active_players = 0
+                            for status in self._agents_status.values():
+                                if status == AgentStatus.PlayingWithTimeout:
+                                    active_players += 1
+                            
+                            # Check if the number of active players meets the minimum required to start the episode
+                            if active_players >= self._min_required_active_players:
+                                # Signal that the episode can start
                                 self._episode_start_event.set()
                                 self.logger.info("Enough players joined. Starting the episode.")
                             else:
-                                self.logger.debug("Waiting for other players to join.")
+                                # Wait for more players to join
+                                self.logger.debug(f"Waiting for more players to join. Current active players: {active_players}.")
                         # wait for required number of players
                         await self._episode_start_event.wait()
                         output_message_dict = {
@@ -536,7 +546,7 @@ class GameCoordinator:
             # agent can't play any more actions in the game
             current_observation = self._agent_observations[agent_addr]
             reward = self._agent_rewards[agent_addr]
-            end_reason = str(self._agent_status[agent_addr])
+            end_reason = str(self._agents_status[agent_addr])
             new_observation = Observation(
                 current_observation.state,
                 reward=reward,
@@ -560,7 +570,7 @@ class GameCoordinator:
                 self._agent_states[agent_addr] = new_state
                 
                 # store new state of the agent using the new state
-                self._agent_status[agent_addr] = self._update_agent_status(agent_addr)
+                self._agents_status[agent_addr] = self._update_agent_status(agent_addr)
                 
                 # add reward for step (other rewards are added at the end of the episode)
                 self._agent_rewards[agent_addr] = self._rewards["step"]
@@ -581,8 +591,8 @@ class GameCoordinator:
                 self._add_step_to_trajectory(agent_addr, action, self._agent_rewards[agent_addr], new_state,end_reason=None)
             # add information to 'info' field if needed
             info = {}
-            if self._agent_status[agent_addr] not in [AgentStatus.Playing, AgentStatus.PlayingWithTimeout]:
-                info["end_reason"] = str(self._agent_status[agent_addr])
+            if self._agents_status[agent_addr] not in [AgentStatus.Playing, AgentStatus.PlayingWithTimeout]:
+                info["end_reason"] = str(self._agents_status[agent_addr])
             new_observation = Observation(self._agent_states[agent_addr], self._agent_rewards[agent_addr], self._episode_ends[agent_addr], info=info)
             self._agent_observations[agent_addr] = new_observation
             output_message_dict = {
@@ -615,7 +625,7 @@ class GameCoordinator:
                 # award attackers
                 for agent in attackers:
                     self.logger.debug(f"Processing reward for agent {agent}")
-                    if self._agent_status[agent] is AgentStatus.Success:
+                    if self._agents_status[agent] is AgentStatus.Success:
                         self._agent_rewards[agent] += self._rewards["success"]
                         successful_attack = True
                     else:
@@ -626,10 +636,10 @@ class GameCoordinator:
                     self.logger.debug(f"Processing reward for agent {agent}")
                     if not successful_attack:
                         self._agent_rewards[agent] += self._rewards["success"]
-                        self._agent_status[agent] = AgentStatus.Success
+                        self._agents_status[agent] = AgentStatus.Success
                     else:
                         self._agent_rewards[agent] += self._rewards["fail"]
-                        self._agent_status[agent] = AgentStatus.Fail
+                        self._agents_status[agent] = AgentStatus.Fail
                     # TODO Add penalty for False positives 
             # clear the episode end event
             self._episode_end_event.clear()
@@ -670,9 +680,9 @@ class GameCoordinator:
                     self._agent_rewards[agent] = 0
                     self._agent_steps[agent] = 0
                     if self.agents[agent][1].lower() == "attacker":
-                        self._agent_status[agent] = AgentStatus.PlayingWithTimeout
+                        self._agents_status[agent] = AgentStatus.PlayingWithTimeout
                     else:
-                        self._agent_status[agent] = AgentStatus.Playing
+                        self._agents_status[agent] = AgentStatus.Playing
             self._reset_event.clear()  
             # notify all waiting agents
             async with self._reset_done_condition:
@@ -693,9 +703,9 @@ class GameCoordinator:
         self._agent_states[agent_addr] = agent_current_state
         self._agent_rewards[agent_addr] = 0
         if agent_role.lower() == "attacker":
-            self._agent_status[agent_addr] = AgentStatus.PlayingWithTimeout
+            self._agents_status[agent_addr] = AgentStatus.PlayingWithTimeout
         else:
-            self._agent_status[agent_addr] = AgentStatus.Playing
+            self._agents_status[agent_addr] = AgentStatus.Playing
         self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
         return Observation(self._agent_states[agent_addr], 0, False, {})
@@ -725,7 +735,7 @@ class GameCoordinator:
             if agent_addr in self.agents:
                 agent_info["state"] = self._agent_states.pop(agent_addr)
                 agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
-                agent_info["agent_status"] = self._agent_status.pop(agent_addr)
+                agent_info["agent_status"] = self._agents_status.pop(agent_addr)
                 async with self._reset_lock:
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
                     # check if this agent was not preventing reset 
@@ -806,7 +816,7 @@ class GameCoordinator:
         Update the status of an agent based on reaching the goal, timeout or detection.
         """
         # read current status of the agent
-        next_status = self._agent_status[agent]
+        next_status = self._agents_status[agent]
         if self.goal_check(agent):
             # Goal has been reached
             self.logger.info(f"Agent {agent}{self.agents[agent]} reached the goal!")
@@ -823,13 +833,13 @@ class GameCoordinator:
 
     def _update_agent_episode_end(self, agent:tuple)->bool:
         episode_end = False
-        if  self._agent_status[agent] in [AgentStatus.Success, AgentStatus.Fail, AgentStatus.TimeoutReached]:
+        if  self._agents_status[agent] in [AgentStatus.Success, AgentStatus.Fail, AgentStatus.TimeoutReached]:
             # agent reached goal, timeout or was detected
             episode_end = True
         # check if there are any agents playing with timeout
         elif all(
                 status != AgentStatus.PlayingWithTimeout
-                for status in self._agent_status.values()
+                for status in self._agents_status.values()
             ):
             # all attackers have finised - terminate episode
             self.logger.info(f"Stopping episode for {agent} because the is no ACTIVE agent playing.")
