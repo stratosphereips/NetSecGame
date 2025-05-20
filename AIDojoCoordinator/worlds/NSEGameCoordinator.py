@@ -596,6 +596,7 @@ class NSGCoordinator(GameCoordinator):
                         new_ips.add(ip)
                         self.update_log_file(next_data,action, ip)
                     else:
+                        self._record_false_positive(action, current_state, agent_id)
                         self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {ip} blocked by FW. Skipping")
             next_known_h = next_known_h.union(new_ips)
         else:
@@ -623,6 +624,7 @@ class NSGCoordinator(GameCoordinator):
                 # update logs
                 self.update_log_file(next_data,action, action.parameters['target_host'])
             else:
+                self._record_false_positive(action, current_state, agent_id)
                 self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
@@ -653,6 +655,7 @@ class NSGCoordinator(GameCoordinator):
                     else:
                         next_blocked[action.parameters["target_host"]] = next_blocked[action.parameters["target_host"]].union(new_blocks)
             else:
+                self._record_false_positive(action, current, agent_id)
                 self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
@@ -697,6 +700,7 @@ class NSGCoordinator(GameCoordinator):
                     else:
                         self.logger.debug("\t\t\tCan not exfiltrate. Agent did not find this data yet.")
                 else:
+                    self._record_false_positive(action, current_state, agent_id)
                     self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
             else:
                 self.logger.debug("\t\t\tCan not exfiltrate. Source host is not controlled.")
@@ -736,6 +740,7 @@ class NSGCoordinator(GameCoordinator):
                     # update logs
                     self.update_log_file(next_data,action, action.parameters['target_host'])
                 else:
+                    self._record_false_positive(action, current_state, agent_id)
                     self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
             else:
                 self.logger.debug("\t\t\tCan not exploit. Target host does not exist.")
@@ -767,6 +772,14 @@ class NSGCoordinator(GameCoordinator):
                 if self._firewall_check(action.parameters["source_host"], action.parameters["target_host"]):
                     if action.parameters["target_host"] != action.parameters['blocked_host']:
                         self.logger.info(f"\t\tBlockConnection {action.parameters['target_host']} <-> {action.parameters['blocked_host']}")
+                        # record which agent is adding the blocking rule
+                        if (action.parameters["target_host"], action.parameters["blocked_host"]) not in self._agent_fw_rules:
+                            self._agent_fw_rules[(action.parameters["target_host"], action.parameters["blocked_host"])] = set()
+                        self._agent_fw_rules[(action.parameters["target_host"], action.parameters["blocked_host"])].add(agent_id)
+                        # both directions are blocked
+                        if (action.parameters["blocked_host"], action.parameters["target_host"]) not in self._agent_fw_rules:
+                            self._agent_fw_rules[(action.parameters["blocked_host"], action.parameters["target_host"])] = set()
+                        self._agent_fw_rules[(action.parameters["blocked_host"], action.parameters["target_host"])].add(agent_id)
                         try:
                             #remove connection target_host -> blocked_host
                             self._firewall[action.parameters["target_host"]].discard(action.parameters["blocked_host"])
@@ -800,6 +813,7 @@ class NSGCoordinator(GameCoordinator):
                     # update logs
                     self.update_log_file(next_data,action, action.parameters['target_host'])
                 else:
+                    self._record_false_positive(action, current_state, agent_id)
                     self.logger.debug(f"\t\t\t Connection from '{action.parameters['source_host']}->'{action.parameters['target_host']} is blocked blocked by FW")
             else:
                 self.logger.debug(f"\t\t\t Invalid target_host:'{action.parameters['target_host']}'")
