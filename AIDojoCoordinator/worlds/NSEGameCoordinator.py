@@ -547,6 +547,22 @@ class NSGCoordinator(GameCoordinator):
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
         
+    def record_false_positive(self, action:Action, current_state:GameState, agent_id:tuple)->bool:
+        # only record false positive if the agent is benign
+        if self.is_agent_benign(agent_id):
+            # find agent(s) that created the rule
+            src_host = action.parameters["source_host"]
+            dst_host = action.parameters["target_host"]
+            if (src_host, dst_host) in self._agent_fw_rules:
+                # check if this connection is actively blocked
+                for author_agent in self._agent_fw_rules[(src_host, dst_host)]:
+                    self.logger.info(f"Adding false positive for blocking {src_host} -> {dst_host} by {author_agent}")
+                    if author_agent not in self._agent_false_positives:
+                        self._agent_false_positives[author_agent] = 0
+                    self._agent_false_positives[author_agent] += 1
+            else:
+                self.logger.debug(f"False positive for blocking {src_host} -> {dst_host} caused by the system configuration.")
+
     def _state_parts_deep_copy(self, current:GameState)->tuple:
         next_nets = copy.deepcopy(current.known_networks)
         next_known_h = copy.deepcopy(current.known_hosts)
