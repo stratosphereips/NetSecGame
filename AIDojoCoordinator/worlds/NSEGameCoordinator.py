@@ -29,7 +29,6 @@ class NSGCoordinator(GameCoordinator):
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         self._fw_blocks = {}
         self._agent_fw_rules = {}
-        self._fw_block_false_positives = {}
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
@@ -882,7 +881,6 @@ class NSGCoordinator(GameCoordinator):
         self._firewall = copy.deepcopy(self._firewall_original)
         self._fw_blocks = {}
         self._agent_fw_rules = {}
-        self._agent_false_positives = {}
         return True
 
 if __name__ == "__main__":

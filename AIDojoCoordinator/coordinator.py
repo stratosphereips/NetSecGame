@@ -144,6 +144,8 @@ class GameCoordinator:
         self._agent_rewards = {}
         # trajectories per agent_addr
         self._agent_trajectories = {}
+        # false_positives per agent_addr
+        self._agent_false_positives = {}
     
     def _spawn_task(self, coroutine, *args, **kwargs)->asyncio.Task:
         "Helper function to make sure all tasks are registered for proper termination"
@@ -633,6 +635,7 @@ class GameCoordinator:
                         self._agent_rewards[agent] += self._rewards["fail"]
                         self._agent_status[agent] = AgentStatus.Fail
                     # dicrease the reward for false positives
+                    self.logger.debug(f"Processing false positives for agent {agent}: {self._agent_false_positives[agent]}")
                     self._agent_rewards[agent] -= self._agent_false_positives[agent] * self._rewards["false_positive"]
             # clear the episode end event
             self._episode_end_event.clear()
@@ -676,7 +679,7 @@ class GameCoordinator:
                     if self.agents[agent][1].lower() == "attacker":
                         self._agent_status[agent] = AgentStatus.PlayingWithTimeout
                     else:
-                        self._agent_status[agent] = AgentStatus.Playing
+                        self._agent_status[agent] = AgentStatus.PlayingWithTimeout
             self._reset_event.clear()  
             # notify all waiting agents
             async with self._reset_done_condition:
