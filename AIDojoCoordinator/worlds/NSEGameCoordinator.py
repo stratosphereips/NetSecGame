@@ -28,6 +28,8 @@ class NSGCoordinator(GameCoordinator):
         self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         self._fw_blocks = {}
+        self._agent_fw_rules = {}
+        self._fw_block_false_positives = {}
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
