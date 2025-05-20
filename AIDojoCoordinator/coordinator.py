@@ -679,7 +679,7 @@ class GameCoordinator:
                     if self.agents[agent][1].lower() == "attacker":
                         self._agent_status[agent] = AgentStatus.PlayingWithTimeout
                     else:
-                        self._agent_status[agent] = AgentStatus.PlayingWithTimeout
+                        self._agent_status[agent] = AgentStatus.Playing
             self._reset_event.clear()  
             # notify all waiting agents
             async with self._reset_done_condition:
