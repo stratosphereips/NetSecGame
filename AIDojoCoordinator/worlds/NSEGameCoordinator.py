@@ -518,7 +518,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug("Data content not found because target IP does not exists.")
         return content
     
-    def _execute_action(self, current_state:GameState, action:Action)-> GameState:
+    def _execute_action(self, current_state:GameState, action:Action, agent_id:tuple)-> GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
@@ -532,17 +532,17 @@ class NSGCoordinator(GameCoordinator):
         next_state = None
         match action.type:
             case ActionType.ScanNetwork:
-                next_state = self._execute_scan_network_action(current_state, action)
+                next_state = self._execute_scan_network_action(current_state, action, agent_id)
             case ActionType.FindServices:   
-                next_state = self._execute_find_services_action(current_state, action)
+                next_state = self._execute_find_services_action(current_state, action, agent_id)
             case ActionType.FindData:
-                next_state = self._execute_find_data_action(current_state, action)
+                next_state = self._execute_find_data_action(current_state, action, agent_id)
             case ActionType.ExploitService:
-                next_state = self._execute_exploit_service_action(current_state, action)
+                next_state = self._execute_exploit_service_action(current_state, action, agent_id)
             case ActionType.ExfiltrateData:
-                next_state = self._execute_exfiltrate_data_action(current_state, action)
+                next_state = self._execute_exfiltrate_data_action(current_state, action, agent_id)
             case ActionType.BlockIP:
-                next_state = self._execute_block_ip_action(current_state, action)
+                next_state = self._execute_block_ip_action(current_state, action, agent_id)
             case _:
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
@@ -564,7 +564,7 @@ class NSGCoordinator(GameCoordinator):
             connection_allowed = False
         return connection_allowed
 
-    def _execute_scan_network_action(self, current_state:GameState, action:Action)->GameState:
+    def _execute_scan_network_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the ScanNetwork action in the environment
         """
@@ -586,7 +586,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _execute_find_services_action(self, current_state:GameState, action:Action)->GameState:
+    def _execute_find_services_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the FindServices action in the environment
         """
@@ -612,7 +612,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_find_data_action(self, current:GameState, action:Action)->GameState:
+    def _execute_find_data_action(self, current:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the FindData action in the environment
         """
@@ -642,7 +642,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_exfiltrate_data_action(self, current_state:GameState, action:Action)->GameState:
+    def _execute_exfiltrate_data_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the ExfiltrateData action in the environment
         """
@@ -688,7 +688,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug("\t\t\tCan not exfiltrate. Target host is not controlled.")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_exploit_service_action(self, current_state:GameState, action:Action)->GameState:
+    def _execute_exploit_service_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the ExploitService action in the environment
         """
@@ -727,7 +727,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_block_ip_action(self, current_state:GameState, action:Action)->GameState:
+    def _execute_block_ip_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the BlockIP action 
         - The action has BlockIP("target_host": IP object, "source_host": IP object, "blocked_host": IP object)
@@ -829,7 +829,7 @@ class NSGCoordinator(GameCoordinator):
         return True
         
     async def step(self, agent_id, agent_state, action)->GameState:
-        return self._execute_action(agent_state, action)
+        return self._execute_action(agent_state, action, agent_id)
     
     async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
        game_state = self._create_state_from_view(agent_initial_view)
