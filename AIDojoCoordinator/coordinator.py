@@ -887,3 +887,11 @@ class GameCoordinator:
             with jsonlines.open(filename, "a") as writer:
                 writer.write(self._agent_trajectories[agent_addr])
             self.logger.info(f"Trajectory of {agent_addr} strored in {filename}")
+    
+    def is_agent_benign(self, agent_addr:tuple)->bool:
+        """
+        Check if the agent is benign (defender, normal)
+        """
+        if agent_addr not in self.agents:
+            return False
+        return self.agents[agent_addr][1].lower() in ["defender", "benign"]
