@@ -848,8 +848,11 @@ class NSGCoordinator(GameCoordinator):
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
-        self._firewall = copy.deepcopy(self._firewall)
+        # reset all firewall related data structure
+        self._firewall = copy.deepcopy(self._firewall_original)
         self._fw_blocks = {}
+        self._agent_fw_rules = {}
+        self._agent_false_positives = {}
         return True
 
 if __name__ == "__main__":
