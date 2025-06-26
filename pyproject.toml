@@ -6,6 +6,10 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 exclude = ["tests*"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
 [project]
 name = "AIDojoGameCoordinator"
 version = "0.1.0"
