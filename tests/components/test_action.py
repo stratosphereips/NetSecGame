@@ -3,6 +3,36 @@
 import json
 from AIDojoCoordinator.game_components import Action, ActionType, IP, Network, Data, Service, AgentInfo
 
+class TestComponentActionType:
+    """
+    Test cases for the ActionType enum
+    """
+    def test_action_type_str(self):
+        """
+        Test that the string representation of the ActionType enum is correct
+        """
+        assert str(ActionType.FindData) == "ActionType.FindData"
+        assert str(ActionType.FindServices) == "ActionType.FindServices"
+        assert str(ActionType.ScanNetwork) == "ActionType.ScanNetwork"
+        assert str(ActionType.ExploitService) == "ActionType.ExploitService"
+        assert str(ActionType.ExfiltrateData) == "ActionType.ExfiltrateData"
+        assert str(ActionType.JoinGame) == "ActionType.JoinGame"
+        assert str(ActionType.ResetGame) == "ActionType.ResetGame"
+        assert str(ActionType.QuitGame) == "ActionType.QuitGame"
+    
+    def test_action_type_hash(self):
+        """
+        Test that the hash of the ActionType enum is correct
+        """
+        assert hash(ActionType.FindData) == hash("FindData")
+        assert hash(ActionType.FindServices) == hash("FindServices")
+        assert hash(ActionType.ScanNetwork) == hash("ScanNetwork")
+        assert hash(ActionType.ExploitService) == hash("ExploitService")
+        assert hash(ActionType.ExfiltrateData) == hash("ExfiltrateData")
+        assert hash(ActionType.JoinGame) == hash("JoinGame")
+        assert hash(ActionType.ResetGame) == hash("ResetGame")
+        assert hash(ActionType.QuitGame) == hash("QuitGame")
+
 class TestComponentAction:
     """
     Test cases for the Action class
