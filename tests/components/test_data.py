@@ -10,8 +10,8 @@ class TestComponentData:
         """
         Test that the data object is created with ONLY required fields (using default for the rest)
         """
-        data = Data(owner="Ondra", id="Password")
-        assert data.owner == "Ondra"
+        data = Data(owner="User", id="Password")
+        assert data.owner == "User"
         assert data.id == "Password"
         assert data.type == ""
         assert data.size == 0
@@ -20,8 +20,8 @@ class TestComponentData:
         """
         Test that the data object is created with ALL fields (using default for the rest)
         """
-        data = Data(owner="Ondra", id="Password",size=42, type="txt")
-        assert data.owner == "Ondra"
+        data = Data(owner="User", id="Password",size=42, type="txt")
+        assert data.owner == "User"
         assert data.id == "Password"
         assert data.type == "txt"
         assert data.size == 42
@@ -30,11 +30,11 @@ class TestComponentData:
         """
         Test that two data objects with the same required parameters are equal
         """
-        data = Data("Ondra", "Password")
-        data2 = Data("Ondra", "Password")
+        data = Data("User", "Password")
+        data2 = Data("User", "Password")
         # test equality with all fields used
-        data3 = Data(owner="Ondra", id="Password",size=42, type="txt")
-        data4 = Data(owner="Ondra", id="Password", size=42, type="txt")
+        data3 = Data(owner="User", id="Password",size=42, type="txt")
+        data4 = Data(owner="User", id="Password", size=42, type="txt")
         assert data == data2
         assert data3 == data4
 
@@ -42,27 +42,37 @@ class TestComponentData:
         """
         Test that two data objects with different required parameters are NOT equal
         """
-        data = Data("Ondra", "Password")
+        data = Data("User", "Password")
         data2 = Data("ChuckNorris", "Password")
-        data3 = Data(owner="Ondra", id="Password",size=42, type="txt")
-        data4 = Data(owner="Ondra", id="DifferentPassword",size=41, type="rsa")
+        data3 = Data(owner="User", id="Password",size=42, type="txt")
+        data4 = Data(owner="User", id="DifferentPassword",size=41, type="rsa")
         assert data != data2
         assert data3 != data4
     
     def test_data_hash_equal(self):
-        data = Data("Ondra", "Password")
-        data2 = Data("Ondra", "Password")
+        data = Data("User", "Password")
+        data2 = Data("User", "Password")
         # test equality with all fields used
-        data3 = Data(owner="Ondra", id="Password",size=42, type="txt")
-        data4 = Data(owner="Ondra", id="Password",size=42, type="txt")
+        data3 = Data(owner="User", id="Password",size=42, type="txt")
+        data4 = Data(owner="User", id="Password",size=42, type="txt")
         assert hash(data) == hash(data2)
         assert hash(data3) == hash(data4)
 
     def test_data_hash_not_equal(self):
-        data = Data("Ondra", "Password")
-        data2 = Data("Ondra", "NewPassword")
+        data = Data("User", "Password")
+        data2 = Data("User", "NewPassword")
         # test equality with all fields used
-        data3 = Data(owner="Ondra", id="Password",size=42, type="txt")
-        data4 = Data(owner="Ondra", id="Password",size=41, type="rsa")
+        data3 = Data(owner="User", id="Password",size=42, type="txt")
+        data4 = Data(owner="User", id="Password",size=41, type="rsa")
         assert hash(data) != hash(data2)
         assert hash(data3) != hash(data4)
+
+    def test_data_from_dict(self):
+        d = {"owner": "Alice", "id": "Secret", "size": 10, "type": "txt", "content": "abc"}
+        data = Data.from_dict(d)
+        assert isinstance(data, Data)
+        assert data.owner == "Alice"
+        assert data.id == "Secret"
+        assert data.size == 10
+        assert data.type == "txt"
+        assert data.content == "abc"
