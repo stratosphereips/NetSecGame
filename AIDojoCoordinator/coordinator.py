@@ -47,46 +47,48 @@ class AgentServer(asyncio.Protocol):
         if addr not in self.answers_queues:
             self.answers_queues[addr] = asyncio.Queue(maxsize=2)
             self.logger.info(f"Created queue for agent {addr}")
+            try:
+                while True:
+                    # Step 1: Read data from the agent
+                    data = await reader.read(ProtocolConfig.BUFFER_SIZE)
+                    if not data:
+                        self.logger.info(f"Agent {addr} disconnected.")
+                        quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
+                        await self.actions_queue.put((addr, quit_message))
+                        break
 
-        try:
-            while True:
-                # Step 1: Read data from the agent
-                data = await reader.read(ProtocolConfig.BUFFER_SIZE)
-                if not data:
-                    self.logger.info(f"Agent {addr} disconnected.")
-                    quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
-                    await self.actions_queue.put((addr, quit_message))
-                    break
+                    raw_message = data.decode().strip()
+                    self.logger.debug(f"Handler received from {addr}: {raw_message}")
 
-                raw_message = data.decode().strip()
-                self.logger.debug(f"Handler received from {addr}: {raw_message}")
+                    # Step 2: Forward the message to the Coordinator
+                    await self.actions_queue.put((addr, raw_message))
+                    # await asyncio.sleep(0)w
+                    # Step 3: Get a matching response from the answers queue
+                    response_queue = self.answers_queues[addr]
+                    response = await response_queue.get()
+                    self.logger.info(f"Sending response to agent {addr}: {response}")
 
-                # Step 2: Forward the message to the Coordinator
-                await self.actions_queue.put((addr, raw_message))
-                # await asyncio.sleep(0)w
-                # Step 3: Get a matching response from the answers queue
-                response_queue = self.answers_queues[addr]
-                response = await response_queue.get()
-                self.logger.info(f"Sending response to agent {addr}: {response}")
-
-                # Step 4: Send the response to the agent
-                response = str(response).encode() + ProtocolConfig.END_OF_MESSAGE
-                writer.write(response)
-                await writer.drain()
-        except asyncio.CancelledError:
-            self.logger.debug("Terminating by KeyboardInterrupt")
-            raise
-        finally:
-            # Decrement the count of current connections
-            self.current_connections -= 1
-            if addr in self.answers_queues:
-                self.answers_queues.pop(addr)
-                self.logger.info(f"Removed queue for agent {addr}")
-            else:
-                self.logger.warning(f"Queue for agent {addr} not found during cleanup.")
+                    # Step 4: Send the response to the agent
+                    response = str(response).encode() + ProtocolConfig.END_OF_MESSAGE
+                    writer.write(response)
+                    await writer.drain()
+            except asyncio.CancelledError:
+                self.logger.debug("Terminating by KeyboardInterrupt")
+                raise
+            finally:
+                # Decrement the count of current connections
+                self.current_connections -= 1
+                if addr in self.answers_queues:
+                    self.answers_queues.pop(addr)
+                    self.logger.info(f"Removed queue for agent {addr}")
+                else:
+                    self.logger.warning(f"Queue for agent {addr} not found during cleanup.")
+                writer.close()
+                return
+        else:
+            self.logger.warning(f"Queue for agent {addr} already exists. Closing connection.")
             writer.close()
             return
-            
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
 
