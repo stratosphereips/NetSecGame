@@ -178,3 +178,106 @@ async def test_handles_missing_queue_on_cleanup_gracefully(agent_server, mock_re
 # -----------------------
 # Data Exchange
 # -----------------------
+
+@pytest.mark.asyncio
+async def test_agent_disconnect_inserts_quit_message(agent_server, mock_writer):
+    """Test that when an agent disconnects, the server inserts a QuitGame message into the actions queue."""
+    peername = mock_writer.get_extra_info.return_value
+
+    # Prepare a reader that returns b'' (disconnect) immediately
+    reader = AsyncMock()
+    reader.read = AsyncMock(return_value=b'')
+
+    # Patch the actions_queue to monitor put calls
+    agent_server.actions_queue = AsyncMock()
+    agent_server.answers_queues = {}
+
+    await agent_server.handle_new_agent(reader, mock_writer)
+
+    # Check that a QuitGame action was put into the actions_queue
+    assert agent_server.actions_queue.put.await_count == 1
+    args = agent_server.actions_queue.put.await_args[0][0]
+    addr, quit_message = args
+    assert addr == peername
+    action = Action.from_json(quit_message)
+    assert action.type == ActionType.QuitGame
+    
+@pytest.mark.asyncio
+async def test_agent_message_is_placed_in_queue(agent_server, mock_writer):
+    """Test that when the server receives a message from the agent, it is placed in the actions queue."""
+    peername = mock_writer.get_extra_info.return_value
+
+    # Prepare a reader that returns a valid Action JSON, then disconnects
+    action = Action(ActionType.FindServices, parameters={"source_host": "10.0.0.1", "target_host": "10.0.0.2"}).to_json()
+    reader = AsyncMock()
+    reader.read = AsyncMock(side_effect=[action.encode(), b''])
+
+    # Patch the actions_queue to monitor put calls
+    agent_server.actions_queue = AsyncMock()
+    agent_server.answers_queues = {}
+
+    # Start the handler as a background task
+    handler_task = asyncio.create_task(agent_server.handle_new_agent(reader, mock_writer))
+
+    # Wait for the queue to be created by the handler
+    for _ in range(100):
+        await asyncio.sleep(0.01)
+        if peername in agent_server.answers_queues:
+            break
+    else:
+        handler_task.cancel()
+        pytest.fail("answers_queues was not created in time")
+
+    # Put a dummy response so the handler can proceed
+    await agent_server.answers_queues[peername].put("dummy-response")
+
+    await handler_task
+
+    # Check that the action was put into the actions_queue
+    assert agent_server.actions_queue.put.await_count >= 1
+    # The first put should be the agent's message
+    addr, msg = agent_server.actions_queue.put.await_args_list[0][0][0]
+    assert addr == peername
+    # The message should be the same as sent
+    assert msg == action
+
+@pytest.mark.asyncio
+async def test_answer_queue_response_is_sent_to_agent(agent_server, mock_writer):
+    """Test that if something is in the answer queue, it is sent to the agent."""
+    peername = mock_writer.get_extra_info.return_value
+
+    # Prepare a reader that returns a valid Action JSON, then disconnects
+    action = Action(ActionType.FindServices, parameters={"source_host": "10.0.0.1", "target_host": "10.0.0.2"}).to_json()
+    reader = AsyncMock()
+    reader.read = AsyncMock(side_effect=[action.encode(), b''])
+
+    # Patch the actions_queue to monitor put calls
+    agent_server.actions_queue = AsyncMock()
+    agent_server.answers_queues = {}
+
+    # Patch writer.write and writer.drain to monitor calls
+    mock_writer.write = MagicMock()
+    mock_writer.drain = AsyncMock()
+
+    # Start the handler as a background task
+    handler_task = asyncio.create_task(agent_server.handle_new_agent(reader, mock_writer))
+
+    # Wait for the queue to be created by the handler
+    for _ in range(100):
+        await asyncio.sleep(0.01)
+        if peername in agent_server.answers_queues:
+            break
+    else:
+        handler_task.cancel()
+        pytest.fail("answers_queues was not created in time")
+
+    # Put a response in the answer queue
+    response = '{"response": "ok"}'
+    await agent_server.answers_queues[peername].put(response)
+    assert agent_server.answers_queues[peername].qsize() == 1
+    # Wait for the handler to process the response
+    await handler_task
+    # Check that the response was sent to the agent
+    expected_bytes = response.encode() + getattr(ProtocolConfig, "END_OF_MESSAGE", b'EOF')
+    mock_writer.write.assert_any_call(expected_bytes)
+    mock_writer.drain.assert_awaited()
