@@ -99,15 +99,15 @@ class NSGCoordinator(GameCoordinator):
             for controlled_host in controlled_hosts:
                 for net in self._get_networks_from_host(controlled_host): #TODO
                     net_obj = netaddr.IPNetwork(str(net))
-                    if net_obj.ip.is_ipv4_private_use(): #TODO
+                    if net_obj.ip.is_private(): #TODO
                         known_networks.add(net)
                         net_obj.value += 256
-                        if net_obj.ip.is_ipv4_private_use():
+                        if net_obj.ip.is_private():
                             ip = Network(str(net_obj.ip), net_obj.prefixlen)
                             self.logger.debug(f'\tAdding {ip} to agent')
                             known_networks.add(ip)
                         net_obj.value -= 2*256
-                        if net_obj.ip.is_ipv4_private_use():
+                        if net_obj.ip.is_private():
                             ip = Network(str(net_obj.ip), net_obj.prefixlen)
                             self.logger.debug(f'\tAdding {ip} to agent')
                             known_networks.add(ip)
@@ -234,7 +234,7 @@ class NSGCoordinator(GameCoordinator):
                 # LOCAL NETWORKS
                 for net, ips in self._networks.items():
                     # IF net is local, allow connection between all nodes in it
-                    if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+                    if netaddr.IPNetwork(str(net)).ip.is_private():
                         for src in ips:
                             for dst in ips:
                                 firewall[src].add(dst)
@@ -242,9 +242,9 @@ class NSGCoordinator(GameCoordinator):
                 # LOCAL TO INTERNET
                 for net, ips in self._networks.items():
                     # IF net is local, allow connection between all nodes in it
-                    if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+                    if netaddr.IPNetwork(str(net)).ip.is_private():
                         for public_net, public_ips in self._networks.items():
-                            if not netaddr.IPNetwork(str(public_net)).ip.is_ipv4_private_use():
+                            if not netaddr.IPNetwork(str(public_net)).ip.is_private():
                                 for src in ips:
                                     for dst in public_ips:
                                         firewall[src].add(dst)
@@ -311,7 +311,7 @@ class NSGCoordinator(GameCoordinator):
         # generate mapping for networks
         private_nets = []
         for net in self._networks.keys():
-            if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+            if netaddr.IPNetwork(str(net)).ip.is_private():
                 private_nets.append(net)
             else:
                 mapping_nets[net] = Network(fake.ipv4_public(), net.mask)
@@ -335,7 +335,7 @@ class NSGCoordinator(GameCoordinator):
                     # find the new mapping 
                     new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
                     # evaluate if its still a private network
-                    is_private_net_checks.append(new_net_addr.is_ipv4_private_use())
+                    is_private_net_checks.append(new_net_addr.is_private())
                     # store the new mapping
                     mapping_nets[private_nets_sorted[i]] = Network(str(new_net_addr), private_nets_sorted[i].mask)
                 if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
@@ -823,7 +823,7 @@ class NSGCoordinator(GameCoordinator):
     def _get_all_local_ips(self)->set:
         local_ips = set()
         for net, ips in self._networks.items():
-            if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+            if netaddr.IPNetwork(str(net)).ip.is_private():
                 for ip in ips:
                     local_ips.add(self._ip_mapping[ip])
         self.logger.info(f"\t\t\tLocal ips: {local_ips}")
