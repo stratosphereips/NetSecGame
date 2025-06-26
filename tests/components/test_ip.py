@@ -43,3 +43,17 @@ class TestComponentIP:
         ip = IP.from_dict(d)
         assert isinstance(ip, IP)
         assert ip.ip == "10.0.0.1"
+
+    def test_ip_from_dict_invalid(self):
+        """Test creating an IP object from an invalid dictionary"""
+        d = {"ip": "invalid_ip"}
+        try:
+            ip = IP.from_dict(d)
+            assert False, "Expected ValueError for invalid IP"
+        except ValueError:
+            pass
+    def test_ip_hash(self):
+        """Test that the hash of two IP objects with the same IP is equal"""
+        ip_1 = IP("192.168.1.15")
+        ip_2 = IP("192.168.1.15")
+        assert hash(ip_1) == hash(ip_2)
