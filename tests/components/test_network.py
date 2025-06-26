@@ -43,7 +43,7 @@ class TestComponentNetwork:
         net_1 = Network("125.36.21.3", 16)
         net_2 = Network("192.168.1.3", 16)
         assert net_1 != net_2
-
+    
     def test_net_is_not_private(self):
         net_1 = Network("125.36.21.3", 16)
         assert net_1.is_private() is False
@@ -51,3 +51,13 @@ class TestComponentNetwork:
     def test_net_is_private(self):
         net_1 = Network("192.168.1.0", 16)
         assert net_1.is_private() is True
+
+    def test_net_from_dict(self):
+        """
+        Test creating a Network object from a dictionary
+        """
+        d = {"ip": "192.168.1.0", "mask": 16}
+        net = Network.from_dict(d)
+        assert isinstance(net, Network)
+        assert net.ip == "192.168.1.0"
+        assert net.mask == 16
