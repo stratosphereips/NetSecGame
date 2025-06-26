@@ -4,6 +4,7 @@ import pytest
 import dataclasses
 from AIDojoCoordinator.game_components import IP
 
+# Pytest fixtures for creating sample IP objects
 @pytest.fixture
 def sample_private_ip1():
     """Fixture to provide a sample IP object"""
@@ -16,7 +17,6 @@ def sample_private_ip1_copy():
     ip_str = "192.168.1.15"
     return IP(ip_str), ip_str
 
-
 @pytest.fixture
 def sample_private_ip2():
     """Fixture to provide a sample IP object different from sample_private_ip1"""
@@ -28,7 +28,8 @@ def sample_public_ip():
     """Fixture to provide a sample public IP object"""
     ip_str = "8.8.8.8"
     return IP(ip_str), ip_str
-
+    
+# Test cases for the IP class
 def test_ip_repr(sample_private_ip1):
     """Test the object representation"""
     ip_1, ip_str = sample_private_ip1
