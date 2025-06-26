@@ -9,6 +9,10 @@ from AIDojoCoordinator.game_components import Network
 def sample_private_network1():
     """Fixture to provide a sample Network object with private IP"""
     return Network("192.168.1.0", 24)
+@pytest.fixture
+def sample_private_network1_copy():
+    """Fixture to provide a sample Network object with private IP"""
+    return Network("192.168.1.0", 24)
 
 @pytest.fixture
 def sample_private_network2():
@@ -42,12 +46,12 @@ def test_net_repr(sample_private_network1):
     net = sample_private_network1
     assert repr(net) == "192.168.1.0/24"
 
-def test_net_equal(sample_private_network1, sample_private_network2):
+def test_net_equal(sample_private_network1, sample_private_network1_copy):
     """
     Test that two network objects with the same paramters are equal
     """
     net_1 = sample_private_network1
-    net_2 = sample_private_network2
+    net_2 = sample_private_network1_copy
     assert net_1 == net_2
 
 def test_net_not_equal(sample_private_network1, sample_public_network):
