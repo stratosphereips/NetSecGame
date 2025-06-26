@@ -11,5 +11,5 @@ python3  -m pytest tests/test_global_defender.py -p no:warnings -vvvv -s --full-
 
 # run ruff check as well
 echo "Running RUFF check: in ${PWD}"
-ruff check --output-format=github --select=E9,F4,F6,F7,F8,N8 --ignore=F405 --target-version=py310 --line-length=120 .
+ruff check --output-format=github --select=E9,F4,F6,F7,F8,N8 --ignore=F405 --target-version=py310 --line-length=120 --exclude NetSecGameAgents .
 
