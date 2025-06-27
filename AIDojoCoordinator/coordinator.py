@@ -27,15 +27,15 @@ class AgentServer(asyncio.Protocol):
             """
             Send the world to the agent
             """
-            writer.write(bytes(str(data).encode()))
-            await writer.drain()              
+            writer.write(bytes(str(data).encode()))           
 
         # Check if the maximum number of connections has been reached
         if self.current_connections >= self.max_connections:
             self.logger.info(
                 f"Max connections reached. Rejecting new connection from {writer.get_extra_info('peername')}"
             )
-            await writer.close()
+            writer.close()
+            await writer.wait_closed()
             return
 
         # Increment the count of current connections
@@ -84,10 +84,12 @@ class AgentServer(asyncio.Protocol):
                     self.logger.info(f"Removed queue for agent {addr}")
                 else:
                     self.logger.warning(f"Queue for agent {addr} not found during cleanup.")
-                await writer.close()
+                writer.close()
+                await writer.wait_closed()
         else:
             self.logger.warning(f"Queue for agent {addr} already exists. Closing connection.")
-            await writer.close()
+            writer.close()
+            await writer.wait_closed()
             return
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
