@@ -23,12 +23,6 @@ class AgentServer(asyncio.Protocol):
         self.logger = logging.getLogger("AIDojo-AgentServer")
     
     async def handle_new_agent(self, reader, writer):
-        async def send_data_to_agent(writer, data: str) -> None:
-            """
-            Send the world to the agent
-            """
-            writer.write(bytes(str(data).encode()))           
-
         # Check if the maximum number of connections has been reached
         if self.current_connections >= self.max_connections:
             self.logger.info(
