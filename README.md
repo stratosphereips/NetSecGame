@@ -389,7 +389,7 @@ It is advised after every change you test if the env is running correctly by doi
 ```bash
 tests/run_all_tests.sh
 ```
-This will load and run the unit tests in the `tests` folder. 
+This will load and run the unit tests in the `tests` folder. After passing all tests, linting and formatting is checked with ruff.
 
 ## Code adaptation for new configurations
 The code can be adapted to new configurations of games and for new agents. See [Agent repository](https://github.com/stratosphereips/NetSecGameAgents/tree/main) for more details.
