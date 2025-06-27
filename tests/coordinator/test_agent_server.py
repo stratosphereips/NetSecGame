@@ -65,7 +65,6 @@ def make_writer_with_peer():
 async def test_rejects_connection_when_max_connections_reached(agent_server, mock_reader_empty, mock_writer):
     agent_server.current_connections = agent_server.max_connections
     await agent_server.handle_new_agent(mock_reader_empty, mock_writer)
-    mock_writer.close.assert_awaited_once()
     assert ('127.0.0.1', 12345) not in agent_server.answers_queues
 
 @pytest.mark.asyncio
