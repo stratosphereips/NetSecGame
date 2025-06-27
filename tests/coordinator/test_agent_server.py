@@ -1,7 +1,7 @@
 # Authors: Ondřej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import asyncio
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from AIDojoCoordinator.coordinator import AgentServer
 from AIDojoCoordinator.game_components import Action, ActionType, ProtocolConfig
 

@@ -77,7 +77,7 @@ def test_ip_from_dict_invalid():
     """Test creating an IP object from an invalid dictionary"""
     d = {"ip": "invalid_ip"}
     try:
-        ip = IP.from_dict(d)
+        _ = IP.from_dict(d)
         assert False, "Expected ValueError for invalid IP"
     except ValueError:
         pass

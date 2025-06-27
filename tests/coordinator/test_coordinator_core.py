@@ -74,9 +74,7 @@ def mock_reader_empty():
 
 @pytest.fixture
 def agent_server():
-    actions_queue = asyncio.Queue()
-    answers_queues = {}
-    max_connections = 3
+    """Fixture for a mock agent server."""
     return GameCoordinator(
         game_host="localhost",
         game_port=9999,
