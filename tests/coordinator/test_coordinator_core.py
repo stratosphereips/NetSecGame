@@ -1,14 +1,12 @@
 # Authors:  Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import asyncio
 import json
-import logging
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from types import SimpleNamespace
 
-from AIDojoCoordinator import coordinator
-from AIDojoCoordinator.coordinator import GameCoordinator, GlobalDefender
-from AIDojoCoordinator.game_components import ActionType, Action, ProtocolConfig, GameState, Observation
+from AIDojoCoordinator.coordinator import GameCoordinator
+from AIDojoCoordinator.game_components import ActionType, Action, AgentStatus, GameState, Observation, GameStatus
 
 # -----------------------
 # Fixtures
@@ -59,6 +57,7 @@ def initialized_coordinator(gc_with_test_config):
     gc_with_test_config._CONFIG_FILE_HASH = "dummyhash"
     gc_with_test_config._min_required_players = 1
     gc_with_test_config._agent_status = {}
+    gc_with_test_config._rewards = {"step": 0, "success": 10, "failure": -10}
     return gc_with_test_config
 
 @pytest.fixture
@@ -235,6 +234,9 @@ async def test_run_game_spawns_expected_action_tasks(gc_with_test_config, action
             spawn_mock.assert_called_once()
             assert spawn_mock.call_args[0][0].__name__.startswith("_process_")
 
+# -----------------------
+# GameCoordinator Tests (Action Processing)
+# -----------------------   
 @pytest.mark.asyncio
 async def test_process_join_game_action_success(initialized_coordinator):
     """Test that _process_join_game_action successfully processes a join game action."""
@@ -314,3 +316,63 @@ async def test_process_reset_game_action_sets_flag(initialized_coordinator, empt
         await initialized_coordinator._process_reset_game_action(agent, reset_action)
         await stopper
         assert not initialized_coordinator._agent_response_queues[agent].empty()
+
+@pytest.mark.asyncio
+async def test_process_game_action_episode_ended(initialized_coordinator, empty_game_state):
+    agent = ("127.0.0.1", 5555)
+    action = Action(action_type = ActionType.FindData, parameters={})  # or any game action type
+
+    # Setup state indicating episode ended for the agent
+    initialized_coordinator._episode_ends = {agent: True}
+    initialized_coordinator.agents = {agent: ("AgentName", "Attacker")}
+    initialized_coordinator._agent_observations = {agent: Observation(empty_game_state, reward=5, end=True, info={})}
+    initialized_coordinator._agent_rewards = {agent: 5}
+    initialized_coordinator._agent_status = {agent: AgentStatus.TimeoutReached}
+    await initialized_coordinator.create_agent_queue(agent)
+
+    # Call the method
+    await initialized_coordinator._process_game_action(agent, action)
+
+    # Check response queue got a message with FORBIDDEN status
+    msg_json = await initialized_coordinator._agent_response_queues[agent].get()
+    assert '"status": "' + str(GameStatus.FORBIDDEN) + '"' in msg_json
+    assert "Episode ended" in msg_json
+
+
+@pytest.mark.asyncio
+async def test_process_game_action_ongoing_episode(initialized_coordinator, empty_game_state):
+    agent = ("127.0.0.1", 5555)
+    action = Action(action_type = ActionType.FindData, parameters={})  # or any game action type
+
+    # Setup state indicating episode ongoing for the agent
+    initialized_coordinator._episode_ends = {agent: False}
+    initialized_coordinator.agents = {agent: ("AgentName", "Attacker")}
+    initialized_coordinator._agent_states = {agent: empty_game_state}
+    initialized_coordinator._agent_last_action = {agent: None}
+    initialized_coordinator._agent_steps = {agent: 0}
+    initialized_coordinator._agent_status = {agent: AgentStatus.Playing}
+    initialized_coordinator._agent_rewards = {agent: 0}
+    initialized_coordinator._agent_observations = {agent: Observation(empty_game_state, reward=0, end=False, info={})}
+    await initialized_coordinator.create_agent_queue(agent)
+
+    # Mocks and patches
+    initialized_coordinator.step = AsyncMock(return_value=empty_game_state)
+    initialized_coordinator._update_agent_status = MagicMock(return_value=AgentStatus.Playing)
+    initialized_coordinator._update_agent_episode_end = MagicMock(return_value=False)
+    initialized_coordinator._add_step_to_trajectory = MagicMock()
+    initialized_coordinator._episode_end_event.clear()
+    initialized_coordinator._episode_rewards_condition = asyncio.Condition()
+    initialized_coordinator._agents_lock = asyncio.Lock()
+
+    # Call the method
+    await initialized_coordinator._process_game_action(agent, action)
+
+    # Check that step was called with expected params
+    initialized_coordinator.step.assert_awaited_with(agent_id=agent, agent_state=empty_game_state, action=action)
+
+    # Check response queue got a message with OK status
+    msg_json = await initialized_coordinator._agent_response_queues[agent].get()
+    assert '"status": "' + str(GameStatus.OK) + '"' in msg_json
+    assert '"reward": 0' in msg_json
+    assert '"end": false' in msg_json
+    assert '"info": {}' in msg_json
