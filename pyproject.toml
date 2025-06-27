@@ -53,6 +53,12 @@ dev = [
     "ruff",
 ]
 
+[project.urls]
+Homepage = "https://github.com/stratosphereips/NetSecGame"
+Repository = "https://github.com/stratosphereips/NetSecGame"
+Documentation = "https://github.com/stratosphereips/NetSecGame"
+Issues = "https://github.com/stratosphereips/NetSecGame/issues"
+
 [tool.setuptools.packages.find]
 where = ["."]
 exclude = ["tests*"]
@@ -64,9 +70,9 @@ asyncio_mode = "auto"
 addopts = "-p no:warnings -vvvv -s --full-trace"
 
 [tool.ruff]
-output-format = "github"
 lint.select = ["E9", "F4", "F6", "F7", "F8", "N8"]
 lint.ignore = ["F405"]
+output-format = "github"
 target-version = "py312"
 line-length = 120
 exclude = ["NetSecGameAgents"]
