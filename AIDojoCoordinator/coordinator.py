@@ -28,6 +28,7 @@ class AgentServer(asyncio.Protocol):
             Send the world to the agent
             """
             writer.write(bytes(str(data).encode()))
+            await writer.drain()              
 
         # Check if the maximum number of connections has been reached
         if self.current_connections >= self.max_connections:
