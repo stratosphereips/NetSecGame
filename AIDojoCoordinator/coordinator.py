@@ -24,17 +24,19 @@ class AgentServer(asyncio.Protocol):
         self.current_connections = 0
         self.logger = logging.getLogger("AIDojo-AgentServer")
     
+    async def handle_agent_quit(self, peername:tuple):
+        """
+        Helper function to handle agent disconnection.
+        """
+        # Send a quit message to the Coordinator
+        self.logger.info(f"\tHandling agent quit for {peername}.")
+        quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
+        await self.actions_queue.put((peername, quit_message))
+        
     async def handle_new_agent(self, reader, writer):
-
-        async def handle_agent_quit(peername):
-            """
-            Helper function to handle agent disconnection.
-            """
-            # Send a quit message to the Coordinator
-            self.logger.info(f"\tHandling agent quit for {peername}.")
-            quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
-            await self.actions_queue.put((peername, quit_message))
-
+        """
+        Handle a new agent connection.
+        """
         # get the peername of the writer
         peername = writer.get_extra_info("peername")
         try:
@@ -54,7 +56,7 @@ class AgentServer(asyncio.Protocol):
                         data = await reader.read(ProtocolConfig.BUFFER_SIZE)
                         if not data:
                             self.logger.info(f"Agent {peername} disconnected.")
-                            await handle_agent_quit(peername)
+                            await self.handle_agent_quit(peername)
                             break
 
                         raw_message = data.decode().strip()
@@ -78,7 +80,7 @@ class AgentServer(asyncio.Protocol):
                 self.logger.info(f"Max connections reached. Rejecting new connection from {writer.get_extra_info('peername')}")
         except ConnectionResetError:
             self.logger.warning(f"Connection reset by {peername}")
-            await handle_agent_quit(peername)
+            await self.handle_agent_quit(peername)
         except asyncio.CancelledError:
             self.logger.debug("Connection handling cancelled.")
             raise  # Ensure the exception propagates
@@ -96,69 +98,6 @@ class AgentServer(asyncio.Protocol):
             except Exception:
                 # swallow exceptions on close to avoid crash on cleanup
                 pass
-
-        # # Check if the maximum number of connections has been reached
-        # if self.current_connections >= self.max_connections:
-        #     self.logger.info(
-        #         f"Max connections reached. Rejecting new connection from {writer.get_extra_info('peername')}"
-        #     )
-        #     writer.close()
-        #     await writer.wait_closed()
-        #     return
-
-        # # Increment the count of current connections
-        # self.current_connections += 1
-
-        # # Handle the new agent
-        # addr = writer.get_extra_info("peername")
-        # self.logger.info(f"New agent connected: {addr}")
-        # Ensure a queue exists for this agent
-        # if addr not in self.answers_queues:
-        #     self.answers_queues[addr] = asyncio.Queue(maxsize=2)
-        #     self.logger.info(f"Created queue for agent {addr}")
-        #     try:
-        #         while True:
-        #             # Step 1: Read data from the agent
-        #             data = await reader.read(ProtocolConfig.BUFFER_SIZE)
-        #             if not data:
-        #                 self.logger.info(f"Agent {addr} disconnected.")
-        #                 quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
-        #                 await self.actions_queue.put((addr, quit_message))
-        #                 break
-
-        #             raw_message = data.decode().strip()
-        #             self.logger.debug(f"Handler received from {addr}: {raw_message}")
-
-        #             # Step 2: Forward the message to the Coordinator
-        #             await self.actions_queue.put((addr, raw_message))
-        #             # await asyncio.sleep(0)w
-        #             # Step 3: Get a matching response from the answers queue
-        #             response_queue = self.answers_queues[addr]
-        #             response = await response_queue.get()
-        #             self.logger.info(f"Sending response to agent {addr}: {response}")
-
-        #             # Step 4: Send the response to the agent
-        #             response = str(response).encode() + ProtocolConfig.END_OF_MESSAGE
-        #             writer.write(response)
-        #             await writer.drain()
-        #     except asyncio.CancelledError:
-        #         self.logger.debug("Terminating by KeyboardInterrupt")
-        #         raise
-        #     finally:
-        #         # Decrement the count of current connections
-        #         self.current_connections -= 1
-        #         if addr in self.answers_queues:
-        #             self.answers_queues.pop(addr)
-        #             self.logger.info(f"Removed queue for agent {addr}")
-        #         else:
-        #             self.logger.warning(f"Queue for agent {addr} not found during cleanup.")
-        #         writer.close()
-        #         await writer.wait_closed()
-        # else:
-        #     self.logger.warning(f"Queue for agent {addr} already exists. Closing connection.")
-        #     writer.close()
-        #     await writer.wait_closed()
-        #     return
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
 
