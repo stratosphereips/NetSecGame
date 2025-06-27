@@ -12,8 +12,10 @@ from AIDojoCoordinator.game_components import Action, ActionType, ProtocolConfig
 @pytest.fixture
 def mock_writer():
     writer = AsyncMock()
-    # Default peername; individual tests will override as needed
-    writer.get_extra_info.return_value = ('127.0.0.1', 12345)
+    writer.get_extra_info = MagicMock(return_value=('127.0.0.1', 12345))  # ✅ Sync method
+    writer.write = MagicMock()                                           # ✅ Sync method
+    writer.drain = AsyncMock()                                           # ✅ Async method
+    writer.close = AsyncMock()                                           # ✅ Async method
     return writer
 
 @pytest.fixture
@@ -48,7 +50,10 @@ def agent_server():
 def make_writer_with_peer():
     def _make(ip: str, port: int):
         writer = AsyncMock()
-        writer.get_extra_info.return_value = (ip, port)
+        writer.get_extra_info = MagicMock(return_value=(ip, port))  # get_extra_info is sync
+        writer.write = MagicMock()                                   # write is sync
+        writer.drain = AsyncMock()                                   # drain is async
+        writer.close = AsyncMock()                                   # close is async
         return writer
     return _make
 
