@@ -2,15 +2,6 @@
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["."]
-exclude = ["tests*"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-asyncio_mode = "auto"
-
 [project]
 name = "AIDojoGameCoordinator"
 version = "0.1.0"
@@ -61,3 +52,21 @@ dev = [
     "pytest",
     "ruff",
 ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+addopts = "-p no:warnings -vvvv -s --full-trace"
+
+[tool.ruff]
+output-format = "github"
+lint.select = ["E9", "F4", "F6", "F7", "F8", "N8"]
+lint.ignore = ["F405"]
+target-version = "py312"
+line-length = 120
+exclude = ["NetSecGameAgents"]
