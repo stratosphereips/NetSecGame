@@ -4,6 +4,13 @@ from cyst.api.configuration.network.elements import RouteConfig
 from cyst.api.logic.access import AuthenticationProviderType, AuthenticationTokenType, AuthenticationTokenSecurity
 from cyst.api.configuration import ExploitConfig, VulnerableServiceConfig
 from cyst.api.logic.exploit import ExploitLocality, ExploitCategory
+
+# --------------------
+# 5 clients
+# 5 Servers
+# 1 local network
+# 1 remote C&C host
+# --------------------
 ''' --------------------------------------------------------------------------------------------------------------------
 A template for local password authentication. 
 '''
