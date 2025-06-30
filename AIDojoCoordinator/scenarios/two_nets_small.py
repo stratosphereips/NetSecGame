@@ -1,5 +1,6 @@
 # This file defines the hosts and their characteristics, the services they run, the users they have and their security levels, the data they have, and in the router/FW all the rules of which host can access what
 import cyst.api.configuration as cyst_cfg
+#from cyst.api.configuration import *
 from cyst.api.configuration.network.elements import RouteConfig
 from cyst.api.logic.access import AuthenticationProviderType, AuthenticationTokenType, AuthenticationTokenSecurity
 from cyst.api.configuration import ExploitConfig, VulnerableServiceConfig
@@ -407,217 +408,6 @@ client_1 = cyst_cfg.NodeConfig(
 )
 
 ''' --------------------------------------------------------------------------------------------------------------------
-Client 2
-
-- Remote Desktop
-- Accounts
--- Local admin
--- User2
-- Can go to server 1, 2, 3, router and internet
-'''
-client_2 = cyst_cfg.NodeConfig(
-    active_services=[],
-    passive_services=[
-        cyst_cfg.PassiveServiceConfig(
-            name="ms-wbt-server",
-            owner="Local system",
-            version="10.0.19041",
-            local=False,
-            access_level=cyst_cfg.AccessLevel.ELEVATED,
-            parameters=[
-                (cyst_cfg.ServiceParameter.ENABLE_SESSION, True),
-                (cyst_cfg.ServiceParameter.SESSION_ACCESS_LEVEL, cyst_cfg.AccessLevel.LIMITED)
-            ],
-            authentication_providers=[local_password_auth("client_2_windows_login")],
-            access_schemes=[
-                cyst_cfg.AccessSchemeConfig(
-                    authentication_providers=["client_2_windows_login"],
-                    authorization_domain=cyst_cfg.AuthorizationDomainConfig(
-                        type=cyst_cfg.AuthorizationDomainType.LOCAL,
-                        authorizations=[
-                            cyst_cfg.AuthorizationConfig("User2", cyst_cfg.AccessLevel.LIMITED),
-                            cyst_cfg.AuthorizationConfig("Administrator", cyst_cfg.AccessLevel.ELEVATED)
-                        ]
-                    )
-                )
-            ]
-        ),
-        cyst_cfg.PassiveServiceConfig(
-            name="powershell",
-            owner="Local system",
-            version="10.0.19041",
-            local=True,
-            access_level=cyst_cfg.AccessLevel.LIMITED
-        ),
-        cyst_cfg.PassiveServiceConfig(
-            name="can_attack_start_here",
-            owner="Local system",
-            version="1",
-            local=True,
-            access_level=cyst_cfg.AccessLevel.LIMITED
-        )
-    ],
-    traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.2.3"), cyst_cfg.IPNetwork("192.168.2.0/24"))],
-    shell="powershell",
-    id="client_2"
-)
-
-''' --------------------------------------------------------------------------------------------------------------------
-Client 3
-
-- SSH
-- Accounts
--- Local admin
--- User3
-- Can go to server 1, 2, 3, router and internet
-'''
-client_3 = cyst_cfg.NodeConfig(
-    active_services=[],
-    passive_services=[
-        cyst_cfg.PassiveServiceConfig(
-            name="ssh",
-            owner="openssh",
-            version="8.1.0",
-            local=False,
-            access_level=cyst_cfg.AccessLevel.ELEVATED,
-            authentication_providers=[local_password_auth("openssh_login_client_3")],
-            parameters=[
-                (cyst_cfg.ServiceParameter.ENABLE_SESSION, True),
-                (cyst_cfg.ServiceParameter.SESSION_ACCESS_LEVEL, cyst_cfg.AccessLevel.LIMITED)
-            ],
-            access_schemes=[cyst_cfg.AccessSchemeConfig(
-                authentication_providers=["openssh_login_client_3"],
-                authorization_domain=cyst_cfg.AuthorizationDomainConfig(
-                    type=cyst_cfg.AuthorizationDomainType.LOCAL,
-                    authorizations=[
-                        cyst_cfg.AuthorizationConfig("User3", cyst_cfg.AccessLevel.LIMITED),
-                        cyst_cfg.AuthorizationConfig("root", cyst_cfg.AccessLevel.ELEVATED)
-                    ]
-                )
-            )]
-        ),
-        cyst_cfg.PassiveServiceConfig(
-            name="bash",
-            owner="root",
-            version="5.0.0",
-            local=True,
-            access_level=cyst_cfg.AccessLevel.LIMITED
-        ),
-        cyst_cfg.PassiveServiceConfig(
-            name="can_attack_start_here",
-            owner="Local system",
-            version="1",
-            local=True,
-            access_level=cyst_cfg.AccessLevel.LIMITED
-        )
-    ],
-    traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.2.4"), cyst_cfg.IPNetwork("192.168.2.0/24"))],
-    shell="bash",
-    id="client_3"
-)
-
-''' --------------------------------------------------------------------------------------------------------------------
-Client 4
-
-- SSH
-- Accounts
--- Local admin
--- User4
-- Can go to server 1, 2, 3, router and internet
-'''
-client_4 = cyst_cfg.NodeConfig(
-    active_services=[],
-    passive_services=[
-        cyst_cfg.PassiveServiceConfig(
-            name="ssh",
-            owner="openssh",
-            version="8.1.0",
-            local=False,
-            access_level=cyst_cfg.AccessLevel.ELEVATED,
-            authentication_providers=[local_password_auth("openssh_login_client_4")],
-            parameters=[
-                (cyst_cfg.ServiceParameter.ENABLE_SESSION, True),
-                (cyst_cfg.ServiceParameter.SESSION_ACCESS_LEVEL, cyst_cfg.AccessLevel.LIMITED)
-            ],
-            access_schemes=[cyst_cfg.AccessSchemeConfig(
-                authentication_providers=["openssh_login_client_4"],
-                authorization_domain=cyst_cfg.AuthorizationDomainConfig(
-                    type=cyst_cfg.AuthorizationDomainType.LOCAL,
-                    authorizations=[
-                        cyst_cfg.AuthorizationConfig("User4", cyst_cfg.AccessLevel.LIMITED),
-                        cyst_cfg.AuthorizationConfig("root", cyst_cfg.AccessLevel.ELEVATED)
-                    ]
-                )
-            )]
-        ),
-        cyst_cfg.PassiveServiceConfig(
-            name="bash",
-            owner="root",
-            version="5.0.0",
-            local=True,
-            access_level=cyst_cfg.AccessLevel.LIMITED
-        ),
-        cyst_cfg.PassiveServiceConfig(
-            name="can_attack_start_here",
-            owner="Local system",
-            version="1",
-            local=True,
-            access_level=cyst_cfg.AccessLevel.LIMITED
-        )
-    ],
-    traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.2.5"), cyst_cfg.IPNetwork("192.168.2.0/24"))],
-    shell="bash",
-    id="client_4"
-)
-
-''' --------------------------------------------------------------------------------------------------------------------
-Client 5
-
-- No ports (I assume no remote connection)
-- Accounts
--- Local admin
--- User5
-- Can go to server 1, 2, 3, router and internet
-'''
-client_5 = cyst_cfg.NodeConfig(
-    active_services=[],
-    passive_services=[
-        cyst_cfg.PassiveServiceConfig(
-            name="bash",
-            owner="root",
-            version="5.0.0",
-            local=True,
-            access_level=cyst_cfg.AccessLevel.LIMITED,
-            authentication_providers=[local_password_auth("local_login_client_5")],
-            access_schemes=[cyst_cfg.AccessSchemeConfig(
-                authentication_providers=["local_login_client_5"],
-                authorization_domain=cyst_cfg.AuthorizationDomainConfig(
-                    type=cyst_cfg.AuthorizationDomainType.LOCAL,
-                    authorizations=[
-                        cyst_cfg.AuthorizationConfig("User5", cyst_cfg.AccessLevel.LIMITED),
-                        cyst_cfg.AuthorizationConfig("root", cyst_cfg.AccessLevel.ELEVATED)
-                    ]
-                )
-            )]
-        ),
-        cyst_cfg.PassiveServiceConfig(
-            name="can_attack_start_here",
-            owner="Local system",
-            version="1",
-            local=True,
-            access_level=cyst_cfg.AccessLevel.LIMITED
-        )
-    ],
-    traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.2.6"), cyst_cfg.IPNetwork("192.168.2.0/24"))],
-    shell="bash",
-    id="client_5"
-)
-
-''' --------------------------------------------------------------------------------------------------------------------
 Routers
 
 - Has a defender
@@ -733,10 +523,6 @@ connections = [
     cyst_cfg.ConnectionConfig("other_server_1", 0, "router1", 3),
     cyst_cfg.ConnectionConfig("other_server_2", 0, "router1", 4),
     cyst_cfg.ConnectionConfig("client_1", 0, "router1", 5),
-    cyst_cfg.ConnectionConfig("client_2", 0, "router1", 6),
-    cyst_cfg.ConnectionConfig("client_3", 0, "router1", 7),
-    cyst_cfg.ConnectionConfig("client_4", 0, "router1", 8),
-    cyst_cfg.ConnectionConfig("client_5", 0, "router1", 9),
     cyst_cfg.ConnectionConfig("internet", 0, "router1", 10),
     cyst_cfg.ConnectionConfig("internet", 1, "outside_node", 0)
 ]
@@ -760,5 +546,4 @@ exploits = [
     )
 ]
 
-configuration_objects = [smb_server, db_server, web_server, other_server_1, other_server_2, client_1, client_2,
-                         client_3, client_4, client_5, router1, internet, outside_node, *connections, *exploits]
+configuration_objects = [smb_server, db_server, web_server, other_server_1, other_server_2, client_1, router1, internet, outside_node, *connections, *exploits]

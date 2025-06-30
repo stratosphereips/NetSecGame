@@ -4,6 +4,13 @@ from cyst.api.configuration.network.elements import RouteConfig
 from cyst.api.logic.access import AuthenticationProviderType, AuthenticationTokenType, AuthenticationTokenSecurity
 from cyst.api.configuration import ExploitConfig, VulnerableServiceConfig
 from cyst.api.logic.exploit import ExploitLocality, ExploitCategory
+
+# --------------------
+# 5 clients
+# 5 Servers
+# 1 local network
+# 1 remote C&C host
+# --------------------
 ''' --------------------------------------------------------------------------------------------------------------------
 A template for local password authentication. 
 '''
@@ -401,7 +408,7 @@ client_1 = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.2.2"), cyst_cfg.IPNetwork("192.168.2.0/24"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.1.7"), cyst_cfg.IPNetwork("192.168.1.0/24"))],
     shell="powershell",
     id="client_1"
 )
@@ -458,7 +465,7 @@ client_2 = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.2.3"), cyst_cfg.IPNetwork("192.168.2.0/24"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.1.8"), cyst_cfg.IPNetwork("192.168.1.0/24"))],
     shell="powershell",
     id="client_2"
 )
@@ -513,7 +520,7 @@ client_3 = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.2.4"), cyst_cfg.IPNetwork("192.168.2.0/24"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.1.9"), cyst_cfg.IPNetwork("192.168.1.0/24"))],
     shell="bash",
     id="client_3"
 )
@@ -568,7 +575,7 @@ client_4 = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.2.5"), cyst_cfg.IPNetwork("192.168.2.0/24"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.1.10"), cyst_cfg.IPNetwork("192.168.1.0/24"))],
     shell="bash",
     id="client_4"
 )
@@ -612,7 +619,7 @@ client_5 = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.2.6"), cyst_cfg.IPNetwork("192.168.2.0/24"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.1.11"), cyst_cfg.IPNetwork("192.168.1.0/24"))],
     shell="bash",
     id="client_5"
 )
@@ -626,7 +633,6 @@ Routers
 router1 = cyst_cfg.RouterConfig(
     interfaces=[
         cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.1.1"), cyst_cfg.IPNetwork("192.168.1.0/24"), index=2),
-        cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("192.168.2.1"), cyst_cfg.IPNetwork("192.168.2.0/24"), index=3),
     ],
     routing_table=[
         # Push everything not-infrastructure to the internet
@@ -643,34 +649,12 @@ router1 = cyst_cfg.RouterConfig(
                 policy=cyst_cfg.FirewallPolicy.DENY,
                 rules=[
                     cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.1.0/24"), cyst_cfg.IPNetwork("192.168.1.1/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                    cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.0/24"), cyst_cfg.IPNetwork("192.168.2.1/32"), "*", cyst_cfg.FirewallPolicy.ALLOW)
                 ]
               ),
               cyst_cfg.FirewallChainConfig(
                   type=cyst_cfg.FirewallChainType.FORWARD,
                   policy=cyst_cfg.FirewallPolicy.DENY,
-                  rules=[
-                      # Client 1 can go to server 1, 2, 3
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.2/32"), cyst_cfg.IPNetwork("192.168.1.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.2/32"), cyst_cfg.IPNetwork("192.168.1.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.2/32"), cyst_cfg.IPNetwork("192.168.1.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      # Client 2 can go to server 1, 2, 3
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.3/32"), cyst_cfg.IPNetwork("192.168.1.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.3/32"), cyst_cfg.IPNetwork("192.168.1.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.3/32"), cyst_cfg.IPNetwork("192.168.1.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      # Client 3 can go to server 1, 2, 3
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.4/32"), cyst_cfg.IPNetwork("192.168.1.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.4/32"), cyst_cfg.IPNetwork("192.168.1.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.4/32"), cyst_cfg.IPNetwork("192.168.1.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      # Client 4 can go to server 1, 2, 3
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.5/32"), cyst_cfg.IPNetwork("192.168.1.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.5/32"), cyst_cfg.IPNetwork("192.168.1.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.5/32"), cyst_cfg.IPNetwork("192.168.1.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      # Client 5 can go to server 1, 2, 3
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.6/32"), cyst_cfg.IPNetwork("192.168.1.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.6/32"), cyst_cfg.IPNetwork("192.168.1.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("192.168.2.6/32"), cyst_cfg.IPNetwork("192.168.1.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW)
-                  ]
+                  rules=[]
               )
           ]
         )
