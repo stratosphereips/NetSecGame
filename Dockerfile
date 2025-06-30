@@ -20,10 +20,11 @@ WORKDIR  ${DESTINATION_DIR}
 
 # Install any necessary Python dependencies
 # If a requirements.txt file is in the repository
-RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+RUN if [ -f pyproject.toml ]; then pip install . ; fi
 
-# change the server ip to 0.0.0.0
-RUN sed -i 's/"host": "127.0.0.1"/"host": "0.0.0.0"/' coordinator.conf
+# Expose the port the coordinator will run on
+EXPOSE 9000 
 
 # Run the Python script when the container launches
-CMD ["python3", "coordinator.py"]
+CMD ["python3", "-m", "AIDojoCoordinator.worlds.NSEGameCoordinator", "--task_config=netsecenv_conf.yaml", "--game_port=9000", "--game_host=0.0.0.0"]
+
