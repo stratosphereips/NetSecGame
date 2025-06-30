@@ -458,7 +458,7 @@ class ConfigParser():
     
     def get_scenario(self):
         """
-        Get the scenario config object
+        Get the scenario config objects based on the configuration. Only import objects that are selected via importlib.
         """
         ALLOWED = {
             "scenario1" : "AIDojoCoordinator.scenarios.scenario_configuration",
