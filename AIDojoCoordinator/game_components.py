@@ -130,11 +130,12 @@ class Data():
     """
     owner: str
     id: str
-    size: int = 0
+    size: int = field(compare=False, hash=False, default=0)
     type: str = ""
-    
+    content: str = field(compare=False, hash=False, repr=False, default_factory=str)
+
     def __hash__(self) -> int:
-        return hash((self.owner, self.id, self.size, self.type))
+        return hash((self.owner, self.id, self.type))
     @classmethod
     def from_dict(cls, data: dict):
         return cls(**data)
@@ -379,7 +380,7 @@ class GameState():
             controlled_hosts = {IP(x["ip"]) for x in data_dict["controlled_hosts"]},
             known_services = {IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
                 for s in services} for k,services in data_dict["known_services"].items()},  
-            known_data = {IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in data_dict["known_data"].items()},
+            known_data = {IP(k):{Data(v["owner"], v["id"], v["size"], v["type"], v["content"]) for v in values} for k,values in data_dict["known_data"].items()},
             known_blocks = known_blocks
                 )
         return state
@@ -396,7 +397,7 @@ class GameState():
             controlled_hosts = {IP(x["ip"]) for x in json_data["controlled_hosts"]},
             known_services = {IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
                 for s in services} for k,services in json_data["known_services"].items()},  
-            known_data = {IP(k):{Data(v["owner"], v["id"]) for v in values} for k,values in json_data["known_data"].items()},
+            known_data = {IP(k):{Data(v["owner"], v["id"], v["size"], v["type"], v["content"]) for v in values} for k,values in json_data["known_data"].items()},
             known_blocks = {IP(target_host):{IP(blocked_host) for blocked_host in blocked_hosts} for target_host, blocked_hosts in json_data["known_blocks"].items()}
             )
         return state

@@ -8,6 +8,7 @@ import copy
 from faker import Faker
 from pathlib import Path
 import netaddr, re
+import json
 
 from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP, Network, Data, Service
 from AIDojoCoordinator.coordinator import GameCoordinator
@@ -27,6 +28,7 @@ class NSGCoordinator(GameCoordinator):
         self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         self._fw_blocks = {}
+        self._agent_fw_rules = {}
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
@@ -97,15 +99,15 @@ class NSGCoordinator(GameCoordinator):
             for controlled_host in controlled_hosts:
                 for net in self._get_networks_from_host(controlled_host): #TODO
                     net_obj = netaddr.IPNetwork(str(net))
-                    if net_obj.ip.is_ipv4_private_use(): #TODO
+                    if net_obj.ip.is_private(): #TODO
                         known_networks.add(net)
                         net_obj.value += 256
-                        if net_obj.ip.is_ipv4_private_use():
+                        if net_obj.ip.is_private():
                             ip = Network(str(net_obj.ip), net_obj.prefixlen)
                             self.logger.debug(f'\tAdding {ip} to agent')
                             known_networks.add(ip)
                         net_obj.value -= 2*256
-                        if net_obj.ip.is_ipv4_private_use():
+                        if net_obj.ip.is_private():
                             ip = Network(str(net_obj.ip), net_obj.prefixlen)
                             self.logger.debug(f'\tAdding {ip} to agent')
                             known_networks.add(ip)
@@ -232,7 +234,7 @@ class NSGCoordinator(GameCoordinator):
                 # LOCAL NETWORKS
                 for net, ips in self._networks.items():
                     # IF net is local, allow connection between all nodes in it
-                    if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+                    if netaddr.IPNetwork(str(net)).ip.is_private():
                         for src in ips:
                             for dst in ips:
                                 firewall[src].add(dst)
@@ -240,9 +242,9 @@ class NSGCoordinator(GameCoordinator):
                 # LOCAL TO INTERNET
                 for net, ips in self._networks.items():
                     # IF net is local, allow connection between all nodes in it
-                    if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+                    if netaddr.IPNetwork(str(net)).ip.is_private():
                         for public_net, public_ips in self._networks.items():
-                            if not netaddr.IPNetwork(str(public_net)).ip.is_ipv4_private_use():
+                            if not netaddr.IPNetwork(str(public_net)).ip.is_private():
                                 for src in ips:
                                     for dst in public_ips:
                                         firewall[src].add(dst)
@@ -281,6 +283,13 @@ class NSGCoordinator(GameCoordinator):
 
         #exploits
         self._exploits = exploits
+        
+        # create logfile in each nodes
+        for node in nodes + routers:
+            if node.id not in self._data:
+                self._data[node.id] = set()
+            self.logger.info(f"\tAdding logfile to node {node.id}")
+            self._data[node.id].add(Data(owner="system", id="logfile", type="log", size=0))
         #create initial mapping
         self.logger.info("\tCreating initial mapping of IPs and Networks")
         for net in self._networks.keys():
@@ -302,7 +311,7 @@ class NSGCoordinator(GameCoordinator):
         # generate mapping for networks
         private_nets = []
         for net in self._networks.keys():
-            if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+            if netaddr.IPNetwork(str(net)).ip.is_private():
                 private_nets.append(net)
             else:
                 mapping_nets[net] = Network(fake.ipv4_public(), net.mask)
@@ -326,7 +335,7 @@ class NSGCoordinator(GameCoordinator):
                     # find the new mapping 
                     new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
                     # evaluate if its still a private network
-                    is_private_net_checks.append(new_net_addr.is_ipv4_private_use())
+                    is_private_net_checks.append(new_net_addr.is_private())
                     # store the new mapping
                     mapping_nets[private_nets_sorted[i]] = Network(str(new_net_addr), private_nets_sorted[i].mask)
                 if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
@@ -508,7 +517,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug("Data content not found because target IP does not exists.")
         return content
     
-    def _execute_action(self, current_state:GameState, action:Action)-> GameState:
+    def _execute_action(self, current_state:GameState, action:Action, agent_id:tuple)-> GameState:
         """
         Execute the action and update the values in the state
         Before this function it was checked if the action was successful
@@ -522,21 +531,37 @@ class NSGCoordinator(GameCoordinator):
         next_state = None
         match action.type:
             case ActionType.ScanNetwork:
-                next_state = self._execute_scan_network_action(current_state, action)
+                next_state = self._execute_scan_network_action(current_state, action, agent_id)
             case ActionType.FindServices:   
-                next_state = self._execute_find_services_action(current_state, action)
+                next_state = self._execute_find_services_action(current_state, action, agent_id)
             case ActionType.FindData:
-                next_state = self._execute_find_data_action(current_state, action)
+                next_state = self._execute_find_data_action(current_state, action, agent_id)
             case ActionType.ExploitService:
-                next_state = self._execute_exploit_service_action(current_state, action)
+                next_state = self._execute_exploit_service_action(current_state, action, agent_id)
             case ActionType.ExfiltrateData:
-                next_state = self._execute_exfiltrate_data_action(current_state, action)
+                next_state = self._execute_exfiltrate_data_action(current_state, action, agent_id)
             case ActionType.BlockIP:
-                next_state = self._execute_block_ip_action(current_state, action)
+                next_state = self._execute_block_ip_action(current_state, action, agent_id)
             case _:
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
         
+    def _record_false_positive(self, src_ip:IP, dst_ip:IP, agent_id:tuple)->bool:
+        # only record false positive if the agent is benign
+        if self.is_agent_benign(agent_id):
+            # find agent(s) that created the rule
+            src_host = src_ip
+            dst_host = dst_ip
+            if (src_host, dst_host) in self._agent_fw_rules:
+                # check if this connection is actively blocked
+                for author_agent in self._agent_fw_rules[(src_host, dst_host)]:
+                    self.logger.info(f"Adding false positive for blocking {src_host} -> {dst_host} by {author_agent}")
+                    if author_agent not in self._agent_false_positives:
+                        self._agent_false_positives[author_agent] = 0
+                    self._agent_false_positives[author_agent] += 1
+            else:
+                self.logger.debug(f"False positive for blocking {src_host} -> {dst_host} caused by the system configuration.")
+
     def _state_parts_deep_copy(self, current:GameState)->tuple:
         next_nets = copy.deepcopy(current.known_networks)
         next_known_h = copy.deepcopy(current.known_hosts)
@@ -554,7 +579,7 @@ class NSGCoordinator(GameCoordinator):
             connection_allowed = False
         return connection_allowed
 
-    def _execute_scan_network_action(self, current_state:GameState, action:Action)->GameState:
+    def _execute_scan_network_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the ScanNetwork action in the environment
         """
@@ -568,14 +593,16 @@ class NSGCoordinator(GameCoordinator):
                     if self._firewall_check(action.parameters["source_host"], ip):
                         self.logger.debug(f"\t\t\tAdding {ip} to new_ips")
                         new_ips.add(ip)
+                        self.update_log_file(next_data,action, ip)
                     else:
+                        self._record_false_positive(action.parameters["source_host"], ip, agent_id)
                         self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {ip} blocked by FW. Skipping")
             next_known_h = next_known_h.union(new_ips)
         else:
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _execute_find_services_action(self, current_state:GameState, action:Action)->GameState:
+    def _execute_find_services_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the FindServices action in the environment
         """
@@ -593,13 +620,16 @@ class NSGCoordinator(GameCoordinator):
                         self.logger.debug(f"\t\tAdding {action.parameters['target_host']} to known_hosts")
                         next_known_h.add(action.parameters["target_host"])
                         next_nets = next_nets.union({net for net, values in self._networks.items() if action.parameters["target_host"] in values})
+                # update logs
+                self.update_log_file(next_data,action, action.parameters['target_host'])
             else:
+                self._record_false_positive(action.parameters["source_host"], action.parameters["target_host"], agent_id)
                 self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_find_data_action(self, current:GameState, action:Action)->GameState:
+    def _execute_find_data_action(self, current:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the FindData action in the environment
         """
@@ -607,6 +637,8 @@ class NSGCoordinator(GameCoordinator):
         self.logger.debug(f"\t\tSearching for data in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
+                # update logs before getting the data so this action is listed there
+                self.update_log_file(next_data,action, action.parameters['target_host'])
                 new_data = self._get_data_in_host(action.parameters["target_host"], current.controlled_hosts)
                 self.logger.debug(f"\t\t\t Found {len(new_data)}: {new_data}")
                 if len(new_data) > 0:
@@ -622,12 +654,13 @@ class NSGCoordinator(GameCoordinator):
                     else:
                         next_blocked[action.parameters["target_host"]] = next_blocked[action.parameters["target_host"]].union(new_blocks)
             else:
+                self._record_false_positive(action.parameters["source_host"], action.parameters["target_host"], agent_id)
                 self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
         else:
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_exfiltrate_data_action(self, current_state:GameState, action:Action)->GameState:
+    def _execute_exfiltrate_data_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the ExfiltrateData action in the environment
         """
@@ -643,6 +676,8 @@ class NSGCoordinator(GameCoordinator):
                 # Does the current state for THIS source already know about this data?
                 if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
                     if action.parameters['source_host'] in current_state.known_data.keys() and action.parameters["data"] in current_state.known_data[action.parameters["source_host"]]:
+                        # update logs
+                        self.update_log_file(next_data,action, action.parameters['target_host'])
                         # Does the source host have any data?
                         if self._ip_to_hostname[action.parameters["source_host"]] in self._data.keys():
                             # Does the source host have this data?
@@ -664,6 +699,7 @@ class NSGCoordinator(GameCoordinator):
                     else:
                         self.logger.debug("\t\t\tCan not exfiltrate. Agent did not find this data yet.")
                 else:
+                    self._record_false_positive(action.parameters["source_host"], action.parameters["target_host"], agent_id)
                     self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
             else:
                 self.logger.debug("\t\t\tCan not exfiltrate. Source host is not controlled.")
@@ -671,7 +707,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug("\t\t\tCan not exfiltrate. Target host is not controlled.")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_exploit_service_action(self, current_state:GameState, action:Action)->GameState:
+    def _execute_exploit_service_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the ExploitService action in the environment
         """
@@ -700,7 +736,10 @@ class NSGCoordinator(GameCoordinator):
                             self.logger.debug("\t\t\tCan not exploit. Target host does not the service that was attempted.")
                     else:
                         self.logger.debug("\t\t\tCan not exploit. Target host does not have any services.")
+                    # update logs
+                    self.update_log_file(next_data,action, action.parameters['target_host'])
                 else:
+                    self._record_false_positive(action.parameters["source_host"], action.parameters["target_host"], agent_id)
                     self.logger.debug(f"\t\t\tConnection {action.parameters['source_host']} -> {action.parameters['target_host']} blocked by FW. Skipping")
             else:
                 self.logger.debug("\t\t\tCan not exploit. Target host does not exist.")
@@ -708,7 +747,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_block_ip_action(self, current_state:GameState, action:Action)->GameState:
+    def _execute_block_ip_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
         """
         Executes the BlockIP action 
         - The action has BlockIP("target_host": IP object, "source_host": IP object, "blocked_host": IP object)
@@ -732,6 +771,14 @@ class NSGCoordinator(GameCoordinator):
                 if self._firewall_check(action.parameters["source_host"], action.parameters["target_host"]):
                     if action.parameters["target_host"] != action.parameters['blocked_host']:
                         self.logger.info(f"\t\tBlockConnection {action.parameters['target_host']} <-> {action.parameters['blocked_host']}")
+                        # record which agent is adding the blocking rule
+                        if (action.parameters["target_host"], action.parameters["blocked_host"]) not in self._agent_fw_rules:
+                            self._agent_fw_rules[(action.parameters["target_host"], action.parameters["blocked_host"])] = set()
+                        self._agent_fw_rules[(action.parameters["target_host"], action.parameters["blocked_host"])].add(agent_id)
+                        # both directions are blocked
+                        if (action.parameters["blocked_host"], action.parameters["target_host"]) not in self._agent_fw_rules:
+                            self._agent_fw_rules[(action.parameters["blocked_host"], action.parameters["target_host"])] = set()
+                        self._agent_fw_rules[(action.parameters["blocked_host"], action.parameters["target_host"])].add(agent_id)
                         try:
                             #remove connection target_host -> blocked_host
                             self._firewall[action.parameters["target_host"]].discard(action.parameters["blocked_host"])
@@ -762,7 +809,10 @@ class NSGCoordinator(GameCoordinator):
                         next_blocked[action.parameters["blocked_host"]].add(action.parameters["target_host"])
                     else:
                         self.logger.debug(f"\t\t\t Cant block connection form :'{action.parameters['target_host']}' to '{action.parameters['blocked_host']}'")
+                    # update logs
+                    self.update_log_file(next_data,action, action.parameters['target_host'])
                 else:
+                    self._record_false_positive(action.parameters["source_host"], action.parameters["target_host"], agent_id)
                     self.logger.debug(f"\t\t\t Connection from '{action.parameters['source_host']}->'{action.parameters['target_host']} is blocked blocked by FW")
             else:
                 self.logger.debug(f"\t\t\t Invalid target_host:'{action.parameters['target_host']}'")
@@ -773,12 +823,30 @@ class NSGCoordinator(GameCoordinator):
     def _get_all_local_ips(self)->set:
         local_ips = set()
         for net, ips in self._networks.items():
-            if netaddr.IPNetwork(str(net)).ip.is_ipv4_private_use():
+            if netaddr.IPNetwork(str(net)).ip.is_private():
                 for ip in ips:
                     local_ips.add(self._ip_mapping[ip])
         self.logger.info(f"\t\t\tLocal ips: {local_ips}")
         return local_ips
-     
+    
+    def update_log_file(self, known_data:set, action, target_host:IP):
+        hostaname = self._ip_to_hostname[target_host]
+        self.logger.debug(f"Updating log file in host {hostaname}")
+        try:
+            current_log_file = list(filter(lambda x: x.owner == "system" and x.type == "log",self._data[hostaname]))[0]
+            self._data[hostaname].discard(current_log_file)
+            if current_log_file.size == 0:
+                content = []
+            else: 
+                content = json.loads(current_log_file.content)
+            content.append({'source_host': str(action.parameters["source_host"]), 'action_type': str(action.type)})
+            new_content = json.dumps(content)
+        except KeyError:
+            self.logger.debug(f"\t\t\tLog not found in host {hostaname}. Creating new one.")
+            new_content = [{'source_host': str(action.parameters["source_host"]), 'action_type': str(action.type)}]
+            new_content = json.dumps(new_content)
+        self._data[hostaname].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
+
     async def register_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
         if len(self._networks) == 0:
             self._initialize()
@@ -790,7 +858,7 @@ class NSGCoordinator(GameCoordinator):
         return True
         
     async def step(self, agent_id, agent_state, action)->GameState:
-        return self._execute_action(agent_state, action)
+        return self._execute_action(agent_state, action, agent_id)
     
     async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
        game_state = self._create_state_from_view(agent_initial_view)
@@ -809,8 +877,10 @@ class NSGCoordinator(GameCoordinator):
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
-        self._firewall = copy.deepcopy(self._firewall)
+        # reset all firewall related data structure
+        self._firewall = copy.deepcopy(self._firewall_original)
         self._fw_blocks = {}
+        self._agent_fw_rules = {}
         return True
 
 if __name__ == "__main__":

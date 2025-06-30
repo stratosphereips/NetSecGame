@@ -102,10 +102,12 @@ env:
   use_dynamic_addresses: False
   use_firewall: True
   save_trajectories: False
+  required_players: 1
   rewards:
     success: 100
     step: -1
     fail: -10
+    false_positive: -5
   actions:
     scan_network:
       prob_success: 1.0

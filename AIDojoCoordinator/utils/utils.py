@@ -8,7 +8,7 @@ from AIDojoCoordinator.scenarios import scenario_configuration
 from AIDojoCoordinator.scenarios import smaller_scenario_configuration
 from AIDojoCoordinator.scenarios import tiny_scenario_configuration
 from AIDojoCoordinator.scenarios import three_net_scenario
-from AIDojoCoordinator.game_components import IP, Data, Network, Service, GameState, Action, Observation
+from AIDojoCoordinator.game_components import IP, Data, Network, Service, GameState, Action, Observation, ActionType
 import netaddr
 import logging
 import csv
@@ -113,6 +113,22 @@ def observation_as_dict(observation:Observation)->dict:
         'info': observation.info
     }
     return observation_dict
+
+def parse_log_content(log_content:str)->list:
+    try:
+        logs = []
+        data = json.loads(log_content)
+        for item in data:
+            ip = IP(item["source_host"])
+            action_type = ActionType.from_string(item["action_type"])
+            logs.append({"source_host":ip, "action_type":action_type})
+        return logs
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+        return None
+    except TypeError as e:
+        print(f"Error decoding JSON: {e}")
+        return None
 
 class ConfigParser():
     """

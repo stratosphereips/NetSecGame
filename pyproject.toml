@@ -2,10 +2,6 @@
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["."]
-exclude = ["tests*"]
-
 [project]
 name = "AIDojoGameCoordinator"
 version = "0.1.0"
@@ -55,4 +51,29 @@ requires-python = ">=3.12"
 dev = [
     "pytest",
     "ruff",
+    "pytest-asyncio"
 ]
+
+[project.urls]
+Homepage = "https://github.com/stratosphereips/NetSecGame"
+Repository = "https://github.com/stratosphereips/NetSecGame"
+Documentation = "https://github.com/stratosphereips/NetSecGame"
+Issues = "https://github.com/stratosphereips/NetSecGame/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+addopts = "-p no:warnings -vvvv -s --full-trace"
+
+[tool.ruff]
+lint.select = ["E9", "F4", "F6", "F7", "F8", "N8"]
+lint.ignore = ["F405"]
+output-format = "github"
+target-version = "py312"
+line-length = 120
+exclude = ["NetSecGameAgents"]

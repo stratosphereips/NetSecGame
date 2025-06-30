@@ -4,6 +4,7 @@ import json
 import asyncio
 from datetime import datetime
 import signal
+
 from AIDojoCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, ProtocolConfig
 from AIDojoCoordinator.global_defender import GlobalDefender
 from AIDojoCoordinator.utils.utils import observation_as_dict, get_str_hash, ConfigParser
@@ -22,71 +23,84 @@ class AgentServer(asyncio.Protocol):
         self.current_connections = 0
         self.logger = logging.getLogger("AIDojo-AgentServer")
     
+    async def handle_agent_quit(self, peername:tuple):
+        """
+        Helper function to handle agent disconnection.
+        """
+        # Send a quit message to the Coordinator
+        self.logger.info(f"\tHandling agent quit for {peername}.")
+        quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
+        await self.actions_queue.put((peername, quit_message))
+        
     async def handle_new_agent(self, reader, writer):
-        async def send_data_to_agent(writer, data: str) -> None:
-            """
-            Send the world to the agent
-            """
-            writer.write(bytes(str(data).encode()))
-
-        # Check if the maximum number of connections has been reached
-        if self.current_connections >= self.max_connections:
-            self.logger.info(
-                f"Max connections reached. Rejecting new connection from {writer.get_extra_info('peername')}"
-            )
-            writer.close()
-            return
-
-        # Increment the count of current connections
-        self.current_connections += 1
-
-        # Handle the new agent
-        addr = writer.get_extra_info("peername")
-        self.logger.info(f"New agent connected: {addr}")
-        # Ensure a queue exists for this agent
-        if addr not in self.answers_queues:
-            self.answers_queues[addr] = asyncio.Queue(maxsize=2)
-            self.logger.info(f"Created queue for agent {addr}")
-
+        """
+        Handle a new agent connection.
+        """
+        # get the peername of the writer
+        peername = writer.get_extra_info("peername")
+        queue_created = False
         try:
-            while True:
-                # Step 1: Read data from the agent
-                data = await reader.read(ProtocolConfig.BUFFER_SIZE)
-                if not data:
-                    self.logger.info(f"Agent {addr} disconnected.")
-                    quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
-                    await self.actions_queue.put((addr, quit_message))
-                    break
+            self.logger.info(f"New connection from {peername}")
+            # Check if the maximum number of connections has been reached
+            if self.current_connections < self.max_connections:
+                # increment the count of current connections
+                self.current_connections += 1
+                self.logger.info(f"New agent connected: {peername}. Current connections: {self.current_connections}")
+                # Ensure a queue exists for this agent
+                if peername not in self.answers_queues:
+                    self.answers_queues[peername] = asyncio.Queue(maxsize=2)
+                    queue_created = True
+                    self.logger.info(f"Created queue for agent {peername}")
+                    # Handle the new agent
+                    while True:
+                        # Step 1: Read data from the agent
+                        data = await reader.read(ProtocolConfig.BUFFER_SIZE)
+                        if not data:
+                            self.logger.info(f"Agent {peername} disconnected.")
+                            await self.handle_agent_quit(peername)
+                            break
 
-                raw_message = data.decode().strip()
-                self.logger.debug(f"Handler received from {addr}: {raw_message}")
+                        raw_message = data.decode().strip()
+                        self.logger.debug(f"Handler received from {peername}: {raw_message}")
 
-                # Step 2: Forward the message to the Coordinator
-                await self.actions_queue.put((addr, raw_message))
-                # await asyncio.sleep(0)w
-                # Step 3: Get a matching response from the answers queue
-                response_queue = self.answers_queues[addr]
-                response = await response_queue.get()
-                self.logger.info(f"Sending response to agent {addr}: {response}")
+                        # Step 2: Forward the message to the Coordinator
+                        await self.actions_queue.put((peername, raw_message))
+                
+                        # Step 3: Get a matching response from the answers queue
+                        response_queue = self.answers_queues[peername]
+                        response = await response_queue.get()
+                        self.logger.info(f"Sending response to agent {peername}: {response}")
 
-                # Step 4: Send the response to the agent
-                response = str(response).encode() + ProtocolConfig.END_OF_MESSAGE
-                writer.write(response)
-                await writer.drain()
+                        # Step 4: Send the response to the agent
+                        response = str(response).encode() + ProtocolConfig.END_OF_MESSAGE
+                        writer.write(response)
+                        await writer.drain()
+                else:
+                    self.logger.warning(f"Queue for agent {peername} already exists. Closing connection.")
+            else:
+                self.logger.info(f"Max connections reached. Rejecting new connection from {writer.get_extra_info('peername')}")
+        except ConnectionResetError:
+            self.logger.warning(f"Connection reset by {peername}")
+            await self.handle_agent_quit(peername)
         except asyncio.CancelledError:
-            self.logger.debug("Terminating by KeyboardInterrupt")
+            self.logger.debug("Connection handling cancelled.")
+            raise  # Ensure the exception propagates
+        except Exception as e:
+            self.logger.error(f"Unexpected error with client {peername}: {e}")
             raise
         finally:
-            # Decrement the count of current connections
-            self.current_connections -= 1
-            if addr in self.answers_queues:
-                self.answers_queues.pop(addr)
-                self.logger.info(f"Removed queue for agent {addr}")
-            else:
-                self.logger.warning(f"Queue for agent {addr} not found during cleanup.")
-            writer.close()
-            return
-            
+            try:
+                if peername in self.answers_queues:
+                    # If the queue was created, remove it
+                    if queue_created:
+                        self.answers_queues.pop(peername)
+                        self.logger.info(f"Removed queue for agent {peername}")
+                    self.current_connections = max(0, self.current_connections - 1)
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                # swallow exceptions on close to avoid crash on cleanup
+                pass
     async def __call__(self, reader, writer):
         await self.handle_new_agent(reader, writer)
 
@@ -138,10 +152,14 @@ class GameCoordinator:
         self._agent_states = {}
         # last action played by agent (Action)
         self._agent_last_action = {}
+        # False positives per agent (due to added blocks)
+        self._agent_false_positives = {}
         # agent status dict {agent_addr: int}
         self._agent_rewards = {}
         # trajectories per agent_addr
         self._agent_trajectories = {}
+        # false_positives per agent_addr
+        self._agent_false_positives = {}
     
     def _spawn_task(self, coroutine, *args, **kwargs)->asyncio.Task:
         "Helper function to make sure all tasks are registered for proper termination"
@@ -331,7 +349,7 @@ class GameCoordinator:
         else:
             self._global_defender = None
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
-        self._rewards = self.task_config.get_rewards(["step", "success", "fail"])
+        self._rewards = self.task_config.get_rewards(["step", "success", "fail", "false_positive"])
         self.logger.info(f"Rewards set to:{self._rewards}")
         self._min_required_players = self.task_config.get_required_num_players()
         self.logger.info(f"Min player requirement set to:{self._min_required_players}")
@@ -365,7 +383,7 @@ class GameCoordinator:
             # Read message from the queue
             agent_addr, message = await self._agent_action_queue.get()
             if message is not None:
-                self.logger.info(f"Coordinator received: {message}.")
+                self.logger.info(f"Coordinator received from agent {agent_addr}: {message}.")
                 try:  # Convert message to Action
                     action = Action.from_json(message)
                     self.logger.debug(f"\tConverted to: {action}.")
@@ -375,20 +393,23 @@ class GameCoordinator:
                     )
                 match action.type:  # process action based on its type
                     case ActionType.JoinGame:
-                        self.logger.debug(f"Start processing of ActionType.JoinGame by {agent_addr}")
+                        self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.JoinGame by {agent_addr}")
                         self.logger.debug(f"{action.type}, {action.type.value}, {action.type == ActionType.JoinGame}")
                         self._spawn_task(self._process_join_game_action, agent_addr, action)
                     case ActionType.QuitGame:
-                        self.logger.debug(f"Start processing of ActionType.QuitGame by {agent_addr}")
+                        self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.QuitGame by {agent_addr}")
                         self._spawn_task(self._process_quit_game_action, agent_addr)
                     case ActionType.ResetGame:
-                        self.logger.debug(f"Start processing of ActionType.ResetGame by {agent_addr}")
+                        self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.ResetGame by {agent_addr}")
                         self._spawn_task(self._process_reset_game_action, agent_addr, action)
                     case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
-                        self.logger.debug(f"Start processing of {action.type} by {agent_addr}")
+                        self.logger.debug(f"About agent {agent_addr}. Start processing of {action.type} by {agent_addr}")
+                        self._spawn_task(self._process_game_action, agent_addr, action)
+                    case ActionType.BlockIP:
+                        self.logger.debug(f"About agent {agent_addr}. Start processing of {action.type} by {agent_addr}")
                         self._spawn_task(self._process_game_action, agent_addr, action)
                     case _:
-                        self.logger.warning(f"Unsupported action type: {action}!")
+                        self.logger.warning(f"About agent {agent_addr}. Unsupported action type: {action}!")
         self.logger.info("\tAction processing task stopped.")
             
     async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
@@ -412,7 +433,8 @@ class GameCoordinator:
                             self.agents[agent_addr] = (agent_name, agent_role)
                             observation = self._initialize_new_player(agent_addr, new_agent_game_state)
                             self._agent_observations[agent_addr] = observation
-                            if len(self.agents) == self._min_required_players:
+                            #if len(self.agents) == self._min_required_players:
+                            if sum(1 for v in self._agent_status.values() if v == AgentStatus.PlayingWithTimeout) >= self._min_required_players:
                                 # set the event so the episde can start
                                 self._episode_start_event.set()
                                 self.logger.info("Enough players joined. Starting the episode.")
@@ -467,7 +489,10 @@ class GameCoordinator:
         Outputs: None
         """
         try:
-            await self.remove_agent(agent_addr, self._agent_states[agent_addr])
+            if agent_addr in self._agent_states:
+                await self.remove_agent(agent_addr, self._agent_states[agent_addr])
+            else:
+                self.logger.warning(f"Agent address {agent_addr} not found in _agent_states. Skipping removal.")
             agent_info = await self._remove_agent_from_game(agent_addr)
             self.logger.info(f"Agent {agent_addr} removed from the game. {agent_info}")
         except asyncio.CancelledError:
@@ -517,6 +542,13 @@ class GameCoordinator:
         await self._agent_response_queues[agent_addr].put(response_msg_json)
 
     async def _process_game_action(self, agent_addr: tuple, action:Action)->None:
+        """
+        Method for processing Action of type ActionType.GameAction
+        Inputs: 
+            -   agent_addr (tuple)
+            -   action (Action)
+        Outputs: None
+        """
         if self._episode_ends[agent_addr]:
             self.logger.warning(f"Agent {agent_addr}({self.agents[agent_addr]}) is attempting to play action {action} after the end of the episode!")
             # agent can't play any more actions in the game
@@ -616,7 +648,9 @@ class GameCoordinator:
                     else:
                         self._agent_rewards[agent] += self._rewards["fail"]
                         self._agent_status[agent] = AgentStatus.Fail
-                    # TODO Add penalty for False positives 
+                    # dicrease the reward for false positives
+                    self.logger.debug(f"Processing false positives for agent {agent}: {self._agent_false_positives[agent]}")
+                    self._agent_rewards[agent] -= self._agent_false_positives[agent] * self._rewards["false_positive"]
             # clear the episode end event
             self._episode_end_event.clear()
             # notify all waiting agents
@@ -655,6 +689,7 @@ class GameCoordinator:
                     self._reset_requests[agent] = False
                     self._agent_rewards[agent] = 0
                     self._agent_steps[agent] = 0
+                    self._agent_false_positives[agent] = 0
                     if self.agents[agent][1].lower() == "attacker":
                         self._agent_status[agent] = AgentStatus.PlayingWithTimeout
                     else:
@@ -678,6 +713,7 @@ class GameCoordinator:
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = agent_current_state
         self._agent_rewards[agent_addr] = 0
+        self._agent_false_positives[agent_addr] = 0
         if agent_role.lower() == "attacker":
             self._agent_status[agent_addr] = AgentStatus.PlayingWithTimeout
         else:
@@ -712,6 +748,7 @@ class GameCoordinator:
                 agent_info["state"] = self._agent_states.pop(agent_addr)
                 agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
                 agent_info["agent_status"] = self._agent_status.pop(agent_addr)
+                agent_info["false_positives"] = self._agent_false_positives.pop(agent_addr)
                 async with self._reset_lock:
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
                     # check if this agent was not preventing reset 
@@ -787,6 +824,17 @@ class GameCoordinator:
                 timeout_reached = True
         return timeout_reached
 
+    def add_false_positive(self, agent:tuple)->None:
+        """
+        Method for adding false positive to the agent.
+        """
+        self.logger.debug(f"Adding false positive to {agent}")
+        if agent in self._agent_false_positives:
+            self._agent_false_positives[agent] += 1
+        else:
+            self._agent_false_positives[agent] = 1
+        self.logger.debug(f"False positives for {agent}: {self._agent_false_positives[agent]}")
+
     def _update_agent_status(self, agent:tuple)->AgentStatus:
         """
         Update the status of an agent based on reaching the goal, timeout or detection.
@@ -856,3 +904,11 @@ class GameCoordinator:
             with jsonlines.open(filename, "a") as writer:
                 writer.write(self._agent_trajectories[agent_addr])
             self.logger.info(f"Trajectory of {agent_addr} strored in {filename}")
+    
+    def is_agent_benign(self, agent_addr:tuple)->bool:
+        """
+        Check if the agent is benign (defender, normal)
+        """
+        if agent_addr not in self.agents:
+            return False
+        return self.agents[agent_addr][1].lower() in ["defender", "benign"]
