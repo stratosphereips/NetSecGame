@@ -268,7 +268,8 @@ async def test_answer_queue_response_is_sent_to_agent(agent_server, mock_writer)
 async def test_cancelled_error_cleanup(agent_server, mock_writer):
     peername = ('127.0.0.1', 12345)
     mock_writer.get_extra_info = MagicMock(return_value=peername)
-
+    mock_writer.close = AsyncMock()
+    mock_writer.wait_closed = AsyncMock()
     reader = AsyncMock()
     reader.read = AsyncMock(side_effect=asyncio.CancelledError())
 
@@ -279,7 +280,8 @@ async def test_cancelled_error_cleanup(agent_server, mock_writer):
         await agent_server.handle_new_agent(reader, mock_writer)
 
     assert peername not in agent_server.answers_queues
-    mock_writer.close.assert_awaited()
+    mock_writer.close.assert_called_once()            
+    mock_writer.wait_closed.assert_awaited_once()    
 
 @pytest.mark.asyncio
 async def test_unexpected_exception_cleanup(agent_server, mock_writer):
