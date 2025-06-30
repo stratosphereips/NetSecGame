@@ -460,7 +460,7 @@ class ConfigParser():
         """
         Get the scenario config objects based on the configuration. Only import objects that are selected via importlib.
         """
-        ALLOWED = {
+        allowed_names = {
             "scenario1" : "AIDojoCoordinator.scenarios.scenario_configuration",
             "scenario1_small" : "AIDojoCoordinator.scenarios.smaller_scenario_configuration",
             "scenario1_tiny" : "AIDojoCoordinator.scenarios.tiny_scenario_configuration",
@@ -473,11 +473,11 @@ class ConfigParser():
         }
         scenario_name = self.config['env']['scenario']
         # make sure to validate the input
-        if scenario_name not in ALLOWED:
+        if scenario_name not in allowed_names:
             raise ValueError(f"Unsupported scenario: {scenario_name}")
         
         # import the correct module
-        module = importlib.import_module(ALLOWED[scenario_name])
+        module = importlib.import_module(allowed_names[scenario_name])
         return module.configuration_objects
 
     def get_seed(self, whom):
