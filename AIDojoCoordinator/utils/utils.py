@@ -465,7 +465,11 @@ class ConfigParser():
             "scenario1_small" : "AIDojoCoordinator.scenarios.smaller_scenario_configuration",
             "scenario1_tiny" : "AIDojoCoordinator.scenarios.tiny_scenario_configuration",
             "one_net": "AIDojoCoordinator.scenarios.one_net",
-            "three_net_scenario": "AIDojoCoordinator.scenarios.three_net_scenario"
+            "three_net_scenario": "AIDojoCoordinator.scenarios.three_net_scenario",
+            "two_nets": "AIDojoCoordinator.scenarios.two_nets", # same as scenario1
+            "two_nets_small": "AIDojoCoordinator.scenarios.two_nets_small", # same as scenario1_small
+            "two_nets_tiny": "AIDojoCoordinator.scenarios.two_nets_tiny", # same as scenario1_small
+
         }
         scenario_name = self.config['env']['scenario']
         # make sure to validate the input
