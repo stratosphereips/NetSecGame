@@ -51,6 +51,7 @@ requires-python = ">=3.12"
 dev = [
     "pytest",
     "ruff",
+    "pytest-asyncio"
 ]
 
 [project.urls]
