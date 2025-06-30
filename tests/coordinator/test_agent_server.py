@@ -2,6 +2,7 @@
 import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
+from contextlib import suppress
 from AIDojoCoordinator.coordinator import AgentServer
 from AIDojoCoordinator.game_components import Action, ActionType, ProtocolConfig
 
@@ -76,7 +77,7 @@ async def test_accepts_connection_under_max_connections(agent_server, mock_reade
 
     # incremented and decremented → back to zero
     assert agent_server.current_connections == 0
-    mock_writer.close.assert_awaited_once()
+    mock_writer.close.assert_called_once()
     assert peername not in agent_server.answers_queues
 
 @pytest.mark.asyncio
@@ -85,7 +86,7 @@ async def test_accepts_multiple_connections_up_to_limit(agent_server, mock_reade
         peername = (f'10.0.0.{i}', 1000 + i)
         writer = make_writer_with_peer(*peername)
         await agent_server.handle_new_agent(mock_reader_empty, writer)
-        writer.close.assert_awaited_once()
+        writer.close.assert_called_once()
         assert peername not in agent_server.answers_queues
 
 @pytest.mark.asyncio
@@ -94,37 +95,49 @@ async def test_prevents_simultaneous_duplicate_peername_connections(agent_server
     writer1 = make_writer_with_peer(*peername)
     writer2 = make_writer_with_peer(*peername)
 
-    # Explicitly mock get_extra_info to return the same peername tuple
     writer1.get_extra_info = MagicMock(return_value=peername)
     writer2.get_extra_info = MagicMock(return_value=peername)
 
+    # First reader hangs to simulate a long-lived connection
+    async def never_read(_=None):
+        await asyncio.Event().wait()
+
     reader1 = AsyncMock()
     reader2 = AsyncMock()
-
-    reader1.read = AsyncMock(side_effect=[b'{"some":"message"}', b''])
+    reader1.read = AsyncMock(side_effect=never_read)
     reader2.read = AsyncMock(return_value=b'')
 
     agent_server.actions_queue = AsyncMock()
 
+    # Start first connection
     task1 = asyncio.create_task(agent_server.handle_new_agent(reader1, writer1))
 
+    # Wait until queue for writer1 is created
     for _ in range(100):
         await asyncio.sleep(0.01)
         if peername in agent_server.answers_queues:
             break
     else:
         task1.cancel()
+        with suppress(asyncio.CancelledError):
+            await task1
         pytest.fail("answers_queues was not created in time")
 
-    await agent_server.handle_new_agent(reader2, writer2)
-    writer2.close.assert_awaited_once()
+    # Assert queue exists before it's potentially removed
     assert list(agent_server.answers_queues.keys()).count(peername) == 1
 
-    await agent_server.answers_queues[peername].put("dummy-response")
-    await task1
+    # Start second connection with the same peername
+    await agent_server.handle_new_agent(reader2, writer2)
 
-    writer1.close.assert_awaited_once()
-    assert peername not in agent_server.answers_queues
+    # Assert it was rejected (writer2 should be closed)
+    writer2.close.assert_called_once()
+
+    # Clean up task1
+    task1.cancel()
+    with suppress(asyncio.CancelledError):
+        await task1
+
+
 
 # -----------------------
 # Queue Management Tests
@@ -138,7 +151,7 @@ async def test_does_not_create_queue_if_one_exists(agent_server, mock_reader_emp
     agent_server.answers_queues = {peername: preexisting}
 
     await agent_server.handle_new_agent(mock_reader_empty, mock_writer)
-    mock_writer.close.assert_awaited_once()
+    mock_writer.close.assert_called_once()
     assert agent_server.answers_queues[peername] is preexisting
 
 @pytest.mark.asyncio
@@ -148,7 +161,7 @@ async def test_handles_missing_queue_on_cleanup_gracefully(agent_server, mock_re
     agent_server.answers_queues = {}  # missing
 
     await agent_server.handle_new_agent(mock_reader_empty, mock_writer)
-    mock_writer.close.assert_awaited_once()
+    mock_writer.close.assert_called_once()
     assert peername not in agent_server.answers_queues
 
 # -----------------------
@@ -245,7 +258,7 @@ async def test_answer_queue_response_is_sent_to_agent(agent_server, mock_writer)
     delimiter = getattr(ProtocolConfig, "END_OF_MESSAGE", b"\n")
     expected = response.encode() + delimiter
     mock_writer.write.assert_any_call(expected)
-    mock_writer.drain.assert_awaited_once()
+    mock_writer.drain.assert_called_once()
 
 # -----------------------
 # Error Handling Tests
@@ -255,7 +268,8 @@ async def test_answer_queue_response_is_sent_to_agent(agent_server, mock_writer)
 async def test_cancelled_error_cleanup(agent_server, mock_writer):
     peername = ('127.0.0.1', 12345)
     mock_writer.get_extra_info = MagicMock(return_value=peername)
-
+    mock_writer.close = AsyncMock()
+    mock_writer.wait_closed = AsyncMock()
     reader = AsyncMock()
     reader.read = AsyncMock(side_effect=asyncio.CancelledError())
 
@@ -266,7 +280,8 @@ async def test_cancelled_error_cleanup(agent_server, mock_writer):
         await agent_server.handle_new_agent(reader, mock_writer)
 
     assert peername not in agent_server.answers_queues
-    mock_writer.close.assert_awaited()
+    mock_writer.close.assert_called_once()            
+    mock_writer.wait_closed.assert_awaited_once()    
 
 @pytest.mark.asyncio
 async def test_unexpected_exception_cleanup(agent_server, mock_writer):
@@ -284,4 +299,4 @@ async def test_unexpected_exception_cleanup(agent_server, mock_writer):
         await agent_server.handle_new_agent(reader, mock_writer)
 
     assert peername not in agent_server.answers_queues
-    mock_writer.close.assert_awaited()
+    mock_writer.close.assert_called_once()

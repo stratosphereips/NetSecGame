@@ -39,6 +39,7 @@ class AgentServer(asyncio.Protocol):
         """
         # get the peername of the writer
         peername = writer.get_extra_info("peername")
+        queue_created = False
         try:
             self.logger.info(f"New connection from {peername}")
             # Check if the maximum number of connections has been reached
@@ -49,6 +50,7 @@ class AgentServer(asyncio.Protocol):
                 # Ensure a queue exists for this agent
                 if peername not in self.answers_queues:
                     self.answers_queues[peername] = asyncio.Queue(maxsize=2)
+                    queue_created = True
                     self.logger.info(f"Created queue for agent {peername}")
                     # Handle the new agent
                     while True:
@@ -90,9 +92,11 @@ class AgentServer(asyncio.Protocol):
         finally:
             try:
                 if peername in self.answers_queues:
-                    self.answers_queues.pop(peername)
-                    self.logger.info(f"Removed queue for agent {peername}")
-                    self.current_connections -= 1
+                    # If the queue was created, remove it
+                    if queue_created:
+                        self.answers_queues.pop(peername)
+                        self.logger.info(f"Removed queue for agent {peername}")
+                    self.current_connections = max(0, self.current_connections - 1)
                 writer.close()
                 await writer.wait_closed()
             except Exception:
