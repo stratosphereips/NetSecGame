@@ -8,32 +8,52 @@ The main part of he NetSecGame is the Game coordinator. It creates the enivronem
 
 ## Installation and Dependencies
 To run this code you need an environment and access to cyst code. However, the venv needs to be created for your own user
-
-- If you don't have your environment
-
+### Installing in Pyton virtual environment
+1. Create the [virual envtironment](https://docs.python.org/3/library/venv.html):
 ```bash
 python -m venv ai-dojo-venv-<yourusername>
 ```
-
-- The environment can be activated with
-
+2. Activate the venv:
 ```bash
 source ai-dojo-venv<yourusername>/bin/activate
 ```
-
-- Install using pip by running following in the **root** directory
-
+3. Install with pip:
 ```bash
 pip install -e .
 ```
-
-- If you use conda use
+### Installing with Conda
+1. Create conda environment
 ```bash
 conda create --name aidojo python==3.12
+```
+2. Activate it
+```bash
 conda activate aidojo
+```
+3. Install the package
+```bash
 pip install -e .
 ```
 
+### Running in Docker
+You can run the coordinator in a Docker container
+Build the Contaier (run from the *root* of the project) locally.
+```bash
+docker build -t aidojo-nsg-coordinator:latest .
+```
+
+or pull the image from Dockerhub
+```bash
+docker pull lukasond/aidojo-coordinator:1.0.2
+```
+
+## Running the game:
+There are currently two variants of how you can run the game:
+- Network Security Game - pure simulation
+- CYST-based Environment - simulation + emulation
+
+### Running Network Security Game
+1. Prepare the task configuration file (see )
 ## Components of the NetSecGame Environment
 The architecture of the environment can be seen [here](docs/Architecture.md).
 The NetSecGame environment has several components in the following files:
@@ -77,6 +97,7 @@ Predefined scenario configurations:
 - `scenario_configuration.py`: The main scenario configuration.
 - `three_net_configuration.py`: Configuration for a three-network scenario. Used for evaluation of the model overfitting.
 Implements the network game's configuration of hosts, data, services, and connections. It is taken from [CYST](https://pypi.org/project/cyst/).
+
 #### **`utils/`**
 Helper modules:
 - `utils.py`: General-purpose utilities.
@@ -86,6 +107,9 @@ Helper modules:
 
 The [scenarios](#definition-of-the-network-topology) define the **topology** of a network (number of hosts, connections, networks, services, data, users, firewall rules, etc.) while the [task-configuration](#task-configuration) is to be used for definition of the exact task for the agent in one of the scenarios (with fix topology).
 - Agents compatible with the NetSecGame are located in a separate repository [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main)
+
+
+
 
 ### Assumptions of the NetSecGame
 1. NetSecGame works with the closed-world assumption. Only the defined entities exist in the simulation.
