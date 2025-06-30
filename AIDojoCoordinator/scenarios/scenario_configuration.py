@@ -760,5 +760,5 @@ exploits = [
     )
 ]
 
-configuration_objects = [smb_server, db_server, web_server, other_server_1, other_server_2, client_1, client_2,
-                         client_3, client_4, client_5, router1, internet, outside_node, *connections, *exploits]
+# configuration_objects = [smb_server, db_server, web_server, other_server_1, other_server_2, client_1, client_2,
+#                          client_3, client_4, client_5, router1, internet, outside_node, *connections, *exploits]
