@@ -932,7 +932,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
     # Set the logging
-    log_filename = Path("NSG_coordinator.log")
+    log_filename = Path("logs/NSG_coordinator.log")
     if not log_filename.parent.exists():
         os.makedirs(log_filename.parent)
 
