@@ -4,10 +4,7 @@
 
 import yaml
 # This is used so the agent can see the environment and game components
-from AIDojoCoordinator.scenarios import scenario_configuration
-from AIDojoCoordinator.scenarios import smaller_scenario_configuration
-from AIDojoCoordinator.scenarios import tiny_scenario_configuration
-from AIDojoCoordinator.scenarios import three_net_scenario
+import importlib
 from AIDojoCoordinator.game_components import IP, Data, Network, Service, GameState, Action, Observation, ActionType
 import netaddr
 import logging
@@ -463,19 +460,21 @@ class ConfigParser():
         """
         Get the scenario config object
         """
-        scenario = self.config['env']['scenario']
-
-        if scenario == "scenario1":
-            cyst_config = scenario_configuration.configuration_objects
-        elif scenario == "scenario1_small":
-            cyst_config = smaller_scenario_configuration.configuration_objects
-        elif scenario == "scenario1_tiny":
-            cyst_config = tiny_scenario_configuration.configuration_objects
-        elif scenario == "three_nets":
-            cyst_config = three_net_scenario.configuration_objects
-        else:
-            cyst_config = 'scenario1'
-        return cyst_config
+        ALLOWED = {
+            "scenario1" : "AIDojoCoordinator.scenarios.scenario_configuration",
+            "scenario1_small" : "AIDojoCoordinator.scenarios.smaller_scenario_configuration",
+            "scenario1_tiny" : "AIDojoCoordinator.scenarios.tiny_scenario_configuration",
+            "one_net": "AIDojoCoordinator.scenarios.one_net",
+            "three_net_scenario": "AIDojoCoordinator.scenarios.three_net_scenario"
+        }
+        scenario_name = self.config['env']['scenario']
+        # make sure to validate the input
+        if scenario_name not in ALLOWED:
+            raise ValueError(f"Unsupported scenario: {scenario_name}")
+        
+        # import the correct module
+        module = importlib.import_module(ALLOWED[scenario_name])
+        return module.configuration_objects
 
     def get_seed(self, whom):
         """
