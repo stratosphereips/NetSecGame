@@ -831,7 +831,7 @@ class NSGCoordinator(GameCoordinator):
     
     def update_log_file(self, known_data:set, action, target_host:IP):
         hostaname = self._ip_to_hostname[target_host]
-        self.logger.info(f"Updating log file in host {hostaname}")
+        self.logger.debug(f"Updating log file in host {hostaname}")
         try:
             current_log_file = list(filter(lambda x: x.owner == "system" and x.type == "log",self._data[hostaname]))[0]
             self._data[hostaname].discard(current_log_file)
