@@ -1,0 +1,1 @@
+::: AIDojoCoordinator.coordinator

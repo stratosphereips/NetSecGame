@@ -6,6 +6,7 @@ nav:
   - Home: index.md
   - API Reference: 
     - game_components.md
+    - game_coordinator.md
 
 plugins:
   - mkdocstrings:
