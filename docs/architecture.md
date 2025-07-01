@@ -1,5 +1,5 @@
-
-
+## NetSecGame Architecture
+The Network Security Game(NSG) works as a game server - agents connect to it via TCP sockets and interact with the environment using the standard RL communication loop: Agent submits actinon and recieves new observation of the environment. The NSG supports real-time, highly customizable multi-agent simulations.
 
 ## Game Components
 The following classes are used in the game to hold information about the state of the game. They are used both in the [Actions](#actions) and [GameState](#gamestate). See the API Reference for [GameComponents](game_components.md)
