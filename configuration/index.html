@@ -1,0 +1,727 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../architecture/">
+      
+      
+        <link rel="next" href="../game_components/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.15">
+    
+    
+      
+        <title>Configuration - Network Security Game</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#environment-configuration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Network Security Game" class="md-header__button md-logo" aria-label="Network Security Game" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Network Security Game
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Configuration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Network Security Game" class="md-nav__button md-logo" aria-label="Network Security Game" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Network Security Game
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#environment-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Environment configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#definition-of-the-network-topology" class="md-nav__link">
+    <span class="md-ellipsis">
+      Definition of the network topology
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#attacker-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attacker configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#defender-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defender configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../game_components/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Game Components
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../game_coordinator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Game Coordinator
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#environment-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Environment configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Environment configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#definition-of-the-network-topology" class="md-nav__link">
+    <span class="md-ellipsis">
+      Definition of the network topology
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#attacker-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attacker configuration
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#defender-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Defender configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Configuration</h1>
+
+<p>The NetSecEnv is highly configurable in terms of the properties of the world, tasks, and agent interaction. Modification of the world is done in the YAML configuration file in two main areas:
+1. Environment (<code>env</code> section) controls the properties of the world (taxonomy of networks, maximum allowed steps per episode, probabilities of action success, etc.)
+2. Task configuration defines the agents' properties (starting position, goal, etc.)</p>
+<h2 id="environment-configuration">Environment configuration</h2>
+<p>The environment part defines the properties of the environment for the task (see the example below). In particular:</p>
+<ul>
+<li><code>random_seed</code> - sets seed for any random processes in the environment</li>
+<li><code>scenario</code> - sets the scenario (network topology) used in the task:<ul>
+<li><code>one_network</code> - several client computers and servers in single local network</li>
+<li><code>two_networks_tiny</code> - single client and server in separate local networks + remote C&amp;C server</li>
+<li><code>two_networks_small</code> - single client and 5 servers in separate local networks + remote C&amp;C server</li>
+<li><code>two_networks</code> - 5 clients and 5 servers in separate local networks + remote C&amp;C server</li>
+<li><code>three_net_scenario</code> - 5 clients in a local network, 5 servers split in 2 additional local networks + remote C&amp;C server</li>
+</ul>
+</li>
+<li><code>save_tajectories</code> - if <code>True</code>, interaction of the agents is serialized and stored in a file</li>
+<li><code>use_dynamic_addresses</code> - if <code>True</code>, the network and IP addresses defined in <code>scenario</code> are randomly changed at the beginning of <strong>EVERY</strong> episode (the network topology is kept as defined in the <code>scenario</code>. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)</li>
+<li><code>use_firewall</code> - if <code>True</code> firewall rules defined in <code>scenario</code> are used when executing actions. When <code>False</code>, the firewall is ignored, and all connections are allowed (Default)</li>
+<li><code>use_global_defender</code> - if <code>True</code>, enables global defendr which is part of the environment and can stop interaction of any playing agent.</li>
+<li><code>required_players</code> - Minimum required players for the game to start (default 1)</li>
+<li><code>rewards</code>:<ul>
+<li><code>success</code> - sets reward which agent gets when it reaches the goal (default 100)</li>
+<li><code>fail</code> - sets the reward that which agent does not reach it's objective (default -10)</li>
+<li><code>step_reward</code> - sets reward which agent gets for every step taken (default -1)</li>
+</ul>
+</li>
+<li><code>actions</code> - defines the probability of success for every ActionType</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">env</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">random_seed</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;random&#39;</span>
+<span class="w">    </span><span class="nt">scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;scenario1&#39;</span>
+<span class="w">    </span><span class="nt">use_global_defender</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">    </span><span class="nt">use_dynamic_addresses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">    </span><span class="nt">use_firewall</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">    </span><span class="nt">save_trajectories</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">    </span><span class="nt">rewards</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">win</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">        </span><span class="nt">step</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1</span>
+<span class="w">        </span><span class="nt">loss</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-10</span>
+<span class="w">    </span><span class="nt">actions</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">scan_network</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">prob_success</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">        </span><span class="nt">find_services</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">prob_success</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">        </span><span class="nt">exploit_service</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">prob_success</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">        </span><span class="nt">find_data</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">prob_success</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">        </span><span class="nt">exfiltrate_data</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">prob_success</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">        </span><span class="nt">block_ip</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">prob_success</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+</code></pre></div>
+<h3 id="definition-of-the-network-topology">Definition of the network topology</h3>
+<p>The network topology and rules are defined using a <a href="https://pypi.org/project/cyst/">CYST</a> simulator configuration. Cyst defines a complex network configuration, and this environment does not use all Cyst features for now. CYST components currently used are:</p>
+<ul>
+<li>Server hosts (are a NodeConf in CYST)<ul>
+<li>Interfaces, each with one IP address</li>
+<li>Users that can log in to the host</li>
+<li>Active and passive services</li>
+<li>Data in the server</li>
+<li>To which network is connected</li>
+</ul>
+</li>
+<li>Client host (are a Node in CYST)<ul>
+<li>Interfaces, each with one IP address</li>
+<li>To which network is connected</li>
+<li>Active and passive services if any</li>
+<li>Data in the client</li>
+</ul>
+</li>
+<li>Router (are a RouterConf in CYST)<ul>
+<li>Interfaces, each with one IP address</li>
+<li>Networks</li>
+<li>Allowed connections between hosts</li>
+</ul>
+</li>
+<li>Internet host (as an external router) (are a Node in RouterConf)<ul>
+<li>Interfaces, each with one IP address</li>
+<li>Which host can connect</li>
+</ul>
+</li>
+<li>Exploits<ul>
+<li>which service is the exploit linked to</li>
+</ul>
+</li>
+</ul>
+<h2 id="task-configuration">Task configuration</h2>
+<p>The task configuration part (section <code>coordinator[agents]</code>) defines the starting and goal position of the attacker and the type of defender that is used.</p>
+<h3 id="attacker-configuration">Attacker configuration</h3>
+<p>Configuration of the attacking agents. Consists of three parts:
+1. Goal definition (<code>goal</code>) which describes the <code>GameState</code> properties that must be fulfilled to award <code>win</code> reward to the attacker:
+    - <code>known_networks:</code>(list)
+    - <code>known_hosts</code>(list)
+    - <code>controlled_hosts</code>(list)
+    - <code>known_services</code>(dict)
+    - <code>known_data</code>(dict)
+    - <code>known_blocks</code>(dict)</p>
+<pre><code> Each of the parts can be empty (not part of the goal, exactly defined (e.g., `known_networks: [192.168.1.0/24, 192.168.3.0/24]`) or include the keyword `random` (`controlled_hosts: [213.47.23.195, random]`, `known_data: {213.47.23.195: [random]}`.
+Additionally,  if `random` keyword is used in the goal definition, 
+`randomize_goal_every_episode`. If set to `True`, each keyword `random` is replaced with a randomly selected, valid option at the beginning of **EVERY** episode. If set to `False`, randomization is performed only **once** when the environment is
+</code></pre>
+<ol>
+<li>
+<p>Definition of starting position (<code>start_position</code>), which describes the <code>GameState</code> in which the attacker starts. It consists of:</p>
+<ul>
+<li><code>known_networks:</code>(list)</li>
+<li><code>known_hosts</code>(list)</li>
+<li><code>controlled_hosts</code>(list)</li>
+<li><code>known_services</code>(dict)</li>
+<li><code>known_data</code>(dict)</li>
+<li><code>known_blocks</code>(dict)</li>
+</ul>
+<p>The initial network configuration must assign at least <strong>one</strong> controlled host to the attacker in the network. Any item in <code>controlled_hosts</code> is copied to <code>known_hosts</code>, so there is no need to include these in both sets. <code>known_networks</code> is also extended with a set of <strong>all</strong> networks accessible from the <code>controlled_hosts</code>
+3. Definition of maximum allowed amount of steps:
+- <code>max_steps:</code>(int): defines the maximum allowed number of steps for attackers in <strong>each</strong> episode.</p>
+</li>
+</ol>
+<p>Example attacker configuration:
+<div class="highlight"><pre><span></span><code><span class="nt">coordinator</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">agents</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">Attacker</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">max_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
+<span class="w">            </span><span class="nt">goal</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">randomize_goal_every_episode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">            </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">            </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">            </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">            </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">192.168.1.3</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">Local system</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">lanman server</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">10.0.19041</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">False</span><span class="p p-Indicator">],</span><span class="nt"> 192.168.1.4</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">Other system</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">SMB server</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">21.2.39421</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">False</span><span class="p p-Indicator">]}</span>
+<span class="w">            </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">213.47.23.195</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;random&quot;</span><span class="p p-Indicator">]}</span>
+<span class="w">            </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="s">&#39;all_routers&#39;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&#39;all_attackers&#39;</span><span class="p p-Indicator">}</span>
+
+<span class="w">            </span><span class="nt">start_position</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">            </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">            </span><span class="c1"># The attacker must always at least control the CC if the goal is to exfiltrate there</span>
+<span class="w">            </span><span class="c1"># Example of fixing the starting point of the agent in a local host</span>
+<span class="w">            </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">213.47.23.195</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">random</span><span class="p p-Indicator">]</span>
+<span class="w">            </span><span class="c1"># Services are defined as a target host where the service must be, and then a description in the form &#39;name, type, version, is_local&#39;</span>
+<span class="w">            </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">            </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">            </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+</code></pre></div></p>
+<h3 id="defender-configuration">Defender configuration</h3>
+<p>Currently, the defender <strong>is</strong> a separate agent.</p>
+<p>If you want a defender in the game, you must connect a defender agent. For playing without a defender, leave the section empty.</p>
+<p>Example of defender configuration:
+<div class="highlight"><pre><span></span><code><span class="w">   </span><span class="nt">Defender</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">goal</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Block</span><span class="nv"> </span><span class="s">all</span><span class="nv"> </span><span class="s">attackers&quot;</span>
+<span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+
+<span class="w">      </span><span class="nt">start_position</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">all_local</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">blocked_ips</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+</code></pre></div>
+As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In the curent implementation, the <em>Defender</em> wins, if <strong>NO ATTACKER</strong> reaches their goal. </p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.56ea9cef.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
