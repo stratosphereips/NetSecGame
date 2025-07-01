@@ -2,6 +2,7 @@
 Coordinator is the centerpiece of the game orchestration. It provides an interface between the agents and the worlds.
 
 In detail it handles:
+
 1. World initialiazation
 2. Registration of new agents in the game
 3. Agent-World communication (message verification and forwarding)

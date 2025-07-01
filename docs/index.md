@@ -136,9 +136,10 @@ The NetSecGame environment has several components in the following files:
 |		├── actions_parser.py
 ```
 Some compoments are described in detail in following sections:
+
 - [Architecture](architecture.md) describes the architecture and important design decisions of the NetSecGame
-- [Configuration](configuration.md) 
-- [API Reference](reference.md)
+- [Configuration](configuration.md) describes the task and scenario configuration for NetSecGame
+- [API Reference](game_components.md) provides details of the API
 
 ## About
 This code was developed at the [Stratosphere Laboratory at the Czech Technical University in Prague](https://www.stratosphereips.org/). The project is supported by Strategic Support for the Development of Security Research in the Czech Republic 2019–2025 (IMPAKT 1) program, by the Ministry of the Interior of the Czech Republic under No.
