@@ -2,8 +2,32 @@
 
 The NetSecGame (Network Security Game) is a framework for training and evaluation of AI agents in the network security tasks (both offensive and defensive). It is build with [CYST](https://pypi.org/project/cyst/) network simulator and enables rapid development and testing of AI agents in highly configurable scenarios. Examples of implemented agents can be seen in the submodule [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
 
-## Installation
-To in
+## Installation Guide
+It is recommended to install the NetSecGame in a virual environement:
+### Python venv
+1. 
+```bash
+python -m venv <venv-name>
+```
+2. 
+```bash
+source <venv-name>/bin/activate
+```
+
+### Conda
+1. 
+```bash
+conda create --name aidojo python==3.12
+```
+2. 
+```bash
+conda activate aidojo
+```
+
+After the virtual environment is activated, install using pip:
+```bash
+pip install -e .
+```
 ### With Docker
 The NetSecGame can be run in a Docker container. You can build the image locally with:
 ```bash 
@@ -38,8 +62,6 @@ docker run -it --rm \
 - [Architecture](architecture.md) describes the architecture and important design decisions of the NetSecGame
 - [Configuration](configuration.md) 
 - [API Reference](reference.md)
-
-## Contribution
 
 ## About
 This code was developed at the [Stratosphere Laboratory at the Czech Technical University in Prague](https://www.stratosphereips.org/). The project is supported by Strategic Support for the Development of Security Research in the Czech Republic 2019–2025 (IMPAKT 1) program, by the Ministry of the Interior of the Czech Republic under No.
