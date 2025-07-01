@@ -1,0 +1,19 @@
+site_name: Network Security Game
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - API Reference: 
+    - game_components.md
+
+plugins:
+  - mkdocstrings:
+      default_handler: python
+
+markdown_extensions:
+  - pymdownx.arithmatex
+  - pymdownx.superfences
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
