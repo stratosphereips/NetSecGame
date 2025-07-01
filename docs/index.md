@@ -1,3 +1,47 @@
-# Welcome to Your Project
+# Network Security Game
 
-This is the documentation homepage.
+The NetSecGame (Network Security Game) is a framework for training and evaluation of AI agents in the network security tasks (both offensive and defensive). It is build with [CYST](https://pypi.org/project/cyst/) network simulator and enables rapid development and testing of AI agents in highly configurable scenarios. Examples of implemented agents can be seen in the submodule [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
+
+## Installation
+To in
+### With Docker
+The NetSecGame can be run in a Docker container. You can build the image locally with:
+```bash 
+docker build -t aidojo-nsg-coordinator:latest .
+```
+or use the availabe image from [Dockerhub](https://hub.docker.com/r/lukasond/aidojo-coordinator).
+```bash
+docker pull lukasond/aidojo-coordinator:1.0.2
+```
+## Quick Start
+A task configuration needs to be specified to start the NetSecGame (see [Configuration](configuration.md)). For the first step, the example task configuration is recommended:
+```yaml
+```
+
+The game can be started with:
+```bash
+python3 -m AIDojoCoordinator.worlds.NSEGameCoordinator \
+  --task_config=./examples/example_config.yaml \
+  --game_port=9000
+```
+Upon which the game server is created on `localhost:9000` to which the agents can connect to interact in the NetSecGame.
+### Docker Container
+When running in the Docker container, the NetSecGame can be started with:
+```bash
+docker run -it --rm \
+  -v $(pwd)/examples/example_config.yaml:/aidojo/netsecenv_conf.yaml \
+  -v $(pwd)/logs:/aidojo/logs \
+  -p 9000:9000 lukasond/aidojo-coordinator:1.0.2
+```
+
+## Documentation
+- [Architecture](architecture.md) describes the architecture and important design decisions of the NetSecGame
+- [Configuration](configuration.md) 
+- [API Reference](reference.md)
+
+## Contribution
+
+## About
+This code was developed at the [Stratosphere Laboratory at the Czech Technical University in Prague](https://www.stratosphereips.org/). The project is supported by Strategic Support for the Development of Security Research in the Czech Republic 2019–2025 (IMPAKT 1) program, by the Ministry of the Interior of the Czech Republic under No.
+VJ02010020 – AI-Dojo: Multi-agent testbed for the
+research and testing of AI-driven cyber security technologies.
