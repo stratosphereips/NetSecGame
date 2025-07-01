@@ -59,6 +59,24 @@ docker run -it --rm \
 ```
 
 ## Documentation
+The NetSecGame environment has several components in the following files:
+```
+├── AIDojoGameCoordinator/
+|   ├── game_coordinator.py
+|	├── game_components.py
+|	├── global_defender.py
+|	├── worlds/
+|		├── NSGCoordinator.py
+|		├── NSGRealWorldCoordinator.py
+|		├── CYSTCoordinator.py
+|	├── scenarios/
+|	├── utils/
+|		├── utils.py
+|		├── log_parser.py
+|		├── gamaplay_graphs.py
+|		├── actions_parser.py
+```
+Some compoments are described in detail in following sections:
 - [Architecture](architecture.md) describes the architecture and important design decisions of the NetSecGame
 - [Configuration](configuration.md) 
 - [API Reference](reference.md)
