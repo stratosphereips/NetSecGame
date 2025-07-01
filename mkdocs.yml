@@ -20,7 +20,7 @@ plugins:
             show_root_heading: true
             show_signature: true
             show_source: true
-            members_order: source
+            members_order: alphabetical
             merge_init_into_class: true
 
 markdown_extensions:
