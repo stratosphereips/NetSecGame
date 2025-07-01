@@ -137,7 +137,7 @@ class Network():
     ip: str
     mask: int
 
-    def __repr__(self):
+    def __repr__(self)->str:
         """
         Return the string representation of the network.
 
@@ -146,7 +146,7 @@ class Network():
         """
         return f"{self.ip}/{self.mask}"
 
-    def __str__(self):
+    def __str__(self)->str:
         """
         Return the string representation of the network.
 
