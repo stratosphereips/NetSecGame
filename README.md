@@ -1,61 +1,127 @@
 # Netwrok Security Game
 [![Python Checks](https://github.com/stratosphereips/game-states-maker/actions/workflows/python-checks.yml/badge.svg)](https://github.com/stratosphereips/game-states-maker/actions/workflows/python-checks.yml)
 [![Autotag](https://github.com/stratosphereips/game-states-maker/actions/workflows/autotag.yml/badge.svg)](https://github.com/stratosphereips/game-states-maker/actions/workflows/autotag.yml)
-[![Docs](https://github.com/<user>/stratosphereips/game-states-maker/actions/workflows/deploy-docs.yml/badge.svg)](https://stratosphereips.github.io/NetSecGame/))
+[![Docs](https://github.com/stratosphereips/game-states-maker/actions/workflows/deploy-docs.yml/badge.svg)](https://stratosphereips.github.io/NetSecGame/)
 
 
-The NetSecGame (Network Security Game) is a framework for training and evaluation of AI agents in the network security tasks (both offensive and defensive). It builds a simulated local network using the [CYST](https://pypi.org/project/cyst/) network simulator, adds many conditions on the environment and can train reinforcement learning (RL) algorithms on how to better attack and defend the network. Examples of implemented agents can be seen in the submodule [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
+The NetSecGame (Network Security Game) is a framework for training and evaluation of AI agents in the network security tasks (both offensive and defensive). It is build with [CYST](https://pypi.org/project/cyst/) network simulator and enables rapid development and testing of AI agents in highly configurable scenarios. Examples of implemented agents can be seen in the submodule [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
 
-The main part of he NetSecGame is the Game coordinator. It creates the enivronemnt, handles the agents and their interactions and coordinates the game(s).
-
-## Installation and Dependencies
-To run this code you need an environment and access to cyst code. However, the venv needs to be created for your own user
-### Installing in Pyton virtual environment
-1. Create the [virual envtironment](https://docs.python.org/3/library/venv.html):
+## Installation Guide
+It is recommended to install the NetSecGame in a virual environement:
+### Python venv
+1. 
 ```bash
-python -m venv ai-dojo-venv-<yourusername>
+python -m venv <venv-name>
 ```
-2. Activate the venv:
+2. 
 ```bash
-source ai-dojo-venv<yourusername>/bin/activate
+source <venv-name>/bin/activate
 ```
-3. Install with pip:
-```bash
-pip install -e .
-```
-### Installing with Conda
-1. Create conda environment
+
+### Conda
+1. 
 ```bash
 conda create --name aidojo python==3.12
 ```
-2. Activate it
+2. 
 ```bash
 conda activate aidojo
 ```
-3. Install the package
+
+After the virtual environment is activated, install using pip:
 ```bash
 pip install -e .
 ```
-
-### Running in Docker
-You can run the coordinator in a Docker container
-Build the Contaier (run from the *root* of the project) locally.
-```bash
+### With Docker
+The NetSecGame can be run in a Docker container. You can build the image locally with:
+```bash 
 docker build -t aidojo-nsg-coordinator:latest .
 ```
-
-or pull the image from Dockerhub
+or use the availabe image from [Dockerhub](https://hub.docker.com/r/lukasond/aidojo-coordinator).
 ```bash
 docker pull lukasond/aidojo-coordinator:1.0.2
 ```
+## Quick Start
+A task configuration needs to be specified to start the NetSecGame (see [Configuration](configuration.md)). For the first step, the example task configuration is recommended:
+```yaml
+# Example of the task configuration for NetSecGame
+# The objective of the Attacker in this task is to locate specific data
+# and exfiltrate it to a remote C&C server.
+# The scenario starts AFTER initial breach of the local network
+# (the attacker controls 1 local device + the remote C&C server).
 
-## Running the game:
-There are currently two variants of how you can run the game:
-- Network Security Game - pure simulation
-- CYST-based Environment - simulation + emulation
+coordinator:
+  agents:
+    Attacker: # Configuration of 'Attacker' agents
+      max_steps: 25
+      goal:
+        description: "Exfiltrate data from Samba server to remote C&C server."
+        is_any_part_of_goal_random: True
+        known_networks: []
+        known_hosts: []
+        controlled_hosts: []
+        known_services: {}
+        known_data: {213.47.23.195: [[User1,DataFromServer1]]} # winning condition
+        known_blocks: {}
+      start_position: # Defined starting position of the attacker
+        known_networks: []
+        known_hosts: []
+        controlled_hosts: [213.47.23.195, random] #
+        known_services: {}
+        known_data: {}
+        known_blocks: {}
 
-### Running Network Security Game
-1. Prepare the task configuration file (see )
+    Defender:
+      goal:
+        description: "Block all attackers"
+        is_any_part_of_goal_random: False
+        known_networks: []
+        known_hosts: []
+        controlled_hosts: []
+        known_services: {}
+        known_data: {}
+        known_blocks: {213.47.23.195: 'all_attackers'}
+
+      start_position:
+        known_networks: []
+        known_hosts: []
+        controlled_hosts: []
+        known_services: {}
+        known_data: {}
+        blocked_ips: {}
+        known_blocks: {}
+
+env:
+  scenario: 'two_networks_tiny' # use the smallest topology for this example
+  use_global_defender: False # Do not use global SIEM Defender
+  use_dynamic_addresses: False # Do not randomize IP addresses
+  use_firewall: True # Use firewall
+  save_trajectories: False # Do not store trajectories
+  required_players: 1
+  rewards: # Configurable reward function
+    success: 100
+    step: -1
+    fail: -10
+    false_positive: -5 
+```
+
+The game can be started with:
+```bash
+python3 -m AIDojoCoordinator.worlds.NSEGameCoordinator \
+  --task_config=./examples/example_config.yaml \
+  --game_port=9000
+```
+Upon which the game server is created on `localhost:9000` to which the agents can connect to interact in the NetSecGame.
+### Docker Container
+When running in the Docker container, the NetSecGame can be started with:
+```bash
+docker run -it --rm \
+  -v $(pwd)/examples/example_config.yaml:/aidojo/netsecenv_conf.yaml \
+  -v $(pwd)/logs:/aidojo/logs \
+  -p 9000:9000 lukasond/aidojo-coordinator:1.0.2
+```
+## Documentation
+You can find user documentation at [https://stratosphereips.github.io/NetSecGame/](https://stratosphereips.github.io/NetSecGame/)
 ## Components of the NetSecGame Environment
 The architecture of the environment can be seen [here](docs/Architecture.md).
 The NetSecGame environment has several components in the following files:
