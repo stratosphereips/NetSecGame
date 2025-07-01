@@ -14,9 +14,24 @@ from cyst.api.environment.environment import Environment
 
 class AgentServer(asyncio.Protocol):
     """
-    Class used for serving the agents when conneting to the game run by th GameCoordinator.
+    Class used for serving the agents when connecting to the game run by the GameCoordinator.
+
+    Attributes:
+        actions_queue (asyncio.Queue): Queue for actions from agents.
+        answers_queues (dict): Mapping of agent addresses to their response queues.
+        max_connections (int): Maximum allowed concurrent agent connections.
+        current_connections (int): Current number of connected agents.
+        logger (logging.Logger): Logger for the AgentServer.
     """
     def __init__(self, actions_queue, agent_response_queues, max_connections):
+        """
+        Initialize the AgentServer.
+
+        Args:
+            actions_queue (asyncio.Queue): Queue for actions from agents.
+            agent_response_queues (dict): Mapping of agent addresses to their response queues.
+            max_connections (int): Maximum allowed concurrent agent connections.
+        """
         self.actions_queue = actions_queue
         self.answers_queues = agent_response_queues
         self.max_connections = max_connections
@@ -26,6 +41,9 @@ class AgentServer(asyncio.Protocol):
     async def handle_agent_quit(self, peername:tuple):
         """
         Helper function to handle agent disconnection.
+
+        Args:
+            peername (tuple): The address of the disconnecting agent.
         """
         # Send a quit message to the Coordinator
         self.logger.info(f"\tHandling agent quit for {peername}.")
@@ -35,6 +53,10 @@ class AgentServer(asyncio.Protocol):
     async def handle_new_agent(self, reader, writer):
         """
         Handle a new agent connection.
+
+        Args:
+            reader (asyncio.StreamReader): Stream reader for the agent.
+            writer (asyncio.StreamWriter): Stream writer for the agent.
         """
         # get the peername of the writer
         peername = writer.get_extra_info("peername")
@@ -102,6 +124,13 @@ class AgentServer(asyncio.Protocol):
                 # swallow exceptions on close to avoid crash on cleanup
                 pass
     async def __call__(self, reader, writer):
+        """
+        Allow the server instance to be called as a coroutine.
+
+        Args:
+            reader (asyncio.StreamReader): Stream reader for the agent.
+            writer (asyncio.StreamWriter): Stream writer for the agent.
+        """
         await self.handle_new_agent(reader, writer)
 
 class GameCoordinator:

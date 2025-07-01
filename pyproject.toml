@@ -54,6 +54,13 @@ dev = [
     "pytest-asyncio"
 ]
 
+docs = [
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+    "pymdown-extensions"
+]
+
 [project.urls]
 Homepage = "https://github.com/stratosphereips/NetSecGame"
 Repository = "https://github.com/stratosphereips/NetSecGame"

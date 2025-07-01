@@ -1,0 +1,31 @@
+site_name: Network Security Game
+theme:
+  name: material
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - Configuration: configuration.md
+  - API Reference: 
+    - game_components.md
+    - game_coordinator.md
+
+plugins:
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            heading_level: 2
+            show_root_heading: true
+            show_signature: true
+            show_source: true
+            members_order: alphabetical
+            merge_init_into_class: true
+
+markdown_extensions:
+  - pymdownx.arithmatex
+  - pymdownx.superfences
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
