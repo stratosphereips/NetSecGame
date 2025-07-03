@@ -219,15 +219,21 @@ class ConfigParser():
                 # Check the host is a good ip
                 _ = netaddr.IPAddress(ip)
                 known_services_host = IP(ip)
-                if data.lower() == "random":
-                    known_services[known_services_host] = "random"
-                name = data[0]
-                type = data[1]
-                version = data[2]
-                is_local = data[3]
-
-                known_services[known_services_host] = Service(name, type, version, is_local)
-
+                known_services[known_services_host] = []
+                for service in data: # process each item in the list 
+                    if isinstance(service, list): # Service defined as list
+                        name = service[0]
+                        type = service[1]
+                        version = service[2]
+                        is_local = service[3]
+                        known_services[known_services_host].append(Service(name, type, version, is_local))
+                    elif isinstance(service, str): # keyword 
+                        if service.lower() == "random":
+                            known_services[known_services_host].append("random")
+                        else:
+                            logging.warning(f"Unsupported values in agent known_services{ip}:{service}")
+                    else:
+                        logging.warning(f"Unsupported values in agent known_services{ip}:{service}")
             except (ValueError, netaddr.AddrFormatError):
                 known_services = {}
         return known_services
