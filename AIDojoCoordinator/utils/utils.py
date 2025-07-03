@@ -178,7 +178,7 @@ class ConfigParser():
                 known_data[known_data_host] = set()
                 for datum in data:
                     if not isinstance(datum, list) and datum.lower() == "random":
-                        known_data[known_data_host] = "random"
+                        known_data[known_data_host].add("random")
                     else:
                         known_data_content_str_user =  datum[0]
                         known_data_content_str_data =  datum[1]
