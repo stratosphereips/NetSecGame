@@ -378,6 +378,7 @@ class GameCoordinator:
         else:
             self._global_defender = None
         self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
+        self.logger.info(f"Change IP every episode set to: {self._use_dynamic_ips}")
         self._rewards = self.task_config.get_rewards(["step", "success", "fail", "false_positive"])
         self.logger.info(f"Rewards set to:{self._rewards}")
         self._min_required_players = self.task_config.get_required_num_players()
