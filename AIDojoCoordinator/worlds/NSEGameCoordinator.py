@@ -307,7 +307,6 @@ class NSGCoordinator(GameCoordinator):
         fake = self._faker_object
         mapping_nets = {}
         mapping_ips = {}
-        
         # generate mapping for networks
         private_nets = []
         for net in self._networks.keys():
@@ -369,13 +368,14 @@ class NSGCoordinator(GameCoordinator):
                 new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
         self._networks = new_self_networks
         
-        #self._firewall
-        new_self_firewall = {}
-        for ip, dst_ips in self._firewall.items():
-            new_self_firewall[mapping_ips[ip]] = set()
+        #self._firewall_original (we do not care about the changes done during the episode)
+        new_self_firewall_original = {}
+        for ip, dst_ips in self._firewall_original.items():
+            new_self_firewall_original[mapping_ips[ip]] = set()
             for dst_ip in dst_ips:
-                new_self_firewall[mapping_ips[ip]].add(mapping_ips[dst_ip])
-        self._firewall = new_self_firewall
+                new_self_firewall_original[mapping_ips[ip]].add(mapping_ips[dst_ip])
+        self.logger.debug(f"New FW: {new_self_firewall_original}")
+        self._firewall_original = new_self_firewall_original
 
         #self._ip_to_hostname
         new_self_ip_to_hostname  = {}
