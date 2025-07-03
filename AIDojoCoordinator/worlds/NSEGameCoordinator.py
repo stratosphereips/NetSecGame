@@ -5,11 +5,11 @@ import argparse
 import random
 import numpy as np
 import copy
+import netaddr, re
+import json
 from faker import Faker
 from pathlib import Path
 from typing import Iterable
-import netaddr, re
-import json
 
 from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP, Network, Data, Service
 from AIDojoCoordinator.coordinator import GameCoordinator
