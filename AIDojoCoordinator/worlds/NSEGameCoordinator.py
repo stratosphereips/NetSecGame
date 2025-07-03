@@ -117,6 +117,7 @@ class NSGCoordinator(GameCoordinator):
                         else:
                             self.logger.warning("\tNo available data. Skipping")
         return known_data
+    
     def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->GameState:
         """
         Builds a GameState from given view.
@@ -126,7 +127,7 @@ class NSGCoordinator(GameCoordinator):
         """
         self.logger.info(f'Generating state from view:{view}')
         # re-map all networks based on current mapping in self._network_mapping
-        known_networks = set([self._network_mapping[net] for net in  view["known_networks"]])
+        known_networks = set([self._network_mapping[net] for net in view["known_networks"]])
         # parse controlled hosts
         controlled_hosts = self._get_controlled_hosts_from_view(view["controlled_hosts"])
         known_hosts = set([self._ip_mapping[ip] for ip in view["known_hosts"]])
