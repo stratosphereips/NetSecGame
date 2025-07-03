@@ -114,10 +114,21 @@ class NSGCoordinator(GameCoordinator):
                         #return value back to the original
                         net_obj.value += 256
         known_services ={}
-        for ip, service_list in view["known_services"]:
-            known_services[self._ip_mapping[ip]] = service_list
+        for ip, service_list in view["known_services"].items():
+            if self._ip_mapping[ip] not in known_services:
+                known_services[self._ip_mapping[ip]] = set()
+            for s in service_list:
+                if isinstance(s, Service):
+                    known_services[self._ip_mapping[ip]].add(s)
+                elif isinstance(s, str):
+                    if s == "random": # randomly select the service
+                        self.logger.info(f"\tSelecting service randomly in {self._ip_mapping[ip]}")
+                        # select candidates that are not explicitly listed
+                        service_candidates = [s for s in self._services[self._ip_to_hostname[ip]] if s not in known_services[self._ip_mapping[ip]]]
+                        # randomly select from candidates
+                        known_services[self._ip_mapping[ip]].add(random.choice(service_candidates))
         known_data = {}
-        for ip, data_list in view["known_data"]:
+        for ip, data_list in view["known_data"].items():
             known_data[self._ip_mapping[ip]] = data_list
         game_state = GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
         self.logger.info(f"Generated GameState:{game_state}")
