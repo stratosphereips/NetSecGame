@@ -78,6 +78,7 @@ def store_replay_buffer_in_csv(replay_buffer:list, filename:str, delimiter:str="
         writer_object = csv.writer(f_object, delimiter=delimiter)
         for (s_t, a_t, r, s_t1, done) in replay_buffer:
             writer_object.writerow([s_t.as_json(), a_t.as_json(), r, s_t1.as_json(), done])
+    warnings.warn("This feature is deprecated. Use Trajectories instead", DeprecationWarning)
 
 def state_as_ordered_string(state:GameState)->str:
     ret = ""
