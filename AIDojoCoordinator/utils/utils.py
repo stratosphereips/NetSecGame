@@ -265,8 +265,13 @@ class ConfigParser():
                     _ = netaddr.IPNetwork(net)
                     host_part, net_part = net.split('/')
                     known_networks.add(Network(host_part, int(net_part)))
+                elif net == 'random':
+                    # A random network was asked for
+                    known_networks.add('random')
+                elif net == 'all':
+                    known_networks.add('all')
             except (ValueError, TypeError, netaddr.AddrFormatError):
-                self.logger('Configuration problem with the known networks')
+                self.logger.error('Configuration problem with the known networks')
         return known_networks
 
     def read_agents_known_hosts(self, type_agent: str, type_data: str) -> dict:
