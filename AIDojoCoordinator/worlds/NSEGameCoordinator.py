@@ -15,7 +15,7 @@ from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP,
 from AIDojoCoordinator.coordinator import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
-from AIDojoCoordinator.utils.utils import get_logging_level
+from AIDojoCoordinator.utils.utils import get_logging_level, estimate_subnetwork_from_ip
 
 class NSGCoordinator(GameCoordinator):
 
@@ -120,7 +120,7 @@ class NSGCoordinator(GameCoordinator):
                             self.logger.warning("\tNo available data. Skipping")
         return known_data
     
-    def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->GameState:
+    def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=True, add_estimated_nets:bool=True)->GameState:
         """
         Builds a GameState from given view.
         If there is a keyword 'random' used, it is replaced by a valid option at random.
@@ -135,6 +135,21 @@ class NSGCoordinator(GameCoordinator):
         known_hosts = set([self._ip_mapping[ip] for ip in view["known_hosts"]])
         # Add all controlled hosts to known_hosts
         known_hosts = known_hosts.union(controlled_hosts)
+
+        # Add all networks that the controlled hosts have access to
+        for controlled_host in controlled_hosts:
+            # Get networks from controlled host
+            known_networks = known_networks.union(self._get_networks_from_controlled_host(controlled_host))
+        if add_estimated_nets:
+            # Add estimated networks from known hosts which are not controlled by the agent
+            for host in known_hosts:
+                if host not in controlled_hosts:
+                    # Estimate the subnetwork of the known host
+                    net = estimate_subnetwork_from_ip(host)
+                    if net not in known_networks:
+                        self.logger.debug(f'\tAdding estimated network {net} for {host}')
+                        known_networks.add(net)
+
         if add_neighboring_nets:
             # Extend the known networks with the neighbouring networks
             # This is to solve in the env (and not in the agent) the problem
@@ -517,7 +532,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug("\tServices not found because target IP does not exists.")
         return found_services
 
-    def _get_networks_from_host(self, host_ip)->set:
+    def _get_networks_from_controlled_host(self, host_ip)->set:
         """
         Returns set of IPs the host has access to
         """
@@ -774,7 +789,7 @@ class NSGCoordinator(GameCoordinator):
                                     if action.parameters["target_host"] not in next_controlled_h:
                                         next_controlled_h.add(action.parameters["target_host"])
                                         self.logger.debug("\t\tAdding to controlled_hosts")
-                                    new_networks = self._get_networks_from_host(action.parameters["target_host"])
+                                    new_networks = self._get_networks_from_controlled_host(action.parameters["target_host"])
                                     self.logger.debug(f"\t\t\tFound {len(new_networks)}: {new_networks}")
                                     next_nets = next_nets.union(new_networks)
                                 else:
