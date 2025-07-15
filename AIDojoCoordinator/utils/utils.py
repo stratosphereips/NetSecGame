@@ -14,7 +14,7 @@ import json
 import hashlib
 from cyst.api.configuration.network.node import NodeConfig
 
-def estimate_subnetwork(ip:IP)-> Network:
+def estimate_subnetwork_from_ip(ip:IP)-> Network:
     """
     Estimate the subnetwork of a given IP address.
     Returns a Network object with the IP and a default mask of 24.
@@ -589,5 +589,5 @@ if __name__ == "__main__":
     
     #print(state_as_ordered_string(state))
     ip = IP("192.168.1.2")
-    network = estimate_subnetwork(ip)
+    network = estimate_subnetwork_from_ip(ip)
     print(f"Estimated subnetwork for {ip} is {network}")
