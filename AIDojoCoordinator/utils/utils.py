@@ -14,6 +14,21 @@ import json
 import hashlib
 from cyst.api.configuration.network.node import NodeConfig
 
+def estimate_subnetwork(ip:IP)-> Network:
+    """
+    Estimate the subnetwork of a given IP address.
+    Returns a Network object with the IP and a default mask of 24.
+    """
+    octets = str(ip).split('.')
+    if str(ip).startswith("192.168."):
+        return Network(f"{octets[0]}.{octets[1]}.{octets[2]}.0",24)
+    elif str(ip).startswith("10."):
+        return Network(f"{octets[0]}.0.0.0", 8)
+    elif str(ip).startswith("172."):
+        return Network(f"{octets[0]}.{octets[1]}.0.0", 16)
+    else:
+        return Network(f"{octets[0]}.{octets[1]}.{octets[2]}.0", 24)  # Fallback option, assuming a /24 subnet
+
 def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
     """
     Computes hash of a given file.
@@ -572,4 +587,7 @@ if __name__ == "__main__":
             known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
                         IP("192.168.1.2"):{Data("McGiver", "data2")}})
     
-    print(state_as_ordered_string(state))
+    #print(state_as_ordered_string(state))
+    ip = IP("192.168.1.2")
+    network = estimate_subnetwork(ip)
+    print(f"Estimated subnetwork for {ip} is {network}")
