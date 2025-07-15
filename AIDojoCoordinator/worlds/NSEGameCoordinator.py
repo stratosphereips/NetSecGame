@@ -120,6 +120,28 @@ class NSGCoordinator(GameCoordinator):
                             self.logger.warning("\tNo available data. Skipping")
         return known_data
     
+    def _get_networks_from_view(self, view_known_networks:Iterable)->set:
+        """
+        Parses view and translates all keywords. Produces set of known networks (Network objects)"""
+        known_networks = set()
+        for net in view_known_networks:
+            if isinstance(net, Network):
+                # If it is a Network object, use the mapping
+                known_networks.add(self._network_mapping[net])
+                self.logger.debug(f'\tAdding network {self._network_mapping[net]} to known networks.')
+            elif net == 'random':
+                # Randomly select a network
+                self.logger.debug('\tAdding random network to known networks')
+                # Select a random network from the current mapping
+                selected_net = random.choice(list(self._network_mapping.values()))
+                known_networks.add(selected_net)
+                self.logger.debug(f'\t\tSelected {selected_net}')
+            elif net == 'all':
+                # Add all networks
+                self.logger.debug('\tAdding all networks to known networks')
+                known_networks = known_networks.union(set(self._network_mapping.values()))
+        return known_networks
+
     def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=True, add_estimated_nets:bool=True)->GameState:
         """
         Builds a GameState from given view.
@@ -129,7 +151,7 @@ class NSGCoordinator(GameCoordinator):
         """
         self.logger.info(f'Generating state from view:{view}')
         # re-map all networks based on current mapping in self._network_mapping
-        known_networks = set([self._network_mapping[net] for net in view["known_networks"]])
+        known_networks = self._get_networks_from_view(view["known_networks"])
         # parse controlled hosts
         controlled_hosts = self._get_controlled_hosts_from_view(view["controlled_hosts"])
         known_hosts = set([self._ip_mapping[ip] for ip in view["known_hosts"]])
