@@ -176,22 +176,23 @@ class NSGCoordinator(GameCoordinator):
             # of not knowing other networks appart from the one the agent is in
             # This is wrong and should be done by the agent, not here
             # TODO remove this!
+            extended_networks = set()
             for net in known_networks:
                 net_obj = netaddr.IPNetwork(str(net))
                 if net_obj.ip.is_private(): #TODO
-                    known_networks.add(net)
                     net_obj.value += 256
                     if net_obj.ip.is_private():
                         ip = Network(str(net_obj.ip), net_obj.prefixlen)
                         self.logger.debug(f'\tAdding {ip} to agent')
-                        known_networks.add(ip)
+                        extended_networks.add(ip)
                     net_obj.value -= 2*256
                     if net_obj.ip.is_private():
                         ip = Network(str(net_obj.ip), net_obj.prefixlen)
                         self.logger.debug(f'\tAdding {ip} to agent')
-                        known_networks.add(ip)
+                        extended_networks.add(ip)
                     #return value back to the original
                     net_obj.value += 256
+            known_networks = known_networks.union(extended_networks)
         # parse known services
         known_services = self._get_services_from_view(view["known_services"])
         # parse known data
