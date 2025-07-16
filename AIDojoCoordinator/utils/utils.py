@@ -14,20 +14,6 @@ from random import randint
 from cyst.api.configuration.network.node import NodeConfig
 from AIDojoCoordinator.game_components import IP, Data, Network, Service, GameState, Action, Observation, ActionType
 
-def estimate_subnetwork_from_ip(ip:IP)-> Network:
-    """
-    Estimate the subnetwork of a given IP address.
-    Returns a Network object with the IP and a default mask of 24.
-    """
-    octets = str(ip).split('.')
-    if str(ip).startswith("192.168."):
-        return Network(f"{octets[0]}.{octets[1]}.{octets[2]}.0",24)
-    elif str(ip).startswith("10."):
-        return Network(f"{octets[0]}.0.0.0", 8)
-    elif str(ip).startswith("172."):
-        return Network(f"{octets[0]}.{octets[1]}.0.0", 16)
-    else:
-        return Network(f"{octets[0]}.{octets[1]}.{octets[2]}.0", 24)  # Fallback option, assuming a /24 subnet
 
 def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
     """
