@@ -142,7 +142,7 @@ class NSGCoordinator(GameCoordinator):
                 known_networks = known_networks.union(set(self._network_mapping.values()))
         return known_networks
 
-    def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=True, add_estimated_nets:bool=True)->GameState:
+    def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=False, add_estimated_nets:bool=False)->GameState:
         """
         Builds a GameState from given view.
         If there is a keyword 'random' used, it is replaced by a valid option at random.
