@@ -7,6 +7,7 @@ import numpy as np
 import copy
 import netaddr, re
 import json
+import warnings
 from faker import Faker
 from pathlib import Path
 from typing import Iterable
@@ -163,6 +164,7 @@ class NSGCoordinator(GameCoordinator):
             # Get networks from controlled host
             known_networks = known_networks.union(self._get_networks_from_controlled_host(controlled_host))
         if add_estimated_nets:
+            warnings.warn("This feature has been moved to the agent side. It will be removed in the future.", DeprecationWarning)
             # Add estimated networks from known hosts which are not controlled by the agent
             for host in known_hosts:
                 if host not in controlled_hosts:
@@ -173,6 +175,7 @@ class NSGCoordinator(GameCoordinator):
                         known_networks.add(net)
 
         if add_neighboring_nets:
+            warnings.warn("This feature has been moved to the agent side. It will be removed in the future.", DeprecationWarning)
             # Extend the known networks with the neighbouring networks
             # This is to solve in the env (and not in the agent) the problem
             # of not knowing other networks appart from the one the agent is in
