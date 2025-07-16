@@ -9,7 +9,11 @@ nav:
   - API Reference: 
     - game_components.md
     - game_coordinator.md
-
+    - Agents:
+        - agents/base_agents.md
+        - agents/attackers.md
+        - agents/defenders.md
+        - agents/benign_agents.md
 plugins:
   - mkdocstrings:
       default_handler: python
