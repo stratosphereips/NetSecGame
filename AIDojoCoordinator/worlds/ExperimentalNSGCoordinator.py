@@ -2,17 +2,21 @@ import itertools
 import argparse
 import logging
 import os
+import json
 from pathlib import Path
 from AIDojoCoordinator.utils.utils import get_logging_level
-from AIDojoCoordinator.game_components import GameState, Action, ActionType, Service,IP
+from AIDojoCoordinator.game_components import Action, ActionType
 from AIDojoCoordinator.worlds.NSEGameCoordinator import NSGCoordinator
 
 
 
 
-class ExperimentalNSGCoordinator(NSGCoordinator):
-
-    def __init__(self, game_host, game_port, task_config, allowed_roles=["Attacker", "Defender", "Benign"], seed=42, include_block_action=True):
+class WhiteBoxNSGCoordinator(NSGCoordinator):
+    """
+    WhiteBoxNSGCoordinator is an extension for the NetSecGame environment
+    that provides list of all possible actions to each agent that registers in the game.
+    """
+    def __init__(self, game_host, game_port, task_config, allowed_roles=["Attacker", "Defender", "Benign"], seed=42, include_block_action=False):
         super().__init__(game_host, game_port, task_config, allowed_roles, seed)
         self._action_mapping = None
         self._include_block_action = include_block_action
@@ -23,13 +27,16 @@ class ExperimentalNSGCoordinator(NSGCoordinator):
         # All components are initialized, now we can set the action mapping
         self.logger.debug("Creating action mapping for the game.")
         self._create_action_mapping()
+        self._generate_all_actions = {
+            "all_actions": json.dumps([v.as_dict for v in self._action_mapping.values()]),
+        }
 
-    def _create_action_mapping(self)-> dict:
+
+    def _generate_all_actions(self)-> list:
         """
-        Create the action mapping for the game.
-        This method should be overridden in subclasses to provide specific action mappings.
+        Generate a list of all possible actions for the game.
         """
-        actions = {}
+        actions = []
         all_ips = [self._ip_mapping[ip] for ip in self._ip_to_hostname.keys()]
         all_networks = self._networks.keys()
         all_data = set()
@@ -46,66 +53,67 @@ class ExperimentalNSGCoordinator(NSGCoordinator):
         
         # Network Scans
         for source_host, target_network in itertools.product(all_ips, all_networks):
-            actions[len(actions)] = Action(
-                ActionType.ScanNetwork,
-                parameters={
-                    "source_host": source_host,
-                    "target_network": target_network
-                }
-            )
+                actions.append(Action(
+                    ActionType.ScanNetwork,
+                    parameters={
+                        "source_host": source_host,
+                        "target_network": target_network
+                    }
+                ))
+
         # Service Scans
         for source_host, target_host in itertools.product(all_ips, all_ips):
-            actions[len(actions)] = Action(
+            actions.append(Action(
                 ActionType.FindServices,
                 parameters={
                     "source_host": source_host,
                     "target_host": target_host
                 }
-            )
+            ))
         # Service Exploits
         for source_host, target_host in itertools.product(all_ips, ip_with_services.keys()):
             for service in ip_with_services[target_host]:
-                actions[len(actions)] = Action(
+                actions.append(Action(
                     ActionType.ExploitService,
                     parameters={
                         "source_host": source_host,
                         "target_host": target_host,
                         "service": service
                     }
-                )
+                ))
         # Data Scans
         for source_host, target_host in itertools.product(all_ips, all_ips):
-            actions[len(actions)] = Action(
+            actions.append(Action(
                 ActionType.FindData,
                 parameters={
                     "source_host": source_host,
                     "target_host": target_host
                 }
-            )
+            ))
         # Data transfers
         for (source_host, target_host), datum in itertools.product(itertools.product(all_ips, all_ips), all_data):
-            actions[len(actions)] = Action(
+            actions.append(Action(
                 ActionType.ExfiltrateData,
                 parameters={
                     "source_host": source_host,
                     "target_host": target_host,
                     "data": datum
                 }
-            )
+            ))
         # Blocks
         if self._include_block_action:
             for (source_host, target_host), blocked_ip in itertools.product(itertools.product(all_ips, all_ips), all_ips):
-                actions[len(actions)] = Action(
+                actions.append(Action(
                     ActionType.BlockIP,
                     parameters={
                         "source_host": source_host,
                         "target_host": target_host,
                         "blocked_ip": blocked_ip
                     }
-                )
+                ))
         self.logger.info(f"Created action mapping with {len(actions)} actions.")
-        for action_id, action in actions.items():
-            self.logger.debug(f"Action {action_id}: {action.type} with parameters {action.parameters}")
+        for action in actions:
+            self.logger.debug(action)
         self._action_mapping = actions
 
 if __name__ == "__main__":
@@ -172,6 +180,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
   
-    game_server = ExperimentalNSGCoordinator(args.game_host, args.game_port, args.task_config)
+    game_server = WhiteBoxNSGCoordinator(args.game_host, args.game_port, args.task_config)
     # Run it!
     game_server.run()
