@@ -255,6 +255,7 @@ class GameCoordinator:
                self.logger.error(f"Error fetching initialization objects: {e}")
         # Temporary fix
         self.task_config = ConfigParser(self._task_config_file)
+    
     def _load_initialization_objects(self)->None:
         """
         Loads task configuration from a local file.
@@ -487,6 +488,9 @@ class GameCoordinator:
                                 "configuration_hash": self._CONFIG_FILE_HASH
                                 },
                         }
+                        if self._registration_info:
+                            for key, value in self._registration_info.items():
+                                output_message_dict["message"][key] = value
                         await self._agent_response_queues[agent_addr].put(self.convert_msg_dict_to_json(output_message_dict))
                 else:
                     self.logger.info(
@@ -753,6 +757,7 @@ class GameCoordinator:
             self._agent_status[agent_addr] = AgentStatus.Playing
         self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
         self.logger.info(f"\tAgent {agent_name} ({agent_addr}), registred as {agent_role}")
+        # create initial observation
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
     async def register_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
