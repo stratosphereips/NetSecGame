@@ -488,7 +488,7 @@ class GameCoordinator:
                                 "configuration_hash": self._CONFIG_FILE_HASH
                                 },
                         }
-                        if self._registration_info:
+                        if hasattr(self, "_registration_info"):
                             for key, value in self._registration_info.items():
                                 output_message_dict["message"][key] = value
                         await self._agent_response_queues[agent_addr].put(self.convert_msg_dict_to_json(output_message_dict))
