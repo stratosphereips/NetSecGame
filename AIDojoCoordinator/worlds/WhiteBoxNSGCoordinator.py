@@ -18,7 +18,7 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
     """
     def __init__(self, game_host, game_port, task_config, allowed_roles=["Attacker", "Defender", "Benign"], seed=42, include_block_action=False):
         super().__init__(game_host, game_port, task_config, allowed_roles, seed)
-        self._action_mapping = None
+        self._all_actions = None
         self._include_block_action = include_block_action
 
     def _initialize(self):
@@ -26,9 +26,9 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
         super()._initialize()
         # All components are initialized, now we can set the action mapping
         self.logger.debug("Creating action mapping for the game.")
-        self._create_action_mapping()
-        self._generate_all_actions = {
-            "all_actions": json.dumps([v.as_dict for v in self._action_mapping.values()]),
+        self._generate_all_actions()
+        self._registration_info = {
+            "all_actions": json.dumps([v.as_dict for v in self._all_actions]),
         }
 
 
@@ -114,7 +114,7 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
         self.logger.info(f"Created action mapping with {len(actions)} actions.")
         for action in actions:
             self.logger.debug(action)
-        self._action_mapping = actions
+        self._all_actions = actions
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
     # Set the logging
-    log_filename = Path("logs/EXPERIMENTAL_NSG_coordinator.log")
+    log_filename = Path("logs/WhiteBox_NSG_coordinator.log")
     if not log_filename.parent.exists():
         os.makedirs(log_filename.parent)
 
