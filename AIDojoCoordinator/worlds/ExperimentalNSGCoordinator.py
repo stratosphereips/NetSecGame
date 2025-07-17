@@ -31,7 +31,6 @@ class ExperimentalNSGCoordinator(NSGCoordinator):
         """
         actions = {}
         all_ips = [self._ip_mapping[ip] for ip in self._ip_to_hostname.keys()]
-        print(all_ips)
         all_networks = self._networks.keys()
         all_data = set()
         ip_with_services = {}
@@ -44,8 +43,6 @@ class ExperimentalNSGCoordinator(NSGCoordinator):
         # Collect all data from all hosts
         for data in self._data.values():
             all_data.update(data)
-        host_combinations = itertools.product(all_ips, all_ips)
-        
         
         # Network Scans
         for source_host, target_network in itertools.product(all_ips, all_networks):
@@ -57,7 +54,7 @@ class ExperimentalNSGCoordinator(NSGCoordinator):
                 }
             )
         # Service Scans
-        for source_host, target_host in host_combinations:
+        for source_host, target_host in itertools.product(all_ips, all_ips):
             actions[len(actions)] = Action(
                 ActionType.FindServices,
                 parameters={
@@ -95,7 +92,6 @@ class ExperimentalNSGCoordinator(NSGCoordinator):
                     "data": datum
                 }
             )
-
         # Blocks
         if self._include_block_action:
             for (source_host, target_host), blocked_ip in itertools.product(itertools.product(all_ips, all_ips), all_ips):
