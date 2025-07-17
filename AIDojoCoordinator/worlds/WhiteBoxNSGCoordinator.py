@@ -78,7 +78,7 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
                     parameters={
                         "source_host": source_host,
                         "target_host": target_host,
-                        "service": service
+                        "target_service": service
                     }
                 ))
         # Data Scans
