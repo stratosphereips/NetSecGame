@@ -383,6 +383,9 @@ class GameCoordinator:
         self.logger.info(f"Rewards set to:{self._rewards}")
         self._min_required_players = self.task_config.get_required_num_players()
         self.logger.info(f"Min player requirement set to:{self._min_required_players}")
+        # run self initialization
+        self._initialize()
+
         # start server for agent communication
         self._spawn_task(self.start_tcp_server)
 
@@ -802,6 +805,12 @@ class GameCoordinator:
         raise NotImplementedError
     
     async def reset(self):
+        return NotImplemented
+
+    def _initialize(self):
+        """
+        Initialize the game state and other necessary components. This is called at the start of the game after the configuration is loaded.
+        """
         return NotImplemented
 
     def goal_check(self, agent_addr:tuple)->bool:
