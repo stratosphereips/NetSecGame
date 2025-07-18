@@ -16,7 +16,7 @@ from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP,
 from AIDojoCoordinator.coordinator import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
-from AIDojoCoordinator.utils.utils import get_logging_level, estimate_subnetwork_from_ip
+from AIDojoCoordinator.utils.utils import get_logging_level
 
 class NSGCoordinator(GameCoordinator):
 
