@@ -889,8 +889,6 @@ class NSGCoordinator(GameCoordinator):
         self._data[hostaname].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
 
     async def register_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
-        if len(self._networks) == 0:
-            self._initialize()
         game_state = self._create_state_from_view(agent_initial_view)
         return game_state
          
