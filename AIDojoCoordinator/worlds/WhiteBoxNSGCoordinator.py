@@ -116,6 +116,10 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
             self.logger.debug(action)
         self._all_actions = actions
 
+
+    def _create_state_from_view(self, view, add_neighboring_nets = True):
+        return super()._create_state_from_view(view, add_neighboring_nets=False)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="NetSecGame Coordinator Server Author: Ondrej Lukas ondrej.lukas@aic.fel.cvut.cz",
