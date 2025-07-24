@@ -33,15 +33,18 @@ smb_server = cyst_cfg.NodeConfig(
             private_data=[
                 cyst_cfg.DataConfig(
                     owner="User1",
-                    description="DataFromServer1"
+                    description="DataFromServer1",
+                    path="/etc/"
                 ),
                 cyst_cfg.DataConfig(
                     owner="User2",
-                    description="Data2FromServer1"
+                    description="Data2FromServer1",
+                    path="/etc/"
                 ),
                 cyst_cfg.DataConfig(
                     owner="User1",
-                    description="Data3FromServer1"
+                    description="Data3FromServer1",
+                    path="/etc/"
                 )
             ],
             access_level=cyst_cfg.AccessLevel.LIMITED,
@@ -160,7 +163,8 @@ db_server = cyst_cfg.NodeConfig(
             private_data=[
                 cyst_cfg.DataConfig(
                     owner="User1",
-                    description="DatabaseData"
+                    description="DatabaseData",
+                    path="/etc/"
             )],
             local=False,
             access_level=cyst_cfg.AccessLevel.LIMITED
@@ -200,7 +204,8 @@ web_server = cyst_cfg.NodeConfig(
             private_data=[
                 cyst_cfg.DataConfig(
                     owner="User2",
-                    description="WebServerData"
+                    description="WebServerData",
+                    path="/etc/"
             ),
             ],
             access_level=cyst_cfg.AccessLevel.LIMITED,
