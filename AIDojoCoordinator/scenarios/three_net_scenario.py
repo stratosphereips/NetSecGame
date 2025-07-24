@@ -39,9 +39,9 @@ smb_server = cyst_cfg.NodeConfig(
             version="10.0.19041",
             local=False,
             private_data=[
-                cyst_cfg.DataConfig(owner="User1", description="DataFromServer1"),
-                cyst_cfg.DataConfig(owner="User2", description="Data2FromServer1"),
-                cyst_cfg.DataConfig(owner="User1", description="Data3FromServer1"),
+                cyst_cfg.DataConfig(owner="User1", description="DataFromServer1", path="/etc/"),
+                cyst_cfg.DataConfig(owner="User2", description="Data2FromServer1", path="/etc/"),
+                cyst_cfg.DataConfig(owner="User1", description="Data3FromServer1", path="/etc/"),
             ],
             access_level=cyst_cfg.AccessLevel.LIMITED,
             authentication_providers=[],
@@ -162,7 +162,7 @@ web_server = cyst_cfg.NodeConfig(
             version="1.4.54",
             local=False,
             private_data=[
-                cyst_cfg.DataConfig(owner="User2", description="WebServerData"),
+                cyst_cfg.DataConfig(owner="User2", description="WebServerData", path="/etc/"),
             ],
             access_level=cyst_cfg.AccessLevel.LIMITED,
             authentication_providers=[],
@@ -310,7 +310,7 @@ ad_server = cyst_cfg.NodeConfig(
             version="10.0.19041",
             local=False,
             private_data=[
-                cyst_cfg.DataConfig(owner="admin", description="passwords"),
+                cyst_cfg.DataConfig(owner="admin", description="passwords", path="/etc/"),
             ],
             access_level=cyst_cfg.AccessLevel.LIMITED,
             authentication_providers=[],
@@ -410,7 +410,7 @@ db_server = cyst_cfg.NodeConfig(
             owner="postgresql",
             version="14.3.0",
             private_data=[
-                cyst_cfg.DataConfig(owner="User1", description="DatabaseData")
+                cyst_cfg.DataConfig(owner="User1", description="DatabaseData", path="/etc/")
             ],
             local=False,
             access_level=cyst_cfg.AccessLevel.LIMITED,
