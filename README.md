@@ -1,13 +1,13 @@
-# Netwrok Security Game
+# Network Security Game
 [![Python Checks](https://github.com/stratosphereips/game-states-maker/actions/workflows/python-checks.yml/badge.svg)](https://github.com/stratosphereips/game-states-maker/actions/workflows/python-checks.yml)
 [![Autotag](https://github.com/stratosphereips/game-states-maker/actions/workflows/autotag.yml/badge.svg)](https://github.com/stratosphereips/game-states-maker/actions/workflows/autotag.yml)
 [![Docs](https://github.com/stratosphereips/game-states-maker/actions/workflows/deploy-docs.yml/badge.svg)](https://stratosphereips.github.io/NetSecGame/)
 
 
-The NetSecGame (Network Security Game) is a framework for training and evaluation of AI agents in the network security tasks (both offensive and defensive). It is build with [CYST](https://pypi.org/project/cyst/) network simulator and enables rapid development and testing of AI agents in highly configurable scenarios. Examples of implemented agents can be seen in the submodule [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
+The NetSecGame (Network Security Game) is a framework for training and evaluation of AI agents in network security tasks (both offensive and defensive). It is built with [CYST](https://pypi.org/project/cyst/) network simulator and enables rapid development and testing of AI agents in highly configurable scenarios. Examples of implemented agents can be seen in the submodule [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
 
 ## Installation Guide
-It is recommended to install the NetSecGame in a virual environement:
+It is recommended to install the NetSecGame in a virtual environment:
 ### Python venv
 1. 
 ```bash
@@ -37,7 +37,7 @@ The NetSecGame can be run in a Docker container. You can build the image locally
 ```bash 
 docker build -t aidojo-nsg-coordinator:latest .
 ```
-or use the availabe image from [Dockerhub](https://hub.docker.com/r/lukasond/aidojo-coordinator).
+or use the available image from [Dockerhub](https://hub.docker.com/r/lukasond/aidojo-coordinator).
 ```bash
 docker pull lukasond/aidojo-coordinator:1.0.2
 ```
@@ -150,7 +150,7 @@ The NetSecGame environment has several components in the following files:
 ### Directory Details
 - `coordinator.py`: Basic coordinator class. Handles agent communication and coordination. **Does not implement dynamics of the world** and must be extended (see examples in `worlds/`).
 - `game_components.py`: Implements a library with objects used in the environment. See [detailed explanation](AIDojoCoordinator/docs/Components.md) of the game components.
-- `global_defender.py`: Implements global (omnipresent) defender which can be used to stop agents. Simulation of SIEM.
+- `global_defender.py`: Implements a global (omnipresent) defender that can be used to stop agents. Simulation of SIEM.
 
 #### **`worlds/`**
 Modules for different world configurations:
@@ -161,9 +161,9 @@ Modules for different world configurations:
 #### **`scenarios/`**
 Predefined scenario configurations:
 - `tiny_scenario_configuration.py`: A minimal example scenario.
-- `smaller_scenario_configuration.py`: A compact scenario configuration used for develompent and rapid testing.
+- `smaller_scenario_configuration.py`: A compact scenario configuration used for development and rapid testing.
 - `scenario_configuration.py`: The main scenario configuration.
-- `three_net_configuration.py`: Configuration for a three-network scenario. Used for evaluation of the model overfitting.
+- `three_net_configuration.py`: Configuration for a three-network scenario. Used for the evaluation of the model overfitting.
 Implements the network game's configuration of hosts, data, services, and connections. It is taken from [CYST](https://pypi.org/project/cyst/).
 
 #### **`utils/`**
@@ -184,9 +184,9 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 2. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
 (From commit d6d4ac9, July 18th, 2024, the new action BlockIP removes controlled hosts from the state of others. So the state can get smaller)
 
-- The action FindServices finds the new services in a host. If in a subsequent call to FindServices there are less services, they completely replace the list of previous services found. That is, each list of services is the final one, and no memory of previous open services is retained.
+- The action FindServices finds the new services in a host. If in a subsequent call to FindServices there are fewer services, they completely replace the list of previous services found. That is, each list of services is the final one, and no memory of previous open services is retained.
 
-#### Assumption and Conditions for Actions
+#### Assumptions and Conditions for Actions
 1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
 2. The `Find Data` action finds all the available data in the host if successful.
 3. The `Find Data` action requires ownership of the target host.
@@ -220,7 +220,7 @@ Each action type has a predefined probability of being detected. However, detect
     - BlockIP: 0.01
 
 This means that one action of the type ScanNetwork has a 5% probability of being detected by the defender. 
-This way we can define some basic probabilities based on how good we want the defender to be.
+This way, we can define some basic probabilities based on how good we want the defender to be.
 
 - Type Ratio Threshold
 
@@ -275,10 +275,10 @@ This approach ensures that only repeated or excessive behavior is flagged, reduc
 ## Starting the game
 The environment should be created before starting the agents. The properties of the game, the task and the topology can be either read from a local file or via REST request to the GameDashboard.
 
-#### To start the game with local configuration file
+#### To start the game with a local configuration file
 ```python3 -m AIDojoCoordinator.worlds.NSEGameCoordinator --task_config=<PATH TO CONFIGURATION FILE>```
 
-#### To start the game with remotely defined configuration
+#### To start the game with a remotely defined configuration
 ```python3 -m AIDojoCoordinator.worlds.CYSTCoordinator --service_host=<URL OF THE REMOTE HOST> --service_port=<PORT FOR THE CONFIGURATION REST API> ```
 
 When created, the environment:
@@ -289,7 +289,7 @@ When created, the environment:
 5. starts the game server in a specified address and port
 
 ### Interaction with the Environment
-When the game server is created, [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main) connect to it and interact with the environment. In every step of the interaction, agents submits an [Action](./AIDojoCoordinator/docs/Components.md#actions) and receives [Observation](./AIDojoCoordinator/docs/Components.md#observations) with `next_state`, `reward`, `is_terminal`, `end`, and `info` values. Once the terminal state or timeout is reached, no more interaction is possible until the agent asks for a game reset. Each agent should extend the `BaseAgent` class in [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
+When the game server is created, [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main) connect to it and interact with the environment. In every step of the interaction, agents submits an [Action](./AIDojoCoordinator/docs/Components.md#actions) and receive [Observation](./AIDojoCoordinator/docs/Components.md#observations) with `next_state`, `reward`, `is_terminal`, `end`, and `info` values. Once the terminal state or timeout is reached, no more interaction is possible until the agent asks for a game reset. Each agent should extend the `BaseAgent` class in [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
 
 
 ### Configuration
@@ -299,17 +299,17 @@ The NetSecEnv is highly configurable in terms of the properties of the world, ta
 
 #### Environment configuration
 The environment part defines the properties of the environment for the task (see the example below). In particular:
-- `random_seed` - sets seed for any random processes in the environment
+- `random_seed` - sets the seed for any random processes in the environment
 - `scenario` - sets the scenario (network topology) used in the task (currently, `scenario1_tiny`, `scenario1_small`, `scenario1` and `three_nets` are available)
 - `save_tajectories` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of **EVERY** episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)
-- `use_firewall` - if `True` firewall rules defined in `scenario` are used when executing actions. When `False`, the firewall is ignored, and all connections are allowed (Default)
-- `use_global_defender` - if `True`, enables global defendr which is part of the environment and can stop interaction of any playing agent.
+- `use_firewall` - if `True`, firewall rules defined in `scenario` are used when executing actions. When `False`, the firewall is ignored, and all connections are allowed (Default)
+- `use_global_defender` - if `True`, enables global defender, which is part of the environment and can stop interaction of any playing agent.
 - `required_players` - Minimum required players for the game to start (default 1)
 - `rewards`:
-    - `success` - sets reward which agent gets when it reaches the goal (default 100)
-    - `fail` - sets the reward that which agent does not reach it's objective (default -10)
-    - `step_reward` - sets reward which agent gets for every step taken (default -1)
+    - `success` - sets the reward when the agent reaches the goal (default 100)
+    - `fail` - sets the reward when the agent does not reach its objective (default -10)
+    - `step_reward` - sets the reward when the agent does each single step in the game (default -1)
 - `actions` - defines the probability of success for every ActionType
 
 ```YAML
@@ -364,7 +364,7 @@ Configuration of the attacking agents. Consists of three parts:
     - `known_blocks`(dict)
 
     The initial network configuration must assign at least **one** controlled host to the attacker in the network. Any item in `controlled_hosts` is copied to `known_hosts`, so there is no need to include these in both sets. `known_networks` is also extended with a set of **all** networks accessible from the `controlled_hosts`
-3. Definition of maximum allowed amount of steps:
+3. Definition of maximum allowed number of steps:
     - `max_steps:`(int): defines the maximum allowed number of steps for attackers in **each** episode.
 
 Example attacker configuration:
@@ -420,7 +420,7 @@ Example of defender configuration:
         blocked_ips: {}
         known_blocks: {}
 ```
-As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In the curent implementation, the *Defender* wins, if **NO ATTACKER** reaches their goal. 
+As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In the current implementation, the *Defender* wins, if **NO ATTACKER** reaches their goal. 
 
 
 ### Definition of the network topology
@@ -428,30 +428,30 @@ The network topology and rules are defined using a [CYST](https://pypi.org/proje
 
 - Server hosts (are a NodeConf in CYST)
     - Interfaces, each with one IP address
-    - Users that can log in to the host
+    - Users who can log in to the host
     - Active and passive services
     - Data in the server
     - To which network is connected
-- Client host (are a Node in CYST)
+- Client host (are of type Node in CYST)
     - Interfaces, each with one IP address
     - To which network is connected
-    - Active and passive services if any
+    - Active and passive services, if any
     - Data in the client
-- Router (are a RouterConf in CYST)
+- Router (are of type RouterConf in CYST)
     - Interfaces, each with one IP address
     - Networks
     - Allowed connections between hosts
-- Internet host (as an external router) (are a Node in RouterConf)
+- Internet host (as an external router) (are of type Node in RouterConf)
     - Interfaces, each with one IP address
     - Which host can connect
 - Exploits
-    - which service is the exploit linked to
+    - Which service is the exploit linked to
 
 ### Scenarios
 In the current state, we support a single scenario: Data exfiltration to a remote C&C server. However, extensions can be made by modification of the task configuration.
 
 #### Data exfiltration to a remote C&C
-For the data exfiltration we support 3 variants. The full scenario contains 5 clients (where the attacker can start) and 5 servers where the data that is supposed to be exfiltrated can be located. *scenario1_small* is a variant with a single client (the attacker always starts there) and all 5 servers. *scenario1_tiny* contains only a single server with data. The tiny scenario is trivial and intended only for debugging purposes.
+For the data exfiltration, we support 3 variants. The full scenario contains 5 clients (where the attacker can start) and 5 servers, where the data that is supposed to be exfiltrated can be located. *scenario1_small* is a variant with a single client (the attacker always starts there) and all 5 servers. *scenario1_tiny* contains only a single server with data. The tiny scenario is trivial and intended only for debugging purposes.
 <table>
   <tr><th>Scenario 1</th><th>Scenario 1 - small</th><th>Scenario 1 -tiny</th></tr>
   <tr><td><img src="AIDojoCoordinator/docs/figures/scenarios/scenario_1.png" alt="Scenario 1 - Data exfiltration" width="300"></td><td><img src="AIDojoCoordinator/docs/figures/scenarios/scenario 1_small.png" alt="Scenario 1 - small" width="300"</td><td><img src="AIDojoCoordinator/docs/figures/scenarios/scenario_1_tiny.png" alt="Scenario 1 - tiny" width="300"></td></tr>
@@ -476,12 +476,12 @@ env:
 
 ## Testing the environment
 
-It is advised after every change you test if the env is running correctly by doing
+It is advised that after every change, you test if the env is running correctly by doing
 
 ```bash
 tests/run_all_tests.sh
 ```
-This will load and run the unit tests in the `tests` folder. After passing all tests, linting and formatting is checked with ruff.
+This will load and run the unit tests in the `tests` folder. After passing all tests, linting and formatting are checked with ruff.
 
 ## Code adaptation for new configurations
 The code can be adapted to new configurations of games and for new agents. See [Agent repository](https://github.com/stratosphereips/NetSecGameAgents/tree/main) for more details.
