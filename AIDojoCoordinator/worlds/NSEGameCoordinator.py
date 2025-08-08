@@ -163,16 +163,6 @@ class NSGCoordinator(GameCoordinator):
         for controlled_host in controlled_hosts:
             # Get networks from controlled host
             known_networks = known_networks.union(self._get_networks_from_controlled_host(controlled_host))
-        if add_estimated_nets:
-            warnings.warn("This feature has been moved to the agent side. It will be removed in the future.", DeprecationWarning)
-            # Add estimated networks from known hosts which are not controlled by the agent
-            for host in known_hosts:
-                if host not in controlled_hosts:
-                    # Estimate the subnetwork of the known host
-                    net = estimate_subnetwork_from_ip(host)
-                    if net not in known_networks:
-                        self.logger.debug(f'\tAdding estimated network {net} for {host}')
-                        known_networks.add(net)
 
         if add_neighboring_nets:
             warnings.warn("This feature has been moved to the agent side. It will be removed in the future.", DeprecationWarning)
