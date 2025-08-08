@@ -187,10 +187,6 @@ class NSGCoordinator(GameCoordinator):
                             known_networks.add(ip)
                         #return value back to the original
                         net_obj.value += 256
-        else:
-            for controlled_host in controlled_hosts:
-                for net in self._get_networks_from_host(controlled_host): #TODO
-                    known_networks.add(net)
         # parse known services
         known_services = self._get_services_from_view(view["known_services"])
         # parse known data
