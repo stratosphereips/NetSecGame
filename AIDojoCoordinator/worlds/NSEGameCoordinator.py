@@ -143,7 +143,7 @@ class NSGCoordinator(GameCoordinator):
                 known_networks = known_networks.union(set(self._network_mapping.values()))
         return known_networks
 
-    def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=False, add_estimated_nets:bool=False)->GameState:
+    def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=False)->GameState:
         """
         Builds a GameState from given view.
         If there is a keyword 'random' used, it is replaced by a valid option at random.
@@ -163,7 +163,6 @@ class NSGCoordinator(GameCoordinator):
         for controlled_host in controlled_hosts:
             # Get networks from controlled host
             known_networks = known_networks.union(self._get_networks_from_controlled_host(controlled_host))
-
         if add_neighboring_nets:
             warnings.warn("This feature has been moved to the agent side. It will be removed in the future.", DeprecationWarning)
             # Extend the known networks with the neighbouring networks
