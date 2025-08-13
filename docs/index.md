@@ -7,7 +7,7 @@ It is recommended to install the NetSecGame in a virual environement:
 ### Python venv
 1. 
 ```bash
-python -m venv <venv-name>
+python -m venv <venv-name> 
 ```
 2. 
 ```bash
@@ -17,7 +17,7 @@ source <venv-name>/bin/activate
 ### Conda
 1. 
 ```bash
-conda create --name aidojo python==3.12
+conda create --name aidojo python==3.12.10
 ```
 2. 
 ```bash
