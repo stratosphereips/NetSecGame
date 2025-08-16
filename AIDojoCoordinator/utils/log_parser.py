@@ -11,14 +11,18 @@ def calculate_episode_lengths(step_sequence):
     Given the list with step numbers calculate 
     the length of each episode and return a list of episode lengths.
     """
+    if not step_sequence:
+        return []
+        
     episode_lengths = []
     for i in range(1, len(step_sequence)):
-        if step_seq[i] == 0:
+        if step_sequence[i] == 0:
             # If the step is zero then it's a new episode
             # Take the last value as episode length
             episode_lengths.append(step_sequence[i - 1] + 1)
     # For the last episode take the latest step value
-    episode_lengths.append(step_sequence[-1] + 1)
+    if step_sequence:  # Only append if we have steps
+        episode_lengths.append(step_sequence[-1] + 1)
     return episode_lengths
 
 def reached_limit(current_step, max_steps, invalid_steps):
@@ -131,6 +135,12 @@ if __name__ == '__main__':
     print(f"Episodes: {len(episode_starts)}")
     print(f"Wins: {total_wins}")
     print(f"Detections: {total_detected}")
+    
+    # Add validation for when no episodes were found
+    if len(episode_starts) == 0:
+        print("No episodes found in the log file.")
+        exit(0)
+        
     print(f"Win rate: {100*total_wins/len(episode_starts):.3f}%")
     print(f"Detection rate: {100*total_detected/len(episode_starts):.3f}%")
     print(f"Average return: {np.mean(rewards):.3f} +- {np.std(rewards):.3f}")
