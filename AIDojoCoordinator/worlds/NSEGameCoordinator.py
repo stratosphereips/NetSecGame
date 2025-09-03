@@ -229,15 +229,22 @@ class NSGCoordinator(GameCoordinator):
                 self.logger.info(f"\t\t\tProcessing data in node '{node_obj.id}':'{service.name}' service")
                 try:
                     for data in service.private_data:
+                        self.logger.info(f"\t\t\t\tData: {data}")
                         if node_obj.id not in self._data:
                             self._data[node_obj.id] = set()
                         datapoint = Data(data.owner, data.description)
                         self._data[node_obj.id].add(datapoint)
                         # add content
-                        self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
+                        try:
+                            self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
+                        except AttributeError:
+                            # If self._data_content does not exist, create it here.
+                            self._data_content = {}
+                            self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
                 except AttributeError:
+                    # Service does not contain any data
                     pass
-                    #service does not contain any data
+
         def process_router_config(router_obj:RouterConfig)->None:
             self.logger.info(f"\tProcessing config of router '{router_obj.id}'")
             # Process a router
