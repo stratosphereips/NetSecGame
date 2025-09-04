@@ -27,6 +27,7 @@ class NSGCoordinator(GameCoordinator):
         self._networks = {} # A `dict` of the networks present in the environment. Keys: `Network` objects, values `set` of `IP` objects.
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
         self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
+        self._data_content = {} # ??? Not sure. Added by by sebas to fix error in reading config file
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         self._fw_blocks = {}
         self._agent_fw_rules = {}
@@ -53,6 +54,7 @@ class NSGCoordinator(GameCoordinator):
             Faker.seed(self._seed)  
         # store initial values for parts which are modified during the game
         self._data_original = copy.deepcopy(self._data)
+        self._data_content_original = copy.deepcopy(self._data_content)
         self._firewall_original = copy.deepcopy(self._firewall)
         self.logger.info("Environment initialization finished")
     
@@ -235,12 +237,7 @@ class NSGCoordinator(GameCoordinator):
                         datapoint = Data(data.owner, data.description)
                         self._data[node_obj.id].add(datapoint)
                         # add content
-                        try:
-                            self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
-                        except AttributeError:
-                            # If self._data_content does not exist, create it here.
-                            self._data_content = {}
-                            self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
+                        self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
                 except AttributeError:
                     # Service does not contain any data
                     pass
@@ -927,6 +924,7 @@ class NSGCoordinator(GameCoordinator):
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
+        self._data_content = copy.deepcopy(self._data_content_original)
         # reset all firewall related data structure
         self._firewall = copy.deepcopy(self._firewall_original)
         self._fw_blocks = {}
