@@ -4,7 +4,7 @@ coordinator:
   # Define the conf for all the 'attacker' agents.
   agents:
     Attacker:
-      max_steps: 25
+      max_steps: 100
       goal:
         description: "Exfiltrate data to '213.47.23.195'"
         is_any_part_of_goal_random: True
