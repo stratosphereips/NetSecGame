@@ -19,7 +19,7 @@ from AIDojoCoordinator.utils.utils import get_logging_level
 
 class NSGCoordinator(GameCoordinator):
 
-    def __init__(self, game_host, game_port, task_config:str, allowed_roles=["Attacker", "Defender", "Benign"], seed=42):
+    def __init__(self, game_host, game_port, task_config:str, allowed_roles=["Attacker", "Defender", "Benign"], seed=None):
         super().__init__(game_host, game_port, service_host=None, service_port=None, allowed_roles=allowed_roles, task_config_file=task_config)
 
         # Internal data structure of the NSG
@@ -1009,6 +1009,16 @@ if __name__ == "__main__":
         default="netsecenv_conf.yaml",
     )
 
+    parser.add_argument(
+        "-s",
+        "--seed",
+        help="Random seed for the environment",
+        action="store",
+        required=False,
+        type=int,
+        default=42,
+    )
+
     args = parser.parse_args()
     print(args)
     # Set the logging
@@ -1026,7 +1036,7 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
         level=pass_level,
     )
-  
-    game_server = NSGCoordinator(args.game_host, args.game_port, args.task_config)
+
+    game_server = NSGCoordinator(args.game_host, args.game_port, args.task_config, seed=args.seed)
     # Run it!
     game_server.run()
