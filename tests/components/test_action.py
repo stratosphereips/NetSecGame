@@ -437,7 +437,7 @@ class TestComponentAction:
             assert len(action_dict["parameters"]) == 2
             assert action_dict["parameters"]["request_trajectory"] is True
             assert action_dict["parameters"]["randomize_topology"] is False
-    
+
     def test_action_to_dict_quit_game(self):
             action = Action(
                 action_type=ActionType.QuitGame,
