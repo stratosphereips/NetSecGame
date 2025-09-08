@@ -448,7 +448,7 @@ class Action:
                     params[k] = Data.from_dict(v)
                 case "agent_info":
                     params[k] = AgentInfo.from_dict(v)
-                case "request_trajectory":
+                case "request_trajectory" | "randomize_topology":
                     params[k] = ast.literal_eval(v)
                 case _:
                     raise ValueError(f"Unsupported value in {k}: {v}")
