@@ -172,6 +172,7 @@ class GameCoordinator:
         self._agent_steps = {}
         # reset request per agent_addr (bool)
         self._reset_requests = {}
+        self._randomize_topology_requests = {}
         self._agent_status = {}
         self._episode_ends = {}
         self._agent_observations = {}
@@ -547,8 +548,10 @@ class GameCoordinator:
         """
         self.logger.debug("Beginning the _process_reset_game_action.")
         async with self._reset_lock:
-             # add reset request for this agent
+            # add reset request for this agent
             self._reset_requests[agent_addr] = True
+            # register if the agent wants to randomize the topology
+            self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", False)
             if all(self._reset_requests.values()):
                 # all agents want reset - reset the world
                 self.logger.debug(f"All agents requested reset, setting the event")
@@ -724,6 +727,7 @@ class GameCoordinator:
                     self._agent_observations[agent] = new_observation
                     self._episode_ends[agent] = False
                     self._reset_requests[agent] = False
+                    self._randomize_topology_requests[agent] = False
                     self._agent_rewards[agent] = 0
                     self._agent_steps[agent] = 0
                     self._agent_false_positives[agent] = 0
@@ -788,6 +792,9 @@ class GameCoordinator:
                 agent_info["agent_status"] = self._agent_status.pop(agent_addr)
                 agent_info["false_positives"] = self._agent_false_positives.pop(agent_addr)
                 async with self._reset_lock:
+                    # remove agent from  topology reset requests
+                    agent_info["topology_reset_request"] = self._randomize_topology_requests.pop(agent_addr)
+                    # remove agent from reset requests
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
                     # check if this agent was not preventing reset 
                     if any(self._reset_requests.values()):
