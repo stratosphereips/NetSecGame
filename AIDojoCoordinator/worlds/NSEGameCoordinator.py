@@ -920,7 +920,11 @@ class NSGCoordinator(GameCoordinator):
         self.logger.info('--- Reseting NSG Environment to its initial state ---')
         # change IPs if needed
         if self.task_config.get_use_dynamic_addresses():
-            self._create_new_network_mapping()
+            if all(self._randomize_topology_requests.values()):
+                self.logger.info("All agents requested reset with randomized topology.")
+                self._create_new_network_mapping()
+            else:
+                self.logger.info("Not all agents requested a topology randomization. Keeping the current one.")
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
