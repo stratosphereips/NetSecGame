@@ -35,6 +35,7 @@ Coordinator, having the role of the middle man in all communication between the 
 `self.agents`: information about connected agents {`agent address`: (`agent_name`,`agent_role`)}
 `self._agent_steps`: step counter for each agent in the current episode
 `self._reset_requests`: dictionary where requests for episode reset are collected (the world resets only if **all** active agents request reset)
+`self._randomize_topology_requests`: dictionary where requests for topology randomization are collected (the world randomizes the topology only if **all** active agents request reset)
 `self._agent_observations`: current observation per agent
 `self._agent_starting_position`: starting position (with wildcards, see [configuration](../README.md#task-configuration)) per agent
 `self._agent_states`: current GameState per agent 
