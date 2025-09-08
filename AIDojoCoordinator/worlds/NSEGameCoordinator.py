@@ -44,7 +44,17 @@ class NSGCoordinator(GameCoordinator):
         self._seed = seed
         self.logger.info(f'Setting env seed to {seed}')
 
-    def _initialize(self)->None:
+    def _initialize(self) -> None:
+        """
+        Initializes the NetSecGame environment.
+
+        Loads the CYST configuration, sets up dynamic IP and network address generation if enabled,
+        and stores original copies of environment data structures for later resets. Also seeds the
+        random number generator for reproducibility and logs the completion of initialization.
+
+        Returns:
+            None
+        """
         # Load CYST configuration
         self._process_cyst_config(self._cyst_objects)
                 # Check if dynamic network and ip adddresses are required
@@ -84,7 +94,16 @@ class NSGCoordinator(GameCoordinator):
         return controlled_hosts
 
     def _get_services_from_view(self, view_known_services:dict)->dict:
-        known_services ={}
+        """
+        Parses view and translates all keywords. Produces dict of known services {IP: set(Service)}
+        
+        Args:
+            view_known_services (dict): The view containing known services information.
+
+        Returns:
+            dict: A dictionary mapping IP addresses to sets of known services.
+        """
+        known_services = {}
         for ip, service_list in view_known_services.items():
             if self._ip_mapping[ip] not in known_services:
                 known_services[self._ip_mapping[ip]] = set()
@@ -101,6 +120,15 @@ class NSGCoordinator(GameCoordinator):
         return known_services
 
     def _get_data_from_view(self, view_known_data:dict)->dict:
+        """
+        Parses view and translates all keywords. Produces dict of known data {IP: set(Data)}
+        
+        Args:
+            view_known_data (dict): The view containing known data information.
+
+        Returns:
+            dict: A dictionary mapping IP addresses to sets of known data.
+        """
         known_data = {}
         for ip, data_list in view_known_data.items():
             if self._ip_mapping[ip] not in known_data:
