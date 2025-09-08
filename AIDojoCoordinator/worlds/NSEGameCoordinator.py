@@ -19,7 +19,7 @@ from AIDojoCoordinator.utils.utils import get_logging_level
 
 class NSGCoordinator(GameCoordinator):
 
-    def __init__(self, game_host, game_port, task_config:str, allowed_roles=["Attacker", "Defender", "Benign"], seed=42):
+    def __init__(self, game_host, game_port, task_config:str, allowed_roles=["Attacker", "Defender", "Benign"], seed=None):
         super().__init__(game_host, game_port, service_host=None, service_port=None, allowed_roles=allowed_roles, task_config_file=task_config)
 
         # Internal data structure of the NSG
@@ -44,7 +44,17 @@ class NSGCoordinator(GameCoordinator):
         self._seed = seed
         self.logger.info(f'Setting env seed to {seed}')
 
-    def _initialize(self)->None:
+    def _initialize(self) -> None:
+        """
+        Initializes the NetSecGame environment.
+
+        Loads the CYST configuration, sets up dynamic IP and network address generation if enabled,
+        and stores original copies of environment data structures for later resets. Also seeds the
+        random number generator for reproducibility and logs the completion of initialization.
+
+        Returns:
+            None
+        """
         # Load CYST configuration
         self._process_cyst_config(self._cyst_objects)
                 # Check if dynamic network and ip adddresses are required
@@ -84,7 +94,16 @@ class NSGCoordinator(GameCoordinator):
         return controlled_hosts
 
     def _get_services_from_view(self, view_known_services:dict)->dict:
-        known_services ={}
+        """
+        Parses view and translates all keywords. Produces dict of known services {IP: set(Service)}
+        
+        Args:
+            view_known_services (dict): The view containing known services information.
+
+        Returns:
+            dict: A dictionary mapping IP addresses to sets of known services.
+        """
+        known_services = {}
         for ip, service_list in view_known_services.items():
             if self._ip_mapping[ip] not in known_services:
                 known_services[self._ip_mapping[ip]] = set()
@@ -101,6 +120,15 @@ class NSGCoordinator(GameCoordinator):
         return known_services
 
     def _get_data_from_view(self, view_known_data:dict)->dict:
+        """
+        Parses view and translates all keywords. Produces dict of known data {IP: set(Data)}
+        
+        Args:
+            view_known_data (dict): The view containing known data information.
+
+        Returns:
+            dict: A dictionary mapping IP addresses to sets of known data.
+        """
         known_data = {}
         for ip, data_list in view_known_data.items():
             if self._ip_mapping[ip] not in known_data:
@@ -920,7 +948,11 @@ class NSGCoordinator(GameCoordinator):
         self.logger.info('--- Reseting NSG Environment to its initial state ---')
         # change IPs if needed
         if self.task_config.get_use_dynamic_addresses():
-            self._create_new_network_mapping()
+            if all(self._randomize_topology_requests.values()):
+                self.logger.info("All agents requested reset with randomized topology.")
+                self._create_new_network_mapping()
+            else:
+                self.logger.info("Not all agents requested a topology randomization. Keeping the current one.")
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
@@ -977,6 +1009,16 @@ if __name__ == "__main__":
         default="netsecenv_conf.yaml",
     )
 
+    parser.add_argument(
+        "-s",
+        "--seed",
+        help="Random seed for the environment",
+        action="store",
+        required=False,
+        type=int,
+        default=42,
+    )
+
     args = parser.parse_args()
     print(args)
     # Set the logging
@@ -994,7 +1036,7 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
         level=pass_level,
     )
-  
-    game_server = NSGCoordinator(args.game_host, args.game_port, args.task_config)
+
+    game_server = NSGCoordinator(args.game_host, args.game_port, args.task_config, seed=args.seed)
     # Run it!
     game_server.run()

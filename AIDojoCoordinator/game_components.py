@@ -397,6 +397,8 @@ class Action:
         for k, v in self.parameters.items():
             if hasattr(v, '__dict__'):  # Handle custom objects like Service, Data, AgentInfo
                 params[k] = asdict(v)
+            elif isinstance(v, bool):  # Handle boolean values
+                params[k] = v
             else:
                 params[k] = str(v)
         return {"action_type": str(self.action_type), "parameters": params}
@@ -448,8 +450,11 @@ class Action:
                     params[k] = Data.from_dict(v)
                 case "agent_info":
                     params[k] = AgentInfo.from_dict(v)
-                case "request_trajectory":
-                    params[k] = ast.literal_eval(v)
+                case "request_trajectory" | "randomize_topology":
+                    if isinstance(v, bool):
+                        params[k] = v
+                    else:
+                        params[k] = ast.literal_eval(v)
                 case _:
                     raise ValueError(f"Unsupported value in {k}: {v}")
         return cls(action_type=action_type, parameters=params)

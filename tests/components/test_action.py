@@ -426,7 +426,18 @@ class TestComponentAction:
             assert action == new_action
             assert action_dict["action_type"] == str(action.type)
             assert len(action_dict["parameters"]) == 0
-    
+            action = Action(
+                action_type=ActionType.ResetGame,
+                parameters={"request_trajectory": True, "randomize_topology": False}
+            )
+            action_dict = action.as_dict
+            new_action = Action.from_dict(action_dict)
+            assert action == new_action
+            assert action_dict["action_type"] == str(action.type)
+            assert len(action_dict["parameters"]) == 2
+            assert action_dict["parameters"]["request_trajectory"] is True
+            assert action_dict["parameters"]["randomize_topology"] is False
+
     def test_action_to_dict_quit_game(self):
             action = Action(
                 action_type=ActionType.QuitGame,
