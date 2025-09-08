@@ -793,7 +793,7 @@ class GameCoordinator:
                 agent_info["false_positives"] = self._agent_false_positives.pop(agent_addr)
                 async with self._reset_lock:
                     # remove agent from  topology reset requests
-                    agent_info["topology_reset_request"] = self._randomize_topology_requests.pop(agent_addr)
+                    agent_info["topology_reset_request"] = self._randomize_topology_requests.pop(agent_addr, False)
                     # remove agent from reset requests
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
                     # check if this agent was not preventing reset 
