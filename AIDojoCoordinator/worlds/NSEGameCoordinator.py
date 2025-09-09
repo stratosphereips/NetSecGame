@@ -947,6 +947,7 @@ class NSGCoordinator(GameCoordinator):
         # write all steps in the episode replay buffer in the file
         self.logger.info('--- Reseting NSG Environment to its initial state ---')
         # change IPs if needed
+        # This is done ONLY if it is (i) enabled in the task config and (ii) all agents requested it
         if self.task_config.get_use_dynamic_addresses():
             if all(self._randomize_topology_requests.values()):
                 self.logger.info("All agents requested reset with randomized topology.")
