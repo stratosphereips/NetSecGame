@@ -118,7 +118,7 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
 
 
     def _create_state_from_view(self, view, add_neighboring_nets = True):
-        return super()._create_state_from_view(view, add_neighboring_nets=False)
+        return super()._create_state_from_view(view, add_neighboring_nets=add_neighboring_nets)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -165,6 +165,16 @@ if __name__ == "__main__":
         type=str,
         default="netsecenv_conf.yaml",
     )
+    parser.add_argument(
+        "-s",
+        "--seed",
+        help="Random seed for the environment",
+        action="store",
+        required=False,
+        type=int,
+        default=42,
+    )
+
 
     args = parser.parse_args()
     print(args)
@@ -184,6 +194,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
   
-    game_server = WhiteBoxNSGCoordinator(args.game_host, args.game_port, args.task_config)
+    game_server = WhiteBoxNSGCoordinator(args.game_host, args.game_port, args.task_config, seed=args.seed)
     # Run it!
     game_server.run()
