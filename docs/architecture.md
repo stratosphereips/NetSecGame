@@ -74,7 +74,7 @@ The Action consists of two parts
 #### List of ActionTypes
 - **JoinGame**, params={`agent_info`:AgentInfo(`<name>`, `<role>`)}: Used to register agent in a game with a given `<role>`.
 - **QuitGame**, params={}: Used for termination of agent's interaction.
-- **ResetGame**, params={`request_trajectory`:`bool`}: Used for requesting reset of the game to it's initial position. If `request_trajectory = True`, the coordinator will send back the complete trajectory of the previous run in the next message.
+- **ResetGame**, params={`request_trajectory`:`bool` (default=`False`),  `randomize_topology`=`bool` (default=`True`)}: Used for requesting reset of the game to it's initial position. If `request_trajectory = True`, the coordinator will send back the complete trajectory of the previous run in the next message. If `randomize_topology`=`True`, the agent request topology to be changed in the next episode. NOTE: the topology is changed only if (i) the `use_dynamic_ips` is set to `True` in the task configuration AND all active agents ask for the change.
 ---
 - **ScanNetwork**, params{`source_host`:`<IP>`, `target_network`:`<Network>`}: Scans the given `<Network>` from a specified source host. Discovers ALL hosts in a network that are accessible from `<IP>`. If successful, returns set of discovered `<IP>` objects.
 - **FindServices**, params={`source_host`:`<IP>`, `target_host`:`<IP>`}: Used to discover ALL services running in the `target_host` if the host is accessible from `source_host`. If successful, returns a set of all discovered `<Service>` objects.

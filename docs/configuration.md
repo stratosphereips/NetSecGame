@@ -13,7 +13,17 @@ The environment part defines the properties of the environment for the task (see
     -  `two_networks` - 5 clients and 5 servers in separate local networks + remote C&C server
     -  `three_net_scenario` - 5 clients in a local network, 5 servers split in 2 additional local networks + remote C&C server
 - `save_tajectories` - if `True`, interaction of the agents is serialized and stored in a file
-- `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of **EVERY** episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)
+- `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of an episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask). The change also depend on the input from the agents:
+
+|Task configuration| Agent reset request | Result|
+|----------------------|----------------------|----------------------|
+|`use_dynamic_ips = True` | `randomize_topology = True`| Changed topology |
+|`use_dynamic_ips = True` | `randomize_topology = False`| SAME topology |
+|`use_dynamic_ips = False` | `randomize_topology = True`| SAME topology |
+|`use_dynamic_ips = False` | `randomize_topology = False`| SAME topology |
+
+In summary, the topology change (IP randomization) can't change without allowing it in the task configuration. If allowed in the task config YAML, it can still be rejected by the agents.
+
 - `use_firewall` - if `True` firewall rules defined in `scenario` are used when executing actions. When `False`, the firewall is ignored, and all connections are allowed (Default)
 - `use_global_defender` - if `True`, enables global defendr which is part of the environment and can stop interaction of any playing agent.
 - `required_players` - Minimum required players for the game to start (default 1)
