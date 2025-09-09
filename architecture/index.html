@@ -746,7 +746,7 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
 <ul>
 <li><strong>JoinGame</strong>, params={<code>agent_info</code>:AgentInfo(<code>&lt;name&gt;</code>, <code>&lt;role&gt;</code>)}: Used to register agent in a game with a given <code>&lt;role&gt;</code>.</li>
 <li><strong>QuitGame</strong>, params={}: Used for termination of agent's interaction.</li>
-<li><strong>ResetGame</strong>, params={<code>request_trajectory</code>:<code>bool</code>}: Used for requesting reset of the game to it's initial position. If <code>request_trajectory = True</code>, the coordinator will send back the complete trajectory of the previous run in the next message.</li>
+<li><strong>ResetGame</strong>, params={<code>request_trajectory</code>:<code>bool</code> (default=<code>False</code>),  <code>randomize_topology</code>=<code>bool</code> (default=<code>True</code>)}: Used for requesting reset of the game to it's initial position. If <code>request_trajectory = True</code>, the coordinator will send back the complete trajectory of the previous run in the next message. If <code>randomize_topology</code>=<code>True</code>, the agent request topology to be changed in the next episode. NOTE: the topology is changed only if (i) the <code>use_dynamic_ips</code> is set to <code>True</code> in the task configuration AND all active agents ask for the change.</li>
 </ul>
 <hr />
 <ul>

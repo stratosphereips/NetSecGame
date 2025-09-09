@@ -516,7 +516,41 @@
 </ul>
 </li>
 <li><code>save_tajectories</code> - if <code>True</code>, interaction of the agents is serialized and stored in a file</li>
-<li><code>use_dynamic_addresses</code> - if <code>True</code>, the network and IP addresses defined in <code>scenario</code> are randomly changed at the beginning of <strong>EVERY</strong> episode (the network topology is kept as defined in the <code>scenario</code>. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask)</li>
+<li><code>use_dynamic_addresses</code> - if <code>True</code>, the network and IP addresses defined in <code>scenario</code> are randomly changed at the beginning of an episode (the network topology is kept as defined in the <code>scenario</code>. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask). The change also depend on the input from the agents:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Task configuration</th>
+<th>Agent reset request</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>use_dynamic_ips = True</code></td>
+<td><code>randomize_topology = True</code></td>
+<td>Changed topology</td>
+</tr>
+<tr>
+<td><code>use_dynamic_ips = True</code></td>
+<td><code>randomize_topology = False</code></td>
+<td>SAME topology</td>
+</tr>
+<tr>
+<td><code>use_dynamic_ips = False</code></td>
+<td><code>randomize_topology = True</code></td>
+<td>SAME topology</td>
+</tr>
+<tr>
+<td><code>use_dynamic_ips = False</code></td>
+<td><code>randomize_topology = False</code></td>
+<td>SAME topology</td>
+</tr>
+</tbody>
+</table>
+<p>In summary, the topology change (IP randomization) can't change without allowing it in the task configuration. If allowed in the task config YAML, it can still be rejected by the agents.</p>
+<ul>
 <li><code>use_firewall</code> - if <code>True</code> firewall rules defined in <code>scenario</code> are used when executing actions. When <code>False</code>, the firewall is ignored, and all connections are allowed (Default)</li>
 <li><code>use_global_defender</code> - if <code>True</code>, enables global defendr which is part of the environment and can stop interaction of any playing agent.</li>
 <li><code>required_players</code> - Minimum required players for the game to start (default 1)</li>
