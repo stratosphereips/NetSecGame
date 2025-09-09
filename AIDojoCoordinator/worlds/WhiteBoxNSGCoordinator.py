@@ -118,7 +118,7 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
 
 
     def _create_state_from_view(self, view, add_neighboring_nets = True):
-        return super()._create_state_from_view(view, add_neighboring_nets=False)
+        return super()._create_state_from_view(view, add_neighboring_nets=add_neighboring_nets)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
