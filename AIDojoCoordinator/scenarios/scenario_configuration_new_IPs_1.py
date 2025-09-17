@@ -406,7 +406,7 @@ client_1 = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.42.2"), cyst_cfg.IPNetwork("10.7.42.0/24"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.44.2"), cyst_cfg.IPNetwork("10.7.44.0/24"))],
     shell="powershell",
     id="client_1"
 )
@@ -463,7 +463,7 @@ client_2 = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.42.3"), cyst_cfg.IPNetwork("10.7.42.0/24"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.44.3"), cyst_cfg.IPNetwork("10.7.44.0/24"))],
     shell="powershell",
     id="client_2"
 )
@@ -518,7 +518,7 @@ client_3 = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.42.4"), cyst_cfg.IPNetwork("10.7.42.0/24"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.44.4"), cyst_cfg.IPNetwork("10.7.44.0/24"))],
     shell="bash",
     id="client_3"
 )
@@ -573,7 +573,7 @@ client_4 = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.42.5"), cyst_cfg.IPNetwork("10.7.42.0/24"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.44.5"), cyst_cfg.IPNetwork("10.7.44.0/24"))],
     shell="bash",
     id="client_4"
 )
@@ -617,7 +617,7 @@ client_5 = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.42.6"), cyst_cfg.IPNetwork("10.7.42.0/24"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.44.6"), cyst_cfg.IPNetwork("10.7.44.0/24"))],
     shell="bash",
     id="client_5"
 )
@@ -631,7 +631,7 @@ Routers
 router1 = cyst_cfg.RouterConfig(
     interfaces=[
         cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.45.1"), cyst_cfg.IPNetwork("10.7.45.0/24"), index=2),
-        cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.42.1"), cyst_cfg.IPNetwork("10.7.42.0/24"), index=3),
+        cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("10.7.44.1"), cyst_cfg.IPNetwork("10.7.44.0/24"), index=3),
     ],
     routing_table=[
         # Push everything not-infrastructure to the internet
@@ -648,7 +648,7 @@ router1 = cyst_cfg.RouterConfig(
                 policy=cyst_cfg.FirewallPolicy.DENY,
                 rules=[
                     cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.45.0/24"), cyst_cfg.IPNetwork("10.7.45.1/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                    cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.0/24"), cyst_cfg.IPNetwork("10.7.42.1/32"), "*", cyst_cfg.FirewallPolicy.ALLOW)
+                    cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.0/24"), cyst_cfg.IPNetwork("10.7.44.1/32"), "*", cyst_cfg.FirewallPolicy.ALLOW)
                 ]
               ),
               cyst_cfg.FirewallChainConfig(
@@ -656,25 +656,25 @@ router1 = cyst_cfg.RouterConfig(
                   policy=cyst_cfg.FirewallPolicy.DENY,
                   rules=[
                       # Client 1 can go to server 1, 2, 3
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.2/32"), cyst_cfg.IPNetwork("10.7.45.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.2/32"), cyst_cfg.IPNetwork("10.7.45.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.2/32"), cyst_cfg.IPNetwork("10.7.45.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.2/32"), cyst_cfg.IPNetwork("10.7.45.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.2/32"), cyst_cfg.IPNetwork("10.7.45.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.2/32"), cyst_cfg.IPNetwork("10.7.45.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
                       # Client 2 can go to server 1, 2, 3
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.3/32"), cyst_cfg.IPNetwork("10.7.45.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.3/32"), cyst_cfg.IPNetwork("10.7.45.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.3/32"), cyst_cfg.IPNetwork("10.7.45.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.3/32"), cyst_cfg.IPNetwork("10.7.45.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.3/32"), cyst_cfg.IPNetwork("10.7.45.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.3/32"), cyst_cfg.IPNetwork("10.7.45.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
                       # Client 3 can go to server 1, 2, 3
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.4/32"), cyst_cfg.IPNetwork("10.7.45.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.4/32"), cyst_cfg.IPNetwork("10.7.45.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.4/32"), cyst_cfg.IPNetwork("10.7.45.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.4/32"), cyst_cfg.IPNetwork("10.7.45.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.4/32"), cyst_cfg.IPNetwork("10.7.45.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.4/32"), cyst_cfg.IPNetwork("10.7.45.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
                       # Client 4 can go to server 1, 2, 3
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.5/32"), cyst_cfg.IPNetwork("10.7.45.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.5/32"), cyst_cfg.IPNetwork("10.7.45.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.5/32"), cyst_cfg.IPNetwork("10.7.45.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.5/32"), cyst_cfg.IPNetwork("10.7.45.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.5/32"), cyst_cfg.IPNetwork("10.7.45.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.5/32"), cyst_cfg.IPNetwork("10.7.45.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
                       # Client 5 can go to server 1, 2, 3
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.6/32"), cyst_cfg.IPNetwork("10.7.45.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.6/32"), cyst_cfg.IPNetwork("10.7.45.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
-                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.42.6/32"), cyst_cfg.IPNetwork("10.7.45.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW)
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.6/32"), cyst_cfg.IPNetwork("10.7.45.2/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.6/32"), cyst_cfg.IPNetwork("10.7.45.3/32"), "*", cyst_cfg.FirewallPolicy.ALLOW),
+                      cyst_cfg.FirewallRule(cyst_cfg.IPNetwork("10.7.44.6/32"), cyst_cfg.IPNetwork("10.7.45.4/32"), "*", cyst_cfg.FirewallPolicy.ALLOW)
                   ]
               )
           ]
