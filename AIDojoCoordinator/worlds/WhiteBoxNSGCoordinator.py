@@ -50,6 +50,11 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
         # Collect all data from all hosts
         for data in self._data.values():
             all_data.update(data)
+
+        # sort all components to have a consistent order
+        all_ips = sorted(list(all_ips))
+        all_networks = sorted(list(all_networks))
+        all_data = sorted(list(all_data))
         
         # Network Scans
         for source_host, target_network in itertools.product(all_ips, all_networks):
@@ -71,7 +76,7 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
                 }
             ))
         # Service Exploits
-        for source_host, target_host in itertools.product(all_ips, ip_with_services.keys()):
+        for source_host, target_host in itertools.product(all_ips, sorted(ip_with_services.keys())):
             for service in ip_with_services[target_host]:
                 actions.append(Action(
                     ActionType.ExploitService,
