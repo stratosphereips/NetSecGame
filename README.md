@@ -116,7 +116,7 @@ Upon which the game server is created on `localhost:9000` to which the agents ca
 When running in the Docker container, the NetSecGame can be started with:
 ```bash
 docker run -it --rm \
-  -v $(pwd)/examples/example_config.yaml:/aidojo/netsecenv_conf.yaml \
+  -v $(pwd)/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml \
   -v $(pwd)/logs:/aidojo/logs \
   -p 9000:9000 lukasond/aidojo-coordinator:1.0.2
 ```
