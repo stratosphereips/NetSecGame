@@ -141,7 +141,7 @@ class NSGCoordinator(GameCoordinator):
         # re-map all IPs based on current mapping in self._ip_mapping
         return known_services
 
-    def _get_data_from_view(self, view_known_data:dict, exclude_types=["log"])->dict:
+    def _get_data_from_view(self, view_known_data:dict, keyword_scope:str="host", exclude_types=["log"])->dict:
         """
         Parses view and translates all keywords. Produces dict of known data {IP: set(Data)}
         
@@ -163,10 +163,16 @@ class NSGCoordinator(GameCoordinator):
                 elif isinstance(datum, str):
                     # select candidates that are not explicitly listed
                     data_candidates = set()
-                    for datapoints in self._data.values():
-                        for d in datapoints:
+                    if keyword_scope == "host": # scope of the keyword is the host only
+                        for d in self._data[self._ip_to_hostname[ip]]:
                             if d.type not in exclude_types and d not in known_data[ip]:
                                 data_candidates.add(d)
+                    else:
+                        # scope of the keyword is all hosts
+                        for datapoints in self._data.values():
+                            for d in datapoints:
+                                if d.type not in exclude_types and d not in known_data[ip]:
+                                    data_candidates.add(d)
                     if datum == "random": # randomly select the service
                         self.logger.info("\tSelecting data randomly")
                         if len(data_candidates) == 0:
@@ -214,7 +220,6 @@ class NSGCoordinator(GameCoordinator):
                 self.logger.error(f"Unsupported value encountered in start_position['known_networks']: {net}")
         return known_networks
 
-
     def _create_goal_state_from_view(self, view:dict, allowed_hosts=None)->GameState:
         """
         Builds a GameState from given view (dict). All keywords are replaced by valid options.
@@ -234,7 +239,7 @@ class NSGCoordinator(GameCoordinator):
         # parse known services
         known_services = self._get_services_from_view(view["known_services"])
         # parse known data
-        known_data = self._get_data_from_view(view["known_data"])
+        known_data = self._get_data_from_view(view["known_data"], keyword_scope="global", exclude_types=["logs"])
         goal_state = GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
         self.logger.info(f"Generated Goal GameState:{goal_state}")
         return goal_state
