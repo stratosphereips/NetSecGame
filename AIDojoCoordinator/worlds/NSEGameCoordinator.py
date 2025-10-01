@@ -141,7 +141,7 @@ class NSGCoordinator(GameCoordinator):
         # re-map all IPs based on current mapping in self._ip_mapping
         return known_services
 
-    def _get_data_from_view(self, view_known_data:dict)->dict:
+    def _get_data_from_view(self, view_known_data:dict, exclude_types=["log"])->dict:
         """
         Parses view and translates all keywords. Produces dict of known data {IP: set(Data)}
         
@@ -161,20 +161,26 @@ class NSGCoordinator(GameCoordinator):
                     known_data[ip].add(datum)
                     self.logger.debug(f'\tAdding {datum}.')
                 elif isinstance(datum, str):
+                    # select candidates that are not explicitly listed
+                    data_candidates = set()
+                    for datapoints in self._data.values():
+                        for d in datapoints:
+                            if d.type not in exclude_types and d not in known_data[ip]:
+                                data_candidates.add(d)
                     if datum == "random": # randomly select the service
-                        self.logger.info(f"\tSelecting data randomly in {ip}")
-                        # select candidates that are not explicitly listed
-                        data_candidates = [d for d in self._data[self._ip_to_hostname[ip]] if d not in known_data[ip]]
+                        self.logger.info("\tSelecting data randomly")
                         if len(data_candidates) == 0:
                             self.logger.warning("\t\tNo available data. Skipping")
                         else:
                             # randomly select from candidates
-                            selected = random.choice(data_candidates)
+                            selected = random.choice(list(data_candidates))
                             self.logger.debug(f"\t\tAdding: {selected}")
                             known_data[ip].add(selected)
-                elif datum == "all":
-                    self.logger.info(f"\tSelecting all data in {ip}")
-                    known_data[ip].update(self._data[self._ip_to_hostname[ip]])
+                    elif datum == "all":
+                        self.logger.info(f"\tSelecting all data in {ip}")
+                        known_data[ip].update(data_candidates)
+                    else:
+                        self.logger.error(f"Unsupported value encountered in view_known_data: {datum}")
                 else:
                     self.logger.error(f"Unsupported value encountered in view_known_data: {datum}")
         # re-map all IPs based on current mapping in self._ip_mapping
