@@ -793,6 +793,7 @@ class GameCoordinator:
         async with self._agents_lock:
             if agent_addr in self.agents:
                 agent_info["state"] = self._agent_states.pop(agent_addr)
+                agent_info["goal_state"] = self._agent_goal_states.pop(agent_addr)
                 agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
                 agent_info["agent_status"] = self._agent_status.pop(agent_addr)
                 agent_info["false_positives"] = self._agent_false_positives.pop(agent_addr)
