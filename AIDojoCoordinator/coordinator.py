@@ -764,7 +764,7 @@ class GameCoordinator:
         # create initial observation
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
-    async def register_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
+    async def register_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         """
