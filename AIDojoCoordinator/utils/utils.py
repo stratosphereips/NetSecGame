@@ -13,6 +13,7 @@ from random import randint
 import json
 import hashlib
 from cyst.api.configuration.network.node import NodeConfig
+from  typing import Optional
 
 def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
     """
@@ -395,7 +396,7 @@ class ConfigParser():
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
     
-    def get_max_steps(self, role=str)->int:
+    def get_max_steps(self, role=str)->Optional[int]:
         """
         Get the max steps based on agent's role
         """
