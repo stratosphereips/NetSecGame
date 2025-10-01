@@ -1037,10 +1037,11 @@ class NSGCoordinator(GameCoordinator):
         
     async def step(self, agent_id, agent_state, action)->GameState:
         return self._execute_action(agent_state, action, agent_id)
-    
-    async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
+
+    async def reset_agent(self, agent_id, agent_role, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
        game_state = self._create_state_from_view(agent_initial_view)
-       return game_state
+       goal_state = self._create_goal_state_from_view(agent_win_condition_view)
+       return game_state, goal_state    
 
     async def reset(self)->bool:
         """

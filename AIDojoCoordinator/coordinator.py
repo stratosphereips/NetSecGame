@@ -779,8 +779,8 @@ class GameCoordinator:
         Domain specific method of the environment. Creates the initial state of the agent.
         """
         raise NotImplementedError
-    
-    async def reset_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
+
+    async def reset_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
         raise NotImplementedError
 
     async def _remove_agent_from_game(self, agent_addr):
