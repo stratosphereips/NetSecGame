@@ -153,9 +153,11 @@ class NSGCoordinator(GameCoordinator):
                         data_candidates = [d for d in self._data[self._ip_to_hostname[ip]] if d not in known_data[self._ip_mapping[ip]]]
                         if len(data_candidates) > 0:
                             # randomly select from candidates
-                            known_data[self._ip_mapping[ip]].add(random.choice(data_candidates))
+                            selected = random.choice(data_candidates)
+                            self.logger.info(f"\t\tAdding: {selected}")
+                            known_data[self._ip_mapping[ip]].add(selected)
                         else:
-                            self.logger.warning("\tNo available data. Skipping")
+                            self.logger.warning("\t\tNo available data. Skipping")
         return known_data
     
     def _get_networks_from_view(self, view_known_networks:Iterable)->set[Network]:
@@ -1023,10 +1025,10 @@ class NSGCoordinator(GameCoordinator):
             new_content = json.dumps(new_content)
         self._data[hostaname].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
 
-    async def register_agent(self, agent_id, agent_role, agent_initial_view)->tuple[GameState, GameState]:
-        game_state = self._create_state_from_view(agent_initial_view)
-        goal_state = self._create_state_from_view(self._goal_description_per_role[agent_role])
-        return game_state, goal_state
+    async def register_agent(self, agent_id, agent_role, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+        start_game_state = self._create_state_from_view(agent_initial_view)
+        goal_state = self._create_goal_state_from_view(agent_win_condition_view)
+        return start_game_state, goal_state
 
     async def remove_agent(self, agent_id, agent_state)->bool:
         # No action is required
