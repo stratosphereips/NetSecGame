@@ -380,66 +380,18 @@ class NSGCoordinator(GameCoordinator):
         self.logger.info(f"\tintitial self._ip_mapping: {self._ip_mapping}")
         self.logger.info("CYST configuration processed successfully")
 
-    def _create_new_network_mapping(self)->tuple:
-        """ Method that generates random IP and Network addreses
-          while following the topology loaded in the environment.
-         All internal data structures are updated with the newly generated addresses."""
-        fake = self._faker_object
-        mapping_nets = {}
-        mapping_ips = {}
-        # generate mapping for networks
-        private_nets = []
-        for net in self._networks.keys():
-            if netaddr.IPNetwork(str(net)).ip.is_private():
-                private_nets.append(net)
-            else:
-                mapping_nets[net] = Network(fake.ipv4_public(), net.mask)
+
+
+    def _dynamic_ip_change(self, max_attempts:int=10)-> None:
+        """
+        Changes the IP and network addresses in the environment
+        """
+        self.logger.info("Changing IP and Network addresses in the environment")
+        # find a new IP and network mapping 
         
-        # for private networks, we want to keep the distances among them
-        private_nets_sorted = sorted(private_nets)
-        valid_valid_network_mapping = False
-        counter_iter = 0
-        while not valid_valid_network_mapping:
-            try:
-                # find the new lowest networks
-                new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets_sorted[0].mask}")
-                # store its new mapping
-                mapping_nets[private_nets[0]] = Network(str(new_base.network), private_nets_sorted[0].mask)
-                base = netaddr.IPNetwork(str(private_nets_sorted[0]))
-                is_private_net_checks = []
-                for i in range(1,len(private_nets_sorted)):
-                    current = netaddr.IPNetwork(str(private_nets_sorted[i]))
-                    # find the distance before mapping
-                    diff_ip = current.ip - base.ip
-                    # find the new mapping 
-                    new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
-                    # evaluate if its still a private network
-                    is_private_net_checks.append(new_net_addr.is_private())
-                    # store the new mapping
-                    mapping_nets[private_nets_sorted[i]] = Network(str(new_net_addr), private_nets_sorted[i].mask)
-                if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
-                    valid_valid_network_mapping = True
-            except IndexError as e:
-                self.logger.info(f"Dynamic address sampling failed, re-trying. {e}")
-                counter_iter +=1
-                if counter_iter > 10:
-                    self.logger.error("Dynamic address failed more than 10 times - stopping.")
-                    exit(-1)
-                # Invalid IP address boundary
-        self.logger.info(f"New network mapping:{mapping_nets}")
+        mapping_nets, mapping_ips = self._create_new_network_mapping(max_attempts)
         
-        # genereate mapping for ips:
-        for net,ips in self._networks.items():
-            ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))[1:]
-            # remove broadcast and network ip from the list
-            random.shuffle(ip_list)
-            for i,ip in enumerate(ips):
-                mapping_ips[ip] = IP(str(ip_list[i]))
-            # Always add random, in case random is selected for ips
-            mapping_ips['random'] = 'random'
-        self.logger.info(f"Mapping IPs done:{mapping_ips}")
-        
-        # update ALL data structure in the environment with the new mappings
+                # update ALL data structure in the environment with the new mappings
         # self._networks
         new_self_networks = {}
         for net, ips in self._networks.items():
@@ -530,6 +482,67 @@ class NSGCoordinator(GameCoordinator):
         for ip, mapping in self._ip_mapping.items():
             self._ip_mapping[ip] = mapping_ips[mapping]
         self.logger.debug(f"self._ip_mapping: {self._ip_mapping}")
+
+
+    def _create_new_network_mapping(self, max_attempts:int=10)->tuple:
+        """ Method that generates random IP and Network addreses
+          while following the topology loaded in the environment.
+         All internal data structures are updated with the newly generated addresses."""
+        fake = self._faker_object
+        mapping_nets = {}
+        mapping_ips = {}
+        # generate mapping for networks
+        private_nets = []
+        for net in self._networks.keys():
+            if netaddr.IPNetwork(str(net)).ip.is_private():
+                private_nets.append(net)
+            else:
+                mapping_nets[net] = Network(fake.ipv4_public(), net.mask)
+        
+        # for private networks, we want to keep the distances among them
+        private_nets_sorted = sorted(private_nets)
+        valid_valid_network_mapping = False
+        counter_iter = 0
+        while not valid_valid_network_mapping:
+            try:
+                # find the new lowest networks
+                new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets_sorted[0].mask}")
+                # store its new mapping
+                mapping_nets[private_nets[0]] = Network(str(new_base.network), private_nets_sorted[0].mask)
+                base = netaddr.IPNetwork(str(private_nets_sorted[0]))
+                is_private_net_checks = []
+                for i in range(1,len(private_nets_sorted)):
+                    current = netaddr.IPNetwork(str(private_nets_sorted[i]))
+                    # find the distance before mapping
+                    diff_ip = current.ip - base.ip
+                    # find the new mapping 
+                    new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
+                    # evaluate if its still a private network
+                    is_private_net_checks.append(new_net_addr.is_private())
+                    # store the new mapping
+                    mapping_nets[private_nets_sorted[i]] = Network(str(new_net_addr), private_nets_sorted[i].mask)
+                if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
+                    valid_valid_network_mapping = True
+            except IndexError as e:
+                self.logger.info(f"Dynamic address sampling failed, re-trying. {e}")
+                counter_iter +=1
+                if counter_iter > max_attempts:
+                    self.logger.error(f"Dynamic address failed more than {max_attempts} times - stopping.")
+                    exit(-1)
+                # Invalid IP address boundary
+        self.logger.info(f"New network mapping:{mapping_nets}")
+        
+        # genereate mapping for ips:
+        for net,ips in self._networks.items():
+            ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))[1:]
+            # remove broadcast and network ip from the list
+            random.shuffle(ip_list)
+            for i,ip in enumerate(ips):
+                mapping_ips[ip] = IP(str(ip_list[i]))
+            # Always add random, in case random is selected for ips
+            mapping_ips['random'] = 'random'
+        self.logger.info(f"Mapping IPs done:{mapping_ips}")
+        return mapping_nets, mapping_ips
     
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
         """
@@ -954,7 +967,7 @@ class NSGCoordinator(GameCoordinator):
         if self.task_config.get_use_dynamic_addresses():
             if all(self._randomize_topology_requests.values()):
                 self.logger.info("All agents requested reset with randomized topology.")
-                self._create_new_network_mapping()
+                self._dynamic_ip_change()
             else:
                 self.logger.info("Not all agents requested a topology randomization. Keeping the current one.")
         # reset self._data to orignal state
