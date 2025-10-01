@@ -238,7 +238,7 @@ class ConfigParser():
                 known_services = {}
         return known_services
 
-    def read_agents_known_networks(self, type_agent: str, type_data: str) -> dict:
+    def read_agents_known_networks(self, type_agent: str, type_data: str) -> set:
         """
         Generic function to read the known networks for any agent and goal of position
         """
@@ -251,7 +251,7 @@ class ConfigParser():
                     host_part, net_part = net.split('/')
                     known_networks.add(Network(host_part, int(net_part)))
             except (ValueError, TypeError, netaddr.AddrFormatError):
-                self.logger('Configuration problem with the known networks')
+                self.logger.error('Configuration problem with the known networks')
         return known_networks
 
     def read_agents_known_hosts(self, type_agent: str, type_data: str) -> dict:
