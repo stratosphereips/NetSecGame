@@ -468,7 +468,7 @@ class GameCoordinator:
                     if new_agent_game_state: # successful registration
                         async with self._agents_lock:
                             self.agents[agent_addr] = (agent_name, agent_role)
-                            observation = self._initialize_new_player(agent_addr, new_agent_game_state)
+                            observation = self._initialize_new_player(agent_addr, new_agent_game_state, new_agent_goal_state)
                             self._agent_observations[agent_addr] = observation
                             #if len(self.agents) == self._min_required_players:
                             if sum(1 for v in self._agent_status.values() if v == AgentStatus.PlayingWithTimeout) >= self._min_required_players:
@@ -722,7 +722,9 @@ class GameCoordinator:
                     async with self._agents_lock:
                         self._store_trajectory_to_file(agent)
                 self.logger.debug(f"Resetting agent {agent}")
-                new_state, new_goal_state = await self.reset_agent(agent, self.agents[agent][1], self._agent_starting_position[agent], self._win_conditions_per_role[self.agents[agent][1]])
+                agent_role = self.agents[agent][1]
+                # reset the agent in the world
+                new_state, new_goal_state = await self.reset_agent(agent, agent_role, self._starting_positions_per_role[agent_role], self._win_conditions_per_role[agent_role])
                 new_observation = Observation(new_state, 0, False, {})
                 async with self._agents_lock:
                     self._agent_states[agent] = new_state
