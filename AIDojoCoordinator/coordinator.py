@@ -854,17 +854,17 @@ class GameCoordinator:
                     return False
             return False
         self.logger.debug(f"Checking goal for agent {agent_addr}.")
-        goal_conditions = self._win_conditions_per_role[self.agents[agent_addr][1]]
-        self.logger.debug(f"\tGoal conditions for {agent_addr}: {goal_conditions}.")
         state = self._agent_states[agent_addr]
         # For each part of the state of the game, check if the conditions are met
+        target_goal_state = self._agent_goal_states[agent_addr]
+        self.logger.debug(f"\tGoal conditions: {target_goal_state}.")
         goal_reached = {}    
-        goal_reached["networks"] = set(goal_conditions["known_networks"]) <= set(state.known_networks)
-        goal_reached["known_hosts"] = set(goal_conditions["known_hosts"]) <= set(state.known_hosts)
-        goal_reached["controlled_hosts"] = set(goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
-        goal_reached["services"] = goal_dict_satistfied(goal_conditions["known_services"], state.known_services)
-        goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
-        goal_reached["known_blocks"] = goal_dict_satistfied(goal_conditions["known_blocks"], state.known_blocks)
+        goal_reached["networks"] = target_goal_state.known_networks <= state.known_networks
+        goal_reached["known_hosts"] = target_goal_state.known_hosts <= state.known_hosts
+        goal_reached["controlled_hosts"] = target_goal_state.controlled_hosts <= state.controlled_hosts
+        goal_reached["services"] = goal_dict_satistfied(target_goal_state.known_services, state.known_services)
+        goal_reached["data"] = goal_dict_satistfied(target_goal_state.known_data, state.known_data)
+        goal_reached["known_blocks"] = goal_dict_satistfied(target_goal_state.known_blocks, state.known_blocks)
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
