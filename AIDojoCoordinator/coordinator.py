@@ -816,7 +816,7 @@ class GameCoordinator:
     async def step(self, agent_id:tuple, agent_state:GameState, action:Action):
         raise NotImplementedError
     
-    async def reset(self):
+    async def reset(self)->bool:
         return NotImplemented
 
     def _initialize(self):
@@ -847,6 +847,7 @@ class GameCoordinator:
             return False
         self.logger.debug(f"Checking goal for agent {agent_addr}.")
         goal_conditions = self._win_conditions_per_role[self.agents[agent_addr][1]]
+        self.logger.debug(f"\tGoal conditions for {agent_addr}: {goal_conditions}.")
         state = self._agent_states[agent_addr]
         # For each part of the state of the game, check if the conditions are met
         goal_reached = {}    
