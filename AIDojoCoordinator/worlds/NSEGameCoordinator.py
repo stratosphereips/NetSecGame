@@ -45,7 +45,7 @@ class NSGCoordinator(GameCoordinator):
         self._seed = seed
         self.logger.info(f'Setting env seed to {seed}')
 
-    def _initialize(self) -> None:
+    def _initialize(self):
         """
         Initializes the NetSecGame environment.
 
@@ -69,38 +69,44 @@ class NSGCoordinator(GameCoordinator):
         self._firewall_original = copy.deepcopy(self._firewall)
         self.logger.info("Environment initialization finished")
 
-    def _get_controlled_hosts_from_view(self, view_controlled_hosts:Iterable, hosts_to_start=None)->set:
+    def _get_hosts_from_view(self, view_hosts:Iterable, allowed_hosts=None)->set[IP]:
         """
         Parses view and translates all keywords. Produces set of controlled host (IP)
+        Args:
+            view_hosts (Iterable): The view containing host information.
+            allowed_hosts (list, optional): A list of host to start from if 'random' is specified. Defaults to None.
+        Returns:
+            set: A set of controlled hosts.
         """
-        controlled_hosts = set()
+        hosts = set()
+        self.logger.debug(f'\tParsing from view: {view_hosts}')
         # controlled_hosts
-        for host in view_controlled_hosts:
+        for host in view_hosts:
             if isinstance(host, IP):
-                controlled_hosts.add(self._ip_mapping[host])
-                self.logger.debug(f'\tThe attacker has control of host {self._ip_mapping[host]}.')
+                hosts.add(self._ip_mapping[host])
+                self.logger.debug(f'\tAdding {self._ip_mapping[host]}.')
             elif host == 'random':
                 # Random start
-                self.logger.debug('\tAdding random starting position of agent')
-                if hosts_to_start is not None:
-                    self.logger.debug(f'\t\tChoosing from {self.hosts_to_start}')
-                    selected = random.choice(self.hosts_to_start)
+                if allowed_hosts is not None:
+                    self.logger.debug(f'\tChoosing randomly from {allowed_hosts}')
+                    selected = random.choice(allowed_hosts)
                 else:
+                    self.logger.debug(f'\tChoosing randomly from all available hosts {list(self._ip_to_hostname.keys())}')
                     selected = random.choice(list(self._ip_to_hostname.keys()))
-                controlled_hosts.add(selected)
-                self.logger.debug(f'\t\tMaking agent start in {selected}')
+                hosts.add(selected)
+                self.logger.debug(f'\t\tAdding {selected}.')
             elif host == "all_local":
                 # all local ips
-                self.logger.debug('\t\tAdding all local hosts to agent')
-                controlled_hosts = controlled_hosts.union(self._get_all_local_ips())
+                self.logger.debug(f'\tAdding all local hosts')
+                hosts = hosts.union(self._get_all_local_ips())
             else:
-                self.logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {host}")
-        return controlled_hosts
+                self.logger.error(f"Unsupported value encountered in view_hosts: {host}")
+        return hosts
 
     def _get_services_from_view(self, view_known_services:dict)->dict:
         """
         Parses view and translates all keywords. Produces dict of known services {IP: set(Service)}
-        
+
         Args:
             view_known_services (dict): The view containing known services information.
 
@@ -152,6 +158,59 @@ class NSGCoordinator(GameCoordinator):
                             self.logger.warning("\tNo available data. Skipping")
         return known_data
     
+    def _get_networks_from_view(self, view_known_networks:Iterable)->set[Network]:
+        """
+        Parses view and translates all keywords. Produces set of known networks (Network).
+        Args:
+            view_known_networks (Iterable): The view containing known networks information.
+        Returns:
+            set: A set of known networks.
+        """
+        known_networks = set()
+        for net in view_known_networks:
+            if isinstance(net, Network):
+                known_networks.add(self._network_mapping[net])
+                self.logger.debug(f'\tAdding network {self._network_mapping[net]}.')
+            elif net == 'random':
+                # Randomly select a network from the available ones
+                selected = random.choice(list(self._networks.keys()))
+                known_networks.add(self._network_mapping[selected])
+                self.logger.debug(f'\tAdding randomly selected network: {self._network_mapping[selected]}.')
+            elif net == "all_local":
+                # all local networks
+                self.logger.debug('\t\tAdding all local private networks')
+                for n in self._networks.keys():
+                    if not n.is_private():
+                        known_networks.add(self._network_mapping[n])
+            else:
+                self.logger.error(f"Unsupported value encountered in start_position['known_networks']: {net}")
+        return known_networks
+
+
+    def _create_goal_state_from_view(self, view:dict, allowed_hosts=None)->GameState:
+        """
+        Builds a GameState from given view (dict). All keywords are replaced by valid options.
+        Args:
+            view (dict): The view containing goal state information.
+            allowed_hosts (set, optional): A set of allowed hosts for random selection. Defaults to None.
+        Returns:
+            GameState: The generated goal state.
+        """
+        self.logger.info(f'Generating goal state from view:{view}')
+        # process known networks
+        known_networks = self._get_networks_from_view(view_known_networks=view["known_networks"])
+        # parse controlled hosts, replacing keywords if present
+        controlled_hosts = self._get_hosts_from_view(view_hosts=view["controlled_hosts"], allowed_hosts=allowed_hosts)
+        # parse known hosts
+        known_hosts = self._get_hosts_from_view(view_hosts=view["known_hosts"])
+        # parse known services
+        known_services = self._get_services_from_view(view["known_services"])
+        # parse known data
+        known_data = self._get_data_from_view(view["known_data"])
+        goal_state = GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
+        self.logger.info(f"Generated Goal GameState:{goal_state}")
+        return goal_state
+
     def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->GameState:
         """
         Builds a GameState from given view.
@@ -161,10 +220,10 @@ class NSGCoordinator(GameCoordinator):
         """
         self.logger.info(f'Generating state from view:{view}')
         # re-map all networks based on current mapping in self._network_mapping
-        known_networks = set([self._network_mapping[net] for net in view["known_networks"]])
+        known_networks = self._get_networks_from_view(view_known_networks=view["known_networks"])
         # parse controlled hosts
-        controlled_hosts = self._get_controlled_hosts_from_view(view_controlled_hosts=view["controlled_hosts"], hosts_to_start=self.hosts_to_start)
-        known_hosts = set([self._ip_mapping[ip] for ip in view["known_hosts"]])
+        controlled_hosts = self._get_hosts_from_view(view_hosts=view["controlled_hosts"], allowed_hosts=self.hosts_to_start)
+        known_hosts = self._get_hosts_from_view(view_hosts=view["known_hosts"], allowed_hosts=self.hosts_to_start)
         # Add all controlled hosts to known_hosts
         known_hosts = known_hosts.union(controlled_hosts)
         if add_neighboring_nets:
@@ -381,8 +440,6 @@ class NSGCoordinator(GameCoordinator):
         self.logger.info(f"\tintitial self._ip_mapping: {self._ip_mapping}")
         self.logger.info("CYST configuration processed successfully")
 
-
-
     def _dynamic_ip_change(self, max_attempts:int=10)-> None:
         """
         Changes the IP and network addresses in the environment
@@ -506,7 +563,6 @@ class NSGCoordinator(GameCoordinator):
         for ip, mapping in self._ip_mapping.items():
             self._ip_mapping[ip] = mapping_ips[mapping]
         self.logger.debug(f"self._ip_mapping: {self._ip_mapping}")
-
 
     def _create_new_network_mapping(self, max_attempts:int=10)->tuple:
         """ Method that generates random IP and Network addreses
@@ -967,10 +1023,11 @@ class NSGCoordinator(GameCoordinator):
             new_content = json.dumps(new_content)
         self._data[hostaname].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
 
-    async def register_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
+    async def register_agent(self, agent_id, agent_role, agent_initial_view)->tuple[GameState, GameState]:
         game_state = self._create_state_from_view(agent_initial_view)
-        return game_state
-         
+        goal_state = self._create_state_from_view(self._goal_description_per_role[agent_role])
+        return game_state, goal_state
+
     async def remove_agent(self, agent_id, agent_state)->bool:
         # No action is required
         return True
