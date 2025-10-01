@@ -79,12 +79,12 @@ class NSGCoordinator(GameCoordinator):
             set: A set of controlled hosts.
         """
         hosts = set()
-        self.logger.debug(f'\tParsing from view: {view_hosts}')
+        self.logger.debug(f'\tParsing hosts from view: {view_hosts}')
         # controlled_hosts
         for host in view_hosts:
             if isinstance(host, IP):
-                hosts.add(self._ip_mapping[host])
-                self.logger.debug(f'\tAdding {self._ip_mapping[host]}.')
+                hosts.add(host)
+                self.logger.debug(f'\tAdding {host}.')
             elif host == 'random':
                 # Random start
                 if allowed_hosts is not None:
@@ -115,18 +115,30 @@ class NSGCoordinator(GameCoordinator):
         """
         known_services = {}
         for ip, service_list in view_known_services.items():
-            if self._ip_mapping[ip] not in known_services:
-                known_services[self._ip_mapping[ip]] = set()
-            for s in service_list:
-                if isinstance(s, Service):
-                    known_services[self._ip_mapping[ip]].add(s)
-                elif isinstance(s, str):
-                    if s == "random": # randomly select the service
-                        self.logger.info(f"\tSelecting service randomly in {self._ip_mapping[ip]}")
+            self.logger.debug(f'\tParsing services from {ip}: {service_list}')
+            known_services[ip] = set()
+            for service in service_list:
+                if isinstance(service, Service):
+                    known_services[ip].add(service)
+                    self.logger.debug(f'\tAdding {service}.')
+                elif isinstance(service, str):
+                    if service == "random": # randomly select the service
+                        self.logger.info(f"\tSelecting service randomly in {ip}")
                         # select candidates that are not explicitly listed
-                        service_candidates = [s for s in self._services[self._ip_to_hostname[ip]] if s not in known_services[self._ip_mapping[ip]]]
-                        # randomly select from candidates
-                        known_services[self._ip_mapping[ip]].add(random.choice(service_candidates))
+                        service_candidates = [s for s in self._services[self._ip_to_hostname[ip]] if s not in known_services[ip]]
+                        if len(service_candidates) == 0:
+                            self.logger.warning("\t\tNo available services. Skipping")
+                        else:
+                            # randomly select from candidates
+                            selected = random.choice(service_candidates)
+                            self.logger.debug(f"\t\tAdding: {selected}")
+                            known_services[ip].add(selected)
+                elif service == "all":
+                    self.logger.info(f"\tSelecting all services in {ip}")
+                    known_services[ip].update(self._services[self._ip_to_hostname[ip]])
+                else:
+                    self.logger.error(f"Unsupported value encountered in view_known_services: {service}")
+        # re-map all IPs based on current mapping in self._ip_mapping
         return known_services
 
     def _get_data_from_view(self, view_known_data:dict)->dict:
@@ -142,23 +154,30 @@ class NSGCoordinator(GameCoordinator):
         # TODO Should we omit certain data types (e.g., logs)?
         known_data = {}
         for ip, data_list in view_known_data.items():
-            if self._ip_mapping[ip] not in known_data:
-                known_data[self._ip_mapping[ip]] = set()
+            self.logger.debug(f'\tParsing data from {ip}: {data_list}')
+            known_data[ip] = set()
             for datum in data_list:
                 if isinstance(datum, Data):
-                    known_data[self._ip_mapping[ip]].add(datum)
+                    known_data[ip].add(datum)
+                    self.logger.debug(f'\tAdding {datum}.')
                 elif isinstance(datum, str):
-                    if datum == "random": # randomly select the data
-                        self.logger.info(f"\tSelecting data randomly in {self._ip_mapping[ip]}")
+                    if datum == "random": # randomly select the service
+                        self.logger.info(f"\tSelecting data randomly in {ip}")
                         # select candidates that are not explicitly listed
-                        data_candidates = [d for d in self._data[self._ip_to_hostname[ip]] if d not in known_data[self._ip_mapping[ip]]]
-                        if len(data_candidates) > 0:
+                        data_candidates = [d for d in self._data[self._ip_to_hostname[ip]] if d not in known_data[ip]]
+                        if len(data_candidates) == 0:
+                            self.logger.warning("\t\tNo available data. Skipping")
+                        else:
                             # randomly select from candidates
                             selected = random.choice(data_candidates)
-                            self.logger.info(f"\t\tAdding: {selected}")
-                            known_data[self._ip_mapping[ip]].add(selected)
-                        else:
-                            self.logger.warning("\t\tNo available data. Skipping")
+                            self.logger.debug(f"\t\tAdding: {selected}")
+                            known_data[ip].add(selected)
+                elif datum == "all":
+                    self.logger.info(f"\tSelecting all data in {ip}")
+                    known_data[ip].update(self._data[self._ip_to_hostname[ip]])
+                else:
+                    self.logger.error(f"Unsupported value encountered in view_known_data: {datum}")
+        # re-map all IPs based on current mapping in self._ip_mapping
         return known_data
     
     def _get_networks_from_view(self, view_known_networks:Iterable)->set[Network]:
