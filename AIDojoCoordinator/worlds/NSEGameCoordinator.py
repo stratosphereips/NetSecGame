@@ -113,6 +113,7 @@ class NSGCoordinator(GameCoordinator):
         Returns:
             dict: A dictionary mapping IP addresses to sets of known services.
         """
+        # TODO: Add keyword scope parameter (like in _get_data_from_view)
         known_services = {}
         for ip, service_list in view_known_services.items():
             self.logger.debug(f'\tParsing services from {ip}: {service_list}')
