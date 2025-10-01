@@ -12,8 +12,8 @@ import csv
 from random import randint
 import json
 import hashlib
-from cyst.api.configuration.network.node import NodeConfig
-from  typing import Optional
+from cyst.api.configuration.network.node import NodeConfig, ActiveServiceConfig, InterfaceConfig
+from  typing import Optional, cast
 
 def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
     """
@@ -410,7 +410,7 @@ class ConfigParser():
             self.logger.warning(f"Unsupported value in 'coordinator.agents.{role}.max_steps': {e}. Setting value to default=None (no step limit)")
         return max_steps
 
-    def get_goal_description(self, agent_role)->dict:
+    def get_goal_description(self, agent_role)->str:
         """
         Get goal description per role
         """
@@ -554,11 +554,13 @@ def get_starting_position_from_cyst_config(cyst_objects):
     for obj in cyst_objects:
         if isinstance(obj, NodeConfig):
             for active_service in obj.active_services:
+                active_service = cast(ActiveServiceConfig, active_service)
                 if active_service.type == "netsecenv_agent":
-                    print(f"startig processing {obj.id}.{active_service.name}")
+                    print(f"starting processing {obj.id}.{active_service.name}")
                     hosts = set()
                     networks = set()
                     for interface in obj.interfaces:
+                        interface = cast(InterfaceConfig, interface)
                         hosts.add(IP(str(interface.ip)))
                         net_ip, net_mask = str(interface.net).split("/")
                         networks.add(Network(net_ip,int(net_mask)))
