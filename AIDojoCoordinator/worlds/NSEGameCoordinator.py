@@ -139,6 +139,7 @@ class NSGCoordinator(GameCoordinator):
         Returns:
             dict: A dictionary mapping IP addresses to sets of known data.
         """
+        # TODO Should we omit certain data types (e.g., logs)?
         known_data = {}
         for ip, data_list in view_known_data.items():
             if self._ip_mapping[ip] not in known_data:
