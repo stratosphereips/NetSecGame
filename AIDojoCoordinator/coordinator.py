@@ -180,6 +180,8 @@ class GameCoordinator:
         self._agent_starting_position = {}
         # current state per agent_addr (GameState)
         self._agent_states = {}
+        # goal state per agent_addr (GameState)
+        self._agent_goal_states = {}
         # last action played by agent (Action)
         self._agent_last_action = {}
         # False positives per agent (due to added blocks)
@@ -741,7 +743,7 @@ class GameCoordinator:
                 self._reset_done_condition.notify_all()
         self.logger.info("\tReset game task stopped.")
     
-    def _initialize_new_player(self, agent_addr:tuple, agent_current_state:GameState) -> Observation:
+    def _initialize_new_player(self, agent_addr:tuple, agent_current_state:GameState, agent_current_goal_state:GameState) -> Observation:
         """
         Method to initialize new player upon joining the game.
         Returns initial observation for the agent based on the agent's role
@@ -753,6 +755,8 @@ class GameCoordinator:
         self._episode_ends[agent_addr] = False
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = agent_current_state
+        self._agent_goal_states[agent_addr] = agent_current_goal_state
+        self._agent_last_action[agent_addr] = None
         self._agent_rewards[agent_addr] = 0
         self._agent_false_positives[agent_addr] = 0
         if agent_role.lower() == "attacker":
