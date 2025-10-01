@@ -147,11 +147,11 @@ class NSGCoordinator(GameCoordinator):
         
         Args:
             view_known_data (dict): The view containing known data information.
-
+            keyword_scope (str, optional): Scope of keywords like 'random' or 'all'. Defaults to "host" (i.e., only data from the specified host are considered).
+            exclude_types (list, optional): List of data types to exclude when selecting data. Defaults to ["log"].
         Returns:
             dict: A dictionary mapping IP addresses to sets of known data.
         """
-        # TODO Should we omit certain data types (e.g., logs)?
         known_data = {}
         for ip, data_list in view_known_data.items():
             self.logger.debug(f'\tParsing data from {ip}: {data_list}')
