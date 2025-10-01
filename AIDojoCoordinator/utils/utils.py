@@ -154,7 +154,7 @@ class ConfigParser():
             self.logger.error(f'Error loading the configuration file{e}')
             pass
     
-    def read_env_action_data(self, action_name: str) -> dict:
+    def read_env_action_data(self, action_name: str) -> float:
         """
         Generic function to read the known data for any agent and goal of position
         """
@@ -254,7 +254,7 @@ class ConfigParser():
                 self.logger.error('Configuration problem with the known networks')
         return known_networks
 
-    def read_agents_known_hosts(self, type_agent: str, type_data: str) -> dict:
+    def read_agents_known_hosts(self, type_agent: str, type_data: str) -> set:
         """
         Generic function to read the known hosts for any agent and goal of position
         """
@@ -274,7 +274,7 @@ class ConfigParser():
                     self.logger.error(f'Configuration problem with the known hosts: {e}')
         return known_hosts
 
-    def read_agents_controlled_hosts(self, type_agent: str, type_data: str) -> dict:
+    def read_agents_controlled_hosts(self, type_agent: str, type_data: str) -> set:
         """
         Generic function to read the controlled hosts for any agent and goal of position
         """
