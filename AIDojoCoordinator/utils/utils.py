@@ -112,7 +112,7 @@ def observation_as_dict(observation:Observation)->dict:
     }
     return observation_dict
 
-def parse_log_content(log_content:str)->list:
+def parse_log_content(log_content:str)->Optional[list]:
     try:
         logs = []
         data = json.loads(log_content)
@@ -554,13 +554,11 @@ def get_starting_position_from_cyst_config(cyst_objects):
     for obj in cyst_objects:
         if isinstance(obj, NodeConfig):
             for active_service in obj.active_services:
-                active_service = cast(ActiveServiceConfig, active_service)
                 if active_service.type == "netsecenv_agent":
                     print(f"starting processing {obj.id}.{active_service.name}")
                     hosts = set()
                     networks = set()
                     for interface in obj.interfaces:
-                        interface = cast(InterfaceConfig, interface)
                         hosts.add(IP(str(interface.ip)))
                         net_ip, net_mask = str(interface.net).split("/")
                         networks.add(Network(net_ip,int(net_mask)))
