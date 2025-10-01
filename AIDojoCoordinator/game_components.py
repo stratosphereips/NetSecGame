@@ -738,6 +738,8 @@ class GameStatus(enum.Enum):
                 return GameStatus.FORBIDDEN
             case "GameStatus.RESET_DONE":
                 return GameStatus.RESET_DONE
+            case _:
+                raise ValueError(f"Invalid GameStatus string: {string}")
     def __repr__(self) -> str:
         """
         Return the string representation of the GameStatus.
