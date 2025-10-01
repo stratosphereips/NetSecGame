@@ -467,6 +467,10 @@ class ConfigParser():
         Get the scenario config objects based on the configuration. Only import objects that are selected via importlib.
         """
         allowed_names = {
+            "scenario1-5" : "AIDojoCoordinator.scenarios.scenario_configuration_new_IPs_5",
+            "scenario1-4" : "AIDojoCoordinator.scenarios.scenario_configuration_new_IPs_4",
+            "scenario1-3" : "AIDojoCoordinator.scenarios.scenario_configuration_new_IPs_3",
+            "scenario1-2" : "AIDojoCoordinator.scenarios.scenario_configuration_new_IPs_2",
             "scenario1-1" : "AIDojoCoordinator.scenarios.scenario_configuration_new_IPs_1",
             "scenario1" : "AIDojoCoordinator.scenarios.scenario_configuration",
             "scenario1_small" : "AIDojoCoordinator.scenarios.smaller_scenario_configuration",
