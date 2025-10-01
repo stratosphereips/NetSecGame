@@ -551,8 +551,8 @@ class GameState():
         graph_nodes = {}
         node_features = []
         controlled = []
+        edges = []
         try:
-            edges = []
             #add known nets
             for net in self.known_networks:
                 graph_nodes[net] = len(graph_nodes)
