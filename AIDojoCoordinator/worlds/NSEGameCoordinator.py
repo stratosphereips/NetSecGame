@@ -10,6 +10,7 @@ import json
 from faker import Faker
 from pathlib import Path
 from typing import Iterable
+from collections import defaultdict
 
 from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP, Network, Data, Service
 from AIDojoCoordinator.coordinator import GameCoordinator
@@ -388,10 +389,10 @@ class NSGCoordinator(GameCoordinator):
         """
         self.logger.info("Changing IP and Network addresses in the environment")
         # find a new IP and network mapping 
-        
         mapping_nets, mapping_ips = self._create_new_network_mapping(max_attempts)
         
-                # update ALL data structure in the environment with the new mappings
+        # update ALL data structure in the environment with the new mappings
+        
         # self._networks
         new_self_networks = {}
         for net, ips in self._networks.items():
@@ -409,7 +410,7 @@ class NSGCoordinator(GameCoordinator):
         self.logger.debug(f"New FW: {new_self_firewall_original}")
         self._firewall_original = new_self_firewall_original
 
-        #self._ip_to_hostname
+        # self._ip_to_hostname
         new_self_ip_to_hostname  = {}
         for ip, hostname in self._ip_to_hostname.items():
             new_self_ip_to_hostname[mapping_ips[ip]] = hostname
@@ -420,60 +421,123 @@ class NSGCoordinator(GameCoordinator):
         for ip in self.hosts_to_start:
             new_self_host_to_start.append(mapping_ips[ip])
         self.hosts_to_start = new_self_host_to_start
+
+        def apply_mapping(d: dict, mapping: dict) -> dict:
+            """
+            Apply a mapping to a dictionary.
+            - Keys are remapped with mapping if present.
+            - Values:
+                * If iterable (set/list/tuple), each element is remapped.
+                * If string (or non-iterable), attempt direct remap.
+            """
+            out = defaultdict(set)
+            for k, vals in d.items():
+                nk = mapping.get(k, k)
+
+                if isinstance(vals, str) or not isinstance(vals, Iterable):
+                    # treat as a single atomic value
+                    nv = {mapping.get(vals, vals)}
+                else:
+                    nv = {mapping.get(v, v) for v in vals}
+
+                out[nk].update(nv)
+
+            return dict(out)
+
+        # start_position per role
+        for role, start_position in self._starting_positions_per_role.items():
+            # {'role': {'controlled_hosts': [...], 'known_hosts': [...], 'known_data': {...}, 'known_services': {...}, known_networks: [...], known_blocks: [...]}}
+            new_start_position = {}
+            new_start_position['known_networks'] = [mapping_nets.get(net, net) for net in start_position['known_networks']]
+            new_start_position['controlled_hosts'] = [mapping_ips.get(ip, ip) for ip in start_position['controlled_hosts']]
+            new_start_position['known_hosts'] = [mapping_ips.get(ip, ip) for ip in start_position['known_hosts']]
+            new_start_position['known_services'] = {mapping_ips.get(ip, ip): services for ip, services in start_position['known_services'].items()}
+            new_start_position["known_data"] = {mapping_ips.get(ip, ip): data for ip, data in start_position['known_data'].items()}
+            # known_blocks {IP:set(IP)}
+            new_start_position["known_blocks"] = apply_mapping(start_position.get("known_blocks", {}), mapping_ips)
+            self._starting_positions_per_role[role] = new_start_position
+            self.logger.debug(f"Updated starting position for role {role}: {self._starting_positions_per_role[role]}")
         
-        # map IPs and networks stored in the taskconfig file
-        # This is a quick fix, we should find some other solution
-        agents = self.task_config.config['coordinator']['agents']
-        # Fields that are dictionaries with IP keys
-        dict_keys = ['known_data', 'blocked_ips', 'known_blocks']
-        # Fields that are lists of IP strings
-        list_keys = ['known_hosts', 'controlled_hosts']
+        # win_conditions_per_role 
+        for role, win_condition in self._win_conditions_per_role.items():
+            new_win_condition = {}
+            new_win_condition['known_networks'] = [mapping_nets.get(net, net) for net in win_condition['known_networks']]
+            new_win_condition['controlled_hosts'] = [mapping_ips.get(ip, ip) for ip in win_condition['controlled_hosts']]
+            new_win_condition['known_hosts'] = [mapping_ips.get(ip, ip) for ip in win_condition['known_hosts']]
+            new_win_condition['known_services'] = {mapping_ips.get(ip, ip): services for ip, services in win_condition['known_services'].items()}
+            new_win_condition["known_data"] = {mapping_ips.get(ip, ip): data for ip, data in win_condition['known_data'].items()}
+            new_win_condition["known_blocks"] = apply_mapping(win_condition.get("known_blocks", {}), mapping_ips)
+            self._win_conditions_per_role[role] = new_win_condition
+            self.logger.debug(f"Updated win condition for role {role}: {self._win_conditions_per_role[role]}")
+        
+        # goal_description_per_role
         ip_regex = re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b')
+        def repl(match):
+            ip_str = match.group(0)
+            try:
+                new_ip = str(mapping_ips[IP(ip_str)])
+                return new_ip
+            except (ValueError, KeyError):
+                return ip_str
+
+        new_goal_description = {role:repl(description) for role, description in self._goal_description_per_role.items()}
+        self._goal_description_per_role = new_goal_description
+        self.logger.debug(f"Updated goal description per role: {self._goal_description_per_role}")
+
+
+        # # map IPs and networks stored in the taskconfig file
+        # # This is a quick fix, we should find some other solution
+        # agents = self.task_config.config['coordinator']['agents']
+        # # Fields that are dictionaries with IP keys
+        # dict_keys = ['known_data', 'blocked_ips', 'known_blocks']
+        # # Fields that are lists of IP strings
+        # list_keys = ['known_hosts', 'controlled_hosts']
+        # ip_regex = re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b')
         
-        for agent in agents.values():
-            for section_key in ['goal', 'start_position']:
-                section = agent.get(section_key, {})
+        # for agent in agents.values():
+        #     for section_key in ['goal', 'start_position']:
+        #         section = agent.get(section_key, {})
 
-                # Remap IP addresses in the description field of the goal section
-                if section_key == 'goal' and 'description' in section:
-                    description = section['description']
-                    def repl(match):
-                        ip_str = match.group(0)
-                        try:
-                            new_ip = str(mapping_ips[IP(ip_str)])
-                            return new_ip
-                        except (ValueError, KeyError):
-                            return ip_str
-                    section['description'] = ip_regex.sub(repl, description)
+        #         # Remap IP addresses in the description field of the goal section
+        #         if section_key == 'goal' and 'description' in section:
+        #             description = section['description']
+        #             def repl(match):
+        #                 ip_str = match.group(0)
+        #                 try:
+        #                     new_ip = str(mapping_ips[IP(ip_str)])
+        #                     return new_ip
+        #                 except (ValueError, KeyError):
+        #                     return ip_str
+        #             section['description'] = ip_regex.sub(repl, description)
 
-                # Remap dictionary keys
-                for key in dict_keys:
-                    if key in section:
-                        current_dict = section[key]
-                        for ip in list(current_dict.keys()):
-                            try:
-                                # Convert the ip string to an IP object
-                                new_ip = str(mapping_ips[IP(ip)])
-                            except (ValueError, KeyError):
-                                # Skip if the IP is invalid or not found in mapping_ips
-                                continue
-                            current_dict[new_ip] = current_dict.pop(ip)
+        #         # Remap dictionary keys
+        #         for key in dict_keys:
+        #             if key in section:
+        #                 current_dict = section[key]
+        #                 for ip in list(current_dict.keys()):
+        #                     try:
+        #                         # Convert the ip string to an IP object
+        #                         new_ip = str(mapping_ips[IP(ip)])
+        #                     except (ValueError, KeyError):
+        #                         # Skip if the IP is invalid or not found in mapping_ips
+        #                         continue
+        #                     current_dict[new_ip] = current_dict.pop(ip)
 
-                # Remap list items
-                for key in list_keys:
-                    if key in section:
-                        new_list = []
-                        for ip in section[key]:
-                            try:
-                                new_ip = str(mapping_ips[IP(ip)])
-                            except (ValueError, KeyError):
-                                # Keep the original if invalid or not in mapping_ips
-                                new_ip = ip
-                            new_list.append(new_ip)
-                        section[key] = new_list                
-            # update win conditions with the new IPs            
-            self._win_conditions_per_role = self._get_win_condition_per_role()        
-            self._goal_description_per_role = self._get_goal_description_per_role()   
+        #         # Remap list items
+        #         for key in list_keys:
+        #             if key in section:
+        #                 new_list = []
+        #                 for ip in section[key]:
+        #                     try:
+        #                         new_ip = str(mapping_ips[IP(ip)])
+        #                     except (ValueError, KeyError):
+        #                         # Keep the original if invalid or not in mapping_ips
+        #                         new_ip = ip
+        #                     new_list.append(new_ip)
+        #                 section[key] = new_list                
+        #     # update win conditions with the new IPs            
+        #     self._win_conditions_per_role = self._get_win_condition_per_role()        
+        #     self._goal_description_per_role = self._get_goal_description_per_role()   
         
         #update mappings stored in the environment
         for net, mapping in self._network_mapping.items():
@@ -539,8 +603,11 @@ class NSGCoordinator(GameCoordinator):
             random.shuffle(ip_list)
             for i,ip in enumerate(ips):
                 mapping_ips[ip] = IP(str(ip_list[i]))
-            # Always add random, in case random is selected for ips
+            # Always add keywords 'random' and 'all_local' 'all_attackers' to the mapping
             mapping_ips['random'] = 'random'
+            mapping_ips['all_local'] = 'all_local'
+            mapping_ips['all_attackers'] = 'all_attackers'
+
         self.logger.info(f"Mapping IPs done:{mapping_ips}")
         return mapping_nets, mapping_ips
     
