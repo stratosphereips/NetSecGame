@@ -67,8 +67,8 @@ class NSGCoordinator(GameCoordinator):
         self._data_content_original = copy.deepcopy(self._data_content)
         self._firewall_original = copy.deepcopy(self._firewall)
         self.logger.info("Environment initialization finished")
-    
-    def _get_controlled_hosts_from_view(self, view_controlled_hosts:Iterable)->set:
+
+    def _get_controlled_hosts_from_view(self, view_controlled_hosts:Iterable, hosts_to_start=None)->set:
         """
         Parses view and translates all keywords. Produces set of controlled host (IP)
         """
@@ -81,8 +81,11 @@ class NSGCoordinator(GameCoordinator):
             elif host == 'random':
                 # Random start
                 self.logger.debug('\tAdding random starting position of agent')
-                self.logger.debug(f'\t\tChoosing from {self.hosts_to_start}')
-                selected = random.choice(self.hosts_to_start)
+                if hosts_to_start is not None:
+                    self.logger.debug(f'\t\tChoosing from {self.hosts_to_start}')
+                    selected = random.choice(self.hosts_to_start)
+                else:
+                    selected = random.choice(list(self._ip_to_hostname.keys()))
                 controlled_hosts.add(selected)
                 self.logger.debug(f'\t\tMaking agent start in {selected}')
             elif host == "all_local":
@@ -159,7 +162,7 @@ class NSGCoordinator(GameCoordinator):
         # re-map all networks based on current mapping in self._network_mapping
         known_networks = set([self._network_mapping[net] for net in view["known_networks"]])
         # parse controlled hosts
-        controlled_hosts = self._get_controlled_hosts_from_view(view["controlled_hosts"])
+        controlled_hosts = self._get_controlled_hosts_from_view(view_controlled_hosts=view["controlled_hosts"], hosts_to_start=self.hosts_to_start)
         known_hosts = set([self._ip_mapping[ip] for ip in view["known_hosts"]])
         # Add all controlled hosts to known_hosts
         known_hosts = known_hosts.union(controlled_hosts)
