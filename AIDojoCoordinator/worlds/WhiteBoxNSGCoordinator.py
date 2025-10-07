@@ -29,7 +29,7 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
         self._generate_all_actions()
         self._registration_info = {
             "all_actions": json.dumps([v.as_dict for v in self._all_actions]),
-        }
+        } if self._all_actions is not None else {}
 
 
     def _generate_all_actions(self)-> list:

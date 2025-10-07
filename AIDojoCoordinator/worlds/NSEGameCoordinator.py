@@ -10,6 +10,7 @@ import json
 from faker import Faker
 from pathlib import Path
 from typing import Iterable
+from collections import defaultdict
 
 from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP, Network, Data, Service
 from AIDojoCoordinator.coordinator import GameCoordinator
@@ -44,7 +45,7 @@ class NSGCoordinator(GameCoordinator):
         self._seed = seed
         self.logger.info(f'Setting env seed to {seed}')
 
-    def _initialize(self) -> None:
+    def _initialize(self):
         """
         Initializes the NetSecGame environment.
 
@@ -67,87 +68,183 @@ class NSGCoordinator(GameCoordinator):
         self._data_content_original = copy.deepcopy(self._data_content)
         self._firewall_original = copy.deepcopy(self._firewall)
         self.logger.info("Environment initialization finished")
-    
-    def _get_controlled_hosts_from_view(self, view_controlled_hosts:Iterable)->set:
+
+    def _get_hosts_from_view(self, view_hosts:Iterable, allowed_hosts=None)->set[IP]:
         """
         Parses view and translates all keywords. Produces set of controlled host (IP)
+        Args:
+            view_hosts (Iterable): The view containing host information.
+            allowed_hosts (list, optional): A list of host to start from if 'random' is specified. Defaults to None.
+        Returns:
+            set: A set of controlled hosts.
         """
-        controlled_hosts = set()
+        hosts = set()
+        self.logger.debug(f'\tParsing hosts from view: {view_hosts}')
         # controlled_hosts
-        for host in view_controlled_hosts:
+        for host in view_hosts:
             if isinstance(host, IP):
-                controlled_hosts.add(self._ip_mapping[host])
-                self.logger.debug(f'\tThe attacker has control of host {self._ip_mapping[host]}.')
+                hosts.add(host)
+                self.logger.debug(f'\tAdding {host}.')
             elif host == 'random':
                 # Random start
-                self.logger.debug('\tAdding random starting position of agent')
-                self.logger.debug(f'\t\tChoosing from {self.hosts_to_start}')
-                selected = random.choice(self.hosts_to_start)
-                controlled_hosts.add(selected)
-                self.logger.debug(f'\t\tMaking agent start in {selected}')
+                if allowed_hosts is not None:
+                    self.logger.debug(f'\tChoosing randomly from {allowed_hosts}')
+                    selected = random.choice(allowed_hosts)
+                else:
+                    self.logger.debug(f'\tChoosing randomly from all available hosts {list(self._ip_to_hostname.keys())}')
+                    selected = random.choice(list(self._ip_to_hostname.keys()))
+                hosts.add(selected)
+                self.logger.debug(f'\t\tAdding {selected}.')
             elif host == "all_local":
                 # all local ips
-                self.logger.debug('\t\tAdding all local hosts to agent')
-                controlled_hosts = controlled_hosts.union(self._get_all_local_ips())
+                self.logger.debug(f'\tAdding all local hosts')
+                hosts = hosts.union(self._get_all_local_ips())
             else:
-                self.logger.error(f"Unsupported value encountered in start_position['controlled_hosts']: {host}")
-        return controlled_hosts
+                self.logger.error(f"Unsupported value encountered in view_hosts: {host}")
+        return hosts
 
     def _get_services_from_view(self, view_known_services:dict)->dict:
         """
         Parses view and translates all keywords. Produces dict of known services {IP: set(Service)}
-        
+
         Args:
             view_known_services (dict): The view containing known services information.
 
         Returns:
             dict: A dictionary mapping IP addresses to sets of known services.
         """
+        # TODO: Add keyword scope parameter (like in _get_data_from_view)
         known_services = {}
         for ip, service_list in view_known_services.items():
-            if self._ip_mapping[ip] not in known_services:
-                known_services[self._ip_mapping[ip]] = set()
-            for s in service_list:
-                if isinstance(s, Service):
-                    known_services[self._ip_mapping[ip]].add(s)
-                elif isinstance(s, str):
-                    if s == "random": # randomly select the service
-                        self.logger.info(f"\tSelecting service randomly in {self._ip_mapping[ip]}")
+            self.logger.debug(f'\tParsing services from {ip}: {service_list}')
+            known_services[ip] = set()
+            for service in service_list:
+                if isinstance(service, Service):
+                    known_services[ip].add(service)
+                    self.logger.debug(f'\tAdding {service}.')
+                elif isinstance(service, str):
+                    if service == "random": # randomly select the service
+                        self.logger.info(f"\tSelecting service randomly in {ip}")
                         # select candidates that are not explicitly listed
-                        service_candidates = [s for s in self._services[self._ip_to_hostname[ip]] if s not in known_services[self._ip_mapping[ip]]]
-                        # randomly select from candidates
-                        known_services[self._ip_mapping[ip]].add(random.choice(service_candidates))
+                        service_candidates = [s for s in self._services[self._ip_to_hostname[ip]] if s not in known_services[ip]]
+                        if len(service_candidates) == 0:
+                            self.logger.warning("\t\tNo available services. Skipping")
+                        else:
+                            # randomly select from candidates
+                            selected = random.choice(service_candidates)
+                            self.logger.debug(f"\t\tAdding: {selected}")
+                            known_services[ip].add(selected)
+                elif service == "all":
+                    self.logger.info(f"\tSelecting all services in {ip}")
+                    known_services[ip].update(self._services[self._ip_to_hostname[ip]])
+                else:
+                    self.logger.error(f"Unsupported value encountered in view_known_services: {service}")
+        # re-map all IPs based on current mapping in self._ip_mapping
         return known_services
 
-    def _get_data_from_view(self, view_known_data:dict)->dict:
+    def _get_data_from_view(self, view_known_data:dict, keyword_scope:str="host", exclude_types=["log"])->dict:
         """
         Parses view and translates all keywords. Produces dict of known data {IP: set(Data)}
         
         Args:
             view_known_data (dict): The view containing known data information.
-
+            keyword_scope (str, optional): Scope of keywords like 'random' or 'all'. Defaults to "host" (i.e., only data from the specified host are considered).
+            exclude_types (list, optional): List of data types to exclude when selecting data. Defaults to ["log"].
         Returns:
             dict: A dictionary mapping IP addresses to sets of known data.
         """
         known_data = {}
         for ip, data_list in view_known_data.items():
-            if self._ip_mapping[ip] not in known_data:
-                known_data[self._ip_mapping[ip]] = set()
+            self.logger.debug(f'\tParsing data from {ip}: {data_list}')
+            known_data[ip] = set()
             for datum in data_list:
                 if isinstance(datum, Data):
-                    known_data[self._ip_mapping[ip]].add(datum)
+                    known_data[ip].add(datum)
+                    self.logger.debug(f'\tAdding {datum}.')
                 elif isinstance(datum, str):
-                    if datum == "random": # randomly select the data
-                        self.logger.info(f"\tSelecting data randomly in {self._ip_mapping[ip]}")
-                        # select candidates that are not explicitly listed
-                        data_candidates = [d for d in self._data[self._ip_to_hostname[ip]] if d not in known_data[self._ip_mapping[ip]]]
-                        if len(data_candidates) > 0:
-                            # randomly select from candidates
-                            known_data[self._ip_mapping[ip]].add(random.choice(data_candidates))
+                    # select candidates that are not explicitly listed
+                    data_candidates = set()
+                    if keyword_scope == "host": # scope of the keyword is the host only
+                        for d in self._data[self._ip_to_hostname[ip]]:
+                            if d.type not in exclude_types and d not in known_data[ip]:
+                                data_candidates.add(d)
+                    else:
+                        # scope of the keyword is all hosts
+                        for datapoints in self._data.values():
+                            for d in datapoints:
+                                if d.type not in exclude_types and d not in known_data[ip]:
+                                    data_candidates.add(d)
+                    if datum == "random": # randomly select the service
+                        self.logger.info("\tSelecting data randomly")
+                        if len(data_candidates) == 0:
+                            self.logger.warning("\t\tNo available data. Skipping")
                         else:
-                            self.logger.warning("\tNo available data. Skipping")
+                            # randomly select from candidates
+                            selected = random.choice(list(data_candidates))
+                            self.logger.debug(f"\t\tAdding: {selected}")
+                            known_data[ip].add(selected)
+                    elif datum == "all":
+                        self.logger.info(f"\tSelecting all data in {ip}")
+                        known_data[ip].update(data_candidates)
+                    else:
+                        self.logger.error(f"Unsupported value encountered in view_known_data: {datum}")
+                else:
+                    self.logger.error(f"Unsupported value encountered in view_known_data: {datum}")
+        # re-map all IPs based on current mapping in self._ip_mapping
         return known_data
     
+    def _get_networks_from_view(self, view_known_networks:Iterable)->set[Network]:
+        """
+        Parses view and translates all keywords. Produces set of known networks (Network).
+        Args:
+            view_known_networks (Iterable): The view containing known networks information.
+        Returns:
+            set: A set of known networks.
+        """
+        known_networks = set()
+        for net in view_known_networks:
+            if isinstance(net, Network):
+                known_networks.add(self._network_mapping[net])
+                self.logger.debug(f'\tAdding network {self._network_mapping[net]}.')
+            elif net == 'random':
+                # Randomly select a network from the available ones
+                selected = random.choice(list(self._networks.keys()))
+                known_networks.add(self._network_mapping[selected])
+                self.logger.debug(f'\tAdding randomly selected network: {self._network_mapping[selected]}.')
+            elif net == "all_local":
+                # all local networks
+                self.logger.debug('\t\tAdding all local private networks')
+                for n in self._networks.keys():
+                    if not n.is_private():
+                        known_networks.add(self._network_mapping[n])
+            else:
+                self.logger.error(f"Unsupported value encountered in start_position['known_networks']: {net}")
+        return known_networks
+
+    def _create_goal_state_from_view(self, view:dict, allowed_hosts=None)->GameState:
+        """
+        Builds a GameState from given view (dict). All keywords are replaced by valid options.
+        Args:
+            view (dict): The view containing goal state information.
+            allowed_hosts (set, optional): A set of allowed hosts for random selection. Defaults to None.
+        Returns:
+            GameState: The generated goal state.
+        """
+        self.logger.info(f'Generating goal state from view:{view}')
+        # process known networks
+        known_networks = self._get_networks_from_view(view_known_networks=view["known_networks"])
+        # parse controlled hosts, replacing keywords if present
+        controlled_hosts = self._get_hosts_from_view(view_hosts=view["controlled_hosts"], allowed_hosts=allowed_hosts)
+        # parse known hosts
+        known_hosts = self._get_hosts_from_view(view_hosts=view["known_hosts"])
+        # parse known services
+        known_services = self._get_services_from_view(view["known_services"])
+        # parse known data
+        known_data = self._get_data_from_view(view["known_data"], keyword_scope="global", exclude_types=["logs"])
+        goal_state = GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
+        self.logger.info(f"Generated Goal GameState:{goal_state}")
+        return goal_state
+
     def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->GameState:
         """
         Builds a GameState from given view.
@@ -157,10 +254,10 @@ class NSGCoordinator(GameCoordinator):
         """
         self.logger.info(f'Generating state from view:{view}')
         # re-map all networks based on current mapping in self._network_mapping
-        known_networks = set([self._network_mapping[net] for net in view["known_networks"]])
+        known_networks = self._get_networks_from_view(view_known_networks=view["known_networks"])
         # parse controlled hosts
-        controlled_hosts = self._get_controlled_hosts_from_view(view["controlled_hosts"])
-        known_hosts = set([self._ip_mapping[ip] for ip in view["known_hosts"]])
+        controlled_hosts = self._get_hosts_from_view(view_hosts=view["controlled_hosts"], allowed_hosts=self.hosts_to_start)
+        known_hosts = self._get_hosts_from_view(view_hosts=view["known_hosts"], allowed_hosts=self.hosts_to_start)
         # Add all controlled hosts to known_hosts
         known_hosts = known_hosts.union(controlled_hosts)
         if add_neighboring_nets:
@@ -377,7 +474,131 @@ class NSGCoordinator(GameCoordinator):
         self.logger.info(f"\tintitial self._ip_mapping: {self._ip_mapping}")
         self.logger.info("CYST configuration processed successfully")
 
-    def _create_new_network_mapping(self)->tuple:
+    def _dynamic_ip_change(self, max_attempts:int=10)-> None:
+        """
+        Changes the IP and network addresses in the environment
+        """
+        self.logger.info("Changing IP and Network addresses in the environment")
+        # find a new IP and network mapping 
+        mapping_nets, mapping_ips = self._create_new_network_mapping(max_attempts)
+        
+        # update ALL data structure in the environment with the new mappings
+        
+        # self._networks
+        new_self_networks = {}
+        for net, ips in self._networks.items():
+            new_self_networks[mapping_nets[net]] = set()
+            for ip in ips:
+                new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
+        self._networks = new_self_networks
+        
+        #self._firewall_original (we do not care about the changes done during the episode)
+        new_self_firewall_original = {}
+        for ip, dst_ips in self._firewall_original.items():
+            new_self_firewall_original[mapping_ips[ip]] = set()
+            for dst_ip in dst_ips:
+                new_self_firewall_original[mapping_ips[ip]].add(mapping_ips[dst_ip])
+        self.logger.debug(f"New FW: {new_self_firewall_original}")
+        self._firewall_original = new_self_firewall_original
+
+        # self._ip_to_hostname
+        new_self_ip_to_hostname  = {}
+        for ip, hostname in self._ip_to_hostname.items():
+            new_self_ip_to_hostname[mapping_ips[ip]] = hostname
+        self._ip_to_hostname = new_self_ip_to_hostname
+
+        # Map hosts_to_start
+        new_self_host_to_start  = []
+        for ip in self.hosts_to_start:
+            new_self_host_to_start.append(mapping_ips[ip])
+        self.hosts_to_start = new_self_host_to_start
+
+        def apply_mapping(d: dict, mapping: dict) -> dict:
+            """
+            Apply a mapping to a dictionary.
+            - Keys are remapped with mapping if present.
+            - Values:
+                * If iterable (set/list/tuple), each element is remapped.
+                * If string (or non-iterable), attempt direct remap.
+            """
+            out = defaultdict(set)
+            for k, vals in d.items():
+                nk = mapping.get(k, k)
+
+                if isinstance(vals, str) or not isinstance(vals, Iterable):
+                    # treat as a single atomic value
+                    nv = {mapping.get(vals, vals)}
+                else:
+                    nv = {mapping.get(v, v) for v in vals}
+
+                out[nk].update(nv)
+
+            return dict(out)
+
+        # start_position per role
+        for role, start_position in self._starting_positions_per_role.items():
+            # {'role': {'controlled_hosts': [...], 'known_hosts': [...], 'known_data': {...}, 'known_services': {...}, known_networks: [...], known_blocks: [...]}}
+            new_start_position = {}
+            new_start_position['known_networks'] = [mapping_nets.get(net, net) for net in start_position['known_networks']]
+            new_start_position['controlled_hosts'] = [mapping_ips.get(ip, ip) for ip in start_position['controlled_hosts']]
+            new_start_position['known_hosts'] = [mapping_ips.get(ip, ip) for ip in start_position['known_hosts']]
+            new_start_position['known_services'] = {mapping_ips.get(ip, ip): services for ip, services in start_position['known_services'].items()}
+            new_start_position["known_data"] = {mapping_ips.get(ip, ip): data for ip, data in start_position['known_data'].items()}
+            # known_blocks {IP:set(IP)}
+            new_start_position["known_blocks"] = apply_mapping(start_position.get("known_blocks", {}), mapping_ips)
+            self._starting_positions_per_role[role] = new_start_position
+            self.logger.debug(f"Updated starting position for role {role}: {self._starting_positions_per_role[role]}")
+        
+        # win_conditions_per_role 
+        for role, win_condition in self._win_conditions_per_role.items():
+            new_win_condition = {}
+            new_win_condition['known_networks'] = [mapping_nets.get(net, net) for net in win_condition['known_networks']]
+            new_win_condition['controlled_hosts'] = [mapping_ips.get(ip, ip) for ip in win_condition['controlled_hosts']]
+            new_win_condition['known_hosts'] = [mapping_ips.get(ip, ip) for ip in win_condition['known_hosts']]
+            new_win_condition['known_services'] = {mapping_ips.get(ip, ip): services for ip, services in win_condition['known_services'].items()}
+            new_win_condition["known_data"] = {mapping_ips.get(ip, ip): data for ip, data in win_condition['known_data'].items()}
+            new_win_condition["known_blocks"] = apply_mapping(win_condition.get("known_blocks", {}), mapping_ips)
+            self._win_conditions_per_role[role] = new_win_condition
+            self.logger.debug(f"Updated win condition for role {role}: {self._win_conditions_per_role[role]}")
+        
+        # goal_description_per_role
+        def replace_ips_in_text(text: str, ip_mapping: dict, net_mapping:dict) -> str:
+            """
+            Replace IPs/CIDRs in text according to mapping {IP: IP}.
+            """
+            # regex: matches IPv4 like 1.2.3.4 or 1.2.3.4/24
+            ip_pattern = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?\b")
+
+            def replacer(match):
+                token = match.group(0)
+                if "/" in token:
+                    try:
+                        net_obj = Network(*token.split("/"))
+                        return str(net_mapping.get(net_obj, token))
+                    except ValueError:
+                        return token
+                else:
+                    try:
+                        net_obj = IP(token)
+                        return str(ip_mapping.get(net_obj, token))
+                    except ValueError:
+                        return token
+
+            return ip_pattern.sub(replacer, text)
+
+        new_goal_description = {role:replace_ips_in_text(description, mapping_ips, mapping_nets) for role, description in self._goal_description_per_role.items()}
+        self._goal_description_per_role = new_goal_description
+        self.logger.debug(f"Updated goal description per role: {self._goal_description_per_role}")
+        
+        # update mappings stored in the environment
+        for net, mapping in self._network_mapping.items():
+            self._network_mapping[net] = mapping_nets[mapping]
+        self.logger.debug(f"self._network_mapping: {self._network_mapping}")
+        for ip, mapping in self._ip_mapping.items():
+            self._ip_mapping[ip] = mapping_ips[mapping]
+        self.logger.debug(f"self._ip_mapping: {self._ip_mapping}")
+
+    def _create_new_network_mapping(self, max_attempts:int=10)->tuple:
         """ Method that generates random IP and Network addreses
           while following the topology loaded in the environment.
          All internal data structures are updated with the newly generated addresses."""
@@ -419,8 +640,8 @@ class NSGCoordinator(GameCoordinator):
             except IndexError as e:
                 self.logger.info(f"Dynamic address sampling failed, re-trying. {e}")
                 counter_iter +=1
-                if counter_iter > 10:
-                    self.logger.error("Dynamic address failed more than 10 times - stopping.")
+                if counter_iter > max_attempts:
+                    self.logger.error(f"Dynamic address failed more than {max_attempts} times - stopping.")
                     exit(-1)
                 # Invalid IP address boundary
         self.logger.info(f"New network mapping:{mapping_nets}")
@@ -432,101 +653,13 @@ class NSGCoordinator(GameCoordinator):
             random.shuffle(ip_list)
             for i,ip in enumerate(ips):
                 mapping_ips[ip] = IP(str(ip_list[i]))
-            # Always add random, in case random is selected for ips
+            # Always add keywords 'random' and 'all_local' 'all_attackers' to the mapping
             mapping_ips['random'] = 'random'
+            mapping_ips['all_local'] = 'all_local'
+            mapping_ips['all_attackers'] = 'all_attackers'
+
         self.logger.info(f"Mapping IPs done:{mapping_ips}")
-        
-        # update ALL data structure in the environment with the new mappings
-        # self._networks
-        new_self_networks = {}
-        for net, ips in self._networks.items():
-            new_self_networks[mapping_nets[net]] = set()
-            for ip in ips:
-                new_self_networks[mapping_nets[net]].add(mapping_ips[ip])
-        self._networks = new_self_networks
-        
-        #self._firewall_original (we do not care about the changes done during the episode)
-        new_self_firewall_original = {}
-        for ip, dst_ips in self._firewall_original.items():
-            new_self_firewall_original[mapping_ips[ip]] = set()
-            for dst_ip in dst_ips:
-                new_self_firewall_original[mapping_ips[ip]].add(mapping_ips[dst_ip])
-        self.logger.debug(f"New FW: {new_self_firewall_original}")
-        self._firewall_original = new_self_firewall_original
-
-        #self._ip_to_hostname
-        new_self_ip_to_hostname  = {}
-        for ip, hostname in self._ip_to_hostname.items():
-            new_self_ip_to_hostname[mapping_ips[ip]] = hostname
-        self._ip_to_hostname = new_self_ip_to_hostname
-
-        # Map hosts_to_start
-        new_self_host_to_start  = []
-        for ip in self.hosts_to_start:
-            new_self_host_to_start.append(mapping_ips[ip])
-        self.hosts_to_start = new_self_host_to_start
-        
-        # map IPs and networks stored in the taskconfig file
-        # This is a quick fix, we should find some other solution
-        agents = self.task_config.config['coordinator']['agents']
-        # Fields that are dictionaries with IP keys
-        dict_keys = ['known_data', 'blocked_ips', 'known_blocks']
-        # Fields that are lists of IP strings
-        list_keys = ['known_hosts', 'controlled_hosts']
-        ip_regex = re.compile(r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b')
-        
-        for agent in agents.values():
-            for section_key in ['goal', 'start_position']:
-                section = agent.get(section_key, {})
-
-                # Remap IP addresses in the description field of the goal section
-                if section_key == 'goal' and 'description' in section:
-                    description = section['description']
-                    def repl(match):
-                        ip_str = match.group(0)
-                        try:
-                            new_ip = str(mapping_ips[IP(ip_str)])
-                            return new_ip
-                        except (ValueError, KeyError):
-                            return ip_str
-                    section['description'] = ip_regex.sub(repl, description)
-
-                # Remap dictionary keys
-                for key in dict_keys:
-                    if key in section:
-                        current_dict = section[key]
-                        for ip in list(current_dict.keys()):
-                            try:
-                                # Convert the ip string to an IP object
-                                new_ip = str(mapping_ips[IP(ip)])
-                            except (ValueError, KeyError):
-                                # Skip if the IP is invalid or not found in mapping_ips
-                                continue
-                            current_dict[new_ip] = current_dict.pop(ip)
-
-                # Remap list items
-                for key in list_keys:
-                    if key in section:
-                        new_list = []
-                        for ip in section[key]:
-                            try:
-                                new_ip = str(mapping_ips[IP(ip)])
-                            except (ValueError, KeyError):
-                                # Keep the original if invalid or not in mapping_ips
-                                new_ip = ip
-                            new_list.append(new_ip)
-                        section[key] = new_list                
-            # update win conditions with the new IPs            
-            self._win_conditions_per_role = self._get_win_condition_per_role()        
-            self._goal_description_per_role = self._get_goal_description_per_role()   
-        
-        #update mappings stored in the environment
-        for net, mapping in self._network_mapping.items():
-            self._network_mapping[net] = mapping_nets[mapping]
-        self.logger.debug(f"self._network_mapping: {self._network_mapping}")
-        for ip, mapping in self._ip_mapping.items():
-            self._ip_mapping[ip] = mapping_ips[mapping]
-        self.logger.debug(f"self._ip_mapping: {self._ip_mapping}")
+        return mapping_nets, mapping_ips
     
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
         """
@@ -924,20 +1057,22 @@ class NSGCoordinator(GameCoordinator):
             new_content = json.dumps(new_content)
         self._data[hostaname].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
 
-    async def register_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
-        game_state = self._create_state_from_view(agent_initial_view)
-        return game_state
-         
+    async def register_agent(self, agent_id, agent_role, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+        start_game_state = self._create_state_from_view(agent_initial_view)
+        goal_state = self._create_goal_state_from_view(agent_win_condition_view)
+        return start_game_state, goal_state
+
     async def remove_agent(self, agent_id, agent_state)->bool:
         # No action is required
         return True
         
     async def step(self, agent_id, agent_state, action)->GameState:
         return self._execute_action(agent_state, action, agent_id)
-    
-    async def reset_agent(self, agent_id, agent_role, agent_initial_view)->GameState:
+
+    async def reset_agent(self, agent_id, agent_role, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
        game_state = self._create_state_from_view(agent_initial_view)
-       return game_state
+       goal_state = self._create_goal_state_from_view(agent_win_condition_view)
+       return game_state, goal_state    
 
     async def reset(self)->bool:
         """
@@ -951,7 +1086,7 @@ class NSGCoordinator(GameCoordinator):
         if self.task_config.get_use_dynamic_addresses():
             if all(self._randomize_topology_requests.values()):
                 self.logger.info("All agents requested reset with randomized topology.")
-                self._create_new_network_mapping()
+                self._dynamic_ip_change()
             else:
                 self.logger.info("Not all agents requested a topology randomization. Keeping the current one.")
         # reset self._data to orignal state

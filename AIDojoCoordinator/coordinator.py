@@ -180,6 +180,8 @@ class GameCoordinator:
         self._agent_starting_position = {}
         # current state per agent_addr (GameState)
         self._agent_states = {}
+        # goal state per agent_addr (GameState)
+        self._agent_goal_states = {}
         # last action played by agent (Action)
         self._agent_last_action = {}
         # False positives per agent (due to added blocks)
@@ -462,11 +464,11 @@ class GameCoordinator:
                 agent_role = action.parameters["agent_info"].role
                 if agent_role in self.ALLOWED_ROLES:
                     # add agent to the world
-                    new_agent_game_state = await self.register_agent(agent_addr, agent_role, self._starting_positions_per_role[agent_role])
+                    new_agent_game_state, new_agent_goal_state = await self.register_agent(agent_addr, agent_role, self._starting_positions_per_role[agent_role], self._win_conditions_per_role[agent_role])
                     if new_agent_game_state: # successful registration
                         async with self._agents_lock:
                             self.agents[agent_addr] = (agent_name, agent_role)
-                            observation = self._initialize_new_player(agent_addr, new_agent_game_state)
+                            observation = self._initialize_new_player(agent_addr, new_agent_game_state, new_agent_goal_state)
                             self._agent_observations[agent_addr] = observation
                             #if len(self.agents) == self._min_required_players:
                             if sum(1 for v in self._agent_status.values() if v == AgentStatus.PlayingWithTimeout) >= self._min_required_players:
@@ -720,10 +722,13 @@ class GameCoordinator:
                     async with self._agents_lock:
                         self._store_trajectory_to_file(agent)
                 self.logger.debug(f"Resetting agent {agent}")
-                new_state = await self.reset_agent(agent, self.agents[agent][1], self._agent_starting_position[agent])
+                agent_role = self.agents[agent][1]
+                # reset the agent in the world
+                new_state, new_goal_state = await self.reset_agent(agent, agent_role, self._starting_positions_per_role[agent_role], self._win_conditions_per_role[agent_role])
                 new_observation = Observation(new_state, 0, False, {})
                 async with self._agents_lock:
                     self._agent_states[agent] = new_state
+                    self._agent_goal_states[agent] = new_goal_state
                     self._agent_observations[agent] = new_observation
                     self._episode_ends[agent] = False
                     self._reset_requests[agent] = False
@@ -741,7 +746,7 @@ class GameCoordinator:
                 self._reset_done_condition.notify_all()
         self.logger.info("\tReset game task stopped.")
     
-    def _initialize_new_player(self, agent_addr:tuple, agent_current_state:GameState) -> Observation:
+    def _initialize_new_player(self, agent_addr:tuple, agent_current_state:GameState, agent_current_goal_state:GameState) -> Observation:
         """
         Method to initialize new player upon joining the game.
         Returns initial observation for the agent based on the agent's role
@@ -753,6 +758,8 @@ class GameCoordinator:
         self._episode_ends[agent_addr] = False
         self._agent_starting_position[agent_addr] = self._starting_positions_per_role[agent_role]
         self._agent_states[agent_addr] = agent_current_state
+        self._agent_goal_states[agent_addr] = agent_current_goal_state
+        self._agent_last_action[agent_addr] = None
         self._agent_rewards[agent_addr] = 0
         self._agent_false_positives[agent_addr] = 0
         if agent_role.lower() == "attacker":
@@ -764,7 +771,7 @@ class GameCoordinator:
         # create initial observation
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
-    async def register_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
+    async def register_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         """
@@ -775,8 +782,8 @@ class GameCoordinator:
         Domain specific method of the environment. Creates the initial state of the agent.
         """
         raise NotImplementedError
-    
-    async def reset_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict)->GameState:
+
+    async def reset_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
         raise NotImplementedError
 
     async def _remove_agent_from_game(self, agent_addr):
@@ -788,6 +795,7 @@ class GameCoordinator:
         async with self._agents_lock:
             if agent_addr in self.agents:
                 agent_info["state"] = self._agent_states.pop(agent_addr)
+                agent_info["goal_state"] = self._agent_goal_states.pop(agent_addr)
                 agent_info["num_steps"] = self._agent_steps.pop(agent_addr)
                 agent_info["agent_status"] = self._agent_status.pop(agent_addr)
                 agent_info["false_positives"] = self._agent_false_positives.pop(agent_addr)
@@ -816,7 +824,7 @@ class GameCoordinator:
     async def step(self, agent_id:tuple, agent_state:GameState, action:Action):
         raise NotImplementedError
     
-    async def reset(self):
+    async def reset(self)->bool:
         return NotImplemented
 
     def _initialize(self):
@@ -846,16 +854,17 @@ class GameCoordinator:
                     return False
             return False
         self.logger.debug(f"Checking goal for agent {agent_addr}.")
-        goal_conditions = self._win_conditions_per_role[self.agents[agent_addr][1]]
         state = self._agent_states[agent_addr]
         # For each part of the state of the game, check if the conditions are met
+        target_goal_state = self._agent_goal_states[agent_addr]
+        self.logger.debug(f"\tGoal conditions: {target_goal_state}.")
         goal_reached = {}    
-        goal_reached["networks"] = set(goal_conditions["known_networks"]) <= set(state.known_networks)
-        goal_reached["known_hosts"] = set(goal_conditions["known_hosts"]) <= set(state.known_hosts)
-        goal_reached["controlled_hosts"] = set(goal_conditions["controlled_hosts"]) <= set(state.controlled_hosts)
-        goal_reached["services"] = goal_dict_satistfied(goal_conditions["known_services"], state.known_services)
-        goal_reached["data"] = goal_dict_satistfied(goal_conditions["known_data"], state.known_data)
-        goal_reached["known_blocks"] = goal_dict_satistfied(goal_conditions["known_blocks"], state.known_blocks)
+        goal_reached["networks"] = target_goal_state.known_networks <= state.known_networks
+        goal_reached["known_hosts"] = target_goal_state.known_hosts <= state.known_hosts
+        goal_reached["controlled_hosts"] = target_goal_state.controlled_hosts <= state.controlled_hosts
+        goal_reached["services"] = goal_dict_satistfied(target_goal_state.known_services, state.known_services)
+        goal_reached["data"] = goal_dict_satistfied(target_goal_state.known_data, state.known_data)
+        goal_reached["known_blocks"] = goal_dict_satistfied(target_goal_state.known_blocks, state.known_blocks)
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
