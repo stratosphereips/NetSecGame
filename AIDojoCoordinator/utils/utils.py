@@ -12,8 +12,8 @@ import csv
 from random import randint
 import json
 import hashlib
-from cyst.api.configuration.network.node import NodeConfig, ActiveServiceConfig, InterfaceConfig
-from  typing import Optional, cast
+from cyst.api.configuration.network.node import NodeConfig
+from  typing import Optional
 
 def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
     """
