@@ -13,6 +13,7 @@ from random import randint
 import json
 import hashlib
 from cyst.api.configuration.network.node import NodeConfig
+from  typing import Optional
 
 def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
     """
@@ -111,7 +112,7 @@ def observation_as_dict(observation:Observation)->dict:
     }
     return observation_dict
 
-def parse_log_content(log_content:str)->list:
+def parse_log_content(log_content:str)->Optional[list]:
     try:
         logs = []
         data = json.loads(log_content)
@@ -154,7 +155,7 @@ class ConfigParser():
             self.logger.error(f'Error loading the configuration file{e}')
             pass
     
-    def read_env_action_data(self, action_name: str) -> dict:
+    def read_env_action_data(self, action_name: str) -> float:
         """
         Generic function to read the known data for any agent and goal of position
         """
@@ -238,7 +239,7 @@ class ConfigParser():
                 known_services = {}
         return known_services
 
-    def read_agents_known_networks(self, type_agent: str, type_data: str) -> dict:
+    def read_agents_known_networks(self, type_agent: str, type_data: str) -> set:
         """
         Generic function to read the known networks for any agent and goal of position
         """
@@ -251,10 +252,10 @@ class ConfigParser():
                     host_part, net_part = net.split('/')
                     known_networks.add(Network(host_part, int(net_part)))
             except (ValueError, TypeError, netaddr.AddrFormatError):
-                self.logger('Configuration problem with the known networks')
+                self.logger.error('Configuration problem with the known networks')
         return known_networks
 
-    def read_agents_known_hosts(self, type_agent: str, type_data: str) -> dict:
+    def read_agents_known_hosts(self, type_agent: str, type_data: str) -> set:
         """
         Generic function to read the known hosts for any agent and goal of position
         """
@@ -274,7 +275,7 @@ class ConfigParser():
                     self.logger.error(f'Configuration problem with the known hosts: {e}')
         return known_hosts
 
-    def read_agents_controlled_hosts(self, type_agent: str, type_data: str) -> dict:
+    def read_agents_controlled_hosts(self, type_agent: str, type_data: str) -> set:
         """
         Generic function to read the controlled hosts for any agent and goal of position
         """
@@ -395,7 +396,7 @@ class ConfigParser():
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
     
-    def get_max_steps(self, role=str)->int:
+    def get_max_steps(self, role=str)->Optional[int]:
         """
         Get the max steps based on agent's role
         """
@@ -409,7 +410,7 @@ class ConfigParser():
             self.logger.warning(f"Unsupported value in 'coordinator.agents.{role}.max_steps': {e}. Setting value to default=None (no step limit)")
         return max_steps
 
-    def get_goal_description(self, agent_role)->dict:
+    def get_goal_description(self, agent_role)->str:
         """
         Get goal description per role
         """
@@ -554,7 +555,7 @@ def get_starting_position_from_cyst_config(cyst_objects):
         if isinstance(obj, NodeConfig):
             for active_service in obj.active_services:
                 if active_service.type == "netsecenv_agent":
-                    print(f"startig processing {obj.id}.{active_service.name}")
+                    print(f"starting processing {obj.id}.{active_service.name}")
                     hosts = set()
                     networks = set()
                     for interface in obj.interfaces:

@@ -244,6 +244,7 @@ async def test_process_join_game_action_success(initialized_coordinator):
     # Minimal working state
     initialized_coordinator._starting_positions_per_role = {"Attacker": MagicMock()}
     initialized_coordinator._goal_description_per_role = {"Attacker": "Goal"}
+    initialized_coordinator._win_conditions_per_role = {"Attacker": MagicMock()}
     initialized_coordinator._steps_limit_per_role = {"Attacker": 10}
     initialized_coordinator._CONFIG_FILE_HASH = "abc123"
     initialized_coordinator._min_required_players = 1
@@ -251,7 +252,10 @@ async def test_process_join_game_action_success(initialized_coordinator):
     initialized_coordinator._episode_start_event.set()  # Prevent wait
 
     action = MagicMock()
-    action.parameters = {"agent_info": MagicMock(name="AgentX", role="Attacker")}
+    agent_info = MagicMock()
+    agent_info.name = "AgentX"
+    agent_info.role = "Attacker"
+    action.parameters = {"agent_info": agent_info}
     observation = SimpleNamespace(
         state=SimpleNamespace(as_dict={}),  # empty dict works here
         reward=0,
@@ -259,7 +263,7 @@ async def test_process_join_game_action_success(initialized_coordinator):
         info={}
     )
 
-    with patch.object(initialized_coordinator, "register_agent", new_callable=AsyncMock, return_value=MagicMock()), \
+    with patch.object(initialized_coordinator, "register_agent", new_callable=AsyncMock, return_value=(MagicMock(),MagicMock())), \
          patch.object(initialized_coordinator, "_initialize_new_player", return_value=observation), \
          patch.object(initialized_coordinator.logger, "info"), \
          patch.object(initialized_coordinator.logger, "debug"):
