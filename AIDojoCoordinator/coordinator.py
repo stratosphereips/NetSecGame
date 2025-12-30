@@ -208,6 +208,7 @@ class GameCoordinator:
         # reset request per agent_addr (bool)
         self._reset_requests = {}
         self._randomize_topology_requests = {}
+        self._randomize_topology_seed_requests = {}
         self._agent_status = {}
         self._episode_ends = {}
         self._agent_observations = {}
@@ -589,7 +590,11 @@ class GameCoordinator:
             # add reset request for this agent
             self._reset_requests[agent_addr] = True
             # register if the agent wants to randomize the topology
+            topology_reset_req = reset_action.parameters.get("randomize_topology", True)
             self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", True)
+            if topology_reset_req:
+                self._randomize_topology_seed_requests[agent_addr] = reset_action.parameters.get("topology_randomization_seed", None)
+                self.logger.debug(f"Agent {agent_addr} requested topology randomization with seed {self._randomize_topology_seed_requests[agent_addr]}")
             if all(self._reset_requests.values()):
                 # all agents want reset - reset the world
                 self.logger.debug(f"All agents requested reset, setting the event")
@@ -770,6 +775,7 @@ class GameCoordinator:
                     self._episode_ends[agent] = False
                     self._reset_requests[agent] = False
                     self._randomize_topology_requests[agent] = False
+                    self._randomize_topology_seed_requests.pop(agent, None)
                     self._agent_rewards[agent] = 0
                     self._agent_steps[agent] = 0
                     self._agent_false_positives[agent] = 0
@@ -839,6 +845,7 @@ class GameCoordinator:
                 async with self._reset_lock:
                     # remove agent from  topology reset requests
                     agent_info["topology_reset_request"] = self._randomize_topology_requests.pop(agent_addr, False)
+                    agent_info["topology_reset_seed"] = self._randomize_topology_seed_requests.pop(agent_addr, None)
                     # remove agent from reset requests
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
                     # check if this agent was not preventing reset 
