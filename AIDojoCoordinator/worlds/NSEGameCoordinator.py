@@ -474,13 +474,18 @@ class NSGCoordinator(GameCoordinator):
         self.logger.info(f"\tintitial self._ip_mapping: {self._ip_mapping}")
         self.logger.info("CYST configuration processed successfully")
 
-    def _dynamic_ip_change(self, max_attempts:int=10)-> None:
+    def _dynamic_ip_change(self, max_attempts:int=10, seed=None)-> None:
         """
         Changes the IP and network addresses in the environment
+        Args:
+            max_attempts (int, optional): Maximum number of attempts to find a valid mapping. Defaults to 10.
+            seed (int, optional): Seed for random number generator. Defaults to None.
+        Returns:
+            None
         """
         self.logger.info("Changing IP and Network addresses in the environment")
         # find a new IP and network mapping 
-        mapping_nets, mapping_ips = self._create_new_network_mapping(max_attempts)
+        mapping_nets, mapping_ips = self._create_new_network_mapping(max_attempts, seed=seed)
         
         # update ALL data structure in the environment with the new mappings
         
@@ -598,11 +603,16 @@ class NSGCoordinator(GameCoordinator):
             self._ip_mapping[ip] = mapping_ips[mapping]
         self.logger.debug(f"self._ip_mapping: {self._ip_mapping}")
 
-    def _create_new_network_mapping(self, max_attempts:int=10)->tuple:
+    def _create_new_network_mapping(self, max_attempts:int=10, seed=None)->tuple:
         """ Method that generates random IP and Network addreses
           while following the topology loaded in the environment.
          All internal data structures are updated with the newly generated addresses."""
-        fake = self._faker_object
+        self.logger.info(f"Generating new network and IP address mapping with seed {seed} (max attempts: {max_attempts})")
+        if seed is not None:
+            fake = Faker()
+            fake.seed_instance(seed)
+        else:
+            fake = self._faker_object   
         mapping_nets = {}
         mapping_ips = {}
         # generate mapping for networks
@@ -1086,7 +1096,17 @@ class NSGCoordinator(GameCoordinator):
         if self.task_config.get_use_dynamic_addresses():
             if all(self._randomize_topology_requests.values()):
                 self.logger.info("All agents requested reset with randomized topology.")
-                self._dynamic_ip_change()
+                topology_reset_seed = None
+                if len(set(self._randomize_topology_seed_requests.values())) != 0:
+                    topology_reset_seed = list(set(self._randomize_topology_seed_requests.values()))[0]
+                    self.logger.info(f"Using agreed seed {topology_reset_seed} for topology randomization.")
+                else:
+                    # No agreement on the seed, use None
+                    topology_reset_seed = None
+                    self.logger.info(f"No agreed seed for topology randomization. Using random seed.")
+                self._randomize_topology_seed_requests.clear()
+                self._randomize_topology_seed_requests.clear() 
+                self._dynamic_ip_change(seed=topology_reset_seed)
             else:
                 self.logger.info("Not all agents requested a topology randomization. Keeping the current one.")
         # reset self._data to orignal state
