@@ -603,72 +603,208 @@ class NSGCoordinator(GameCoordinator):
             self._ip_mapping[ip] = mapping_ips[mapping]
         self.logger.debug(f"self._ip_mapping: {self._ip_mapping}")
 
-    def _create_new_network_mapping(self, max_attempts:int=10, seed=None)->tuple:
-        """ Method that generates random IP and Network addreses
-          while following the topology loaded in the environment.
-         All internal data structures are updated with the newly generated addresses."""
+    # def _create_new_network_mapping(self, max_attempts:int=10, seed=None)->tuple:
+    #     """ Method that generates random IP and Network addreses
+    #       while following the topology loaded in the environment.
+    #      All internal data structures are updated with the newly generated addresses."""
+    #     self.logger.info(f"Generating new network and IP address mapping with seed {seed} (max attempts: {max_attempts})")
+    #     if seed is not None:
+    #         # Create a fresh Faker instance for this run
+    #         fake = Faker()
+    #         fake.seed_instance(seed)
+    #         # Create a local Random instance to avoid modifying global state
+    #         rng = random.Random(seed)
+    #     else:
+    #         # Fallback to existing faker object
+    #         fake = self._faker_object
+    #         # Fallback to standard global random module
+    #         rng = random            
+    #     mapping_nets = {}
+    #     mapping_ips = {}
+    #     # generate mapping for networks
+    #     private_nets = []
+    #     for net in self._networks.keys():
+    #         if netaddr.IPNetwork(str(net)).ip.is_private():
+    #             private_nets.append(net)
+    #         else:
+    #             mapping_nets[net] = Network(fake.ipv4_public(), net.mask)
+        
+    #     # for private networks, we want to keep the distances among them
+    #     private_nets_sorted = sorted(private_nets)
+    #     valid_valid_network_mapping = False
+    #     counter_iter = 0
+    #     while not valid_valid_network_mapping:
+    #         try:
+    #             # find the new lowest networks
+    #             new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets_sorted[0].mask}")
+    #             # store its new mapping
+    #             mapping_nets[private_nets[0]] = Network(str(new_base.network), private_nets_sorted[0].mask)
+    #             base = netaddr.IPNetwork(str(private_nets_sorted[0]))
+    #             is_private_net_checks = []
+    #             for i in range(1,len(private_nets_sorted)):
+    #                 current = netaddr.IPNetwork(str(private_nets_sorted[i]))
+    #                 # find the distance before mapping
+    #                 diff_ip = current.ip - base.ip
+    #                 # find the new mapping 
+    #                 new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
+    #                 # evaluate if its still a private network
+    #                 is_private_net_checks.append(new_net_addr.is_private())
+    #                 # store the new mapping
+    #                 mapping_nets[private_nets_sorted[i]] = Network(str(new_net_addr), private_nets_sorted[i].mask)
+    #             if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
+    #                 valid_valid_network_mapping = True
+    #         except IndexError as e:
+    #             self.logger.info(f"Dynamic address sampling failed, re-trying. {e}")
+    #             counter_iter +=1
+    #             if counter_iter > max_attempts:
+    #                 self.logger.error(f"Dynamic address failed more than {max_attempts} times - stopping.")
+    #                 exit(-1)
+    #             # Invalid IP address boundary
+    #     self.logger.info(f"New network mapping:{mapping_nets}")
+        
+    #     # genereate mapping for ips:
+    #     for net,ips in self._networks.items():
+    #         ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))[1:]
+    #         # remove broadcast and network ip from the list
+    #         random.shuffle(ip_list)
+    #         for i,ip in enumerate(ips):
+    #             mapping_ips[ip] = IP(str(ip_list[i]))
+    #         # Always add keywords 'random' and 'all_local' 'all_attackers' to the mapping
+    #         mapping_ips['random'] = 'random'
+    #         mapping_ips['all_local'] = 'all_local'
+    #         mapping_ips['all_attackers'] = 'all_attackers'
+
+    #     self.logger.info(f"Mapping IPs done:{mapping_ips}")
+    #     return mapping_nets, mapping_ips
+    
+    def _create_new_network_mapping(self, max_attempts: int = 10, seed=None) -> tuple:
+        """ 
+        Generates new network addresses (preserving relative distance between networks)
+        and maps host IPs by preserving their relative offset within the subnet.
+        """
         self.logger.info(f"Generating new network and IP address mapping with seed {seed} (max attempts: {max_attempts})")
+
+        # setup random generators
         if seed is not None:
             fake = Faker()
             fake.seed_instance(seed)
+            rng = random.Random(seed)
         else:
-            fake = self._faker_object   
+            fake = self._faker_object
+            rng = random
+
         mapping_nets = {}
         mapping_ips = {}
-        # generate mapping for networks
+        
+        # sort networks for deterministic processing (order should be deterministic in Python 3.7+ but we enforce it)
+        sorted_networks = sorted(self._networks.keys(), key=str)
+
+        # generate network mappings (Preserves distance between private networks)
         private_nets = []
-        for net in self._networks.keys():
+        for net in sorted_networks:
             if netaddr.IPNetwork(str(net)).ip.is_private():
                 private_nets.append(net)
             else:
                 mapping_nets[net] = Network(fake.ipv4_public(), net.mask)
         
-        # for private networks, we want to keep the distances among them
-        private_nets_sorted = sorted(private_nets)
-        valid_valid_network_mapping = False
+        # Private Network logic
+        valid_network_mapping = False
         counter_iter = 0
-        while not valid_valid_network_mapping:
-            try:
-                # find the new lowest networks
-                new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets_sorted[0].mask}")
-                # store its new mapping
-                mapping_nets[private_nets[0]] = Network(str(new_base.network), private_nets_sorted[0].mask)
-                base = netaddr.IPNetwork(str(private_nets_sorted[0]))
-                is_private_net_checks = []
-                for i in range(1,len(private_nets_sorted)):
-                    current = netaddr.IPNetwork(str(private_nets_sorted[i]))
-                    # find the distance before mapping
-                    diff_ip = current.ip - base.ip
-                    # find the new mapping 
-                    new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
-                    # evaluate if its still a private network
-                    is_private_net_checks.append(new_net_addr.is_private())
-                    # store the new mapping
-                    mapping_nets[private_nets_sorted[i]] = Network(str(new_net_addr), private_nets_sorted[i].mask)
-                if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
-                    valid_valid_network_mapping = True
-            except IndexError as e:
-                self.logger.info(f"Dynamic address sampling failed, re-trying. {e}")
-                counter_iter +=1
-                if counter_iter > max_attempts:
-                    self.logger.error(f"Dynamic address failed more than {max_attempts} times - stopping.")
-                    exit(-1)
-                # Invalid IP address boundary
-        self.logger.info(f"New network mapping:{mapping_nets}")
         
-        # genereate mapping for ips:
-        for net,ips in self._networks.items():
-            ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))[1:]
-            # remove broadcast and network ip from the list
-            random.shuffle(ip_list)
-            for i,ip in enumerate(ips):
-                mapping_ips[ip] = IP(str(ip_list[i]))
-            # Always add keywords 'random' and 'all_local' 'all_attackers' to the mapping
-            mapping_ips['random'] = 'random'
-            mapping_ips['all_local'] = 'all_local'
-            mapping_ips['all_attackers'] = 'all_attackers'
+        while not valid_network_mapping:
+            try:
+                # Pick a random start for the first private network
+                new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets[0].mask}")
+                mapping_nets[private_nets[0]] = Network(str(new_base.network), private_nets[0].mask)
+                
+                base_orig = netaddr.IPNetwork(str(private_nets[0]))
+                checks = []
+                
+                for i in range(1, len(private_nets)):
+                    current_orig = netaddr.IPNetwork(str(private_nets[i]))
+                    # Calculate distance between Network A and Network B
+                    diff = current_orig.ip - base_orig.ip
+                    
+                    # Apply distance to new base
+                    new_net_ip = netaddr.IPNetwork(str(mapping_nets[private_nets[0]])).ip + diff
+                    
+                    checks.append(new_net_ip.is_private())
+                    mapping_nets[private_nets[i]] = Network(str(new_net_ip), private_nets[i].mask)
+                
+                if all(checks): 
+                    valid_network_mapping = True
+            except IndexError:
+                counter_iter += 1
+                if counter_iter > max_attempts:
+                    self.logger.error(f"Failed to generate valid network mapping in {max_attempts} attempts - exiting.")
+                    exit(-1)
 
-        self.logger.info(f"Mapping IPs done:{mapping_ips}")
+        self.logger.info(f"New network mapping: {mapping_nets}")
+
+        # 4. MAP IPS (Preserves distance/offset within subnet)
+        for net in sorted_networks:
+            if net not in mapping_nets: continue
+
+            orig_net_obj = netaddr.IPNetwork(str(net))
+            new_net_obj = netaddr.IPNetwork(str(mapping_nets[net]))
+            
+            # Prepare fallback pool (deterministic shuffle) just in case an offset fails
+            # We exclude .0 and .255 explicitly from the list
+            fallback_pool = list(new_net_obj)[1:-1]
+            rng.shuffle(fallback_pool)
+            
+            # Use a pointer/index for fallback pool so we don't need 'next()'
+            fallback_index = 0
+
+            # Sort hosts for deterministic processing order
+            hosts = self._networks[net]
+            sorted_hosts = sorted(hosts, key=lambda x: repr(x))
+
+            for host in sorted_hosts:
+                try:
+                    old_host_ip = netaddr.IPAddress(str(host))
+                    
+                    # Calculate Offset: (Host IP) - (Network Address)
+                    # e.g. 192.168.1.55 - 192.168.1.0 = 55
+                    offset = old_host_ip - orig_net_obj.network
+                    
+                    # Apply Offset to New Network
+                    # e.g. 10.0.0.0 + 55 = 10.0.0.55
+                    new_host_ip = new_net_obj.network + offset
+
+                    # Verify validity:
+                    # 1. Must be inside the new subnet (cidr check)
+                    # 2. Must not be the Network Address (.0) or Broadcast (.255)
+                    if (new_host_ip in new_net_obj and 
+                        new_host_ip != new_net_obj.network and 
+                        new_host_ip != new_net_obj.broadcast):
+                        
+                        mapping_ips[host] = IP(str(new_host_ip))
+                        
+                        # Optimization: If this IP happens to be in our fallback pool,
+                        # remove it so fallback logic doesn't re-assign it later.
+                        # (Checking efficient sets is faster, but list remove is safe here for small subnets)
+                        if new_host_ip in fallback_pool:
+                            fallback_pool.remove(new_host_ip)
+                    else:
+                        raise ValueError("Offset calculated invalid IP")
+
+                except (ValueError, TypeError, netaddr.AddrFormatError):
+                    # Fallback Strategy: Assign next available random IP from the pool
+                    # This handles edge cases or weird topology mismatches gracefully
+                    if fallback_pool:
+                        safe_ip = fallback_pool.pop(0) # Take first available from shuffled pool
+                        mapping_ips[host] = IP(str(safe_ip))
+                        self.logger.warning(f"Offset failed for {host}, assigned fallback {safe_ip}")
+                    else:
+                        self.logger.error(f"Subnet exhausted for {net}")
+
+        # Static mappings
+        mapping_ips['random'] = 'random'
+        mapping_ips['all_local'] = 'all_local'
+        mapping_ips['all_attackers'] = 'all_attackers'
+
+        self.logger.info(f"Mapping IPs done: {mapping_ips}")
         return mapping_nets, mapping_ips
     
     def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
