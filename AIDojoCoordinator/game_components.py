@@ -399,6 +399,10 @@ class Action:
                 params[k] = asdict(v)
             elif isinstance(v, bool):  # Handle boolean values
                 params[k] = v
+            elif isinstance(v, int):  # Handle integer values
+                params[k] = v
+            elif v is None:
+                params[k] = None
             else:
                 params[k] = str(v)
         return {"action_type": str(self.action_type), "parameters": params}
@@ -455,6 +459,14 @@ class Action:
                         params[k] = v
                     else:
                         params[k] = ast.literal_eval(v)
+                case "randomize_topology_seed":
+                    if isinstance(v, int):
+                        params[k] = v
+                    elif v is None or v == "None":
+                        print("Setting topology randomization seed to None")
+                        params[k] = None
+                    else:
+                        raise ValueError(f"Unsupported value in {k}: {v}")
                 case _:
                     raise ValueError(f"Unsupported value in {k}: {v}")
         return cls(action_type=action_type, parameters=params)
