@@ -113,14 +113,25 @@ python3 -m AIDojoCoordinator.worlds.NSEGameCoordinator \
   --game_port=9000
 ```
 Upon which the game server is created on `localhost:9000` to which the agents can connect to interact in the NetSecGame.
+
 ### Docker Container
 When running in the Docker container, the NetSecGame can be started with:
 ```bash
 docker run -it --rm \
   -v $(pwd)/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml \
   -v $(pwd)/logs:/aidojo/logs \
-  -p 9000:9000 lukasond/aidojo-coordinator:1.0.2
+  -p 9000:9000 stratosphereips/netsecgame:lastest
 ```
+optionally, you can set the logging level with `--debug_level=["DEBUG", "INFO", "WARNING", "CRITICAL"]` (defaul=`"INFO"`):
+
+```bash
+docker run -it --rm \
+ -v $(pwd)/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml \
+ -v $(pwd)/logs:/aidojo/logs \
+ -p 9000:9000 aidojo-local-test:latest \
+ --debug_level="WARNING"
+```
+
 ## Documentation
 You can find user documentation at [https://stratosphereips.github.io/NetSecGame/](https://stratosphereips.github.io/NetSecGame/)
 ## Components of the NetSecGame Environment
