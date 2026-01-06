@@ -120,7 +120,7 @@ When running in the Docker container, the NetSecGame can be started with:
 docker run -it --rm \
   -v $(pwd)/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml \
   -v $(pwd)/logs:/aidojo/logs \
-  -p 9000:9000 stratosphereips/netsecgame:lastest
+  -p 9000:9000 stratosphereips/netsecgame
 ```
 optionally, you can set the logging level with `--debug_level=["DEBUG", "INFO", "WARNING", "CRITICAL"]` (defaul=`"INFO"`):
 
@@ -128,7 +128,7 @@ optionally, you can set the logging level with `--debug_level=["DEBUG", "INFO", 
 docker run -it --rm \
  -v $(pwd)/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml \
  -v $(pwd)/logs:/aidojo/logs \
- -p 9000:9000 aidojo-local-test:latest \
+ -p 9000:9000 stratosphereips/netsecgame \
  --debug_level="WARNING"
 ```
 
