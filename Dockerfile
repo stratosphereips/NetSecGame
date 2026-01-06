@@ -29,4 +29,4 @@ EXPOSE 9000
 ENTRYPOINT ["python3", "-m", "AIDojoCoordinator.worlds.NSEGameCoordinator", "--task_config=netsecenv_conf.yaml", "--game_port=9000", "--game_host=0.0.0.0"]
 
 # Default command arguments (can be overridden at runtime)
-CMD ["--log_level=INFO"]
+CMD ["--debug_level=INFO"]
