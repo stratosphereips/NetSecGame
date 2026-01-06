@@ -38,9 +38,9 @@ The NetSecGame can be run in a Docker container. You can build the image locally
 ```bash 
 docker build -t aidojo-nsg-coordinator:latest .
 ```
-or use the available image from [Dockerhub](https://hub.docker.com/r/lukasond/aidojo-coordinator).
+or use the available image from [Dockerhub](https://hub.docker.com/r/stratosphereips/netsecgame).
 ```bash
-docker pull lukasond/aidojo-coordinator:1.0.2
+docker pull stratosphereips/netsecgame
 ```
 ## Quick Start
 A task configuration needs to be specified to start the NetSecGame (see [Configuration](configuration.md)). For the first step, the example task configuration is recommended:
@@ -48,7 +48,7 @@ A task configuration needs to be specified to start the NetSecGame (see [Configu
 # Example of the task configuration for NetSecGame
 # The objective of the Attacker in this task is to locate specific data
 # and exfiltrate it to a remote C&C server.
-# The scenario starts AFTER initial breach of the local network
+# The scenario starts AFTER the initial breach of the local network
 # (the attacker controls 1 local device + the remote C&C server).
 
 coordinator:
