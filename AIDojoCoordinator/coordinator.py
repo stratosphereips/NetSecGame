@@ -957,7 +957,10 @@ class GameCoordinator:
             if end_reason:
                 self._agent_trajectories[agent_addr]["end_reason"] = end_reason
     
-    def _store_trajectory_to_file(self, agent_addr:tuple, location="./trajectories")-> None:
+    def _store_trajectory_to_file(self, agent_addr:tuple, location="./logs/trajectories")-> None:
+        if not os.path.exists(location):
+            os.makedirs(location)
+            self.logger.debug(f"Created directory for storing trajectories: {location}")
         self.logger.debug(f"Storing Trajectory of {agent_addr}in file")
         if agent_addr in self._agent_trajectories:
             agent_name, agent_role = self.agents[agent_addr] 
