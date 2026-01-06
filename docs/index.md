@@ -23,7 +23,6 @@ conda create --name aidojo python==3.12.10
 ```bash
 conda activate aidojo
 ```
-
 After the virtual environment is activated, install using pip:
 ```bash
 pip install -e .
