@@ -646,17 +646,17 @@
 <li><div class="highlight"><pre><span></span><code>conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>aidojo<span class="w"> </span><span class="nv">python</span><span class="o">==</span><span class="m">3</span>.12.10
 </code></pre></div></li>
 <li><div class="highlight"><pre><span></span><code>conda<span class="w"> </span>activate<span class="w"> </span>aidojo
+</code></pre></div>
+After the virtual environment is activated, install using pip:
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </code></pre></div></li>
 </ol>
-<p>After the virtual environment is activated, install using pip:
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
-</code></pre></div></p>
 <h3 id="with-docker">With Docker</h3>
 <p>The NetSecGame can be run in a Docker container. You can build the image locally with:
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>aidojo-nsg-coordinator:latest<span class="w"> </span>.
 </code></pre></div>
-or use the availabe image from <a href="https://hub.docker.com/r/lukasond/aidojo-coordinator">Dockerhub</a>.
-<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>pull<span class="w"> </span>lukasond/aidojo-coordinator:1.0.2
+or use the available image from <a href="https://hub.docker.com/r/stratosphereips/netsecgame">Dockerhub</a>.
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>pull<span class="w"> </span>stratosphereips/netsecgame
 </code></pre></div></p>
 <h2 id="quick-start">Quick Start</h2>
 <p>A task configuration needs to be specified to start the NetSecGame (see <a href="configuration/">Configuration</a>). For the first step, the example task configuration is recommended:
@@ -729,10 +729,17 @@ Upon which the game server is created on <code>localhost:9000</code> to which th
 <h3 id="docker-container">Docker Container</h3>
 <p>When running in the Docker container, the NetSecGame can be started with:
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/examples/example_config.yaml:/aidojo/netsecenv_conf.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/logs:/aidojo/logs<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-p<span class="w"> </span><span class="m">9000</span>:9000<span class="w"> </span>lukasond/aidojo-coordinator:1.0.2
-</code></pre></div></p>
+<span class="w">  </span>-p<span class="w"> </span><span class="m">9000</span>:9000<span class="w"> </span>stratosphereips/netsecgame
+</code></pre></div>
+optionally, you can set the logging level with <code>--debug_level=["DEBUG", "INFO", "WARNING", "CRITICAL"]</code> (defaul=<code>"INFO"</code>):</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>-it<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+<span class="w"> </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w"> </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/logs:/aidojo/logs<span class="w"> </span><span class="se">\</span>
+<span class="w"> </span>-p<span class="w"> </span><span class="m">9000</span>:9000<span class="w"> </span>stratosphereips/netsecgame<span class="w"> </span><span class="se">\</span>
+<span class="w"> </span>--debug_level<span class="o">=</span><span class="s2">&quot;WARNING&quot;</span>
+</code></pre></div>
 <h2 id="documentation">Documentation</h2>
 <p>The NetSecGame environment has several components in the following files:
 <div class="highlight"><pre><span></span><code>├── AIDojoGameCoordinator/
