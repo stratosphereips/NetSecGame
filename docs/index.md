@@ -33,9 +33,9 @@ The NetSecGame can be run in a Docker container. You can build the image locally
 ```bash 
 docker build -t aidojo-nsg-coordinator:latest .
 ```
-or use the availabe image from [Dockerhub](https://hub.docker.com/r/lukasond/aidojo-coordinator).
+or use the available image from [Dockerhub](https://hub.docker.com/r/stratosphereips/netsecgame).
 ```bash
-docker pull lukasond/aidojo-coordinator:1.0.2
+docker pull stratosphereips/netsecgame
 ```
 ## Quick Start
 A task configuration needs to be specified to start the NetSecGame (see [Configuration](configuration.md)). For the first step, the example task configuration is recommended:
@@ -112,9 +112,18 @@ Upon which the game server is created on `localhost:9000` to which the agents ca
 When running in the Docker container, the NetSecGame can be started with:
 ```bash
 docker run -it --rm \
-  -v $(pwd)/examples/example_config.yaml:/aidojo/netsecenv_conf.yaml \
+  -v $(pwd)/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml \
   -v $(pwd)/logs:/aidojo/logs \
-  -p 9000:9000 lukasond/aidojo-coordinator:1.0.2
+  -p 9000:9000 stratosphereips/netsecgame
+```
+optionally, you can set the logging level with `--debug_level=["DEBUG", "INFO", "WARNING", "CRITICAL"]` (defaul=`"INFO"`):
+
+```bash
+docker run -it --rm \
+ -v $(pwd)/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml \
+ -v $(pwd)/logs:/aidojo/logs \
+ -p 9000:9000 stratosphereips/netsecgame \
+ --debug_level="WARNING"
 ```
 
 ## Documentation
