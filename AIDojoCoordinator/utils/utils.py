@@ -579,7 +579,7 @@ def store_trajectories_to_jsonl(trajectories:list, dir:str, filename:str)->None:
     if not os.path.exists(dir):
         os.makedirs(dir)
     # construct the full file name
-    filename = os.path.join(dir, f"{filename.rstrip("jsonl")}.jsonl")
+    filename = os.path.join(dir, f"{filename.rstrip('jsonl')}.jsonl")
     # store the trajectories
     with jsonlines.open(filename, "a") as writer:
         writer.write(trajectories)
