@@ -45,6 +45,7 @@ def read_replay_buffer_from_csv(csvfile:str)->list:
      expected colums in the csv:
      state_t0, action_t0, reward_t1, state_t1, done_t1
     """
+    raise DeprecationWarning("This function is deprecated and will be removed in future versions.")
     buffer = []
     try:
         with open(csvfile, 'r') as f_object:
@@ -62,6 +63,7 @@ def store_replay_buffer_in_csv(replay_buffer:list, filename:str, delimiter:str="
      Expected format of replay buffer items:
      (state_t0:GameState, action_t0:Action, reward_t1:float, state_t1:GameState, done_t1:bool)
     """
+    raise DeprecationWarning("This function is deprecated and will be removed in future versions.")
     with open(filename, 'a') as f_object:
         writer_object = csv.writer(f_object, delimiter=delimiter)
         for (s_t, a_t, r, s_t1, done) in replay_buffer:
@@ -177,6 +179,16 @@ def store_trajectories_to_jsonl(trajectories:list, dir:str, filename:str)->None:
     # store the trajectories
     with jsonlines.open(filename, "a") as writer:
         writer.write(trajectories)
+
+def read_trajectories_from_jsonl(filepath:str)->list:
+    """
+    Read trajectories from a JSONL file.
+    Args:
+        filepath (str): Path to the JSONL file.
+    Returns:
+        list: List of trajectories read from the file.
+    """
+    raise NotImplementedError("This function is not yet implemented.")
 
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
