@@ -28,3 +28,24 @@ from .utils.utils import (
     observation_as_dict,
     observation_to_str
 )
+# Define the public API of the package
+__all__ = [
+    "Action",
+    "ActionType",
+    "AgentInfo",
+    "Data",
+    "GameState",
+    "GameStatus",
+    "IP",
+    "Network",
+    "Observation",
+    "ProtocolConfig",
+    "Service",
+    "BaseAgent",
+    "get_file_hash",
+    "state_as_ordered_string",
+    "store_trajectories_to_jsonl",
+    "read_trajectories_from_jsonl",
+    "observation_as_dict",
+    "observation_to_str",
+]
