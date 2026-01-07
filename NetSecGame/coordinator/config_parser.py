@@ -354,14 +354,14 @@ class ConfigParser():
         Get the scenario config objects based on the configuration. Only import objects that are selected via importlib.
         """
         allowed_names = {
-            "scenario1" : "AIDojoCoordinator.scenarios.scenario_configuration",
-            "scenario1_small" : "AIDojoCoordinator.scenarios.smaller_scenario_configuration",
-            "scenario1_tiny" : "AIDojoCoordinator.scenarios.tiny_scenario_configuration",
-            "one_network": "AIDojoCoordinator.scenarios.one_net",
-            "three_net_scenario": "AIDojoCoordinator.scenarios.three_net_scenario",
-            "two_networks": "AIDojoCoordinator.scenarios.two_nets", # same as scenario1
-            "two_networks_small": "AIDojoCoordinator.scenarios.two_nets_small", # same as scenario1_small
-            "two_networks_tiny": "AIDojoCoordinator.scenarios.two_nets_tiny", # same as scenario1_small
+            "scenario1" : "NetSecGame.coordinator.scenarios.scenario_configuration",
+            "scenario1_small" : "NetSecGame.coordinator.scenarios.smaller_scenario_configuration",
+            "scenario1_tiny" : "NetSecGame.coordinator.scenarios.tiny_scenario_configuration",
+            "one_network": "NetSecGame.coordinator.scenarios.one_net",
+            "three_net_scenario": "NetSecGame.coordinator.scenarios.three_net_scenario",
+            "two_networks": "NetSecGame.coordinator.scenarios.two_nets", # same as scenario1
+            "two_networks_small": "NetSecGame.coordinator.scenarios.two_nets_small", # same as scenario1_small
+            "two_networks_tiny": "NetSecGame.coordinator.scenarios.two_nets_tiny", # same as scenario1_small
 
         }
         scenario_name = self.config['env']['scenario']
