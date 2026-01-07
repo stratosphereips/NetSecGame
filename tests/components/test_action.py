@@ -1,7 +1,7 @@
 # Authors:  Maria Rigaki - maria.rigaki@aic.fel.cvut.cz
 #           Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import json
-from AIDojoCoordinator.game_components import Action, ActionType, IP, Network, Data, Service, AgentInfo
+from NetSecGame.game_components import Action, ActionType, IP, Network, Data, Service, AgentInfo
 
 class TestComponentActionType:
     """

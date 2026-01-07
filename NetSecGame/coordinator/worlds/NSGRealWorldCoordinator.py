@@ -9,9 +9,9 @@ import argparse
 import os
 from pathlib import Path
 
-from AIDojoCoordinator.utils.utils import get_logging_level
-from AIDojoCoordinator.game_components import GameState, Action, ActionType, Service,IP
-from AIDojoCoordinator.worlds.NSEGameCoordinator import NSGCoordinator
+from NetSecGame.utils.utils import get_logging_level
+from NetSecGame.game_components import GameState, Action, ActionType, Service,IP
+from NetSecGame.worlds.NSEGameCoordinator import NSGCoordinator
 
 class NSERealWorldGameCoordinator(NSGCoordinator):
     

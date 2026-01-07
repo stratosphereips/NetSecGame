@@ -8,10 +8,10 @@ import ast
 import logging
 import argparse
 from pathlib import Path
-from AIDojoCoordinator.game_components import GameState, Action, ActionType,  IP, Service
-from AIDojoCoordinator.coordinator.coordinator import GameCoordinator
+from NetSecGame.game_components import GameState, Action, ActionType,  IP, Service
+from NetSecGame.coordinator.coordinator import GameCoordinator
 
-from AIDojoCoordinator.utils.utils import get_starting_position_from_cyst_config, get_logging_level
+from NetSecGame.utils.utils import get_starting_position_from_cyst_config, get_logging_level
 
 class CYSTCoordinator(GameCoordinator):
 

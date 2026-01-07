@@ -12,11 +12,11 @@ from pathlib import Path
 from typing import Iterable
 from collections import defaultdict
 
-from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP, Network, Data, Service
-from AIDojoCoordinator.coordinator.coordinator import GameCoordinator
+from NetSecGame.game_components import GameState, Action, ActionType, IP, Network, Data, Service
+from NetSecGame.coordinator.coordinator import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
-from AIDojoCoordinator.utils.utils import get_logging_level
+from NetSecGame.utils.utils import get_logging_level
 
 class NSGCoordinator(GameCoordinator):
 

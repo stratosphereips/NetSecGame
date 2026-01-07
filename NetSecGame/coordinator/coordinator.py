@@ -4,10 +4,10 @@ import asyncio
 from datetime import datetime
 import signal
 
-from AIDojoCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, ProtocolConfig
-from AIDojoCoordinator.coordinator.global_defender import GlobalDefender
-from AIDojoCoordinator.utils.utils import observation_as_dict, get_str_hash, store_trajectories_to_jsonl
-from AIDojoCoordinator.coordinator.config_parser import ConfigParser
+from NetSecGame.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, ProtocolConfig
+from NetSecGame.coordinator.global_defender import GlobalDefender
+from NetSecGame.utils.utils import observation_as_dict, get_str_hash, store_trajectories_to_jsonl
+from NetSecGame.coordinator.config_parser import ConfigParser
 import os
 from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment

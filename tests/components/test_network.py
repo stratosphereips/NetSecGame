@@ -2,7 +2,7 @@
 #           Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import pytest
 import dataclasses
-from AIDojoCoordinator.game_components import Network
+from NetSecGame.game_components import Network
 
 # Pytest fixture for creating a sample Network object
 @pytest.fixture

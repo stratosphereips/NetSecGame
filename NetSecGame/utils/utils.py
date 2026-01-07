@@ -5,7 +5,7 @@
 import yaml
 # This is used so the agent can see the environment and game components
 import importlib
-from AIDojoCoordinator.game_components import IP, Data, Network, Service, GameState, Action, Observation, ActionType
+from NetSecGame.game_components import IP, Data, Network, Service, GameState, Action, Observation, ActionType
 import netaddr
 import logging
 import csv

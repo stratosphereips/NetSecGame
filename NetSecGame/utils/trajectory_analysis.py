@@ -9,7 +9,7 @@ import umap
 import plotly.graph_objects as go
 from sklearn.preprocessing import StandardScaler
 
-from AIDojoCoordinator.game_components import GameState, Action, ActionType
+from NetSecGame.game_components import GameState, Action, ActionType
 
    
 

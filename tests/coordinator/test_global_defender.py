@@ -1,6 +1,6 @@
 import pytest
-from AIDojoCoordinator.game_components import ActionType, Action
-from AIDojoCoordinator.coordinator.global_defender import GlobalDefender
+from NetSecGame.game_components import ActionType, Action
+from NetSecGame.coordinator.global_defender import GlobalDefender
 from unittest.mock import patch
 
 @pytest.fixture
