@@ -9,7 +9,7 @@ import logging
 import argparse
 from pathlib import Path
 from AIDojoCoordinator.game_components import GameState, Action, ActionType,  IP, Service
-from AIDojoCoordinator.coordinator import GameCoordinator
+from AIDojoCoordinator.coordinator.coordinator import GameCoordinator
 
 from AIDojoCoordinator.utils.utils import get_starting_position_from_cyst_config, get_logging_level
 

@@ -3,7 +3,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from contextlib import suppress
-from AIDojoCoordinator.coordinator import AgentServer
+from AIDojoCoordinator.coordinator.coordinator import AgentServer
 from AIDojoCoordinator.game_components import Action, ActionType, ProtocolConfig
 
 # -----------------------

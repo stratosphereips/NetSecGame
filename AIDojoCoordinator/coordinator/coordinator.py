@@ -5,7 +5,7 @@ from datetime import datetime
 import signal
 
 from AIDojoCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, ProtocolConfig
-from AIDojoCoordinator.global_defender import GlobalDefender
+from AIDojoCoordinator.coordinator.global_defender import GlobalDefender
 from AIDojoCoordinator.utils.utils import observation_as_dict, get_str_hash, ConfigParser, store_trajectories_to_jsonl
 import os
 from aiohttp import ClientSession
