@@ -9,6 +9,8 @@ from AIDojoCoordinator.game_components import IP, Data, Network, Service, GameSt
 import netaddr
 import logging
 import csv
+import os
+import jsonlines
 from random import randint
 import json
 import hashlib
@@ -565,6 +567,22 @@ def get_starting_position_from_cyst_config(cyst_objects):
                 starting_positions[f"{obj.id}.{active_service.name}"] = {"known_hosts":hosts, "known_networks":networks}
     return starting_positions
 
+def store_trajectories_to_jsonl(trajectories:list, dir:str, filename:str)->None:
+    """
+    Store trajectories to a JSONL file.
+    Args:
+        trajectories (list): List of trajectory data to store.
+        dir (str): Directory where the file will be stored.
+        filename (str): Name of the file (without extension).
+    """
+    # make sure the directory exists
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    # construct the full file name
+    filename = os.path.join(dir, f"{filename.rstrip("jsonl")}.jsonl")
+    # store the trajectories
+    with jsonlines.open(filename, "a") as writer:
+        writer.write(trajectories)
 
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},

@@ -7,7 +7,7 @@ import signal
 
 from AIDojoCoordinator.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, ProtocolConfig
 from AIDojoCoordinator.global_defender import GlobalDefender
-from AIDojoCoordinator.utils.utils import observation_as_dict, get_str_hash, ConfigParser
+from AIDojoCoordinator.utils.utils import observation_as_dict, get_str_hash, ConfigParser, store_trajectories_to_jsonl
 import os
 from aiohttp import ClientSession
 from cyst.api.environment.environment import Environment
@@ -995,16 +995,17 @@ class GameCoordinator:
                 self._agent_trajectories[agent_addr]["end_reason"] = end_reason
     
     def _store_trajectory_to_file(self, agent_addr:tuple, location="./logs/trajectories")-> None:
-        if not os.path.exists(location):
-            os.makedirs(location)
-            self.logger.debug(f"Created directory for storing trajectories: {location}")
-        self.logger.debug(f"Storing Trajectory of {agent_addr}in file")
-        if agent_addr in self._agent_trajectories:
-            agent_name, agent_role = self.agents[agent_addr] 
-            filename = os.path.join(location, f"{datetime.now():%Y-%m-%d}_{agent_name}_{agent_role}.jsonl")
-            with jsonlines.open(filename, "a") as writer:
-                writer.write(self._agent_trajectories[agent_addr])
-            self.logger.info(f"Trajectory of {agent_addr} strored in {filename}")
+        """
+        Method for storing the agent trajectory to a file.
+        """
+        if agent_addr in self.agents:
+            agent_name, agent_role = self.agents[agent_addr]
+            filename =f"{datetime.now():%Y-%m-%d}_{agent_name}_{agent_role}"
+            trajectories = self._agent_trajectories[agent_addr]
+            store_trajectories_to_jsonl(trajectories, location, filename)
+            self.logger.info(f"Trajectories of {agent_addr} strored in {os.path.join(location, filename)}.jsonl")
+        else:
+            self.logger.warning(f"Agent {agent_addr} not found in agents list, can't store trajectory to file.")
     
     def is_agent_benign(self, agent_addr:tuple)->bool:
         """
