@@ -1,4 +1,3 @@
-import jsonlines
 import logging
 import json
 import asyncio
