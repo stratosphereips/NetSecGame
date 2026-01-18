@@ -2,11 +2,8 @@
 # Author: Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
 # Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
 
-import yaml
 # This is used so the agent can see the environment and game components
-import importlib
 from NetSecGame.game_components import IP, Data, Network, Service, GameState, Action, Observation, ActionType
-import netaddr
 import logging
 import csv
 import os
@@ -14,7 +11,6 @@ import jsonlines
 from random import randint
 import json
 import hashlib
-from cyst.api.configuration.network.node import NodeConfig
 from  typing import Optional
 
 def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
@@ -146,22 +142,6 @@ def get_logging_level(debug_level):
     
     level = log_levels.get(debug_level.upper(), logging.ERROR)
     return level
-
-def get_starting_position_from_cyst_config(cyst_objects):
-    starting_positions = {}
-    for obj in cyst_objects:
-        if isinstance(obj, NodeConfig):
-            for active_service in obj.active_services:
-                if active_service.type == "netsecenv_agent":
-                    print(f"starting processing {obj.id}.{active_service.name}")
-                    hosts = set()
-                    networks = set()
-                    for interface in obj.interfaces:
-                        hosts.add(IP(str(interface.ip)))
-                        net_ip, net_mask = str(interface.net).split("/")
-                        networks.add(Network(net_ip,int(net_mask)))
-                starting_positions[f"{obj.id}.{active_service.name}"] = {"known_hosts":hosts, "known_networks":networks}
-    return starting_positions
 
 def store_trajectories_to_jsonl(trajectories:list, dir:str, filename:str)->None:
     """

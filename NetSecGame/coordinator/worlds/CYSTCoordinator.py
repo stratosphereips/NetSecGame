@@ -8,10 +8,35 @@ import ast
 import logging
 import argparse
 from pathlib import Path
-from NetSecGame.game_components import GameState, Action, ActionType,  IP, Service
+from NetSecGame.game_components import GameState, Action, ActionType,  IP, Service ,Network
 from NetSecGame.coordinator.coordinator import GameCoordinator
+from cyst.api.configuration.network.node import NodeConfig
 
-from NetSecGame.utils.utils import get_starting_position_from_cyst_config, get_logging_level
+from NetSecGame.utils.utils import get_logging_level
+
+def get_starting_position_from_cyst_config(cyst_objects):
+    """
+    Extracts starting positions from CYST configuration objects.
+
+    Args:
+        cyst_objects (list): List of CYST configuration objects.
+    Returns:
+        dict: A dictionary mapping agent identifiers to their starting known hosts and networks.
+    """
+    starting_positions = {}
+    for obj in cyst_objects:
+        if isinstance(obj, NodeConfig):
+            for active_service in obj.active_services:
+                if active_service.type == "netsecenv_agent":
+                    print(f"starting processing {obj.id}.{active_service.name}")
+                    hosts = set()
+                    networks = set()
+                    for interface in obj.interfaces:
+                        hosts.add(IP(str(interface.ip)))
+                        net_ip, net_mask = str(interface.net).split("/")
+                        networks.add(Network(net_ip,int(net_mask)))
+                starting_positions[f"{obj.id}.{active_service.name}"] = {"known_hosts":hosts, "known_networks":networks}
+    return starting_positions
 
 class CYSTCoordinator(GameCoordinator):
 
