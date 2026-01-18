@@ -132,6 +132,15 @@ docker run -it --rm \
  --debug_level="WARNING"
 ```
 
+#### Running on Windows (with Docker Desktop):
+```cmd
+docker run -d --rm --name netsecgame-server^
+  -p 9000:9000 ^
+  -v "%cd%\examples\example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml" ^
+  -v "%cd%\logs:/aidojo/logs" ^
+  stratosphereips/netsecgame
+```
+
 ## Documentation
 You can find user documentation at [https://stratosphereips.github.io/NetSecGame/](https://stratosphereips.github.io/NetSecGame/)
 ## Components of the NetSecGame Environment
