@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "NetSecGame"
-version = "0.2.0"
+dynamic = ["version"]
 description = "A package for coordinating AI-driven network simulation games."
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [
     { name = "Ondrej Lukas", email = "ondrej.lukas@aic.fel.cvut.cz" },
     { name = "Sebastian Garcia", email = "sebastian.garcia@agents.fel.cvut.cz" },
@@ -70,6 +71,9 @@ docs = [
     "pymdown-extensions"
 ]
 
+[tool.setuptools.dynamic]
+version = { attr = "NetSecGame.__version__" }
+
 [project.urls]
 Homepage = "https://github.com/stratosphereips/NetSecGame"
 Repository = "https://github.com/stratosphereips/NetSecGame"
@@ -78,7 +82,17 @@ Issues = "https://github.com/stratosphereips/NetSecGame/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["tests*"]
+include = ["NetSecGame*"]
+exclude = [
+    "tests*",
+    "notebooks*",
+    "site*",
+    "docs*",
+    "logs*",
+    "mkdocs.yml",
+    "Dockerfile",
+    "NetSecGameAgents*"
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
