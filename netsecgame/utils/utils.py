@@ -192,6 +192,61 @@ def read_trajectories_from_jsonl(filepath:str)->list:
     """
     raise NotImplementedError("This function is not yet implemented.")
 
+def generate_valid_actions(state: GameState, include_blocks=False)->list:
+    """Function that generates a list of all valid actions in a given GameState
+    Args:
+        state (GameState): The current game state.
+        include_blocks (bool): Whether to include BlockIP actions. Defaults to False.
+    Returns:
+        list: A list of valid Action objects.    
+    """
+    valid_actions = set()
+    def is_fw_blocked(state, src_ip, dst_ip)->bool:
+        blocked = False
+        try:
+            blocked = dst_ip in state.known_blocks[src_ip]
+        except KeyError:
+            pass #this src ip has no known blocks
+        return blocked 
+
+    for source_host in state.controlled_hosts:
+        #Network Scans
+        for network in state.known_networks:
+            # TODO ADD neighbouring networks
+            valid_actions.add(Action(ActionType.ScanNetwork, parameters={"target_network": network, "source_host": source_host,}))
+
+        # Service Scans
+        for blocked_host in state.known_hosts:
+            if not is_fw_blocked(state, source_host, blocked_host):
+                valid_actions.add(Action(ActionType.FindServices, parameters={"target_host": blocked_host, "source_host": source_host,}))
+
+        # Service Exploits
+        for blocked_host, service_list in state.known_services.items():
+            if not is_fw_blocked(state, source_host,blocked_host):
+                for service in service_list:
+                    valid_actions.add(Action(ActionType.ExploitService, parameters={"target_host": blocked_host,"target_service": service,"source_host": source_host,}))
+        # Data Scans
+        for blocked_host in state.controlled_hosts:
+            if not is_fw_blocked(state, source_host,blocked_host):
+                valid_actions.add(Action(ActionType.FindData, parameters={"target_host": blocked_host, "source_host": blocked_host}))
+
+        # Data Exfiltration
+        for source_host, data_list in state.known_data.items():
+            for data in data_list:
+                for trg_host in state.controlled_hosts:
+                    if trg_host != source_host:
+                        if not is_fw_blocked(state, source_host,trg_host):
+                            valid_actions.add(Action(ActionType.ExfiltrateData, parameters={"target_host": trg_host, "source_host": source_host, "data": data}))
+        
+        # BlockIP
+        if include_blocks:
+            for source_host in state.controlled_hosts:
+                for target_host in state.controlled_hosts:
+                    if not is_fw_blocked(state, source_host,target_host):
+                        for blocked_ip in state.known_hosts:
+                            valid_actions.add(Action(ActionType.BlockIP, {"target_host":target_host, "source_host":source_host, "blocked_host":blocked_ip}))
+    return list(valid_actions)  
+
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
             known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},

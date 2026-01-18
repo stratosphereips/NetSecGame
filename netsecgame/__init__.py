@@ -28,7 +28,8 @@ from .utils.utils import (
     store_trajectories_to_jsonl,
     read_trajectories_from_jsonl,
     observation_as_dict,
-    observation_to_str
+    observation_to_str,
+    generate_valid_actions
 )
 
 # Define the public API of the package
@@ -56,4 +57,5 @@ __all__ = [
     "read_trajectories_from_jsonl",
     "observation_as_dict",
     "observation_to_str",
+    "generate_valid_actions"
 ]
