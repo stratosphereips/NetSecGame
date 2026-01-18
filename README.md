@@ -128,17 +128,17 @@ optionally, you can set the logging level with `--debug_level=["DEBUG", "INFO", 
 docker run -it --rm \
  -v $(pwd)/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml \
  -v $(pwd)/logs:/aidojo/logs \
- -p 9000:9000 stratosphereips/netsecgame \
+ -p 9000:9000 stratosphereips/netsecgame:latest \
  --debug_level="WARNING"
 ```
 
 #### Running on Windows (with Docker Desktop):
 ```cmd
-docker run -d --rm --name netsecgame-server^
+docker run -d --rm --name netsecgame-server ^
   -p 9000:9000 ^
   -v "%cd%\examples\example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml" ^
   -v "%cd%\logs:/aidojo/logs" ^
-  stratosphereips/netsecgame
+  stratosphereips/netsecgame:latest
 ```
 
 ## Documentation
