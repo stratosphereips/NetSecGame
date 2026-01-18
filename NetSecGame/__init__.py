@@ -1,6 +1,8 @@
 # add imports so that they are available when importing the package NetSecGame
 # e.g., from NetSecGame import GameState
 
+__version__ = "0.1.0"
+
 # Game components
 from .game_components import (
     Action,
@@ -28,8 +30,12 @@ from .utils.utils import (
     observation_as_dict,
     observation_to_str
 )
+
 # Define the public API of the package
 __all__ = [
+    # Metadata
+    "__version__",
+    # Game components
     "Action",
     "ActionType",
     "AgentInfo",
@@ -41,7 +47,9 @@ __all__ = [
     "Observation",
     "ProtocolConfig",
     "Service",
+    # Base agent
     "BaseAgent",
+    # Utils
     "get_file_hash",
     "state_as_ordered_string",
     "store_trajectories_to_jsonl",
