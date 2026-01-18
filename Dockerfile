@@ -2,7 +2,7 @@
 FROM python:3.12.10-slim
 
 # Set the working directory in the container
-ENV DESTINATION_DIR=/aidojo
+ENV DESTINATION_DIR=/netsecgame
 
 
 # Install system dependencies

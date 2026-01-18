@@ -118,16 +118,16 @@ Upon which the game server is created on `localhost:9000` to which the agents ca
 When running in the Docker container, the NetSecGame can be started with:
 ```bash
 docker run -it --rm \
-  -v $(pwd)/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml \
-  -v $(pwd)/logs:/aidojo/logs \
+  -v $(pwd)/examples/example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml \
+  -v $(pwd)/logs:/netsecgame/logs \
   -p 9000:9000 stratosphereips/netsecgame
 ```
 optionally, you can set the logging level with `--debug_level=["DEBUG", "INFO", "WARNING", "CRITICAL"]` (defaul=`"INFO"`):
 
 ```bash
 docker run -it --rm \
- -v $(pwd)/examples/example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml \
- -v $(pwd)/logs:/aidojo/logs \
+ -v $(pwd)/examples/example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml \
+ -v $(pwd)/logs:/netsecgame/logs \
  -p 9000:9000 stratosphereips/netsecgame:latest \
  --debug_level="WARNING"
 ```
@@ -136,8 +136,8 @@ docker run -it --rm \
 ```cmd
 docker run -d --rm --name netsecgame-server ^
   -p 9000:9000 ^
-  -v "%cd%\examples\example_task_configuration.yaml:/aidojo/netsecenv_conf.yaml" ^
-  -v "%cd%\logs:/aidojo/logs" ^
+  -v "%cd%\examples\example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml" ^
+  -v "%cd%\logs:/netsecgame/logs" ^
   stratosphereips/netsecgame:latest
 ```
 
@@ -147,27 +147,29 @@ You can find user documentation at [https://stratosphereips.github.io/NetSecGame
 The architecture of the environment can be seen [here](docs/Architecture.md).
 The NetSecGame environment has several components in the following files:
 ```
-├── AIDojoGameCoordinator/
-|   ├── game_coordinator.py
-|	├── game_components.py
-|	├── global_defender.py
-|	├── worlds/
-|		├── NSGCoordinator.py
-|		├── NSGRealWorldCoordinator.py
-|		├── CYSTCoordinator.py
-|	├── scenarios/
-|		├── tiny_scenario_configuration.py
-|		├── smaller_scenario_configuration.py
-|		├── scenario_configuration.py
-|		├── three_net_configuration.py
+├── NetSecgame/
+|   ├── base_agent.py # Basic agent class. Defines the API for agent-server communication
+|	├── game_components.py # contains basic building blocks of the environment
 |	├── utils/
 |		├── utils.py
 |		├── log_parser.py
 |		├── gamaplay_graphs.py
 |		├── actions_parser.py
+|	├── coordinator/ # contains components required for running the game server
+|		├── scenarios/
+|		    ├── tiny_scenario_configuration.py
+|		    ├── smaller_scenario_configuration.py
+|		    ├── scenario_configuration.py
+|		    ├── three_net_configuration.py
+|		├── worlds/
+|   		├── NSGCoordinator.py # basic simulation, pure NSG
+|   		├── NSGRealWorldCoordinator.py # Extension of `NSGCoordinator` - runs actions in the *network of the host computer*
+|   		├── CYSTCoordinator.py # Extension of `NSGCoordinator` - runs simulation in CYST engine.
+|   		├── WhiteBoxNSGCoordinator.py # Extension of `NSGCoordinator` - provides agents with full list of actions upon registration.
+|		├── config_parser.py # NSG task configuration parser
+|		├── coordinator.py # Core game server. Not to be run as stand-alone world (see worlds/)
+|	    ├── global_defender.py # Stochastic (non-agentic defender)
 ```
-
-
 ### Directory Details
 - `coordinator.py`: Basic coordinator class. Handles agent communication and coordination. **Does not implement dynamics of the world** and must be extended (see examples in `worlds/`).
 - `game_components.py`: Implements a library with objects used in the environment. See [detailed explanation](AIDojoCoordinator/docs/Components.md) of the game components.
