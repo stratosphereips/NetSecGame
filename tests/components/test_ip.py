@@ -2,7 +2,7 @@
 #           Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import pytest
 import dataclasses
-from NetSecGame.game_components import IP
+from netsecgame.game_components import IP
 
 # Pytest fixtures for creating sample IP objects
 @pytest.fixture

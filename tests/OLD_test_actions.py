@@ -5,8 +5,8 @@ Author: Maria Rigaki - maria.rigaki@fel.cvut.cz
 import sys
 from os import path
 sys.path.append( path.dirname(path.dirname( path.abspath(__file__) ) ))
-from NetSecGame.worlds.network_security_game import NetworkSecurityEnvironment
-import NetSecGame.game_components as components
+from netsecgame.worlds.network_security_game import NetworkSecurityEnvironment
+import netsecgame.game_components as components
 import pytest
 
 # Fixture are used to hold the current state and the environment

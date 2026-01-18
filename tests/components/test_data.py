@@ -2,7 +2,7 @@
 #           Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import pytest
 import dataclasses
-from NetSecGame.game_components import Data
+from netsecgame.game_components import Data
 
 @pytest.fixture
 def sample_data_minimal():

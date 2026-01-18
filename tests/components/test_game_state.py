@@ -2,7 +2,7 @@
 #           Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import json
 import pytest
-from NetSecGame.game_components import GameState, IP, Network, Data, Service
+from netsecgame.game_components import GameState, IP, Network, Data, Service
 
 # pytest fixtures for creating sample objects
 @pytest.fixture

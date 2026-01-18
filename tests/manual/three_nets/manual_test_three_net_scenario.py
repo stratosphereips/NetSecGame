@@ -5,7 +5,7 @@ from os import path
 PATH = path.dirname( path.dirname( path.dirname( path.dirname( path.abspath(__file__) ) ) ))
 sys.path.append(path.dirname( path.dirname( path.dirname( path.dirname( path.abspath(__file__) ) ) )))
 from NetSecGameAgents.agents import base_agent
-from NetSecGame.game_components import Action, ActionType, IP, Network, Service, Data
+from netsecgame.game_components import Action, ActionType, IP, Network, Service, Data
 
 
 if __name__ == "__main__":
