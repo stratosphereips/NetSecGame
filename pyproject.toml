@@ -82,7 +82,7 @@ Issues = "https://github.com/stratosphereips/NetSecGame/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["NetSecGame*"]
+include = ["netsecgame*"]
 exclude = [
     "tests*",
     "notebooks*",
