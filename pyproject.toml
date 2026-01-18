@@ -13,39 +13,16 @@ authors = [
     { name = "Sebastian Garcia", email = "sebastian.garcia@agents.fel.cvut.cz" },
     { name = "Maria Rigaki", email = "maria.rigaki@aic.fel.cvut.cz" }
 ]
+# light-weight version (allows running and development of agents)
 dependencies = [
-    "aiohttp==3.11.8",
-    "attrs==23.2.0",
-    "beartype==0.19.0",
-    "cachetools==5.5.0",
-    "casefy==0.1.7",
-    "cyst==0.3.4",
-    "dictionaries==0.0.2",
-    "Faker==23.2.1",
-    "Jinja2==3.1.4",
-    "jsonlines==4.0.0",
-    "kaleido==0.2.1",
-    "MarkupSafe==3.0.2",
-    "matplotlib==3.9.1",
-    "netaddr==0.9.0",
-    "numpy==1.26.4",
-    "pandas==2.2.2",
-    "plotly==5.22.0",
-    "pyserde==0.21.0",
-    "python-dateutil==2.8.2",
-    "PyYAML==6.0.1",
-    "redis==3.5.3",
-    "requests==2.32.3",
-    "scikit-learn==1.5.1",
-    "scipy==1.14.0",
-    "tenacity==8.5.0",
-    "typing-inspect==0.9.0",
-    "typing_extensions==4.12.2",
+    "jsonlines>=4.0.0",
+    "netaddr>=0.9.0",
 ]
 requires-python = ">=3.12"
 
 [project.optional-dependencies]
 
+# dependencies allowing to run the game server and the simulation
 server = [
     "aiohttp==3.11.8",
     "attrs==23.2.0",
@@ -80,6 +57,7 @@ server = [
 ]
 
 dev = [
+    "NetSecGame[server]",
     "pytest",
     "ruff",
     "pytest-asyncio"
