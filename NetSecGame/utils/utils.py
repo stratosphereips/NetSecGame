@@ -1,21 +1,39 @@
 # Utility functions for then env and for the agents
 # Author: Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
 # Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
-
-# This is used so the agent can see the environment and game components
-from NetSecGame.game_components import IP, Data, Network, Service, GameState, Action, Observation, ActionType
-import logging
+# --- Standard Library Imports ---
 import csv
-import os
-import jsonlines
-from random import randint
-import json
 import hashlib
-from  typing import Optional
+import json
+import logging
+import os
+from random import randint
+from typing import Optional
+
+# --- Third-Party Imports ---
+import jsonlines
+
+# --- Local Application/Library Specific Imports ---
+from NetSecGame.game_components import (
+    Action,
+    ActionType,
+    Data,
+    GameState,
+    IP,
+    Network,
+    Observation,
+    Service,
+)
 
 def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
     """
     Computes hash of a given file.
+    Args:
+        filepath (str): The path to the file to hash.
+        hash_func (str): The hash function to use (default is 'sha256').
+        chunk_size (int): The size of each chunk to read from the file (default is 4096 bytes).
+    Returns:
+        str: The hexadecimal hash of the file.
     """
     hash_algorithm = hashlib.new(hash_func)
     with open(filepath, 'rb') as file:
@@ -25,9 +43,14 @@ def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
             chunk = file.read(chunk_size)
     return hash_algorithm.hexdigest()
 
-def get_str_hash(string, hash_func='sha256', chunk_size=4096):
+def get_str_hash(string, hash_func='sha256'):
     """
-    Computes hash of a given file.
+    Computes hash of a given string.
+    Args:
+        string (str): The input string to hash.
+        hash_func (str): The hash function to use (default is 'sha256').
+    Returns:
+        str: The hexadecimal hash of the input string.
     """
     hash_algorithm = hashlib.new(hash_func)
     hash_algorithm.update(string.encode('utf-8'))
