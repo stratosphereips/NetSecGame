@@ -5,7 +5,7 @@ import socket
 import json
 from abc import ABC 
 
-from NetSecGame.game_components import Action, GameState, Observation, ActionType, GameStatus, AgentInfo, ProtocolConfig
+from netsecgame.game_components import Action, GameState, Observation, ActionType, GameStatus, AgentInfo, ProtocolConfig
 
 class BaseAgent(ABC):
     """
@@ -180,3 +180,14 @@ class BaseAgent(ABC):
         else:
             self._logger.error(f'\rReset failed! (status: {status}, msg:{message}')
             return None
+
+if __name__ == "__main__":
+    # Example usage of BaseAgent
+    GAME_PORT = 5000 # Change to the appropriate port
+    agent = BaseAgent("localhost", GAME_PORT, "Attacker")
+    # Register the agent
+    observation = agent.register()
+    if observation:
+        print("Initial Observation:", observation)
+    # Gracefully terminate the connection
+    agent.terminate_connection()

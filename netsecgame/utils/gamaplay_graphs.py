@@ -5,7 +5,7 @@ import utils
 import argparse
 import matplotlib.pyplot as plt
 
-from NetSecGame.game_components import GameState, Action
+from netsecgame.game_components import GameState, Action
 
 class TrajectoryGraph:
     def __init__(self)->None:

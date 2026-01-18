@@ -13,7 +13,7 @@ from typing import Optional
 import jsonlines
 
 # --- Local Imports ---
-from NetSecGame.game_components import (
+from netsecgame.game_components import (
     Action,
     ActionType,
     Data,

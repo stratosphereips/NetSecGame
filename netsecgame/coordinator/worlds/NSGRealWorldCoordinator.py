@@ -9,9 +9,9 @@ import argparse
 import os
 from pathlib import Path
 
-from NetSecGame.utils.utils import get_logging_level
-from NetSecGame.game_components import GameState, Action, ActionType, Service,IP
-from NetSecGame.worlds.NSEGameCoordinator import NSGCoordinator
+from netsecgame.utils.utils import get_logging_level
+from netsecgame.game_components import GameState, Action, ActionType, Service,IP
+from netsecgame.worlds.NSEGameCoordinator import NSGCoordinator
 
 class NSERealWorldGameCoordinator(NSGCoordinator):
     

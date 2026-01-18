@@ -8,11 +8,11 @@ import ast
 import logging
 import argparse
 from pathlib import Path
-from NetSecGame.game_components import GameState, Action, ActionType,  IP, Service ,Network
-from NetSecGame.coordinator.coordinator import GameCoordinator
+from netsecgame.game_components import GameState, Action, ActionType,  IP, Service ,Network
+from netsecgame.coordinator.coordinator import GameCoordinator
 from cyst.api.configuration.network.node import NodeConfig
 
-from NetSecGame.utils.utils import get_logging_level
+from netsecgame.utils.utils import get_logging_level
 
 def get_starting_position_from_cyst_config(cyst_objects):
     """

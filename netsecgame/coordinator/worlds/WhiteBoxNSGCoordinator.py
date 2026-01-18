@@ -4,9 +4,9 @@ import logging
 import os
 import json
 from pathlib import Path
-from NetSecGame.utils.utils import get_logging_level
-from NetSecGame.game_components import Action, ActionType
-from NetSecGame.worlds.NSEGameCoordinator import NSGCoordinator
+from netsecgame.utils.utils import get_logging_level
+from netsecgame.game_components import Action, ActionType
+from netsecgame.worlds.NSEGameCoordinator import NSGCoordinator
 
 
 

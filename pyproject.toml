@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "NetSecGame"
+name = "netsecgame"
 dynamic = ["version"]
 description = "A package for coordinating AI-driven network simulation games."
 readme = "README.md"
@@ -58,7 +58,7 @@ server = [
 ]
 
 dev = [
-    "NetSecGame[server]",
+    "netsecgame[server]",
     "pytest",
     "ruff",
     "pytest-asyncio"
@@ -72,7 +72,7 @@ docs = [
 ]
 
 [tool.setuptools.dynamic]
-version = { attr = "NetSecGame.__version__" }
+version = { attr = "netsecgame.__version__" }
 
 [project.urls]
 Homepage = "https://github.com/stratosphereips/NetSecGame"

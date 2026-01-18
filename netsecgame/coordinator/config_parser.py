@@ -5,7 +5,7 @@
 import yaml
 # This is used so the agent can see the environment and game components
 import importlib
-from NetSecGame.game_components import IP, Data, Network, Service
+from netsecgame.game_components import IP, Data, Network, Service
 import netaddr
 import logging
 from random import randint
