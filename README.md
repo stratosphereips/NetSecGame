@@ -144,7 +144,7 @@ docker run -d --rm --name netsecgame-server ^
 The environment can be started locally with from the root folder of the repository with following command:
 ```bash
 python3 -m netsecgame.worlds.NSEGameCoordinator \
-  --task_config=./examples/example_config.yaml \
+  --task_config=./examples/example_task_configuration.yaml \
   --game_port=9000
   --debug_level="INFO"
 ```
