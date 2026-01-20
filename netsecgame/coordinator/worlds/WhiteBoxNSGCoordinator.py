@@ -1,3 +1,4 @@
+# Author: Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import itertools
 import argparse
 import logging
@@ -6,9 +7,7 @@ import json
 from pathlib import Path
 from netsecgame.utils.utils import get_logging_level
 from netsecgame.game_components import Action, ActionType
-from netsecgame.worlds.NSEGameCoordinator import NSGCoordinator
-
-
+from netsecgame.coordinator.worlds.NSEGameCoordinator import NSGCoordinator
 
 
 class WhiteBoxNSGCoordinator(NSGCoordinator):
@@ -26,15 +25,17 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
         super()._initialize()
         # All components are initialized, now we can set the action mapping
         self.logger.debug("Creating action mapping for the game.")
-        self._generate_all_actions()
+        self._all_actions = self._generate_all_actions()
         self._registration_info = {
             "all_actions": json.dumps([v.as_dict for v in self._all_actions]),
         } if self._all_actions is not None else {}
 
 
-    def _generate_all_actions(self)-> list:
+    def _generate_all_actions(self)-> list[Action]:
         """
         Generate a list of all possible actions for the game.
+        Returns:
+            list[Action]: List of all possible actions.
         """
         actions = []
         all_ips = [self._ip_mapping[ip] for ip in self._ip_to_hostname.keys()]
@@ -119,7 +120,7 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
         self.logger.info(f"Created action mapping with {len(actions)} actions.")
         for action in actions:
             self.logger.debug(action)
-        self._all_actions = actions
+        return actions
 
 
     def _create_state_from_view(self, view, add_neighboring_nets = True):
