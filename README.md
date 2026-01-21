@@ -210,9 +210,6 @@ Helper modules:
 The [scenarios](#definition-of-the-network-topology) define the **topology** of a network (number of hosts, connections, networks, services, data, users, firewall rules, etc.) while the [task-configuration](#task-configuration) is to be used for definition of the exact task for the agent in one of the scenarios (with fix topology).
 - Agents compatible with the NetSecGame are located in a separate repository [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main)
 
-
-
-
 ### Assumptions of the NetSecGame
 1. NetSecGame works with the closed-world assumption. Only the defined entities exist in the simulation.
 2. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
@@ -498,9 +495,8 @@ For the data exfiltration, we support 3 variants. The full scenario contains 5 c
 </table>
 
 ### Trajectory storing and analysis
-The trajectory is a sequence of GameStates, Actions, and rewards in one run of a game. It contains the complete information of the actions played by the agent, the rewards observed and their effect on the state of the environment. Trajectory visualization and analysis tools are described in [Trajectory analysis tools](./docs/Trajectory_analysis.md)
-
-Trajectories performed by the agents can be stored in a file using the following configuration:
+The trajectory is a sequence of GameStates, Actions, and rewards in one run of a game. It contains the complete information of the actions played by the agent, the rewards observed and their effect on the state of the environment. 
+Trajectories performed by the agents can be stored in a file using the following configuration (on the server side):
 ```YAML
 env:
   save_trajectories: True
