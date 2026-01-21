@@ -130,7 +130,7 @@ docker run -d --rm --name nsg-server\
 
 `--debug_level` is an optional parameter to control the logging level `--debug_level=["DEBUG", "INFO", "WARNING", "CRITICAL"]` (defaul=`"INFO"`):
 ##### Running on Windows (with Docker desktop)
-When running on Windows, Docker desktop is required. T
+When running on Windows, Docker desktop is required.
 ```cmd
 docker run -d --rm --name netsecgame-server ^
   -p 9000:9000 ^
