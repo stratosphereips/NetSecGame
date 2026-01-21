@@ -41,8 +41,14 @@ def main() -> None:
     episodes = 0
     wins = 0
     running_win_rates = []
+    winrate_log_path = Path(args.output).with_suffix(".log")
 
-    with log_path.open("r", encoding="utf-8", errors="ignore") as f:
+    with log_path.open("r", encoding="utf-8", errors="ignore") as f, winrate_log_path.open(
+        "w", encoding="utf-8"
+    ) as wr_log:
+        # Optional header for easier parsing later
+        wr_log.write("episode,win_rate,final_reward\n")
+
         for line in f:
             if state_prefix not in line:
                 continue
@@ -66,6 +72,7 @@ def main() -> None:
 
             win_rate = wins / episodes
             running_win_rates.append(win_rate)
+            wr_log.write(f"{episodes},{win_rate:.6f},{reward}\n")
             print(
                 f"Episode {episodes}: final reward={reward}, "
                 f"running win rate={win_rate:.4f}"
@@ -86,8 +93,8 @@ def main() -> None:
     plt.tight_layout()
     plt.savefig(args.output, dpi=150)
     print(f"Saved win-rate plot to: {args.output}")
+    print(f"Saved win-rate log to: {winrate_log_path}")
 
 
 if __name__ == "__main__":
     main()
-
