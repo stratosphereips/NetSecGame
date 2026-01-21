@@ -9,7 +9,7 @@ import logging
 import argparse
 from pathlib import Path
 from netsecgame.game_components import GameState, Action, ActionType,  IP, Service ,Network
-from netsecgame.coordinator.coordinator import GameCoordinator
+from netsecgame.game.coordinator import GameCoordinator
 from cyst.api.configuration.network.node import NodeConfig
 
 from netsecgame.utils.utils import get_logging_level

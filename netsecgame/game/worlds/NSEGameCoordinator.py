@@ -13,7 +13,7 @@ from typing import Iterable
 from collections import defaultdict
 
 from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service
-from netsecgame.coordinator.coordinator import GameCoordinator
+from netsecgame.game.coordinator import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
 from netsecgame.utils.utils import get_logging_level

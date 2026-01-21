@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from netsecgame.utils.utils import get_logging_level
 from netsecgame.game_components import Action, ActionType
-from netsecgame.coordinator.worlds.NSEGameCoordinator import NSGCoordinator
+from netsecgame.game.worlds.NSEGameCoordinator import NSGCoordinator
 
 
 class WhiteBoxNSGCoordinator(NSGCoordinator):
