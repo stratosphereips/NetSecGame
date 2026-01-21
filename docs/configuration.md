@@ -15,6 +15,8 @@ The environment part defines the properties of the environment for the task (see
 - `save_tajectories` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of an episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask). The change also depend on the input from the agents:
 
+
+
 |Task configuration| Agent reset request | Result|
 |----------------------|----------------------|----------------------|
 |`use_dynamic_ips = True` | `randomize_topology = True`| Changed topology |
