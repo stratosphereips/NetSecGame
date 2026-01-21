@@ -23,5 +23,6 @@ Coordinator, having the role of the middle man in all communication between the 
 ## Episode
 The episode starts with sufficient amount of agents registering in the game. Each agent role has a maximum allowed number of steps defined in the task configuration. An episode ends if all agents reach the goal 
 
-::: AIDojoCoordinator.coordinator.AgentServer
-::: AIDojoCoordinator.coordinator.GameCoordinator
+::: netsecgame.game.coordinator.AgentServer
+::: netsecgame.game.coordinator.GameCoordinator
+::: netsecgame.game.worlds.NetSecGame.NetSecGame

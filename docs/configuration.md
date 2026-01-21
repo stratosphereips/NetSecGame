@@ -15,7 +15,43 @@ The environment part defines the properties of the environment for the task (see
 - `save_tajectories` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of an episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask). The change also depend on the input from the agents:
 
+### Available topologies
+There are 5 topologies available in NSG:
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
 
+  <div style="text-align: center;">
+    <img src="../figures/scenarios/scenario_1_small.png" style="width: 100%; height: 250px; object-fit: contain; border: 1px solid #ddd; padding: 10px; background: white;">
+    <br>
+    <strong>One network topology</strong>
+  </div>
+
+  <div style="text-align: center;">
+    <img src="../figures/scenarios/scenario_1_tiny.png" style="width: 100%; height: 250px; object-fit: contain; border: 1px solid #ddd; padding: 10px; background: white;">
+    <br>
+    <strong>Two networks tiny topology</strong>
+  </div>
+
+  <div style="text-align: center;">
+    <img src="../figures/scenarios/scenario_1_small.png" style="width: 100%; height: 250px; object-fit: contain; border: 1px solid #ddd; padding: 10px; background: white;">
+    <br>
+    <strong>Two networks small topology</strong>
+  </div>
+
+  <div style="text-align: center;">
+    <img src="../figures/scenarios/scenario_1.png" style="width: 100%; height: 250px; object-fit: contain; border: 1px solid #ddd; padding: 10px; background: white;">
+    <br>
+    <strong>Two networks topology</strong>
+  </div>
+
+  <div style="text-align: center;">
+    <img src="../figures/scenarios/three_nets.png" style="width: 100%; height: 250px; object-fit: contain; border: 1px solid #ddd; padding: 10px; background: white;">
+    <br>
+    <strong>Three networks topology</strong>
+  </div>
+
+  <div></div>
+
+</div>
 
 |Task configuration| Agent reset request | Result|
 |----------------------|----------------------|----------------------|
