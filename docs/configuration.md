@@ -203,3 +203,17 @@ Example of defender configuration:
         known_blocks: {}
 ```
 As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In the curent implementation, the *Defender* wins, if **NO ATTACKER** reaches their goal. 
+
+### Trajectory storing and analysis
+
+The trajectory is a sequence of GameStates, Actions, and rewards in one run of a game. It contains the complete information of the actions played by the agent, the rewards observed and their effect on the state of the environment.
+
+Trajectories performed by the agents can be stored in a file using the following configuration (on the server side):
+
+```yaml
+env:
+  save_trajectories: True
+```
+!!! warning "Caution"
+    Trajectory files can grow very fast. It is recommended to use this feature on evaluation/testing runs only. By default, this feature is not enabled.
+
