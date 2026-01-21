@@ -1173,6 +1173,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
 
-    game_server = NSGCoordinator(args.game_host, args.game_port, args.task_config, seed=args.seed)
+    game_server = NetSecGame(args.game_host, args.game_port, args.task_config, seed=args.seed)
     # Run it!
     game_server.run()

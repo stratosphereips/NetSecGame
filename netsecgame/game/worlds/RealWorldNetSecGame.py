@@ -188,6 +188,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
   
-    game_server = NSERealWorldGameCoordinator(args.game_host, args.game_port, args.task_config)
+    game_server = RealWorldNetSecGame(args.game_host, args.game_port, args.task_config)
     # Run it!
     game_server.run()
