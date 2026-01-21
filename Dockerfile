@@ -26,7 +26,7 @@ RUN if [ -f pyproject.toml ]; then pip install .[server] ; fi
 EXPOSE 9000 
 
 # Run the Python script when the container launches (with default arguments --task_config=netsecenv_conf.yaml --game_port=9000 --game_host=0.0.0.0)
-ENTRYPOINT ["python3", "-m", "netsecgame.coordinator.worlds.NSEGameCoordinator", "--task_config=netsecenv_conf.yaml", "--game_port=9000", "--game_host=0.0.0.0"]
+ENTRYPOINT ["python3", "-m", "netsecgame.game.NetSecGame", "--task_config=netsecenv_conf.yaml", "--game_port=9000", "--game_host=0.0.0.0"]
 
 # Default command arguments (can be overridden at runtime)
 CMD ["--debug_level=INFO"]
