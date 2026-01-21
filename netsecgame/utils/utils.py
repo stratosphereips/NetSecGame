@@ -104,35 +104,31 @@ def state_as_ordered_string(state:GameState)->str:
     ret += "}"
     return ret
 
-def observation_to_str(observation:Observation)-> str:
+def observation_as_dict(observation: Observation) -> dict:
     """
-    Generates JSON string representation of a given Observation object.
+    Generates dict representation of a given Observation object.
+    Acts as the single source of truth for the structure.
     """
-    state_str = observation.state.as_json()
-    observation_dict = {
-        'state': state_str,
-        'reward': observation.reward,
-        'end': observation.end,
-        'info': dict(observation.info)
-    }
-    try:
-        observation_str = json.dumps(observation_dict)
-        return observation_str
-    except Exception as e:
-        print(f"Error in encoding observation '{observation}' to JSON string: {e}")
-        raise e
-
-def observation_as_dict(observation:Observation)->dict:
-    """
-    Generates dict string representation of a given Observation object.
-    """
-    observation_dict = {
+    return {
         'state': observation.state.as_dict,
         'reward': observation.reward,
         'end': observation.end,
-        'info': observation.info
+        # Using dict() ensures safety if info is a namedtuple or other mapping
+        'info': dict(observation.info) 
     }
-    return observation_dict
+
+def observation_to_str(observation: Observation) -> str:
+    """
+    Generates JSON string representation of a given Observation object.
+    Relies on observation_as_dict to define the structure.
+    """
+    try:
+        # Clean JSON structure: {"state": {...}, "reward": 0, ...}
+        # No more escaped JSON strings inside the JSON.
+        return json.dumps(observation_as_dict(observation))
+    except Exception as e:
+        print(f"Error in encoding observation '{observation}' to JSON string: {e}")
+        raise e
 
 def parse_log_content(log_content:str)->Optional[list]:
     try:
