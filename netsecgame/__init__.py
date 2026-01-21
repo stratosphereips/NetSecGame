@@ -19,7 +19,7 @@ from .game_components import (
     Service
 )
 # Base agent
-from .base_agent import BaseAgent
+from .agents.base_agent import BaseAgent
 
 # Selected util functions
 from .utils.utils import (
