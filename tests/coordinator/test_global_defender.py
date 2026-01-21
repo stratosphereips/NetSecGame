@@ -57,6 +57,6 @@ def test_mock_stochastic_probabilities(defender, episode_actions):
     action = Action(ActionType.ScanNetwork, {})
     episode_actions += [{"action_type": str(ActionType.ScanNetwork)}] * 4  # Exceed threshold
 
-    with patch("NetSecGame.coordinator.global_defender.random", return_value=0.01):  # Force detection probability
+    with patch("netsecgame.game.global_defender.random", return_value=0.01):  # Force detection probability
         result = defender.stochastic_with_threshold(action, episode_actions, tw_size=5)
         assert result  # Should be True since we forced a low probability value
