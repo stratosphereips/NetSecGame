@@ -11,9 +11,9 @@ from pathlib import Path
 
 from netsecgame.utils.utils import get_logging_level
 from netsecgame.game_components import GameState, Action, ActionType, Service,IP
-from netsecgame.game.worlds.NSEGameCoordinator import NSGCoordinator
+from netsecgame.game.worlds.NetSecGame import NetSecGame
 
-class NSERealWorldGameCoordinator(NSGCoordinator):
+class RealWorldNetSecGame(NetSecGame):
     
     def _execute_action(self, current_state:GameState, action:Action)-> GameState:
         """

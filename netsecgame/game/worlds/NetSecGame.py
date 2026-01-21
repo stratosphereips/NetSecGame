@@ -18,7 +18,7 @@ from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, E
 
 from netsecgame.utils.utils import get_logging_level
 
-class NSGCoordinator(GameCoordinator):
+class NetSecGame(GameCoordinator):
 
     def __init__(self, game_host, game_port, task_config:str, allowed_roles=["Attacker", "Defender", "Benign"], seed=None):
         super().__init__(game_host, game_port, service_host=None, service_port=None, allowed_roles=allowed_roles, task_config_file=task_config)

@@ -7,12 +7,12 @@ import json
 from pathlib import Path
 from netsecgame.utils.utils import get_logging_level
 from netsecgame.game_components import Action, ActionType
-from netsecgame.game.worlds.NSEGameCoordinator import NSGCoordinator
+from netsecgame.game.worlds.NetSecGame import NetSecGame
 
 
-class WhiteBoxNSGCoordinator(NSGCoordinator):
+class WhiteBoxNetSecGame(NetSecGame):
     """
-    WhiteBoxNSGCoordinator is an extension for the NetSecGame environment
+    WhiteBoxNetSecGame is an extension for the NetSecGame environment
     that provides list of all possible actions to each agent that registers in the game.
     """
     def __init__(self, game_host, game_port, task_config, allowed_roles=["Attacker", "Defender", "Benign"], seed=42, include_block_action=False):
