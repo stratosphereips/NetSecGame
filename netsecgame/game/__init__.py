@@ -1,10 +1,11 @@
 try:
     # Attempt to import server-specific dependencies
-    import cyst
-    import aiohttp
-    import faker
-    import numpy as np
-    import requests
+    # disable ruff error F401 for unused imports (used for dependency checking)
+    import cyst # noqa: F401
+    import aiohttp # noqa: F401
+    import faker # noqa: F401
+    import numpy as np # noqa: F401
+    import requests # noqa: F401 
 
     # from .coordinator import AgentServer, GameCoordinator
     # from .worlds.NetSecGame import NetSecGame
