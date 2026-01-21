@@ -29,6 +29,8 @@ from .utils.utils import (
     read_trajectories_from_jsonl,
     observation_as_dict,
     observation_to_str,
+    observation_from_str,
+    observation_from_dict,
     generate_valid_actions
 )
 
@@ -57,5 +59,7 @@ __all__ = [
     "read_trajectories_from_jsonl",
     "observation_as_dict",
     "observation_to_str",
+    "observation_from_str",
+    "observation_from_dict",
     "generate_valid_actions"
 ]
