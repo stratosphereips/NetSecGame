@@ -130,6 +130,58 @@ def observation_to_str(observation: Observation) -> str:
         print(f"Error in encoding observation '{observation}' to JSON string: {e}")
         raise e
 
+def observation_from_dict(data: dict) -> Observation:
+    """
+    Reconstructs an Observation object from a dictionary representation.
+    
+    Args:
+        data (dict): The dictionary containing observation data.
+        
+    Returns:
+        Observation: The reconstructed Observation namedtuple.
+    """
+    try:
+        # Since we refactored serialization, 'state' is now a dictionary
+        state_data = data.get("state")
+        
+        # Robustness check: Ensure we have a dict before converting
+        if isinstance(state_data, dict):
+            state = GameState.from_dict(state_data)
+        else:
+            raise ValueError(f"Expected dictionary for 'state', got {type(state_data)}")
+
+        return Observation(
+            state=state,
+            reward=float(data.get("reward", 0.0)),
+            end=bool(data.get("end", False)),
+            info=data.get("info", {})
+        )
+    except Exception as e:
+        print(f"Error in creating Observation from dict: {e}")
+        raise e
+
+def observation_from_str(json_str: str) -> Observation:
+    """
+    Reconstructs an Observation object from a JSON string representation.
+    
+    Args:
+        json_str (str): The JSON string representation of the observation.
+        
+    Returns:
+        Observation: The reconstructed Observation namedtuple.
+    """
+    try:
+        # 1. Parse the main JSON string -> returns a dict
+        data = json.loads(json_str)
+        
+        # 2. Pass that dict to our existing from_dict method
+        # This keeps the logic DRY (Don't Repeat Yourself)
+        return observation_from_dict(data)
+        
+    except Exception as e:
+        print(f"Error in creating Observation from string: {e}")
+        raise e
+
 def parse_log_content(log_content:str)->Optional[list]:
     try:
         logs = []
@@ -251,3 +303,12 @@ if __name__ == "__main__":
                         IP("192.168.1.2"):{Data("McGiver", "data2")}})
     
     print(state_as_ordered_string(state))
+    obs = Observation(state=state, reward=10.0, end=False, info={"info1":"value1"})
+    obs_str = observation_to_str(obs)
+    print(obs_str)
+    obs_restored = observation_from_str(obs_str)
+    print(obs_restored)
+    print(observation_as_dict(obs_restored))
+    actions = generate_valid_actions(state, include_blocks=True)
+    for action in actions:
+        print(action)
