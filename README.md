@@ -143,7 +143,7 @@ docker run -d --rm --name netsecgame-server ^
 #### Locally
 The environment can be started locally with from the root folder of the repository with following command:
 ```bash
-python3 -m netsecgame.coordinator.worlds.NSEGameCoordinator \
+python3 -m netsecgame.game.NetSecGame \
   --task_config=./examples/example_task_configuration.yaml \
   --game_port=9000
   --debug_level="INFO"
@@ -158,27 +158,28 @@ The architecture of the environment can be seen [here](docs/Architecture.md).
 The NetSecGame environment has several components in the following files:
 ```
 ├── NetSecgame/
-|   ├── base_agent.py # Basic agent class. Defines the API for agent-server communication
-|	├── game_components.py # contains basic building blocks of the environment
-|	├── utils/
-|		├── utils.py
-|		├── log_parser.py
-|		├── gamaplay_graphs.py
-|		├── actions_parser.py
-|	├── coordinator/ # contains components required for running the game server
+|	├── agents/
+|		├── base_agent.py # Basic agent class. Defines the API for agent-server communication
+|	├── game/
 |		├── scenarios/
 |		    ├── tiny_scenario_configuration.py
 |		    ├── smaller_scenario_configuration.py
 |		    ├── scenario_configuration.py
 |		    ├── three_net_configuration.py
 |		├── worlds/
-|   		├── NSGCoordinator.py # basic simulation, pure NSG
-|   		├── NSGRealWorldCoordinator.py # Extension of `NSGCoordinator` - runs actions in the *network of the host computer*
-|   		├── CYSTCoordinator.py # Extension of `NSGCoordinator` - runs simulation in CYST engine.
-|   		├── WhiteBoxNSGCoordinator.py # Extension of `NSGCoordinator` - provides agents with full list of actions upon registration.
+|   		├── NetSecGame.py # (NSG) basic simulation 
+|   		├── RealWorldNetSecGame.py # Extension of `NSG` - runs actions in the *network of the host computer*
+|   		├── CYSTCoordinator.py # Extension of `NSG` - runs simulation in CYST engine.
+|   		├── WhiteBoxNetSecGame.py # Extension of `NSG` - provides agents with full list of actions upon registration.
 |		├── config_parser.py # NSG task configuration parser
 |		├── coordinator.py # Core game server. Not to be run as stand-alone world (see worlds/)
 |	    ├── global_defender.py # Stochastic (non-agentic defender)
+|	├── game_components.py # contains basic building blocks of the environment
+|	├── utils/
+|		├── utils.py
+|		├── log_parser.py
+|		├── gamaplay_graphs.py
+|		├── actions_parser.py
 ```
 #### Directory Details
 - `coordinator.py`: Basic coordinator class. Handles agent communication and coordination. **Does not implement dynamics of the world** and must be extended (see examples in `worlds/`).
