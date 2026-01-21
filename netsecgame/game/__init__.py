@@ -18,7 +18,7 @@ try:
     # ]
 except ImportError as e:
     raise ImportError(
-        f"Failed to import 'netsecgame.worlds'. This module requires server dependencies.\n"
+        f"Failed to import 'netsecgame.game'. This module requires server dependencies.\n"
         f"Missing dependency: {e.name}\n"
         f"Please install them using: pip install 'netsecgame[server]'"
-    ) from e
+    ) from None
