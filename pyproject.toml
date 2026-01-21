@@ -61,7 +61,8 @@ dev = [
     "netsecgame[server]",
     "pytest",
     "ruff",
-    "pytest-asyncio"
+    "pytest-asyncio",
+    "twine"
 ]
 
 docs = [
