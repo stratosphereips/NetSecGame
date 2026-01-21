@@ -12,7 +12,6 @@ from .game_components import (
     GameState,
     GameStatus,
     IP,
-    Data,
     Network,
     Observation,
     ProtocolConfig,
