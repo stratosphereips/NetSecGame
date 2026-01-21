@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from types import SimpleNamespace
 
-from netsecgame.coordinator.coordinator import GameCoordinator
+from netsecgame.game.coordinator import GameCoordinator
 from netsecgame.game_components import ActionType, Action, AgentStatus, GameState, Observation, GameStatus
 
 # -----------------------
