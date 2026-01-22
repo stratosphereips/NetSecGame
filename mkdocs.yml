@@ -26,6 +26,7 @@ plugins:
 markdown_extensions:
   - pymdownx.arithmatex
   - pymdownx.superfences
+  - pymdownx.highlight
   - admonition
 
 extra_javascript:
