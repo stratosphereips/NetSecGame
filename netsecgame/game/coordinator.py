@@ -863,13 +863,13 @@ class GameCoordinator:
         raise NotImplementedError
     
     async def reset(self)->bool:
-        return NotImplemented
+        raise NotImplementedError
 
     def _initialize(self):
         """
         Initialize the game state and other necessary components. This is called at the start of the game after the configuration is loaded.
         """
-        return NotImplemented
+        raise NotImplementedError
 
     def goal_check(self, agent_addr:tuple)->bool:
         """
