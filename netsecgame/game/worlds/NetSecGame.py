@@ -9,7 +9,7 @@ import netaddr, re
 import json
 from faker import Faker
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Any
 from collections import defaultdict
 
 from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service
@@ -57,17 +57,20 @@ class NetSecGame(GameCoordinator):
             None
         """
         # Load CYST configuration
-        self._process_cyst_config(self._cyst_objects)
-                # Check if dynamic network and ip adddresses are required
-        if self._use_dynamic_ips:
-            self.logger.info("Dynamic change of the IP and network addresses enabled")
-            self._faker_object = Faker()
-            Faker.seed(self._seed)  
-        # store initial values for parts which are modified during the game
-        self._data_original = copy.deepcopy(self._data)
-        self._data_content_original = copy.deepcopy(self._data_content)
-        self._firewall_original = copy.deepcopy(self._firewall)
-        self.logger.info("Environment initialization finished")
+        if self._cyst_objects is not None:
+            self._process_cyst_config(self._cyst_objects)
+                    # Check if dynamic network and ip adddresses are required
+            if self._use_dynamic_ips:
+                self.logger.info("Dynamic change of the IP and network addresses enabled")
+                self._faker_object = Faker()
+                Faker.seed(self._seed)  
+            # store initial values for parts which are modified during the game
+            self._data_original = copy.deepcopy(self._data)
+            self._data_content_original = copy.deepcopy(self._data_content)
+            self._firewall_original = copy.deepcopy(self._firewall)
+            self.logger.info("Environment initialization finished")
+        else:
+            self.logger.error("CYST configuration not loaded, cannot initialize the environment!")
 
     def _get_hosts_from_view(self, view_hosts:Iterable, allowed_hosts=None)->set[IP]:
         """
@@ -295,7 +298,7 @@ class NetSecGame(GameCoordinator):
         self.logger.info(f"Generated GameState:{game_state}")
         return game_state
 
-    def _process_cyst_config(self, configuration_objects:list)-> None:
+    def _process_cyst_config(self, configuration_objects:list[Any])-> None:
         """
         Process the cyst configuration file
         """
