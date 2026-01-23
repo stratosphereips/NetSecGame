@@ -167,7 +167,7 @@ class Network():
         """
         try:
             return netaddr.IPNetwork(str(self)) < netaddr.IPNetwork(str(other))
-        except netaddr.core.AddrFormatError:
+        except netaddr.AddrFormatError:
             return str(self.ip) < str(other.ip)
     
     def __le__(self, other)->bool:
@@ -182,7 +182,7 @@ class Network():
         """
         try:
             return netaddr.IPNetwork(str(self)) <= netaddr.IPNetwork(str(other))
-        except netaddr.core.AddrFormatError:
+        except netaddr.AddrFormatError:
             return str(self.ip) <= str(other.ip)
     
     def __gt__(self, other)->bool:
@@ -197,7 +197,7 @@ class Network():
         """
         try:
             return netaddr.IPNetwork(str(self)) > netaddr.IPNetwork(str(other))
-        except netaddr.core.AddrFormatError:
+        except netaddr.AddrFormatError:
             return str(self.ip) > str(other.ip)
     
     def is_private(self)->bool:
@@ -575,7 +575,7 @@ class GameState():
                         if str(host) in netaddr.IPNetwork(str(net)):
                             edges.append((graph_nodes[net], graph_nodes[host]))
                             edges.append((graph_nodes[host], graph_nodes[net]))
-                except netaddr.core.AddrFormatError as error:
+                except netaddr.AddrFormatError as error:
                     print(host, self.known_networks, self.known_hosts)
                     print("Error:")
                     print(error)
