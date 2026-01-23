@@ -665,7 +665,7 @@ class NetSecGame(GameCoordinator):
         """
         Returns set of Service tuples from given hostIP
         """
-        found_services = {}
+        found_services = set()
         if host_ip in self._ip_to_hostname: #is it existing IP?
             if self._ip_to_hostname[host_ip] in self._services: #does it have any services?
                 if host_ip in controlled_hosts: # Should  local services be included ?
@@ -712,7 +712,7 @@ class NetSecGame(GameCoordinator):
             self.logger.debug("\t\t\tCan't get data in host. The host is not controlled.")
         return known_blocks
 
-    def _get_data_content(self, host_ip:str, data_id:str)->str:
+    def _get_data_content(self, host_ip:str, data_id:str)->str|None:
         """
         Returns content of data identified by a host_ip and data_ip.
         """
@@ -756,7 +756,7 @@ class NetSecGame(GameCoordinator):
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
         
-    def _record_false_positive(self, src_ip:IP, dst_ip:IP, agent_id:tuple)->bool:
+    def _record_false_positive(self, src_ip:IP, dst_ip:IP, agent_id:tuple)-> None:
         # only record false positive if the agent is benign
         if self.is_agent_benign(agent_id):
             # find agent(s) that created the rule
