@@ -686,17 +686,8 @@ class GameState():
         Returns:
             GameState: The created GameState object.
         """
-        json_data = json.loads(json_string)
-        state = GameState(
-            known_networks = {Network(x["ip"], x["mask"]) for x in json_data["known_networks"]},
-            known_hosts = {IP(x["ip"]) for x in json_data["known_hosts"]},
-            controlled_hosts = {IP(x["ip"]) for x in json_data["controlled_hosts"]},
-            known_services = {IP(k):{Service(s["name"], s["type"], s["version"], s["is_local"])
-                for s in services} for k,services in json_data["known_services"].items()},  
-            known_data = {IP(k):{Data(v["owner"], v["id"], v["size"], v["type"], v["content"]) for v in values} for k,values in json_data["known_data"].items()},
-            known_blocks = {IP(target_host):{IP(blocked_host) for blocked_host in blocked_hosts} for target_host, blocked_hosts in json_data["known_blocks"].items()}
-            )
-        return state
+        data_dict = json.loads(json_string)
+        return cls.from_dict(data_dict)
 
 
 class Observation(NamedTuple):

@@ -86,3 +86,14 @@ def test_ip_hash(sample_private_ip1, sample_private_ip1_copy):
     ip_1, _ = sample_private_ip1
     ip_2, _ = sample_private_ip1_copy
     assert hash(ip_1) == hash(ip_2)
+
+def test_ip_is_private_external():
+    """Test is_private returns False for 'external' string"""
+    ip = IP("external")
+    assert ip.is_private() is False
+
+def test_ip_eq_other_type(sample_private_ip1):
+    """Test equality with non-IP object"""
+    ip_1, _ = sample_private_ip1
+    assert ip_1.__eq__("some_string") is NotImplemented
+    assert (ip_1 == "some_string") is False  # Python fallback

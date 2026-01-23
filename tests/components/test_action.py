@@ -1,6 +1,7 @@
 # Authors:  Maria Rigaki - maria.rigaki@aic.fel.cvut.cz
 #           Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import json
+import pytest
 from netsecgame.game_components import Action, ActionType, IP, Network, Data, Service, AgentInfo
 
 class TestComponentActionType:
@@ -448,3 +449,45 @@ class TestComponentAction:
             assert action == new_action
             assert action_dict["action_type"] == str(action.type)
             assert len(action_dict["parameters"]) == 0
+
+    def test_action_type_eq_unsupported(self):
+        """Test ActionType equality with unsupported type"""
+        assert (ActionType.FindData == 123) is False
+
+    def test_action_type_from_string_invalid(self):
+        """Test ActionType.from_string with invalid string"""
+        with pytest.raises(ValueError):
+            ActionType.from_string("InvalidAction")
+
+    def test_action_eq_unsupported(self):
+        """Test Action equality with unsupported type"""
+        action = Action(action_type=ActionType.FindData)
+        assert (action == "some_string") is False
+
+    def test_action_from_dict_invalid_parameter(self):
+        """Test Action.from_dict with invalid parameter key"""
+        data = {
+            "action_type": "ActionType.FindData",
+            "parameters": {"unknown_param": "value"}
+        }
+        with pytest.raises(ValueError):
+            Action.from_dict(data)
+
+    def test_action_to_dict_bool_parameter(self):
+        """Test handling of boolean parameters in as_dict"""
+        action = Action(
+            action_type=ActionType.ResetGame,
+            parameters={"request_trajectory": True}
+        )
+        d = action.as_dict
+        assert d["parameters"]["request_trajectory"] is True
+
+    def test_action_to_dict_str_parameter(self):
+        """Test handling of string parameters in as_dict"""
+        # Inject a parameter that is just a string (not a dataclass)
+        # We need a new ActionType or reuse one that accepts arbitrary params?
+        # The existing code mainly expects specific params.
+        # But we can force it for testing as_dict logic.
+        action = Action(ActionType.FindData, parameters={"simple_param": "simple_value"})
+        d = action.as_dict
+        assert d["parameters"]["simple_param"] == "simple_value"
