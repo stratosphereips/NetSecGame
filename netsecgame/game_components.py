@@ -1,7 +1,8 @@
+from __future__ import annotations
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 # Library of helpful functions and objects to play the net sec game
 from dataclasses import dataclass, field, asdict
-from typing import Dict, Any
+from typing import Dict, Any, List, Set, Tuple, Optional, NamedTuple
 import dataclasses
 from collections import namedtuple
 import json
@@ -11,7 +12,6 @@ import netaddr
 import ipaddress
 import ast
 
-
 @dataclass(frozen=True, eq=True, order=True, slots=True)
 class Service():
     """
@@ -19,9 +19,9 @@ class Service():
 
     Attributes:
         name (str): Name of the service.
-        type (str): Type of the service. Default `uknown`
-        version (str): Version of the service. Default `uknown`
-        is_local (bool): Whether the service is local. Default True
+        type (str): Type of the service. Default `unknown`.
+        version (str): Version of the service. Default `unknown`.
+        is_local (bool): Whether the service is local. Default True.
     """
     name: str
     type: str = "unknown"
@@ -29,12 +29,12 @@ class Service():
     is_local: bool = True
 
     @classmethod
-    def from_dict(cls, data: dict)->"Service":
+    def from_dict(cls, data: Dict[str, Any]) -> Service:
         """
         Create a Service object from a dictionary.
 
         Args:
-            data (dict): Dictionary with service attributes.
+            data (Dict[str, Any]): Dictionary with service attributes.
 
         Returns:
             Service: The created Service object.
@@ -64,7 +64,7 @@ class IP():
         except ValueError:
             raise ValueError(f"Invalid IP address provided: {self.ip}")
 
-    def __repr__(self)->str:
+    def __repr__(self) -> str:
         """
         Return the string representation of the IP.
 
@@ -73,26 +73,26 @@ class IP():
         """
         return self.ip
 
-    def __eq__(self, other)->bool:
+    def __eq__(self, other: object) -> bool:
         """
         Check equality with another IP object.
 
         Args:
-            other (IP): Another IP object.
+            other (object): Another object to compare with.
 
         Returns:
-            is_equal: True if equal, False otherwise.
+            bool: True if equal, False otherwise.
         """
         if not isinstance(other, IP):
             return NotImplemented
         return self.ip == other.ip
         
-    def is_private(self)->bool:
+    def is_private(self) -> bool:
         """
         Check if the IP address is private. Uses ipaddress module.
 
         Returns:
-            is_private: True if the IP is private, False otherwise.
+            bool: True if the IP is private, False otherwise.
         """
         try:
             return ipaddress.IPv4Network(self.ip).is_private
@@ -104,12 +104,12 @@ class IP():
             return False
     
     @classmethod
-    def from_dict(cls, data: dict)->"IP":
+    def from_dict(cls, data: Dict[str, Any]) -> IP:
         """
         Build the IP object from a dictionary representation.
 
         Args:
-            data (dict): Dictionary with IP attributes.
+            data (Dict[str, Any]): Dictionary with IP attributes.
 
         Returns:
             IP: The created IP object.
@@ -137,7 +137,7 @@ class Network():
     ip: str
     mask: int
 
-    def __repr__(self)->str:
+    def __repr__(self) -> str:
         """
         Return the string representation of the network.
 
@@ -146,7 +146,7 @@ class Network():
         """
         return f"{self.ip}/{self.mask}"
 
-    def __str__(self)->str:
+    def __str__(self) -> str:
         """
         Return the string representation of the network.
 
@@ -155,7 +155,7 @@ class Network():
         """
         return f"{self.ip}/{self.mask}"
 
-    def __lt__(self, other)->bool:
+    def __lt__(self, other: Network) -> bool:
         """
         Less-than comparison for networks.
 
@@ -170,7 +170,7 @@ class Network():
         except netaddr.AddrFormatError:
             return str(self.ip) < str(other.ip)
     
-    def __le__(self, other)->bool:
+    def __le__(self, other: Network) -> bool:
         """
         Less-than-or-equal comparison for networks.
 
@@ -185,7 +185,7 @@ class Network():
         except netaddr.AddrFormatError:
             return str(self.ip) <= str(other.ip)
     
-    def __gt__(self, other)->bool:
+    def __gt__(self, other: Network) -> bool:
         """
         Greater-than comparison for networks.
 
@@ -200,7 +200,7 @@ class Network():
         except netaddr.AddrFormatError:
             return str(self.ip) > str(other.ip)
     
-    def is_private(self)->bool:
+    def is_private(self) -> bool:
         """
         Check if the network is private. Uses ipaddress module.
 
@@ -214,17 +214,18 @@ class Network():
             return True
     
     @classmethod
-    def from_dict(cls, data: dict)->"Network":
+    def from_dict(cls, data: Dict[str, Any]) -> Network:
         """
         Build the Network object from a dictionary.
 
         Args:
-            data (dict): Dictionary with network attributes.
+            data (Dict[str, Any]): Dictionary with network attributes.
 
         Returns:
             Network: The created Network object.
         """
         return cls(**data)
+
 
 @dataclass(frozen=True, eq=True, order=True, slots=True)
 class Data():
@@ -252,13 +253,14 @@ class Data():
             int: The hash value.
         """
         return hash((self.owner, self.id, self.type))
+
     @classmethod
-    def from_dict(cls, data: dict)->"Data":
+    def from_dict(cls, data: Dict[str, Any]) -> Data:
         """
         Build the Data object from a dictionary.
 
         Args:
-            data (dict): Dictionary with data attributes.
+            data (Dict[str, Any]): Dictionary with data attributes.
 
         Returns:
             Data: The created Data object.
@@ -280,7 +282,7 @@ class ActionType(enum.Enum):
     QuitGame = "QuitGame"
     ResetGame = "ResetGame"
 
-    def to_string(self)->str:
+    def to_string(self) -> str:
         """
         Convert the ActionType enum to string.
 
@@ -289,12 +291,12 @@ class ActionType(enum.Enum):
         """
         return self.value
     
-    def __eq__(self, other)->bool:
+    def __eq__(self, other: object) -> bool:
         """
         Compare ActionType with another ActionType or string.
 
         Args:
-            other (ActionType or str): The object to compare.
+            other (object): The object to compare.
 
         Returns:
             bool: True if equal, False otherwise.
@@ -307,7 +309,7 @@ class ActionType(enum.Enum):
            return self.value == other.replace("ActionType.", "")
         return False
 
-    def __hash__(self)->int:
+    def __hash__(self) -> int:
         """
         Compute the hash of the ActionType.
 
@@ -318,7 +320,7 @@ class ActionType(enum.Enum):
         return hash(self.value)
 
     @classmethod
-    def from_string(cls, name)->"ActionType":
+    def from_string(cls, name: str) -> ActionType:
         """
         Convert a string to an ActionType enum. Strips 'ActionType.' if present.
 
@@ -350,7 +352,7 @@ class AgentInfo():
     name: str
     role: str
 
-    def __repr__(self)->str:
+    def __repr__(self) -> str:
         """
         Return the string representation of the AgentInfo.
 
@@ -361,12 +363,12 @@ class AgentInfo():
 
 
     @classmethod
-    def from_dict(cls, data: dict)->"AgentInfo":
+    def from_dict(cls, data: Dict[str, Any]) -> AgentInfo:
         """
         Build the AgentInfo object from a dictionary.
 
         Args:
-            data (dict): Dictionary with agent info attributes.
+            data (Dict[str, Any]): Dictionary with agent info attributes.
 
         Returns:
             AgentInfo: The created AgentInfo object.
@@ -406,7 +408,7 @@ class Action:
     
 
     @property
-    def type(self)->ActionType:
+    def type(self) -> ActionType:
         """
         Return the action type.
 
@@ -425,7 +427,7 @@ class Action:
         return json.dumps(self.as_dict)
 
     @classmethod
-    def from_dict(cls, data_dict: Dict[str, Any]) -> "Action":
+    def from_dict(cls, data_dict: Dict[str, Any]) -> Action:
         """
         Create an Action from a dictionary.
 
@@ -439,7 +441,7 @@ class Action:
             ValueError: If an unsupported parameter is encountered.
         """
         action_type = ActionType.from_string(data_dict["action_type"])
-        params = {}
+        params: Dict[str, Any] = {}
         for k, v in data_dict["parameters"].items():
             match k:
                 case "source_host" | "target_host" | "blocked_host":
@@ -462,7 +464,7 @@ class Action:
         return cls(action_type=action_type, parameters=params)
 
     @classmethod
-    def from_json(cls, json_string: str) -> "Action":
+    def from_json(cls, json_string: str) -> Action:
         """
         Create an Action from a JSON string.
 
@@ -527,27 +529,28 @@ class GameState():
     Represents the state of the game.
 
     Attributes:
-        controlled_hosts (set): Controlled hosts.
-        known_hosts (set): Known hosts.
-        known_services (dict): Known services.
-        known_data (dict): Known data.
-        known_networks (set): Known networks.
-        known_blocks (dict): Known blocks.
+        controlled_hosts (Set[IP]): Controlled hosts.
+        known_hosts (Set[IP]): Known hosts.
+        known_services (Dict[IP, Set[Service]]): Known services.
+        known_data (Dict[IP, Set[Data]]): Known data.
+        known_networks (Set[Network]): Known networks.
+        known_blocks (Dict[IP, Set[IP]]): Known blocks.
     """
-    controlled_hosts: set = field(default_factory=set, hash=True)
-    known_hosts: set = field(default_factory=set, hash=True)
-    known_services: dict = field(default_factory=dict, hash=True)
-    known_data: dict = field(default_factory=dict, hash=True)
-    known_networks: set = field(default_factory=set, hash=True)
-    known_blocks: dict = field(default_factory=dict, hash=True)
+    controlled_hosts: Set[IP] = field(default_factory=set, hash=True)
+    known_hosts: Set[IP] = field(default_factory=set, hash=True)
+    known_services: Dict[IP, Set[Service]] = field(default_factory=dict, hash=True)
+    known_data: Dict[IP, Set[Data]] = field(default_factory=dict, hash=True)
+    known_networks: Set[Network] = field(default_factory=set, hash=True)
+    known_blocks: Dict[IP, Set[IP]] = field(default_factory=dict, hash=True)
     
     @property
-    def as_graph(self)->tuple:
+    def as_graph(self) -> Tuple[List[int], List[int], List[Tuple[int, int]], Dict[Any, int]]:
         """
         Build a graph representation of the game state.
 
         Returns:
-            tuple: (node_features, controlled, edges, node_index_map)
+            Tuple[List[int], List[int], List[Tuple[int, int]], Dict[Any, int]]: 
+            (node_features, controlled, edges, node_index_map)
         """
         node_types = {"network":0, "host":1, "service":2, "datapoint":3, "blocks": 4}
         graph_nodes = {}
@@ -629,29 +632,30 @@ class GameState():
         return json.dumps(ret_dict)
 
     @property
-    def as_dict(self)->dict:
+    def as_dict(self) -> Dict[str, Any]:
         """
         Return the dictionary representation of the GameState.
 
         Returns:
-            dict: The game state as a dictionary.
+            Dict[str, Any]: The game state as a dictionary.
         """
-        ret_dict = {"known_networks":[dataclasses.asdict(x) for x in self.known_networks],
+        ret_dict = {
+            "known_networks":[dataclasses.asdict(x) for x in self.known_networks],
             "known_hosts":[dataclasses.asdict(x) for x in self.known_hosts],
             "controlled_hosts":[dataclasses.asdict(x) for x in self.controlled_hosts],
             "known_services": {str(host):[dataclasses.asdict(s) for s in services] for host,services in self.known_services.items()},
             "known_data":{str(host):[dataclasses.asdict(d) for d in data] for host,data in self.known_data.items()},
             "known_blocks":{str(target_host):[dataclasses.asdict(blocked_host) for blocked_host in blocked_hosts] for target_host, blocked_hosts in self.known_blocks.items()}
-                    }
+        }
         return ret_dict
 
     @classmethod
-    def from_dict(cls, data_dict:dict)->"GameState":
+    def from_dict(cls, data_dict: Dict[str, Any]) -> GameState:
         """
         Create a GameState from a dictionary.
 
         Args:
-            data_dict (dict): The game state as a dictionary.
+            data_dict (Dict[str, Any]): The game state as a dictionary.
 
         Returns:
             GameState: The created GameState object.
@@ -672,7 +676,7 @@ class GameState():
         return state
 
     @classmethod
-    def from_json(cls, json_string)->"GameState":
+    def from_json(cls, json_string: str) -> GameState:
         """
         Create a GameState from a JSON string.
 
@@ -695,16 +699,20 @@ class GameState():
         return state
 
 
-# Observation - given to agent after taking an action
-"""
-Observations are given when making a step in the environment.
- - observation: current state of the environment
- - reward: float  value with immediate reward for last step
- - end: boolean, True if the game ended. 
-    No further interaction is possible (either terminal state or because of timeout)
- - info: dict, can contain additional information about the reason for ending
-"""
-Observation = namedtuple("Observation", ["state", "reward", "end", "info"])
+class Observation(NamedTuple):
+    """
+    Observations are given when making a step in the environment.
+    
+    Attributes:
+        state (GameState): Current state of the environment.
+        reward (float): Value with immediate reward for last step.
+        end (bool): True if the game ended.
+        info (Dict[str, Any]): Dictionary with additional information about the reason for ending.
+    """
+    state: GameState
+    reward: float
+    end: bool
+    info: Dict[str, Any]
 
 @enum.unique
 class GameStatus(enum.Enum):
@@ -719,7 +727,7 @@ class GameStatus(enum.Enum):
     FORBIDDEN = 403
     
     @classmethod
-    def from_string(cls, string:str)->"GameStatus":
+    def from_string(cls, string: str) -> GameStatus:
         """
         Convert a string to a GameStatus enum.
 
@@ -742,6 +750,7 @@ class GameStatus(enum.Enum):
                 return GameStatus.RESET_DONE
             case _:
                 raise ValueError(f"Invalid GameStatus string: {string}")
+    
     def __repr__(self) -> str:
         """
         Return the string representation of the GameStatus.
@@ -764,7 +773,7 @@ class AgentStatus(enum.Enum):
     Success = "Success"
     Fail = "Fail"
     
-    def to_string(self)->str:
+    def to_string(self) -> str:
         """
         Convert the AgentStatus enum to string.
 
@@ -773,12 +782,12 @@ class AgentStatus(enum.Enum):
         """
         return self.value
     
-    def __eq__(self, other)->bool:
+    def __eq__(self, other: object) -> bool:
         """
         Compare AgentStatus with another AgentStatus or string.
 
         Args:
-            other (AgentStatus or str): The object to compare.
+            other (object): The object to compare.
 
         Returns:
             bool: True if equal, False otherwise.
@@ -791,7 +800,7 @@ class AgentStatus(enum.Enum):
            return self.value == other.replace("AgentStatus.", "")
         return False
 
-    def __hash__(self)->int:
+    def __hash__(self) -> int:
         """
         Compute the hash of the AgentStatus.
 
@@ -802,7 +811,7 @@ class AgentStatus(enum.Enum):
         return hash(self.value)
 
     @classmethod
-    def from_string(cls, name)->"AgentStatus":
+    def from_string(cls, name: str) -> AgentStatus:
         """
         Convert a string to an AgentStatus enum.
 
@@ -831,5 +840,5 @@ class ProtocolConfig:
         END_OF_MESSAGE (bytes): End-of-message marker.
         BUFFER_SIZE (int): Buffer size for messages.
     """
-    END_OF_MESSAGE = b"EOF"
-    BUFFER_SIZE = 8192 
+    END_OF_MESSAGE: bytes = b"EOF"
+    BUFFER_SIZE: int = 8192 
