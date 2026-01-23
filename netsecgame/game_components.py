@@ -661,7 +661,15 @@ class GameState():
             GameState: The created GameState object.
         """
         if "known_blocks" in data_dict:
-            known_blocks = {IP(target_host):{IP(blocked_host["ip"]) for blocked_host in blocked_hosts} for target_host, blocked_hosts in data_dict["known_blocks"].items()}
+            known_blocks = {}
+            for target_host, blocked_hosts in data_dict["known_blocks"].items():
+                blocked_ips = set()
+                for blocked_host in blocked_hosts:
+                    ip_val = blocked_host["ip"]
+                    if isinstance(ip_val, dict):
+                         ip_val = ip_val["ip"]
+                    blocked_ips.add(IP(ip_val))
+                known_blocks[IP(target_host)] = blocked_ips
         else:
             known_blocks = {}
         state = GameState(
