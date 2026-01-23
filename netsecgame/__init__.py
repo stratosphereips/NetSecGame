@@ -33,6 +33,9 @@ from .utils.utils import (
     generate_valid_actions
 )
 
+# Trajectory Recorder
+from .utils.trajectory_recorder import TrajectoryRecorder
+
 # Define the public API of the package
 __all__ = [
     # Metadata
@@ -60,5 +63,7 @@ __all__ = [
     "observation_to_str",
     "observation_from_str",
     "observation_from_dict",
-    "generate_valid_actions"
+    "generate_valid_actions",
+    # Trajectory recorder
+    "TrajectoryRecorder"
 ]
