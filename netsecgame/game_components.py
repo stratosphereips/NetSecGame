@@ -12,7 +12,7 @@ import ipaddress
 import ast
 
 
-@dataclass(frozen=True, eq=True, order=True)
+@dataclass(frozen=True, eq=True, order=True, slots=True)
 class Service():
     """
     Represents a service in the NetSecGame.
@@ -42,7 +42,7 @@ class Service():
         return cls(**data)
 
 
-@dataclass(frozen=True, eq=True, order=True)
+@dataclass(frozen=True, eq=True, order=True, slots=True)
 class IP():
     """
     Immutable object representing an IPv4 address in the NetSecGame.
@@ -125,7 +125,7 @@ class IP():
         """
         return hash(self.ip)
 
-@dataclass(frozen=True, eq=True)
+@dataclass(frozen=True, eq=True, slots=True)
 class Network():
     """
     Immutable object representing an IPv4 network in the NetSecGame.
@@ -226,7 +226,7 @@ class Network():
         """
         return cls(**data)
 
-@dataclass(frozen=True, eq=True, order=True)
+@dataclass(frozen=True, eq=True, order=True, slots=True)
 class Data():
     """
     Represents a data object in the NetSecGame.
@@ -373,7 +373,7 @@ class AgentInfo():
         """
         return cls(**data)
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Action:
     """
     Immutable dataclass representing an Action.
@@ -395,7 +395,8 @@ class Action:
         """
         params = {}
         for k, v in self.parameters.items():
-            if hasattr(v, '__dict__'):  # Handle custom objects like Service, Data, AgentInfo
+            # Check if v is a dataclass AND ensuring it is an instance, not the class itself
+            if dataclasses.is_dataclass(v) and not isinstance(v, type):
                 params[k] = asdict(v)
             elif isinstance(v, bool):  # Handle boolean values
                 params[k] = v
@@ -403,6 +404,7 @@ class Action:
                 params[k] = str(v)
         return {"action_type": str(self.action_type), "parameters": params}
     
+
     @property
     def type(self)->ActionType:
         """
@@ -519,7 +521,7 @@ class Action:
         sorted_params = tuple(sorted((k, hash(v)) for k, v in self.parameters.items()))
         return hash((self.action_type, sorted_params))
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class GameState():
     """
     Represents the state of the game.
