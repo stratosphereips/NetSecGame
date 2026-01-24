@@ -152,7 +152,7 @@ class ConfigurationManager:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_required_num_players(default_value)
 
-    def get_use_firewall(self, default_value: bool = False) -> bool:
+    def get_use_firewall(self, default_value: bool = True) -> bool:
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_use_firewall(default_value)
@@ -198,3 +198,8 @@ class ConfigurationManager:
         # But wait, self.get_max_steps(role) does `self._parser.get_max_steps(role)` already.
         # Iterating over AgentRole is correct.
         return {role: self.get_max_steps(role) for role in AgentRole}
+    
+    def get_store_trajectories(self, default_value: bool = False) -> bool:
+        if not self._parser:
+            raise RuntimeError("Configuration not loaded.")
+        return self._parser.get_store_trajectories(default_value)

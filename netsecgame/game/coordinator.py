@@ -589,7 +589,7 @@ class GameCoordinator:
             self.logger.info("Resetting game to initial state.")
             await self.reset()
             for agent in self.agents:
-                if self.task_config.get_store_trajectories():
+                if self.config_manager.get_store_trajectories():
                     async with self._agents_lock:
                         self._store_trajectory_to_file(agent)
                 self.logger.debug(f"Resetting agent {agent}")
@@ -868,4 +868,5 @@ class GameCoordinator:
         """
         if agent_addr not in self.agents:
             return False
+        #TODO: change to use AgentRole
         return self.agents[agent_addr][1].lower() in ["defender", "benign"]
