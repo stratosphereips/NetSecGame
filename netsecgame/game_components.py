@@ -830,6 +830,64 @@ class AgentStatus(enum.Enum):
         except KeyError:
             raise ValueError(f"Invalid AgentStatus: {name}")
 
+@enum.unique
+class AgentRole(enum.Enum):
+    """
+    Enum representing possible roles of agents.
+    """
+    Attacker = "Attacker"
+    Defender = "Defender"
+    Benign = "Benign"
+
+    def to_string(self) -> str:
+        """
+        Convert the AgentRole enum to string.
+
+        Returns:
+            str: The string representation.
+        """
+        return self.value
+    
+    def __eq__(self, other: object) -> bool:
+        """
+        Compare AgentRole with another AgentRole or string.
+
+        Args:
+             other (object): The object to compare.
+
+        Returns:
+             bool: True if equal, False otherwise.
+        """
+        if isinstance(other, AgentRole):
+             return self.value == other.value
+        elif isinstance(other, str):
+             return self.value.lower() == other.lower().replace("agentrole.", "")
+        return False
+        
+    @classmethod
+    def from_string(cls, name: str) -> AgentRole:
+        """
+        Convert a string to an AgentRole enum.
+
+        Args:
+            name (str): The string representation.
+
+        Returns:
+            AgentRole: The corresponding AgentRole.
+
+        Raises:
+            ValueError: If the string does not match any AgentRole.
+        """
+        # Clean up input string
+        name = name.split(".")[-1] # Remove prefix if present
+        
+        # Try case-insensitive matching
+        for role in cls:
+            if role.value.lower() == name.lower():
+                return role
+                
+        raise ValueError(f"Invalid AgentRole: {name}")
+
 @dataclass(frozen=True)
 class ProtocolConfig:
     """
@@ -840,4 +898,5 @@ class ProtocolConfig:
         BUFFER_SIZE (int): Buffer size for messages.
     """
     END_OF_MESSAGE: bytes = b"EOF"
-    BUFFER_SIZE: int = 8192 
+    BUFFER_SIZE: int = 8192
+
