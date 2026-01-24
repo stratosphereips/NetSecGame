@@ -1,11 +1,11 @@
-## NetSecGame Architecture
-The Network Security Game(NSG) works as a game server - agents connect to it via TCP sockets and interact with the environment using the standard RL communication loop: Agent submits actinon and recieves new observation of the environment. The NSG supports real-time, highly customizable multi-agent simulations.
+# NetSecGame Architecture
+The NetSecGame (NSG) works as a game server - agents connect to it via TCP sockets and interact with the environment using the standard RL communication loop: Agent submits action and receives new observation of the environment. The NSG supports real-time, highly customizable multi-agent simulations.
 
 ## Game Components
 The following classes are used in the game to hold information about the state of the game. They are used both in the [Actions](#actions) and [GameState](#gamestate). See the API Reference for [GameComponents](game_components.md)
 ### Building blocks
 #### IP
-IP is immutable object that represents an IPv4 object in the NetSecGame. It has a single parameter of the address in a dot-decimal notation (4 octet represeted as decimal value separeted by dots).
+IP is immutable object that represents an IPv4 object in the NetSecGame. It has a single parameter of the address in a dot-decimal notation (4 octet represented as decimal value separated by dots).
 
 Example: 
 ```python
@@ -24,9 +24,9 @@ net = Network("192.168.1.0", 24)
 #### Service
 Service class holds information about services running in hosts. Each Service has four parameters:
 - `name`:str  - Name of the service (e.g., "SSH")
-- `type`:str - `passive` or `active`. Currently not being used.
+- `type`:str - `passive`, `active` or `unknown`(default).
 - `version`:str - version of the service.
-- `is_local`:bool - flag specifying if the service is local only. (if `True`, service is NOT visible without controlling the host).
+- `is_local`:bool - flag specifying if the service is local only (default=True). (if `True`, service is NOT visible without controlling the host).
 
 Example: 
 ```python
@@ -52,7 +52,7 @@ d2 = Data("User1", "DatabaseData", size=42, type="txt", "SecretUserDatabase")
 GameState is an object that represents a view of the NetSecGame environment in a given state. It is constructed as a collection of 'assets' available to the agent. GameState has following parts:
 - `known_networks`: Set of [Network](#network) objects that the agent is aware of
 - `known_hosts`: Set of [IP](#ip) objects that the agent is aware of
-- `controlled_hosts`: Set of [IP](#ip) objetcs that the agent has control over. Note that `controlled_hosts` is a subset of `known_hosts`.
+- `controlled_hosts`: Set of [IP](#ip) objects that the agent has control over. Note that `controlled_hosts` is a subset of `known_hosts`.
 - `known_services`: Dictionary of services that the agent is aware of.
 The dictionary format: {`IP`: {`Service`}} where [IP](#ip) object is a key and the value is a set of [Service](#service) objects located in the `IP`.
 - `known_data`: Dictionary of data instances that the agent is aware of. The dictionary format: {`IP`: {`Data`}} where [IP](#ip) object is a key and the value is a set of [Data](#data) objects located in the `IP`.
@@ -79,20 +79,21 @@ The Action consists of two parts
 - **ScanNetwork**, params{`source_host`:`<IP>`, `target_network`:`<Network>`}: Scans the given `<Network>` from a specified source host. Discovers ALL hosts in a network that are accessible from `<IP>`. If successful, returns set of discovered `<IP>` objects.
 - **FindServices**, params={`source_host`:`<IP>`, `target_host`:`<IP>`}: Used to discover ALL services running in the `target_host` if the host is accessible from `source_host`. If successful, returns a set of all discovered `<Service>` objects.
 - **FindData**, params={`source_host`:`<IP>`, `target_host`:`<IP>`}: Searches `target_host` for data. If `source_host` differs from `target_host`, success depends on accessability from the `source_host`. If successful, returns a set of all discovered `<Data>` objects.
-- **ExploitService**, params={`source_host`:`<IP>`, `target_host`:`<IP>`, `taget_service`:`<Service>`}: Exploits `target_service` in a specified `target_host`. If successful, the attacker gains control of the `target_host`.
+- **ExploitService**, params={`source_host`:`<IP>`, `target_host`:`<IP>`, `target_service`:`<Service>`}: Exploits `target_service` in a specified `target_host`. If successful, the attacker gains control of the `target_host`.
 - **ExfiltrateData**, params{`source_host`:`<IP>`, `target_host`:`<IP>`, `data`:`<IP>`}: Copies `data` from the `source_host` to `target_host` IF both are controlled and `target_host` is accessible from `source_host`.
+- **BlockIP**, params{`source_host`:`<IP>`, `target_host`:`<IP>`, `blocked_host`:`<IP>`}: Blocks communication from/to `blocked_host` on `target_host`. Requires control of `target_host`.
 
 ### Action preconditions and effects
 In the following table, we describe the effects of selected actions and their preconditions. Note that if the preconditions are not satisfied, the actions's effects are not applied.
 
 | Action | Params | Preconditions | Effects |
 |----------------------|----------------------|----------------------|----------------------|
-| ScanNetwork| `source_host`, `target_network`| `source_host` &isinv; `controlled_hosts`| extends `known_networks`|
-|FindServices| `source_host`, `target_host`| `source_host` &isinv; `controlled_hosts`| extends `known_services` AND `known_hosts`|
+| ScanNetwork| `source_host`, `target_network`| `source_host` ∈ `controlled_hosts`| extends `known_networks`|
+|FindServices| `source_host`, `target_host`| `source_host` ∈ `controlled_hosts`| extends `known_services` AND `known_hosts`|
 |FindData| `source_host`, `target_host`| `source_host`, `target_host` ∈ `controlled_hosts`| extends `known_data`|
-|Exploit Service | `source_host`, `target_host`, `target_service`|`source_host` &isinv; `controlled_hosts`| extends `controlled_hosts` with `target_host`|
-ExfiltrateData| `source_host`,`target_host`, `data` |`source_host`, `target_host` ∈ `controlled_hosts` AND `data` ∈ `known_data`| extends `known_data[target_host]` with `data`|
-|BlockIP | `source_host`, `target_host`, `blockedIP`|`source_host` &isinv; `controlled_hosts`| extends `known_blocks[target_host]` with `blockedIP`|
+|Exploit Service | `source_host`, `target_host`, `target_service`|`source_host` ∈ `controlled_hosts`| extends `controlled_hosts` with `target_host`|
+|ExfiltrateData| `source_host`,`target_host`, `data` |`source_host`, `target_host` ∈ `controlled_hosts` AND `data` ∈ `known_data`| extends `known_data[target_host]` with `data`|
+|BlockIP | `source_host`, `target_host`, `blocked_host`|`source_host` ∈ `controlled_hosts`| extends `known_blocks[target_host]` with `blocked_host`|
 
 #### Assumption and Conditions for Actions
 1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
@@ -100,7 +101,7 @@ ExfiltrateData| `source_host`,`target_host`, `data` |`source_host`, `target_host
 3. The `Find Data` action requires ownership of the target host.
 4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
 5. Playing `Find Services` can be used to discover hosts (if those have any active services)
-6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
+6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_networks`/`known_hosts`)
 
 ### Observations
 After submitting Action `a` to the environment, agents receive an `Observation` in return. Each observation consists of 4 parts:
