@@ -2,6 +2,7 @@ import logging
 import json
 import asyncio
 from datetime import datetime
+from typing import Optional
 import signal
 import os
 from aiohttp import ClientSession
@@ -329,42 +330,67 @@ class GameCoordinator:
         await asyncio.gather(*self._tasks, return_exceptions=True)  # Wait for all tasks to finish
         self.logger.info("All tasks shut down.")
     
+    def _parse_action_message(self, agent_addr: tuple, message: str) -> Optional[Action]:
+        """
+        Parses a JSON message from an agent into an Action object.
+        
+        Args:
+            agent_addr (tuple): The address of the agent sending the message (used for logging context).
+            message (str): The raw JSON string message received from the agent.
+            
+        Returns:
+            Optional[Action]: The parsed Action object if successful, None otherwise.
+        """
+        try:
+            action = Action.from_json(message)
+            return action
+        except Exception as e:
+            self.logger.error(f"Error when converting msg from {agent_addr} to Action using Action.from_json():{e}, {message}")
+            return None
+
+    def _dispatch_action(self, agent_addr: tuple, action: Action) -> None:
+        """
+        Dispatches an Action to the appropriate processing method based on its type.
+        
+        Args:
+            agent_addr (tuple): The address of the agent performing the action.
+            action (Action): The Action object to be processed.
+        """
+        match action.type:
+            case ActionType.JoinGame:
+                self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.JoinGame by {agent_addr}")
+                self._spawn_task(self._process_join_game_action, agent_addr, action)
+            case ActionType.QuitGame:
+                self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.QuitGame by {agent_addr}")
+                self._spawn_task(self._process_quit_game_action, agent_addr)
+            case ActionType.ResetGame:
+                self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.ResetGame by {agent_addr}")
+                self._spawn_task(self._process_reset_game_action, agent_addr, action)
+            case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
+                self.logger.debug(f"About agent {agent_addr}. Start processing of {action.type} by {agent_addr}")
+                self._spawn_task(self._process_game_action, agent_addr, action)
+            case ActionType.BlockIP:
+                self.logger.debug(f"About agent {agent_addr}. Start processing of {action.type} by {agent_addr}")
+                self._spawn_task(self._process_game_action, agent_addr, action)
+            case _:
+                self.logger.warning(f"About agent {agent_addr}. Unsupported action type: {action}!")
+
     async def run_game(self):
         """
-        Task responsible for reading messages from the agent queue and processing them based on the ActionType.
+        Main game loop task. 
+        
+        Responsible for reading messages from the agent queue, parsing them using `_parse_action_message`, 
+        and dispatching them to the appropriate handler using `_dispatch_action`.
         """
         while not self.shutdown_flag.is_set():
             # Read message from the queue
             agent_addr, message = await self._agent_action_queue.get()
             if message is not None:
                 self.logger.info(f"Coordinator received from agent {agent_addr}: {message}.")
-    
-                try:  # Convert message to Action
-                    action = Action.from_json(message)
-                    self.logger.debug(f"\tConverted to: {action}.")
-                    match action.type:  # process action based on its type
-                        case ActionType.JoinGame:
-                            self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.JoinGame by {agent_addr}")
-                            self.logger.debug(f"{action.type}, {action.type.value}, {action.type == ActionType.JoinGame}")
-                            self._spawn_task(self._process_join_game_action, agent_addr, action)
-                        case ActionType.QuitGame:
-                            self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.QuitGame by {agent_addr}")
-                            self._spawn_task(self._process_quit_game_action, agent_addr)
-                        case ActionType.ResetGame:
-                            self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.ResetGame by {agent_addr}")
-                            self._spawn_task(self._process_reset_game_action, agent_addr, action)
-                        case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
-                            self.logger.debug(f"About agent {agent_addr}. Start processing of {action.type} by {agent_addr}")
-                            self._spawn_task(self._process_game_action, agent_addr, action)
-                        case ActionType.BlockIP:
-                            self.logger.debug(f"About agent {agent_addr}. Start processing of {action.type} by {agent_addr}")
-                            self._spawn_task(self._process_game_action, agent_addr, action)
-                        case _:
-                            self.logger.warning(f"About agent {agent_addr}. Unsupported action type: {action}!")
-                except Exception as e:
-                    self.logger.error(
-                        f"Error when converting msg to Action using Action.from_json():{e}, {message}"
-                    )
+                
+                action = self._parse_action_message(agent_addr, message)
+                if action:
+                    self._dispatch_action(agent_addr, action)
         self.logger.info("\tAction processing task stopped.")
             
     async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
