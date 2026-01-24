@@ -34,7 +34,8 @@ server = [
     "Faker>=23.2",          
     "numpy>=1.26",        
     "PyYAML>=6.0",        
-    "requests>=2.32"     
+    "requests>=2.32",
+    "pyserde==0.21.0"
 ]
 
 dev = [
