@@ -2,7 +2,7 @@
 FROM python:3.12.10-slim
 
 # Set the working directory in the container
-ENV DESTINATION_DIR=/aidojo
+ENV DESTINATION_DIR=/netsecgame
 
 
 # Install system dependencies
@@ -20,13 +20,13 @@ WORKDIR  ${DESTINATION_DIR}
 
 # Install any necessary Python dependencies
 # If a requirements.txt file is in the repository
-RUN if [ -f pyproject.toml ]; then pip install . ; fi
+RUN if [ -f pyproject.toml ]; then pip install .[server] ; fi
 
 # Expose the port the coordinator will run on
 EXPOSE 9000 
 
 # Run the Python script when the container launches (with default arguments --task_config=netsecenv_conf.yaml --game_port=9000 --game_host=0.0.0.0)
-ENTRYPOINT ["python3", "-m", "AIDojoCoordinator.worlds.NSEGameCoordinator", "--task_config=netsecenv_conf.yaml", "--game_port=9000", "--game_host=0.0.0.0"]
+ENTRYPOINT ["python3", "-m", "netsecgame.game.worlds.NetSecGame", "--task_config=netsecenv_conf.yaml", "--game_port=9000", "--game_host=0.0.0.0"]
 
 # Default command arguments (can be overridden at runtime)
 CMD ["--debug_level=INFO"]

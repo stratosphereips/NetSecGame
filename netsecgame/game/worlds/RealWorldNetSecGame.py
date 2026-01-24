@@ -9,11 +9,11 @@ import argparse
 import os
 from pathlib import Path
 
-from AIDojoCoordinator.utils.utils import get_logging_level
-from AIDojoCoordinator.game_components import GameState, Action, ActionType, Service,IP
-from AIDojoCoordinator.worlds.NSEGameCoordinator import NSGCoordinator
+from netsecgame.utils.utils import get_logging_level
+from netsecgame.game_components import GameState, Action, ActionType, Service,IP
+from netsecgame.game.worlds.NetSecGame import NetSecGame
 
-class NSERealWorldGameCoordinator(NSGCoordinator):
+class RealWorldNetSecGame(NetSecGame):
     
     def _execute_action(self, current_state:GameState, action:Action)-> GameState:
         """
@@ -188,6 +188,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
   
-    game_server = NSERealWorldGameCoordinator(args.game_host, args.game_port, args.task_config)
+    game_server = RealWorldNetSecGame(args.game_host, args.game_port, args.task_config)
     # Run it!
     game_server.run()

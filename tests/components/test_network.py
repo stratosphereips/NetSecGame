@@ -2,7 +2,7 @@
 #           Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import pytest
 import dataclasses
-from AIDojoCoordinator.game_components import Network
+from netsecgame.game_components import Network
 
 # Pytest fixture for creating a sample Network object
 @pytest.fixture
@@ -81,3 +81,20 @@ def test_net_from_dict(sample_private_network1):
     assert net.mask == 24
     assert net == sample_private_network1
     assert net is not sample_private_network1
+
+def test_net_less_than(sample_private_network1, sample_private_network2):
+    """Test __lt__ operator"""
+    # 192.168.1.0/24 < 192.168.2.0/24
+    assert sample_private_network1 < sample_private_network2
+    assert not (sample_private_network2 < sample_private_network1)
+
+def test_net_less_than_equal(sample_private_network1, sample_private_network2, sample_private_network1_copy):
+    """Test __le__ operator"""
+    assert sample_private_network1 <= sample_private_network2
+    assert sample_private_network1 <= sample_private_network1_copy
+    assert not (sample_private_network2 <= sample_private_network1)
+
+def test_net_greater_than(sample_private_network1, sample_private_network2):
+    """Test __gt__ operator"""
+    assert sample_private_network2 > sample_private_network1
+    assert not (sample_private_network1 > sample_private_network2)

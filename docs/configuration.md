@@ -15,6 +15,44 @@ The environment part defines the properties of the environment for the task (see
 - `save_tajectories` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of an episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask). The change also depend on the input from the agents:
 
+### Available topologies
+There are 5 topologies available in NSG:
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+  <div style="text-align: center;">
+    <img src="../figures/scenarios/scenario_1_small.png" style="width: 100%; height: 250px; object-fit: contain; border: 1px solid #ddd; padding: 10px; background: white;">
+    <br>
+    <strong>One network topology</strong>
+  </div>
+
+  <div style="text-align: center;">
+    <img src="../figures/scenarios/scenario_1_tiny.png" style="width: 100%; height: 250px; object-fit: contain; border: 1px solid #ddd; padding: 10px; background: white;">
+    <br>
+    <strong>Two networks tiny topology</strong>
+  </div>
+
+  <div style="text-align: center;">
+    <img src="../figures/scenarios/scenario_1_small.png" style="width: 100%; height: 250px; object-fit: contain; border: 1px solid #ddd; padding: 10px; background: white;">
+    <br>
+    <strong>Two networks small topology</strong>
+  </div>
+
+  <div style="text-align: center;">
+    <img src="../figures/scenarios/scenario_1.png" style="width: 100%; height: 250px; object-fit: contain; border: 1px solid #ddd; padding: 10px; background: white;">
+    <br>
+    <strong>Two networks topology</strong>
+  </div>
+
+  <div style="text-align: center;">
+    <img src="../figures/scenarios/three_nets.png" style="width: 100%; height: 250px; object-fit: contain; border: 1px solid #ddd; padding: 10px; background: white;">
+    <br>
+    <strong>Three networks topology</strong>
+  </div>
+
+  <div></div>
+
+</div>
+
 |Task configuration| Agent reset request | Result|
 |----------------------|----------------------|----------------------|
 |`use_dynamic_ips = True` | `randomize_topology = True`| Changed topology |
@@ -25,39 +63,41 @@ The environment part defines the properties of the environment for the task (see
 In summary, the topology change (IP randomization) can't change without allowing it in the task configuration. If allowed in the task config YAML, it can still be rejected by the agents.
 
 - `use_firewall` - if `True` firewall rules defined in `scenario` are used when executing actions. When `False`, the firewall is ignored, and all connections are allowed (Default)
-- `use_global_defender` - if `True`, enables global defendr which is part of the environment and can stop interaction of any playing agent.
+- `use_global_defender` - if `True`, enables global defender which is part of the environment and can stop interaction of any playing agent.
 - `required_players` - Minimum required players for the game to start (default 1)
 - `rewards`:
     - `success` - sets reward which agent gets when it reaches the goal (default 100)
     - `fail` - sets the reward that which agent does not reach it's objective (default -10)
-    - `step_reward` - sets reward which agent gets for every step taken (default -1)
+    - `step` - sets reward which agent gets for every step taken (default -1)
+    - `false_positive` - sets reward for a false positive action (default -5)
 - `actions` - defines the probability of success for every ActionType
 
 ```YAML
 env:
     random_seed: 'random'
-    scenario: 'scenario1'
+    scenario: 'two_networks_tiny'
     use_global_defender: False
     use_dynamic_addresses: False
     use_firewall: True
     save_trajectories: False
     rewards:
-        win: 100
+        success: 100
         step: -1
-        loss: -10
+        fail: -10
+        false_positive: -5
     actions:
         scan_network:
-        prob_success: 1.0
+         prob_success: 1.0
         find_services:
-        prob_success: 1.0
+         prob_success: 1.0
         exploit_service:
-        prob_success: 1.0
+         prob_success: 1.0
         find_data:
-        prob_success: 1.0
+         prob_success: 1.0
         exfiltrate_data:
-        prob_success: 1.0
+         prob_success: 1.0
         block_ip:
-        prob_success: 1.0
+         prob_success: 1.0
 ```
 ### Definition of the network topology
 The network topology and rules are defined using a [CYST](https://pypi.org/project/cyst/) simulator configuration. Cyst defines a complex network configuration, and this environment does not use all Cyst features for now. CYST components currently used are:
@@ -118,24 +158,25 @@ coordinator:
         Attacker:
             max_steps: 20
             goal:
-            randomize_goal_every_episode: False
-            known_networks: []
-            known_hosts: []
-            controlled_hosts: []
-            known_services: {192.168.1.3: [Local system, lanman server, 10.0.19041, False], 192.168.1.4: [Other system, SMB server, 21.2.39421, False]}
-            known_data: {213.47.23.195: ["random"]}
-            known_blocks: {'all_routers': 'all_attackers'}
+                description: "Exfiltrate data from Samba server to remote C&C server."
+                is_any_part_of_goal_random: True
+                known_networks: []
+                known_hosts: []
+                controlled_hosts: []
+                known_services: {}
+                known_data: {213.47.23.195: [[User1,DataFromServer1]]}
+                known_blocks: {}
 
             start_position:
-            known_networks: []
-            known_hosts: []
-            # The attacker must always at least control the CC if the goal is to exfiltrate there
-            # Example of fixing the starting point of the agent in a local host
-            controlled_hosts: [213.47.23.195, random]
-            # Services are defined as a target host where the service must be, and then a description in the form 'name, type, version, is_local'
-            known_services: {}
-            known_data: {}
-            known_blocks: {}
+                known_networks: []
+                known_hosts: []
+                # The attacker must always at least control the CC if the goal is to exfiltrate there
+                # Example of fixing the starting point of the agent in a local host
+                controlled_hosts: [213.47.23.195, random]
+                # Services are defined as a target host where the service must be, and then a description in the form 'name, type, version, is_local'
+                known_services: {}
+                known_data: {}
+                known_blocks: {}
 ```
 
 ### Defender configuration
@@ -165,3 +206,17 @@ Example of defender configuration:
         known_blocks: {}
 ```
 As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In the curent implementation, the *Defender* wins, if **NO ATTACKER** reaches their goal. 
+
+### Trajectory storing and analysis
+
+The trajectory is a sequence of GameStates, Actions, and rewards in one run of a game. It contains the complete information of the actions played by the agent, the rewards observed and their effect on the state of the environment.
+
+Trajectories performed by the agents can be stored in a file using the following configuration (on the server side):
+
+```yaml
+env:
+  save_trajectories: True
+```
+!!! warning "Caution"
+    Trajectory files can grow very fast. It is recommended to use this feature on evaluation/testing runs only. By default, this feature is not enabled.
+

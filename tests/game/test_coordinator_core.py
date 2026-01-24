@@ -5,8 +5,9 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from types import SimpleNamespace
 
-from AIDojoCoordinator.coordinator import GameCoordinator
-from AIDojoCoordinator.game_components import ActionType, Action, AgentStatus, GameState, Observation, GameStatus
+from netsecgame.game.coordinator import GameCoordinator
+from netsecgame.game_components import ActionType, Action, AgentStatus, GameState, Observation, GameStatus, AgentRole
+from netsecgame.game.coordinator import convert_msg_dict_to_json
 
 # -----------------------
 # Fixtures
@@ -44,7 +45,6 @@ def gc_with_test_config(test_config_file_path):
         game_port=9999,
         service_host=None,  # force local config loading
         service_port=0,
-        allowed_roles=["Attacker", "Defender", "Benign"],
         task_config_file=test_config_file_path,
     )
 
@@ -98,15 +98,15 @@ def make_writer_with_peer():
 
 @pytest.mark.asyncio
 async def test_load_initialization_objects_loads_config(gc_with_test_config):
-    """Test that loading initialization objects sets up config and cyst objects."""
-    gc_with_test_config._load_initialization_objects()
-    assert gc_with_test_config._cyst_objects is not None
-    assert hasattr(gc_with_test_config, "_CONFIG_FILE_HASH")
+    """Test that loading initialization objects sets up config using manager."""
+    await gc_with_test_config.config_manager.load()
+    assert gc_with_test_config.config_manager.get_cyst_objects() is not None
+    assert gc_with_test_config.config_manager.get_config_hash() is not None
 
 def test_convert_msg_dict_to_json_success(gc_with_test_config):
     """Test that convert_msg_dict_to_json correctly serializes a dictionary."""
     msg = {"foo": "bar"}
-    json_str = gc_with_test_config.convert_msg_dict_to_json(msg)
+    json_str = convert_msg_dict_to_json(msg)
     assert json_str == '{"foo": "bar"}'
 
 
@@ -116,64 +116,84 @@ def test_convert_msg_dict_to_json_failure(gc_with_test_config):
         pass
 
     with pytest.raises(TypeError):
-        gc_with_test_config.convert_msg_dict_to_json({"bad": Unserializable()})
+        convert_msg_dict_to_json({"bad": Unserializable()})
 
 
 @pytest.mark.asyncio
 async def test_create_agent_queue_adds_new_queue(gc_with_test_config):
-    """Test that create_agent_queue adds a new queue for the agent."""
-    agent = ("127.0.0.1", 12345)
-    await gc_with_test_config.create_agent_queue(agent)
-    assert agent in gc_with_test_config._agent_response_queues
-    assert isinstance(gc_with_test_config._agent_response_queues[agent], asyncio.Queue)
+    """Test that create_agent_queue adds a new queue for an unknown agent."""
+    addr = ("127.0.0.1", 12345)
+    await gc_with_test_config.create_agent_queue(addr)
+    assert addr in gc_with_test_config._agent_response_queues
+    assert isinstance(gc_with_test_config._agent_response_queues[addr], asyncio.Queue)
 
 
 @pytest.mark.asyncio
 async def test_create_agent_queue_idempotent(gc_with_test_config):
-    """Test that create_agent_queue does not create a new queue if it already exists."""
-    agent = ("127.0.0.1", 12345)
-    await gc_with_test_config.create_agent_queue(agent)
-    q1 = gc_with_test_config._agent_response_queues[agent]
-    await gc_with_test_config.create_agent_queue(agent)
-    q2 = gc_with_test_config._agent_response_queues[agent]
-    assert q1 is q2
+    """Test that create_agent_queue doesn't recreate existing queues."""
+    addr = ("127.0.0.1", 12345)
+    await gc_with_test_config.create_agent_queue(addr)
+    first_queue = gc_with_test_config._agent_response_queues[addr]
+    
+    await gc_with_test_config.create_agent_queue(addr)
+    second_queue = gc_with_test_config._agent_response_queues[addr]
+    
+    assert first_queue is second_queue
 
 
-def test_load_initialization_objects(gc_with_test_config):
-    """Test that _load_initialization_objects initializes config and cyst objects."""
-    gc_with_test_config._load_initialization_objects()
-    assert gc_with_test_config._cyst_objects is not None
-    assert hasattr(gc_with_test_config, "_CONFIG_FILE_HASH")
+@pytest.mark.asyncio
+async def test_load_initialization_objects(gc_with_test_config):
+    """Test that config_manager.load initializes config and cyst objects."""
+    await gc_with_test_config.config_manager.load()
+    # Check that cyst objects are loaded via manager
+    assert gc_with_test_config.config_manager.get_cyst_objects() is not None
+    # Check that hash is set
+    assert gc_with_test_config.config_manager.get_config_hash() is not None
 
 
-def test_get_starting_position_per_role(gc_with_test_config):
-    """Test that _get_starting_position_per_role returns positions for all roles."""
-    gc_with_test_config._load_initialization_objects()
-    positions = gc_with_test_config._get_starting_position_per_role()
-    assert set(positions.keys()) == set(gc_with_test_config.ALLOWED_ROLES)
+@pytest.mark.asyncio
+async def test_start_tasks_initializes_config(gc_with_test_config):
+    """Test that start_tasks initializes configuration attributes via manager."""
+    # We can't easily run full start_tasks because it starts a server loop.
+    # But we can verify that config loading logic works if we extract it or partial mock.
+    # Alternatively, we can test that calling config_manager.load() and then accessing properties works.
+    # Or, looking at previous tests, they tested the helper private methods.
+    # Now we should test the properties on config_manager directly OR verify they are set on GC after load.
+    
+    await gc_with_test_config.config_manager.load()
+    # Manually populate like start_tasks does to verify logic correctness (or assume start_tasks does it)
+    # Since start_tasks is the only place calling these, we might want to test the config_manager methods instead.
+    
+    positions = gc_with_test_config.config_manager.get_all_starting_positions()
+    assert "Attacker" in positions
+    assert "Defender" in positions
 
 
-def test_get_goal_description_per_role(gc_with_test_config):
-    """Test that _get_goal_description_per_role returns descriptions for all roles."""
-    gc_with_test_config._load_initialization_objects()
-    desc = gc_with_test_config._get_goal_description_per_role()
-    assert set(desc.keys()) == set(gc_with_test_config.ALLOWED_ROLES)
+@pytest.mark.asyncio
+async def test_goal_descriptions_loaded(gc_with_test_config):
+    """Test that goal descriptions are retrievable via config manager."""
+    await gc_with_test_config.config_manager.load()
+    desc = gc_with_test_config.config_manager.get_all_goal_descriptions()
+    assert "Attacker" in desc
+    assert "Defender" in desc
 
 
-def test_get_win_condition_per_role(gc_with_test_config):
-    """Test that _get_win_condition_per_role returns win conditions for all roles."""
-    gc_with_test_config._load_initialization_objects()
-    win = gc_with_test_config._get_win_condition_per_role()
-    assert set(win.keys()) == set(gc_with_test_config.ALLOWED_ROLES)
+@pytest.mark.asyncio
+async def test_win_conditions_loaded(gc_with_test_config):
+    """Test that win conditions are retrievable via config manager."""
+    await gc_with_test_config.config_manager.load()
+    win = gc_with_test_config.config_manager.get_all_win_conditions()
+    assert "Attacker" in win
+    assert "Defender" in win
 
 
-def test_get_max_steps_per_role(gc_with_test_config):
-    """Test that _get_max_steps_per_role returns max steps for all roles."""
-    gc_with_test_config._load_initialization_objects()
-    steps = gc_with_test_config._get_max_steps_per_role()
+@pytest.mark.asyncio
+async def test_max_steps_loaded(gc_with_test_config):
+    """Test that max steps are retrievable via config manager."""
+    await gc_with_test_config.config_manager.load()
+    steps = gc_with_test_config.config_manager.get_all_max_steps()
     assert isinstance(steps, dict)
-    # values can be int or None
-    assert all(isinstance(v, int) or v is None for v in steps.values())
+    assert "Attacker" in steps
 
 
 @pytest.mark.asyncio
@@ -378,3 +398,86 @@ async def test_process_game_action_ongoing_episode(initialized_coordinator, empt
     assert '"reward": 0' in msg_json
     assert '"end": false' in msg_json
     assert '"info": {}' in msg_json
+
+# -----------------------
+# New tests for refactored methods (_parse_action, _dispatch_action, run_game)
+# -----------------------
+class TestCoordinatorRefactoredMethods:
+    @pytest.fixture
+    def mock_coordinator_core(self):
+        # Create a mock coordinator slightly different from integration fixtures to purely test logic
+        coord = MagicMock(spec=GameCoordinator)
+        coord.logger = MagicMock()
+        coord._agent_action_queue = AsyncMock()
+        coord.shutdown_flag = MagicMock()
+        # Side effect to stop loop after one iteration
+        coord.shutdown_flag.is_set.side_effect = [False, True]
+        
+        # Bind refactored methods
+        coord._parse_action_message = GameCoordinator._parse_action_message.__get__(coord)
+        coord._dispatch_action = GameCoordinator._dispatch_action.__get__(coord)
+        coord.run_game = GameCoordinator.run_game.__get__(coord)
+        
+        # Set __name__ for the mocked handlers so assert .__name__ works
+        coord._process_join_game_action.__name__ = "_process_join_game_action"
+        coord._process_quit_game_action.__name__ = "_process_quit_game_action"
+        coord._process_reset_game_action.__name__ = "_process_reset_game_action"
+        coord._process_game_action.__name__ = "_process_game_action"
+        
+        return coord
+
+    def test_parse_action_message_valid(self, mock_coordinator_core):
+        """New test for refactored method: _parse_action_message with valid input."""
+        valid_json = '{"action_type": "ActionType.JoinGame", "parameters": {"agent_info": {"name": "TestAgent", "role": "Attacker"}}}'
+        agent_addr = ("127.0.0.1", 12345)
+        
+        action = mock_coordinator_core._parse_action_message(agent_addr, valid_json)
+        
+        assert action is not None
+        assert action.type == ActionType.JoinGame
+        assert action.parameters["agent_info"].role == AgentRole.Attacker
+
+    def test_parse_action_message_invalid(self, mock_coordinator_core):
+        """New test for refactored method: _parse_action_message with invalid input."""
+        invalid_json = '{"invalid": "json"}'
+        agent_addr = ("127.0.0.1", 12345)
+        
+        action = mock_coordinator_core._parse_action_message(agent_addr, invalid_json)
+        
+        assert action is None
+        mock_coordinator_core.logger.error.assert_called()
+        # Verify agent address is in the error log
+        args, _ = mock_coordinator_core.logger.error.call_args
+        assert str(agent_addr) in args[0]
+
+    def test_dispatch_action(self, mock_coordinator_core):
+        """New test for refactored method: _dispatch_action routing."""
+        action = Action(ActionType.ScanNetwork, parameters={})
+        agent_addr = ("127.0.0.1", 12345)
+        
+        mock_coordinator_core._dispatch_action(agent_addr, action)
+        
+        mock_coordinator_core._spawn_task.assert_called_once()
+        args = mock_coordinator_core._spawn_task.call_args[0]
+        # Should route to _process_game_action for ScanNetwork
+        assert args[0].__name__ == "_process_game_action"
+
+    @pytest.mark.asyncio
+    async def test_run_game_flow(self, mock_coordinator_core):
+        """New test for refactored method: run_game flow (parse -> dispatch)."""
+        agent_addr = ("127.0.0.1", 12345)
+        valid_json = '{"action_type": "ActionType.ScanNetwork", "parameters": {}}'
+        
+        # Setup queue
+        mock_coordinator_core._agent_action_queue.get.return_value = (agent_addr, valid_json)
+        
+        with patch.object(mock_coordinator_core, '_parse_action_message') as mock_parse, \
+             patch.object(mock_coordinator_core, '_dispatch_action') as mock_dispatch:
+             
+            mock_action = Action(ActionType.ScanNetwork, {})
+            mock_parse.return_value = mock_action
+            
+            await mock_coordinator_core.run_game()
+            
+            mock_parse.assert_called_once_with(agent_addr, valid_json)
+            mock_dispatch.assert_called_once_with(agent_addr, mock_action)

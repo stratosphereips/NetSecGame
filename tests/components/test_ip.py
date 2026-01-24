@@ -2,7 +2,7 @@
 #           Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import pytest
 import dataclasses
-from AIDojoCoordinator.game_components import IP
+from netsecgame.game_components import IP
 
 # Pytest fixtures for creating sample IP objects
 @pytest.fixture
@@ -86,3 +86,9 @@ def test_ip_hash(sample_private_ip1, sample_private_ip1_copy):
     ip_1, _ = sample_private_ip1
     ip_2, _ = sample_private_ip1_copy
     assert hash(ip_1) == hash(ip_2)
+
+def test_ip_eq_other_type(sample_private_ip1):
+    """Test equality with non-IP object"""
+    ip_1, _ = sample_private_ip1
+    assert ip_1.__eq__("some_string") is NotImplemented
+    assert (ip_1 == "some_string") is False  # Python fallback

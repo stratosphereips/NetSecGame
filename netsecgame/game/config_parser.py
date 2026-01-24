@@ -1,144 +1,28 @@
-# Utility functions for then env and for the agents
+# Config parser for NetSecGame Coordinator
 # Author: Sebastian Garcia. sebastian.garcia@agents.fel.cvut.cz
 # Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
 
 import yaml
 # This is used so the agent can see the environment and game components
 import importlib
-from AIDojoCoordinator.game_components import IP, Data, Network, Service, GameState, Action, Observation, ActionType
+from netsecgame.game_components import IP, Data, Network, Service
 import netaddr
 import logging
-import csv
-import os
-import jsonlines
 from random import randint
-import json
-import hashlib
-from cyst.api.configuration.network.node import NodeConfig
 from  typing import Optional
-
-def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
-    """
-    Computes hash of a given file.
-    """
-    hash_algorithm = hashlib.new(hash_func)
-    with open(filepath, 'rb') as file:
-        chunk = file.read(chunk_size)
-        while chunk:
-            hash_algorithm.update(chunk)
-            chunk = file.read(chunk_size)
-    return hash_algorithm.hexdigest()
-
-def get_str_hash(string, hash_func='sha256', chunk_size=4096):
-    """
-    Computes hash of a given file.
-    """
-    hash_algorithm = hashlib.new(hash_func)
-    hash_algorithm.update(string.encode('utf-8'))
-    return hash_algorithm.hexdigest()
-
-def read_replay_buffer_from_csv(csvfile:str)->list:
-    """
-    Function to read steps from a CSV file
-     and restore the objects in the replay buffer.
-
-     expected colums in the csv:
-     state_t0, action_t0, reward_t1, state_t1, done_t1
-    """
-    buffer = []
-    try:
-        with open(csvfile, 'r') as f_object:
-            csv_reader = csv.reader(f_object, delimiter=';')
-            for [s_t, a_t, r, s_t1 , done] in csv_reader:
-                buffer.append((GameState.from_json(s_t), Action.from_json(a_t), r, GameState.from_json(s_t1), done))
-    except FileNotFoundError:
-        # There was no buffer
-        pass
-    return buffer
-
-def store_replay_buffer_in_csv(replay_buffer:list, filename:str, delimiter:str=";")->None:
-    """
-    Function to store steps from a replay buffer in CSV file.
-     Expected format of replay buffer items:
-     (state_t0:GameState, action_t0:Action, reward_t1:float, state_t1:GameState, done_t1:bool)
-    """
-    with open(filename, 'a') as f_object:
-        writer_object = csv.writer(f_object, delimiter=delimiter)
-        for (s_t, a_t, r, s_t1, done) in replay_buffer:
-            writer_object.writerow([s_t.as_json(), a_t.as_json(), r, s_t1.as_json(), done])
-
-def state_as_ordered_string(state:GameState)->str:
-    ret = ""
-    ret += f"nets:[{','.join([str(x) for x in sorted(state.known_networks)])}],"
-    ret += f"hosts:[{','.join([str(x) for x in sorted(state.known_hosts)])}],"
-    ret += f"controlled:[{','.join([str(x) for x in sorted(state.controlled_hosts)])}],"
-    ret += "services:{"
-    for host in sorted(state.known_services.keys()):
-        ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_services[host])])}]"
-    ret += "},data:{"
-    for host in sorted(state.known_data.keys()):
-        ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_data[host])])}]"
-    ret += "}, blocks:{"
-    for host in sorted(state.known_blocks.keys()):
-        ret += f"{host}:[{','.join([str(x) for x in sorted(state.known_blocks[host])])}]"
-    ret += "}"
-    return ret
-
-def observation_to_str(observation:Observation)-> str:
-    """
-    Generates JSON string representation of a given Observation object.
-    """
-    state_str = observation.state.as_json()
-    observation_dict = {
-        'state': state_str,
-        'reward': observation.reward,
-        'end': observation.end,
-        'info': dict(observation.info)
-    }
-    try:
-        observation_str = json.dumps(observation_dict)
-        return observation_str
-    except Exception as e:
-        print(f"Error in encoding observation '{observation}' to JSON string: {e}")
-        raise e
-
-def observation_as_dict(observation:Observation)->dict:
-    """
-    Generates dict string representation of a given Observation object.
-    """
-    observation_dict = {
-        'state': observation.state.as_dict,
-        'reward': observation.reward,
-        'end': observation.end,
-        'info': observation.info
-    }
-    return observation_dict
-
-def parse_log_content(log_content:str)->Optional[list]:
-    try:
-        logs = []
-        data = json.loads(log_content)
-        for item in data:
-            ip = IP(item["source_host"])
-            action_type = ActionType.from_string(item["action_type"])
-            logs.append({"source_host":ip, "action_type":action_type})
-        return logs
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}")
-        return None
-    except TypeError as e:
-        print(f"Error decoding JSON: {e}")
-        return None
 
 class ConfigParser():
     """
-    Class to deal with the configuration file
+    Class to deal with the configuration file of NetSecGame Coordinator
+    Args:
+        task_config_file (str|None): Path to the configuration file
+        config_dict (dict|None): Dictionary with configuration data
     """
-    def __init__(self, task_config_file:str=None, config_dict:dict=None):
+    def __init__(self, task_config_file:str|None=None, config_dict:dict|None=None):
         """
         Initializes the configuration parser. Required either path to a confgiuration file or a dict with configuraitons.
         """
-        self.logger = logging.getLogger('configparser')
+        self.logger = logging.getLogger('ConfigParser')
         if task_config_file:
             self.read_config_file(task_config_file)
         elif config_dict:
@@ -444,40 +328,40 @@ class ConfigParser():
                 rewards[name] = default_value
         return rewards
 
-    def get_use_dynamic_addresses(self)->bool:
+    def get_use_dynamic_addresses(self, default_value: bool = False)->bool:
         """
         Reads if the IP and Network addresses should be dynamically changed.
         """
         try:
             use_dynamic_addresses = self.config['env']['use_dynamic_addresses']
         except KeyError:
-            use_dynamic_addresses = False
+            use_dynamic_addresses = default_value
         return bool(use_dynamic_addresses)
 
-    def get_store_trajectories(self):
+    def get_store_trajectories(self, default_value: bool = False):
         """
         Read if the replay buffer should be stored in file
         """
         try:
-            store_rb = self.config['env']['save_trajectories']
+            store_trajectories = self.config['env']['save_trajectories']
         except KeyError:
             # Option is not in the configuration - default to FALSE
-            store_rb = False
-        return store_rb
+            store_trajectories = default_value
+        return store_trajectories
     
     def get_scenario(self):
         """
         Get the scenario config objects based on the configuration. Only import objects that are selected via importlib.
         """
         allowed_names = {
-            "scenario1" : "AIDojoCoordinator.scenarios.scenario_configuration",
-            "scenario1_small" : "AIDojoCoordinator.scenarios.smaller_scenario_configuration",
-            "scenario1_tiny" : "AIDojoCoordinator.scenarios.tiny_scenario_configuration",
-            "one_network": "AIDojoCoordinator.scenarios.one_net",
-            "three_net_scenario": "AIDojoCoordinator.scenarios.three_net_scenario",
-            "two_networks": "AIDojoCoordinator.scenarios.two_nets", # same as scenario1
-            "two_networks_small": "AIDojoCoordinator.scenarios.two_nets_small", # same as scenario1_small
-            "two_networks_tiny": "AIDojoCoordinator.scenarios.two_nets_tiny", # same as scenario1_small
+            "scenario1" : "netsecgame.game.scenarios.scenario_configuration",
+            "scenario1_small" : "netsecgame.game.scenarios.smaller_scenario_configuration",
+            "scenario1_tiny" : "netsecgame.game.scenarios.tiny_scenario_configuration",
+            "one_network": "netsecgame.game.scenarios.one_net",
+            "three_net_scenario": "netsecgame.game.scenarios.three_net_scenario",
+            "two_networks": "netsecgame.game.scenarios.two_nets", # same as scenario1
+            "two_networks_small": "netsecgame.game.scenarios.two_nets_small", # same as scenario1_small
+            "two_networks_tiny": "netsecgame.game.scenarios.two_nets_tiny", # same as scenario1_small
 
         }
         scenario_name = self.config['env']['scenario']
@@ -498,7 +382,7 @@ class ConfigParser():
             seed = randint(0,100)
         return seed
     
-    def get_randomize_goal_every_episode(self) -> bool:
+    def get_randomize_goal_every_episode(self, default_value: bool = False) -> bool:
         """
         Get if the randomization should be done only once or at the beginning of every episode
         """
@@ -506,89 +390,32 @@ class ConfigParser():
             randomize_goal_every_episode = self.config["coordinator"]["agents"]["attackers"]["goal"]["is_any_part_of_goal_random"]
         except KeyError:
             # Option is not in the configuration - default to FALSE
-            randomize_goal_every_episode = False
+            randomize_goal_every_episode = default_value
         return randomize_goal_every_episode
     
-    def get_use_firewall(self)->bool:
+    def get_use_firewall(self, default_value: bool = False)->bool:
         """
         Retrieves if the firewall functionality is allowed for netsecgame.
         Default: False
         """
         try:
-            use_firewall = self.config['env']['use_firewall']
+            use_firewall = self.config['env']['use_firewall']   
         except KeyError:
-            use_firewall = False
+            use_firewall = default_value
         return use_firewall
 
-    def get_use_global_defender(self)->bool:
+    def get_use_global_defender(self, default_value: bool = False)->bool:
         try:
             use_global_defender = self.config['env']['use_global_defender']
         except KeyError:
-            use_global_defender = False
+            use_global_defender = default_value
         return use_global_defender
     
-    def get_required_num_players(self)->int:
+    def get_required_num_players(self, default_value: int = 1)->int:
         try:
             required_players = int(self.config['env']['required_players'])
         except KeyError:
-            required_players = 1
+            required_players = default_value
         except ValueError:
-            required_players = 1
+            required_players = default_value
         return required_players
-
-def get_logging_level(debug_level):
-    """
-    Configure logging level based on the provided debug_level string.
-    """
-    log_levels = {
-        "DEBUG": logging.DEBUG,
-        "INFO": logging.INFO,
-        "WARNING": logging.WARNING,
-        "ERROR": logging.ERROR,
-        "CRITICAL": logging.CRITICAL
-    }
-    
-    level = log_levels.get(debug_level.upper(), logging.ERROR)
-    return level
-
-def get_starting_position_from_cyst_config(cyst_objects):
-    starting_positions = {}
-    for obj in cyst_objects:
-        if isinstance(obj, NodeConfig):
-            for active_service in obj.active_services:
-                if active_service.type == "netsecenv_agent":
-                    print(f"starting processing {obj.id}.{active_service.name}")
-                    hosts = set()
-                    networks = set()
-                    for interface in obj.interfaces:
-                        hosts.add(IP(str(interface.ip)))
-                        net_ip, net_mask = str(interface.net).split("/")
-                        networks.add(Network(net_ip,int(net_mask)))
-                starting_positions[f"{obj.id}.{active_service.name}"] = {"known_hosts":hosts, "known_networks":networks}
-    return starting_positions
-
-def store_trajectories_to_jsonl(trajectories:list, dir:str, filename:str)->None:
-    """
-    Store trajectories to a JSONL file.
-    Args:
-        trajectories (list): List of trajectory data to store.
-        dir (str): Directory where the file will be stored.
-        filename (str): Name of the file (without extension).
-    """
-    # make sure the directory exists
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-    # construct the full file name
-    filename = os.path.join(dir, f"{filename.rstrip('jsonl')}.jsonl")
-    # store the trajectories
-    with jsonlines.open(filename, "a") as writer:
-        writer.write(trajectories)
-
-if __name__ == "__main__":
-    state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
-            known_hosts={IP("192.168.1.2"), IP("192.168.1.3")}, controlled_hosts={IP("192.168.1.2")},
-            known_services={IP("192.168.1.3"):{Service("service1", "public", "1.01", True)}},
-            known_data={IP("192.168.1.3"):{Data("ChuckNorris", "data1"), Data("ChuckNorris", "data2")},
-                        IP("192.168.1.2"):{Data("McGiver", "data2")}})
-    
-    print(state_as_ordered_string(state))

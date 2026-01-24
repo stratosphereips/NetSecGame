@@ -1,19 +1,18 @@
+# Author: Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 import itertools
 import argparse
 import logging
 import os
 import json
 from pathlib import Path
-from AIDojoCoordinator.utils.utils import get_logging_level
-from AIDojoCoordinator.game_components import Action, ActionType
-from AIDojoCoordinator.worlds.NSEGameCoordinator import NSGCoordinator
+from netsecgame.utils.utils import get_logging_level
+from netsecgame.game_components import Action, ActionType
+from netsecgame.game.worlds.NetSecGame import NetSecGame
 
 
-
-
-class WhiteBoxNSGCoordinator(NSGCoordinator):
+class WhiteBoxNetSecGame(NetSecGame):
     """
-    WhiteBoxNSGCoordinator is an extension for the NetSecGame environment
+    WhiteBoxNetSecGame is an extension for the NetSecGame environment
     that provides list of all possible actions to each agent that registers in the game.
     """
     def __init__(self, game_host, game_port, task_config, allowed_roles=["Attacker", "Defender", "Benign"], seed=42, include_block_action=False):
@@ -26,15 +25,17 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
         super()._initialize()
         # All components are initialized, now we can set the action mapping
         self.logger.debug("Creating action mapping for the game.")
-        self._generate_all_actions()
+        self._all_actions = self._generate_all_actions()
         self._registration_info = {
             "all_actions": json.dumps([v.as_dict for v in self._all_actions]),
         } if self._all_actions is not None else {}
 
 
-    def _generate_all_actions(self)-> list:
+    def _generate_all_actions(self)-> list[Action]:
         """
         Generate a list of all possible actions for the game.
+        Returns:
+            list[Action]: List of all possible actions.
         """
         actions = []
         all_ips = [self._ip_mapping[ip] for ip in self._ip_to_hostname.keys()]
@@ -119,7 +120,7 @@ class WhiteBoxNSGCoordinator(NSGCoordinator):
         self.logger.info(f"Created action mapping with {len(actions)} actions.")
         for action in actions:
             self.logger.debug(action)
-        self._all_actions = actions
+        return actions
 
 
     def _create_state_from_view(self, view, add_neighboring_nets = True):
@@ -199,6 +200,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
   
-    game_server = WhiteBoxNSGCoordinator(args.game_host, args.game_port, args.task_config, seed=args.seed)
+    game_server = WhiteBoxNetSecGame(args.game_host, args.game_port, args.task_config, seed=args.seed)
     # Run it!
     game_server.run()

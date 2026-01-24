@@ -9,19 +9,19 @@ import netaddr, re
 import json
 from faker import Faker
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Any
 from collections import defaultdict
 
-from AIDojoCoordinator.game_components import GameState, Action, ActionType, IP, Network, Data, Service
-from AIDojoCoordinator.coordinator import GameCoordinator
+from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service, AgentRole
+from netsecgame.game.coordinator import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
-from AIDojoCoordinator.utils.utils import get_logging_level
+from netsecgame.utils.utils import get_logging_level
 
-class NSGCoordinator(GameCoordinator):
+class NetSecGame(GameCoordinator):
 
-    def __init__(self, game_host, game_port, task_config:str, allowed_roles=["Attacker", "Defender", "Benign"], seed=None):
-        super().__init__(game_host, game_port, service_host=None, service_port=None, allowed_roles=allowed_roles, task_config_file=task_config)
+    def __init__(self, game_host, game_port, task_config:str, seed=None):
+        super().__init__(game_host, game_port, service_host=None, service_port=None, task_config_file=task_config)
 
         # Internal data structure of the NSG
         self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
@@ -57,17 +57,20 @@ class NSGCoordinator(GameCoordinator):
             None
         """
         # Load CYST configuration
-        self._process_cyst_config(self._cyst_objects)
-                # Check if dynamic network and ip adddresses are required
-        if self._use_dynamic_ips:
-            self.logger.info("Dynamic change of the IP and network addresses enabled")
-            self._faker_object = Faker()
-            Faker.seed(self._seed)  
-        # store initial values for parts which are modified during the game
-        self._data_original = copy.deepcopy(self._data)
-        self._data_content_original = copy.deepcopy(self._data_content)
-        self._firewall_original = copy.deepcopy(self._firewall)
-        self.logger.info("Environment initialization finished")
+        if self._cyst_objects is not None:
+            self._process_cyst_config(self._cyst_objects)
+                    # Check if dynamic network and ip adddresses are required
+            if self._use_dynamic_ips:
+                self.logger.info("Dynamic change of the IP and network addresses enabled")
+                self._faker_object = Faker()
+                Faker.seed(self._seed)  
+            # store initial values for parts which are modified during the game
+            self._data_original = copy.deepcopy(self._data)
+            self._data_content_original = copy.deepcopy(self._data_content)
+            self._firewall_original = copy.deepcopy(self._firewall)
+            self.logger.info("Environment initialization finished")
+        else:
+            self.logger.error("CYST configuration not loaded, cannot initialize the environment!")
 
     def _get_hosts_from_view(self, view_hosts:Iterable, allowed_hosts=None)->set[IP]:
         """
@@ -295,7 +298,7 @@ class NSGCoordinator(GameCoordinator):
         self.logger.info(f"Generated GameState:{game_state}")
         return game_state
 
-    def _process_cyst_config(self, configuration_objects:list)-> None:
+    def _process_cyst_config(self, configuration_objects:list[Any])-> None:
         """
         Process the cyst configuration file
         """
@@ -403,7 +406,7 @@ class NSGCoordinator(GameCoordinator):
             for ips in self._networks.values():
                 all_ips.update(ips)
             firewall = {ip:set() for ip in all_ips}
-            if self.task_config.get_use_firewall():
+            if self.config_manager.get_use_firewall():
                 self.logger.info("Firewall enabled - processing FW rules")
                 # LOCAL NETWORKS
                 for net, ips in self._networks.items():
@@ -665,7 +668,7 @@ class NSGCoordinator(GameCoordinator):
         """
         Returns set of Service tuples from given hostIP
         """
-        found_services = {}
+        found_services = set()
         if host_ip in self._ip_to_hostname: #is it existing IP?
             if self._ip_to_hostname[host_ip] in self._services: #does it have any services?
                 if host_ip in controlled_hosts: # Should  local services be included ?
@@ -712,7 +715,7 @@ class NSGCoordinator(GameCoordinator):
             self.logger.debug("\t\t\tCan't get data in host. The host is not controlled.")
         return known_blocks
 
-    def _get_data_content(self, host_ip:str, data_id:str)->str:
+    def _get_data_content(self, host_ip:str, data_id:str)->str|None:
         """
         Returns content of data identified by a host_ip and data_ip.
         """
@@ -756,7 +759,7 @@ class NSGCoordinator(GameCoordinator):
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
         
-    def _record_false_positive(self, src_ip:IP, dst_ip:IP, agent_id:tuple)->bool:
+    def _record_false_positive(self, src_ip:IP, dst_ip:IP, agent_id:tuple)-> None:
         # only record false positive if the agent is benign
         if self.is_agent_benign(agent_id):
             # find agent(s) that created the rule
@@ -1057,7 +1060,7 @@ class NSGCoordinator(GameCoordinator):
             new_content = json.dumps(new_content)
         self._data[hostaname].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
 
-    async def register_agent(self, agent_id, agent_role, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+    async def register_agent(self, agent_id, agent_role:AgentRole, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
         start_game_state = self._create_state_from_view(agent_initial_view)
         goal_state = self._create_goal_state_from_view(agent_win_condition_view)
         return start_game_state, goal_state
@@ -1069,7 +1072,7 @@ class NSGCoordinator(GameCoordinator):
     async def step(self, agent_id, agent_state, action)->GameState:
         return self._execute_action(agent_state, action, agent_id)
 
-    async def reset_agent(self, agent_id, agent_role, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+    async def reset_agent(self, agent_id, agent_role:AgentRole, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
        game_state = self._create_state_from_view(agent_initial_view)
        goal_state = self._create_goal_state_from_view(agent_win_condition_view)
        return game_state, goal_state    
@@ -1083,7 +1086,7 @@ class NSGCoordinator(GameCoordinator):
         self.logger.info('--- Reseting NSG Environment to its initial state ---')
         # change IPs if needed
         # This is done ONLY if it is (i) enabled in the task config and (ii) all agents requested it
-        if self.task_config.get_use_dynamic_addresses():
+        if self.config_manager.get_use_dynamic_ips():
             if all(self._randomize_topology_requests.values()):
                 self.logger.info("All agents requested reset with randomized topology.")
                 self._dynamic_ip_change()
@@ -1173,6 +1176,6 @@ if __name__ == "__main__":
         level=pass_level,
     )
 
-    game_server = NSGCoordinator(args.game_host, args.game_port, args.task_config, seed=args.seed)
+    game_server = NetSecGame(args.game_host, args.game_port, args.task_config, seed=args.seed)
     # Run it!
     game_server.run()

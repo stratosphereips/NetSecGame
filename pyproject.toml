@@ -3,55 +3,47 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "AIDojoGameCoordinator"
-version = "0.1.0"
+name = "netsecgame"
+dynamic = ["version"]
 description = "A package for coordinating AI-driven network simulation games."
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [
     { name = "Ondrej Lukas", email = "ondrej.lukas@aic.fel.cvut.cz" },
     { name = "Sebastian Garcia", email = "sebastian.garcia@agents.fel.cvut.cz" },
     { name = "Maria Rigaki", email = "maria.rigaki@aic.fel.cvut.cz" }
 ]
+# light-weight version (allows running and development of agents)
 dependencies = [
-    "aiohttp==3.11.8",
-    "attrs==23.2.0",
-    "beartype==0.19.0",
-    "cachetools==5.5.0",
-    "casefy==0.1.7",
-    "cyst==0.3.4",
-    "dictionaries==0.0.2",
-    "Faker==23.2.1",
-    "Jinja2==3.1.4",
-    "jsonlines==4.0.0",
-    "jsonpickle==3.3.0",
-    "kaleido==0.2.1",
-    "MarkupSafe==3.0.2",
-    "matplotlib==3.9.1",
+    "jsonlines>=4.0.0",
     "netaddr==0.9.0",
-    "networkx==3.4.2",
-    "numpy==1.26.4",
-    "pandas==2.2.2",
-    "plotly==5.22.0",
-    "pyserde==0.21.0",
-    "python-dateutil==2.8.2",
-    "PyYAML==6.0.1",
-    "redis==3.5.3",
-    "requests==2.32.3",
-    "scikit-learn==1.5.1",
-    "scipy==1.14.0",
-    "tenacity==8.5.0",
-    "typing-inspect==0.9.0",
-    "typing_extensions==4.12.2",
-    "cyst-core>=0.5.0"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 requires-python = ">=3.12"
 
 [project.optional-dependencies]
+
+# dependencies allowing to run the game server and the simulation
+server = [
+    "aiohttp>=3.11",      
+    "cyst-core>=0.5.0",   
+    "Faker>=23.2",          
+    "numpy>=1.26",        
+    "PyYAML>=6.0",        
+    "requests>=2.32",
+    "pyserde==0.21.0"
+]
+
 dev = [
+    "netsecgame[server]",
     "pytest",
     "ruff",
-    "pytest-asyncio"
+    "pytest-asyncio",
+    "twine"
 ]
 
 docs = [
@@ -61,6 +53,9 @@ docs = [
     "pymdown-extensions"
 ]
 
+[tool.setuptools.dynamic]
+version = { attr = "netsecgame.__version__" }
+
 [project.urls]
 Homepage = "https://github.com/stratosphereips/NetSecGame"
 Repository = "https://github.com/stratosphereips/NetSecGame"
@@ -69,7 +64,19 @@ Issues = "https://github.com/stratosphereips/NetSecGame/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["tests*"]
+include = ["netsecgame*"]
+exclude = [
+    "tests*",
+    "notebooks*",
+    "site*",
+    "docs*",
+    "logs*",
+    "mkdocs.yml",
+    "Dockerfile",
+    "NetSecGameAgents*"
+]
+
+
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

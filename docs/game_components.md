@@ -1,2 +1,1 @@
-# Game Components
-::: AIDojoCoordinator.game_components
+::: netsecgame.game_components

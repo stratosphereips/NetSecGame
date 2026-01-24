@@ -1,0 +1,6 @@
+exclude netsecgame/game/worlds/CYSTCoordinator.py
+exclude netsecgame/game/worlds/RealWorldNetSecGame.py
+exclude netsecgame/utils/trajectory_analysis.py
+exclude netsecgame/utils/actions_parser.py
+exclude netsecgame/utils/gamaplay_graphs.py
+exclude netsecgame/utils/log_parser.py

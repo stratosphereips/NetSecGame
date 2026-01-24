@@ -9,6 +9,8 @@ nav:
   - API Reference: 
     - game_components.md
     - game_coordinator.md
+    - agent_server.md
+    - configuration_manager.md
 
 plugins:
   - mkdocstrings:
@@ -26,6 +28,8 @@ plugins:
 markdown_extensions:
   - pymdownx.arithmatex
   - pymdownx.superfences
+  - pymdownx.highlight
+  - admonition
 
 extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
