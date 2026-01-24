@@ -191,6 +191,8 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -233,23 +235,14 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#netsecgame-architecture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        NetSecGame Architecture
-      
-    </span>
-  </a>
-  
-</li>
       
         <li class="md-nav__item">
   <a href="#game-components" class="md-nav__link">
@@ -514,7 +507,7 @@
   <span class="md-ellipsis">
     
   
-    Game Components
+    Game components
   
 
     
@@ -556,6 +549,62 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agent_server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration_manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration manager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -580,23 +629,14 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#netsecgame-architecture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        NetSecGame Architecture
-      
-    </span>
-  </a>
-  
-</li>
       
         <li class="md-nav__item">
   <a href="#game-components" class="md-nav__link">
@@ -782,15 +822,13 @@
 
 
 
-  <h1>Architecture</h1>
-
-<h2 id="netsecgame-architecture">NetSecGame Architecture</h2>
-<p>The Network Security Game(NSG) works as a game server - agents connect to it via TCP sockets and interact with the environment using the standard RL communication loop: Agent submits actinon and recieves new observation of the environment. The NSG supports real-time, highly customizable multi-agent simulations.</p>
+<h1 id="netsecgame-architecture">NetSecGame Architecture</h1>
+<p>The NetSecGame (NSG) works as a game server - agents connect to it via TCP sockets and interact with the environment using the standard RL communication loop: Agent submits action and receives new observation of the environment. The NSG supports real-time, highly customizable multi-agent simulations.</p>
 <h2 id="game-components">Game Components</h2>
 <p>The following classes are used in the game to hold information about the state of the game. They are used both in the <a href="#actions">Actions</a> and <a href="#gamestate">GameState</a>. See the API Reference for <a href="../game_components/">GameComponents</a></p>
 <h3 id="building-blocks">Building blocks</h3>
 <h4 id="ip">IP</h4>
-<p>IP is immutable object that represents an IPv4 object in the NetSecGame. It has a single parameter of the address in a dot-decimal notation (4 octet represeted as decimal value separeted by dots).</p>
+<p>IP is immutable object that represents an IPv4 object in the NetSecGame. It has a single parameter of the address in a dot-decimal notation (4 octet represented as decimal value separated by dots).</p>
 <p>Example: 
 <div class="highlight"><pre><span></span><code> <span class="n">ip</span> <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="s2">&quot;192.168.1.1&quot;</span><span class="p">)</span>
 </code></pre></div></p>
@@ -804,9 +842,9 @@
 <h4 id="service">Service</h4>
 <p>Service class holds information about services running in hosts. Each Service has four parameters:
 - <code>name</code>:str  - Name of the service (e.g., "SSH")
-- <code>type</code>:str - <code>passive</code> or <code>active</code>. Currently not being used.
+- <code>type</code>:str - <code>passive</code>, <code>active</code> or <code>unknown</code>(default).
 - <code>version</code>:str - version of the service.
-- <code>is_local</code>:bool - flag specifying if the service is local only. (if <code>True</code>, service is NOT visible without controlling the host).</p>
+- <code>is_local</code>:bool - flag specifying if the service is local only (default=True). (if <code>True</code>, service is NOT visible without controlling the host).</p>
 <p>Example: 
 <div class="highlight"><pre><span></span><code><span class="n">s</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="s1">&#39;postgresql&#39;</span><span class="p">,</span> <span class="s1">&#39;passive&#39;</span><span class="p">,</span> <span class="s1">&#39;14.3.0&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 </code></pre></div></p>
@@ -826,7 +864,7 @@ Each data instance has two parameters:
 <p>GameState is an object that represents a view of the NetSecGame environment in a given state. It is constructed as a collection of 'assets' available to the agent. GameState has following parts:
 - <code>known_networks</code>: Set of <a href="#network">Network</a> objects that the agent is aware of
 - <code>known_hosts</code>: Set of <a href="#ip">IP</a> objects that the agent is aware of
-- <code>controlled_hosts</code>: Set of <a href="#ip">IP</a> objetcs that the agent has control over. Note that <code>controlled_hosts</code> is a subset of <code>known_hosts</code>.
+- <code>controlled_hosts</code>: Set of <a href="#ip">IP</a> objects that the agent has control over. Note that <code>controlled_hosts</code> is a subset of <code>known_hosts</code>.
 - <code>known_services</code>: Dictionary of services that the agent is aware of.
 The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="#ip">IP</a> object is a key and the value is a set of <a href="#service">Service</a> objects located in the <code>IP</code>.
 - <code>known_data</code>: Dictionary of data instances that the agent is aware of. The dictionary format: {<code>IP</code>: {<code>Data</code>}} where <a href="#ip">IP</a> object is a key and the value is a set of <a href="#data">Data</a> objects located in the <code>IP</code>.
@@ -851,8 +889,9 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
 <li><strong>ScanNetwork</strong>, params{<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_network</code>:<code>&lt;Network&gt;</code>}: Scans the given <code>&lt;Network&gt;</code> from a specified source host. Discovers ALL hosts in a network that are accessible from <code>&lt;IP&gt;</code>. If successful, returns set of discovered <code>&lt;IP&gt;</code> objects.</li>
 <li><strong>FindServices</strong>, params={<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_host</code>:<code>&lt;IP&gt;</code>}: Used to discover ALL services running in the <code>target_host</code> if the host is accessible from <code>source_host</code>. If successful, returns a set of all discovered <code>&lt;Service&gt;</code> objects.</li>
 <li><strong>FindData</strong>, params={<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_host</code>:<code>&lt;IP&gt;</code>}: Searches <code>target_host</code> for data. If <code>source_host</code> differs from <code>target_host</code>, success depends on accessability from the <code>source_host</code>. If successful, returns a set of all discovered <code>&lt;Data&gt;</code> objects.</li>
-<li><strong>ExploitService</strong>, params={<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_host</code>:<code>&lt;IP&gt;</code>, <code>taget_service</code>:<code>&lt;Service&gt;</code>}: Exploits <code>target_service</code> in a specified <code>target_host</code>. If successful, the attacker gains control of the <code>target_host</code>.</li>
+<li><strong>ExploitService</strong>, params={<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_host</code>:<code>&lt;IP&gt;</code>, <code>target_service</code>:<code>&lt;Service&gt;</code>}: Exploits <code>target_service</code> in a specified <code>target_host</code>. If successful, the attacker gains control of the <code>target_host</code>.</li>
 <li><strong>ExfiltrateData</strong>, params{<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_host</code>:<code>&lt;IP&gt;</code>, <code>data</code>:<code>&lt;IP&gt;</code>}: Copies <code>data</code> from the <code>source_host</code> to <code>target_host</code> IF both are controlled and <code>target_host</code> is accessible from <code>source_host</code>.</li>
+<li><strong>BlockIP</strong>, params{<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_host</code>:<code>&lt;IP&gt;</code>, <code>blocked_host</code>:<code>&lt;IP&gt;</code>}: Blocks communication from/to <code>blocked_host</code> on <code>target_host</code>. Requires control of <code>target_host</code>.</li>
 </ul>
 <h3 id="action-preconditions-and-effects">Action preconditions and effects</h3>
 <p>In the following table, we describe the effects of selected actions and their preconditions. Note that if the preconditions are not satisfied, the actions's effects are not applied.</p>
@@ -869,13 +908,13 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
 <tr>
 <td>ScanNetwork</td>
 <td><code>source_host</code>, <code>target_network</code></td>
-<td><code>source_host</code> &isinv; <code>controlled_hosts</code></td>
+<td><code>source_host</code> ∈ <code>controlled_hosts</code></td>
 <td>extends <code>known_networks</code></td>
 </tr>
 <tr>
 <td>FindServices</td>
 <td><code>source_host</code>, <code>target_host</code></td>
-<td><code>source_host</code> &isinv; <code>controlled_hosts</code></td>
+<td><code>source_host</code> ∈ <code>controlled_hosts</code></td>
 <td>extends <code>known_services</code> AND <code>known_hosts</code></td>
 </tr>
 <tr>
@@ -887,7 +926,7 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
 <tr>
 <td>Exploit Service</td>
 <td><code>source_host</code>, <code>target_host</code>, <code>target_service</code></td>
-<td><code>source_host</code> &isinv; <code>controlled_hosts</code></td>
+<td><code>source_host</code> ∈ <code>controlled_hosts</code></td>
 <td>extends <code>controlled_hosts</code> with <code>target_host</code></td>
 </tr>
 <tr>
@@ -898,9 +937,9 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
 </tr>
 <tr>
 <td>BlockIP</td>
-<td><code>source_host</code>, <code>target_host</code>, <code>blockedIP</code></td>
-<td><code>source_host</code> &isinv; <code>controlled_hosts</code></td>
-<td>extends <code>known_blocks[target_host]</code> with <code>blockedIP</code></td>
+<td><code>source_host</code>, <code>target_host</code>, <code>blocked_host</code></td>
+<td><code>source_host</code> ∈ <code>controlled_hosts</code></td>
+<td>extends <code>known_blocks[target_host]</code> with <code>blocked_host</code></td>
 </tr>
 </tbody>
 </table>
@@ -911,7 +950,7 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
 <li>The <code>Find Data</code> action requires ownership of the target host.</li>
 <li>Playing <code>ExfiltrateData</code> requires controlling <strong>BOTH</strong> source and target hosts</li>
 <li>Playing <code>Find Services</code> can be used to discover hosts (if those have any active services)</li>
-<li>Parameters of <code>ScanNetwork</code> and <code>FindServices</code> can be chosen arbitrarily (they don't have to be listed in <code>known_newtworks</code>/<code>known_hosts</code>)</li>
+<li>Parameters of <code>ScanNetwork</code> and <code>FindServices</code> can be chosen arbitrarily (they don't have to be listed in <code>known_networks</code>/<code>known_hosts</code>)</li>
 </ol>
 <h3 id="observations">Observations</h3>
 <p>After submitting Action <code>a</code> to the environment, agents receive an <code>Observation</code> in return. Each observation consists of 4 parts:
