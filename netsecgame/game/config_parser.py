@@ -22,7 +22,7 @@ class ConfigParser():
         """
         Initializes the configuration parser. Required either path to a confgiuration file or a dict with configuraitons.
         """
-        self.logger = logging.getLogger('configparser')
+        self.logger = logging.getLogger('ConfigParser')
         if task_config_file:
             self.read_config_file(task_config_file)
         elif config_dict:

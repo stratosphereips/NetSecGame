@@ -17,7 +17,7 @@ class ConfigurationManager:
     """
     
     def __init__(self, task_config_file: Optional[str] = None, service_host: Optional[str] = None, service_port: Optional[int] = None):
-        self.logger = logging.getLogger("GameCoordinator-ConfigurationManager")
+        self.logger = logging.getLogger("ConfigurationManager")
         self._task_config_file = task_config_file
         self._service_host = service_host
         self._service_port = service_port
