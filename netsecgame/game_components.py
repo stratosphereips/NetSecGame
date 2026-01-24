@@ -877,6 +877,15 @@ class AgentRole(str, enum.Enum):
         elif isinstance(other, str):
              return self.value.lower() == other.lower().replace("agentrole.", "")
         return False
+
+    def __hash__(self) -> int:
+        """
+        Compute the hash of the AgentRole.
+
+        Returns:
+            int: The hash value.
+        """
+        return hash(self.value)
         
     @classmethod
     def from_string(cls, name: str) -> AgentRole:
