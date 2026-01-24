@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Iterable, Any
 from collections import defaultdict
 
-from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service
+from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service, AgentRole
 from netsecgame.game.coordinator import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
@@ -1060,7 +1060,7 @@ class NetSecGame(GameCoordinator):
             new_content = json.dumps(new_content)
         self._data[hostaname].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
 
-    async def register_agent(self, agent_id, agent_role, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+    async def register_agent(self, agent_id, agent_role:AgentRole, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
         start_game_state = self._create_state_from_view(agent_initial_view)
         goal_state = self._create_goal_state_from_view(agent_win_condition_view)
         return start_game_state, goal_state
@@ -1072,7 +1072,7 @@ class NetSecGame(GameCoordinator):
     async def step(self, agent_id, agent_state, action)->GameState:
         return self._execute_action(agent_state, action, agent_id)
 
-    async def reset_agent(self, agent_id, agent_role, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+    async def reset_agent(self, agent_id, agent_role:AgentRole, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
        game_state = self._create_state_from_view(agent_initial_view)
        goal_state = self._create_goal_state_from_view(agent_win_condition_view)
        return game_state, goal_state    

@@ -6,7 +6,7 @@ import signal
 import os
 from aiohttp import ClientSession
 
-from netsecgame.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, ProtocolConfig
+from netsecgame.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, ProtocolConfig, AgentRole
 from netsecgame.game.global_defender import GlobalDefender
 from netsecgame.utils.utils import observation_as_dict, get_str_hash, store_trajectories_to_jsonl
 from netsecgame.game.config_parser import ConfigParser
@@ -187,7 +187,7 @@ class GameCoordinator:
         Method for finding starting position for each agent role in the game.
         """
         starting_positions = {}
-        for agent_role in self.ALLOWED_ROLES:
+        for agent_role in AgentRole:
             try:
                 starting_positions[agent_role] = self.task_config.get_start_position(agent_role=agent_role)
                 self.logger.info(f"Starting position for role '{agent_role}': {starting_positions[agent_role]}")
@@ -200,7 +200,7 @@ class GameCoordinator:
         Method for finding wininng conditions for each agent role in the game.
         """
         win_conditions = {}
-        for agent_role in self.ALLOWED_ROLES:
+        for agent_role in AgentRole:
             try:
                 win_conditions[agent_role] = self.task_config.get_win_conditions(agent_role=agent_role)
             except KeyError:
@@ -213,7 +213,7 @@ class GameCoordinator:
         Method for finding goal description for each agent role in the game.
         """
         goal_descriptions ={}
-        for agent_role in self.ALLOWED_ROLES:
+        for agent_role in AgentRole:
             try:
                 goal_descriptions[agent_role] = self.task_config.get_goal_description(agent_role=agent_role)
             except KeyError:
@@ -225,7 +225,7 @@ class GameCoordinator:
         """
         Method for finding max amount of steps in 1 episode for each agent role in the game.
         """
-        max_steps = {role:self.task_config.get_max_steps(role) for role in self.ALLOWED_ROLES}
+        max_steps = {role:self.task_config.get_max_steps(role) for role in AgentRole}
         return max_steps
     
     async def start_tcp_server(self):
@@ -681,7 +681,7 @@ class GameCoordinator:
         self._agent_last_action[agent_addr] = None
         self._agent_rewards[agent_addr] = 0
         self._agent_false_positives[agent_addr] = 0
-        if agent_role.lower() == "attacker":
+        if agent_role in [AgentRole.Attacker]:
             self._agent_status[agent_addr] = AgentStatus.PlayingWithTimeout
         else:
             self._agent_status[agent_addr] = AgentStatus.Playing
@@ -690,7 +690,7 @@ class GameCoordinator:
         # create initial observation
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
-    async def register_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+    async def register_agent(self, agent_id:tuple, agent_role:AgentRole, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         """
@@ -702,7 +702,7 @@ class GameCoordinator:
         """
         raise NotImplementedError
 
-    async def reset_agent(self, agent_id:tuple, agent_role:str, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+    async def reset_agent(self, agent_id:tuple, agent_role:AgentRole, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
         raise NotImplementedError
 
     async def _remove_agent_from_game(self, agent_addr):
