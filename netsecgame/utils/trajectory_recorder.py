@@ -3,7 +3,7 @@
 import os
 import logging
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 from netsecgame.game_components import Action, GameState
 from netsecgame.utils.utils import store_trajectories_to_jsonl
 

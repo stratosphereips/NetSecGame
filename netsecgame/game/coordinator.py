@@ -5,15 +5,12 @@ from datetime import datetime
 from typing import Optional
 import signal
 import os
-from aiohttp import ClientSession
 
-from netsecgame.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, ProtocolConfig, AgentRole
+from netsecgame.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, AgentRole
 from netsecgame.game.global_defender import GlobalDefender
-from netsecgame.utils.utils import observation_as_dict, get_str_hash, store_trajectories_to_jsonl
-from netsecgame.game.config_parser import ConfigParser
+from netsecgame.utils.utils import observation_as_dict,store_trajectories_to_jsonl
 from netsecgame.game.agent_server import AgentServer
 from netsecgame.game.configuration_manager import ConfigurationManager
-from cyst.api.environment.environment import Environment
 
 
 def convert_msg_dict_to_json(msg_dict: dict) -> str:

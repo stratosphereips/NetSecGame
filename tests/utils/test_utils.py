@@ -1,7 +1,5 @@
 import pytest
-import json
 import logging
-from unittest.mock import MagicMock, patch
 from netsecgame.utils.utils import (
     get_str_hash,
     state_as_ordered_string,
@@ -16,7 +14,6 @@ from netsecgame.utils.utils import (
 from netsecgame.game_components import (
     GameState,
     Observation,
-    Action,
     ActionType,
     IP,
     Network,

@@ -2,9 +2,8 @@ from __future__ import annotations
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 # Library of helpful functions and objects to play the net sec game
 from dataclasses import dataclass, field, asdict
-from typing import Dict, Any, List, Set, Tuple, Optional, NamedTuple
+from typing import Dict, Any, List, Set, Tuple, NamedTuple
 import dataclasses
-from collections import namedtuple
 import json
 import enum
 import sys

@@ -1,7 +1,7 @@
 import pytest
-from unittest.mock import MagicMock, patch
-from netsecgame import TrajectoryRecorder
-from netsecgame.game_components import Action, ActionType, GameState, Network
+from unittest.mock import patch
+from netsecgame.utils.trajectory_recorder import TrajectoryRecorder
+from netsecgame.game_components import Action, ActionType, GameState
 
 # Mock objects needed for tests
 @pytest.fixture
