@@ -15,6 +15,19 @@ from netsecgame.game.agent_server import AgentServer
 from cyst.api.environment.environment import Environment
 
 
+def convert_msg_dict_to_json(msg_dict: dict) -> str:
+    """
+    Helper function to create text-base messge from a dictionary. Used in the Agent-Game communication.
+    """
+    try:
+        # Convert message into string representation
+        output_message = json.dumps(msg_dict)
+    except Exception as e:
+        # Let the caller handle logging if needed, or re-raise with context
+        raise TypeError(f"Error when converting msg to JSON:{e}") from e
+    return output_message
+
+
 class GameCoordinator:
     """
     Class for creation, and management of agent interactions in AI Dojo.
@@ -110,7 +123,17 @@ class GameCoordinator:
         self._agent_trajectories = {}
     
     def _spawn_task(self, coroutine, *args, **kwargs)->asyncio.Task:
-        "Helper function to make sure all tasks are registered for proper termination"
+        """
+        Helper function to make sure all tasks are registered for proper termination.
+        
+        Args:
+            coroutine: The coroutine function to schedule.
+            *args: Positional arguments to pass to the coroutine.
+            **kwargs: Keyword arguments to pass to the coroutine.
+            
+        Returns:
+            asyncio.Task: The created task object.
+        """
         task = asyncio.create_task(coroutine(*args, **kwargs))
         self._tasks.add(task)
         def remove_task(t):
@@ -118,31 +141,23 @@ class GameCoordinator:
         task.add_done_callback(remove_task)  # Remove task when done
         return task
 
-    async def shutdown_signal_handler(self):
-        """Handle shutdown signals."""
+    async def shutdown_signal_handler(self)->None:
+        """
+        Logs the signal reception and sets the shutdown flag to initiate graceful termination.
+        """
         self.logger.info("Shutdown signal received. Setting shutdown flag.")
         self.shutdown_flag.set()
 
     async def create_agent_queue(self, agent_addr:tuple)->None:
         """
         Creates a queue for the given agent address if it doesn't already exist.
+        
+        Args:
+            agent_addr (tuple): The agent address to create a queue for.
         """
         if agent_addr not in self._agent_response_queues:
             self._agent_response_queues[agent_addr] = asyncio.Queue()
             self.logger.info(f"Created queue for agent {agent_addr}. {len(self._agent_response_queues)} queues in total.")
-
-    def convert_msg_dict_to_json(self, msg_dict:dict)->str:
-        """
-        Helper function to create text-base messge from a dictionary. Used in the Agent-Game communication.
-        """
-        try:
-            # Convert message into string representation
-            output_message = json.dumps(msg_dict)
-        except Exception as e:
-            self.logger.error(f"Error when converting msg to JSON:{e}")
-            raise e
-            # Send to anwer_queue
-        return output_message
     
     def run(self)->None:
         """
@@ -435,7 +450,7 @@ class GameCoordinator:
                         if hasattr(self, "_registration_info"):
                             for key, value in self._registration_info.items():
                                 output_message_dict["message"][key] = value
-                        await self._agent_response_queues[agent_addr].put(self.convert_msg_dict_to_json(output_message_dict))
+                        await self._agent_response_queues[agent_addr].put(convert_msg_dict_to_json(output_message_dict))
                 else:
                     self.logger.info(
                         f"\tError in registration, unknown agent role: {agent_role}!"
@@ -445,7 +460,7 @@ class GameCoordinator:
                         "status": str(GameStatus.BAD_REQUEST),
                         "message": f"Incorrect agent_role {agent_role}",
                     }
-                    response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                    response_msg_json = convert_msg_dict_to_json(output_message_dict)
                     await self._agent_response_queues[agent_addr].put(response_msg_json)
             else:
                 self.logger.info("\tError in registration, agent already exists!")
@@ -454,7 +469,7 @@ class GameCoordinator:
                         "status": str(GameStatus.BAD_REQUEST),
                         "message": "Agent already exists.",
                     }
-                response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+                response_msg_json = convert_msg_dict_to_json(output_message_dict)
                 await self._agent_response_queues[agent_addr].put(response_msg_json)
         except asyncio.CancelledError:
             self.logger.debug(f"Proccessing JoinAction of agent {agent_addr} interrupted")
@@ -521,7 +536,7 @@ class GameCoordinator:
             if "request_trajectory" in reset_action.parameters and reset_action.parameters["request_trajectory"]:
                 output_message_dict["message"]["last_trajectory"] = self._agent_trajectories[agent_addr]
             self._agent_trajectories[agent_addr] = self._reset_trajectory(agent_addr)
-        response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+        response_msg_json = convert_msg_dict_to_json(output_message_dict)
         await self._agent_response_queues[agent_addr].put(response_msg_json)
 
     async def _process_game_action(self, agent_addr: tuple, action:Action)->None:
@@ -592,7 +607,7 @@ class GameCoordinator:
                 "observation": observation_as_dict(new_observation),
                 "status": str(GameStatus.OK),
             }
-        response_msg_json = self.convert_msg_dict_to_json(output_message_dict)
+        response_msg_json = convert_msg_dict_to_json(output_message_dict)
         await self._agent_response_queues[agent_addr].put(response_msg_json)
 
     async def _assign_rewards_episode_end(self):
@@ -764,14 +779,23 @@ class GameCoordinator:
             return agent_info
 
     async def step(self, agent_id:tuple, agent_state:GameState, action:Action):
+        """
+        Domain specific method of the environment. Creates the initial state of the agent.
+        Must be implemented by the domain specific environment.
+        """
         raise NotImplementedError
     
     async def reset(self)->bool:
+        """
+        Domain specific method of the environment. Creates the initial state of the agent.
+        Must be implemented by the domain specific environment.
+        """
         raise NotImplementedError
 
     def _initialize(self):
         """
         Initialize the game state and other necessary components. This is called at the start of the game after the configuration is loaded.
+        Must be implemented by the domain specific environment.
         """
         raise NotImplementedError
 
@@ -829,6 +853,8 @@ class GameCoordinator:
     def add_false_positive(self, agent:tuple)->None:
         """
         Method for adding false positive to the agent.
+        Args:
+            agent (tuple): The agent to add false positive to.
         """
         self.logger.debug(f"Adding false positive to {agent}")
         if agent in self._agent_false_positives:
@@ -840,6 +866,10 @@ class GameCoordinator:
     def _update_agent_status(self, agent:tuple)->AgentStatus:
         """
         Update the status of an agent based on reaching the goal, timeout or detection.
+        Args:
+            agent (tuple): The agent to update the status of.
+        Returns:
+            AgentStatus: The new status of the agent.
         """
         # read current status of the agent
         next_status = self._agent_status[agent]
@@ -858,6 +888,13 @@ class GameCoordinator:
         return next_status
 
     def _update_agent_episode_end(self, agent:tuple)->bool:
+        """
+        Update the episode end status of an agent.
+        Args:
+            agent (tuple): The agent to update the episode end status of.
+        Returns:
+            bool: True if the episode has ended, False otherwise.
+        """
         episode_end = False
         if  self._agent_status[agent] in [AgentStatus.Success, AgentStatus.Fail, AgentStatus.TimeoutReached]:
             # agent reached goal, timeout or was detected

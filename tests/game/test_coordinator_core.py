@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 from netsecgame.game.coordinator import GameCoordinator
 from netsecgame.game_components import ActionType, Action, AgentStatus, GameState, Observation, GameStatus
+from netsecgame.game.coordinator import convert_msg_dict_to_json
 
 # -----------------------
 # Fixtures
@@ -106,7 +107,7 @@ async def test_load_initialization_objects_loads_config(gc_with_test_config):
 def test_convert_msg_dict_to_json_success(gc_with_test_config):
     """Test that convert_msg_dict_to_json correctly serializes a dictionary."""
     msg = {"foo": "bar"}
-    json_str = gc_with_test_config.convert_msg_dict_to_json(msg)
+    json_str = convert_msg_dict_to_json(msg)
     assert json_str == '{"foo": "bar"}'
 
 
@@ -116,7 +117,7 @@ def test_convert_msg_dict_to_json_failure(gc_with_test_config):
         pass
 
     with pytest.raises(TypeError):
-        gc_with_test_config.convert_msg_dict_to_json({"bad": Unserializable()})
+        convert_msg_dict_to_json({"bad": Unserializable()})
 
 
 @pytest.mark.asyncio
