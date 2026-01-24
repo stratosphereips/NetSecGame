@@ -328,26 +328,26 @@ class ConfigParser():
                 rewards[name] = default_value
         return rewards
 
-    def get_use_dynamic_addresses(self)->bool:
+    def get_use_dynamic_addresses(self, default_value: bool = False)->bool:
         """
         Reads if the IP and Network addresses should be dynamically changed.
         """
         try:
             use_dynamic_addresses = self.config['env']['use_dynamic_addresses']
         except KeyError:
-            use_dynamic_addresses = False
+            use_dynamic_addresses = default_value
         return bool(use_dynamic_addresses)
 
-    def get_store_trajectories(self):
+    def get_store_trajectories(self, default_value: bool = False):
         """
         Read if the replay buffer should be stored in file
         """
         try:
-            store_rb = self.config['env']['save_trajectories']
+            store_trajectories = self.config['env']['save_trajectories']
         except KeyError:
             # Option is not in the configuration - default to FALSE
-            store_rb = False
-        return store_rb
+            store_trajectories = default_value
+        return store_trajectories
     
     def get_scenario(self):
         """
@@ -382,7 +382,7 @@ class ConfigParser():
             seed = randint(0,100)
         return seed
     
-    def get_randomize_goal_every_episode(self) -> bool:
+    def get_randomize_goal_every_episode(self, default_value: bool = False) -> bool:
         """
         Get if the randomization should be done only once or at the beginning of every episode
         """
@@ -390,32 +390,32 @@ class ConfigParser():
             randomize_goal_every_episode = self.config["coordinator"]["agents"]["attackers"]["goal"]["is_any_part_of_goal_random"]
         except KeyError:
             # Option is not in the configuration - default to FALSE
-            randomize_goal_every_episode = False
+            randomize_goal_every_episode = default_value
         return randomize_goal_every_episode
     
-    def get_use_firewall(self)->bool:
+    def get_use_firewall(self, default_value: bool = False)->bool:
         """
         Retrieves if the firewall functionality is allowed for netsecgame.
         Default: False
         """
         try:
-            use_firewall = self.config['env']['use_firewall']
+            use_firewall = self.config['env']['use_firewall']   
         except KeyError:
-            use_firewall = False
+            use_firewall = default_value
         return use_firewall
 
-    def get_use_global_defender(self)->bool:
+    def get_use_global_defender(self, default_value: bool = False)->bool:
         try:
             use_global_defender = self.config['env']['use_global_defender']
         except KeyError:
-            use_global_defender = False
+            use_global_defender = default_value
         return use_global_defender
     
-    def get_required_num_players(self)->int:
+    def get_required_num_players(self, default_value: int = 1)->int:
         try:
             required_players = int(self.config['env']['required_players'])
         except KeyError:
-            required_players = 1
+            required_players = default_value
         except ValueError:
-            required_players = 1
+            required_players = default_value
         return required_players
