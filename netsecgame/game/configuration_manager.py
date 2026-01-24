@@ -156,3 +156,45 @@ class ConfigurationManager:
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_use_firewall(default_value)
+
+    def get_all_starting_positions(self) -> Dict[str, Any]:
+        """Returns starting positions for all roles."""
+        starting_positions = {}
+        for agent_role in AgentRole:
+            try:
+                starting_positions[agent_role] = self.get_starting_position(role=agent_role)
+                self.logger.info(f"Starting position for role '{agent_role}': {starting_positions[agent_role]}")
+            except KeyError:
+                starting_positions[agent_role] = {}
+        return starting_positions
+
+    def get_all_win_conditions(self) -> Dict[str, Any]:
+        """Returns win conditions for all roles."""
+        win_conditions = {}
+        for agent_role in AgentRole:
+            try:
+                win_conditions[agent_role] = self.get_win_conditions(role=agent_role)
+            except KeyError:
+                win_conditions[agent_role] = {}
+            self.logger.info(f"Win condition for role '{agent_role}': {win_conditions[agent_role]}")
+        return win_conditions
+
+    def get_all_goal_descriptions(self) -> Dict[str, str]:
+        """Returns goal descriptions for all roles."""
+        goal_descriptions = {}
+        for agent_role in AgentRole:
+            try:
+                goal_descriptions[agent_role] = self.get_goal_description(role=agent_role)
+            except KeyError:
+                goal_descriptions[agent_role] = ""
+            self.logger.info(f"Goal description for role '{agent_role}': {goal_descriptions[agent_role]}")
+        return goal_descriptions
+
+    def get_all_max_steps(self) -> Dict[str, Optional[int]]:
+        """Returns max steps for all roles."""
+        # Using self.get_max_steps might raise RuntimeError if checks are there, 
+        # but simpler to just call parser directly or the single accessor since we are inside the class.
+        # However, the single accessor has the check.
+        # But wait, self.get_max_steps(role) does `self._parser.get_max_steps(role)` already.
+        # Iterating over AgentRole is correct.
+        return {role: self.get_max_steps(role) for role in AgentRole}

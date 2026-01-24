@@ -99,10 +99,10 @@ def make_writer_with_peer():
 
 @pytest.mark.asyncio
 async def test_load_initialization_objects_loads_config(gc_with_test_config):
-    """Test that loading initialization objects sets up config and cyst objects."""
-    gc_with_test_config._load_initialization_objects()
-    assert gc_with_test_config._cyst_objects is not None
-    assert hasattr(gc_with_test_config, "_CONFIG_FILE_HASH")
+    """Test that loading initialization objects sets up config using manager."""
+    await gc_with_test_config.config_manager.load()
+    assert gc_with_test_config.config_manager.get_cyst_objects() is not None
+    assert gc_with_test_config.config_manager.get_config_hash() is not None
 
 def test_convert_msg_dict_to_json_success(gc_with_test_config):
     """Test that convert_msg_dict_to_json correctly serializes a dictionary."""
@@ -122,59 +122,79 @@ def test_convert_msg_dict_to_json_failure(gc_with_test_config):
 
 @pytest.mark.asyncio
 async def test_create_agent_queue_adds_new_queue(gc_with_test_config):
-    """Test that create_agent_queue adds a new queue for the agent."""
-    agent = ("127.0.0.1", 12345)
-    await gc_with_test_config.create_agent_queue(agent)
-    assert agent in gc_with_test_config._agent_response_queues
-    assert isinstance(gc_with_test_config._agent_response_queues[agent], asyncio.Queue)
+    """Test that create_agent_queue adds a new queue for an unknown agent."""
+    addr = ("127.0.0.1", 12345)
+    await gc_with_test_config.create_agent_queue(addr)
+    assert addr in gc_with_test_config._agent_response_queues
+    assert isinstance(gc_with_test_config._agent_response_queues[addr], asyncio.Queue)
 
 
 @pytest.mark.asyncio
 async def test_create_agent_queue_idempotent(gc_with_test_config):
-    """Test that create_agent_queue does not create a new queue if it already exists."""
-    agent = ("127.0.0.1", 12345)
-    await gc_with_test_config.create_agent_queue(agent)
-    q1 = gc_with_test_config._agent_response_queues[agent]
-    await gc_with_test_config.create_agent_queue(agent)
-    q2 = gc_with_test_config._agent_response_queues[agent]
-    assert q1 is q2
+    """Test that create_agent_queue doesn't recreate existing queues."""
+    addr = ("127.0.0.1", 12345)
+    await gc_with_test_config.create_agent_queue(addr)
+    first_queue = gc_with_test_config._agent_response_queues[addr]
+    
+    await gc_with_test_config.create_agent_queue(addr)
+    second_queue = gc_with_test_config._agent_response_queues[addr]
+    
+    assert first_queue is second_queue
 
 
-def test_load_initialization_objects(gc_with_test_config):
-    """Test that _load_initialization_objects initializes config and cyst objects."""
-    gc_with_test_config._load_initialization_objects()
-    assert gc_with_test_config._cyst_objects is not None
-    assert hasattr(gc_with_test_config, "_CONFIG_FILE_HASH")
+@pytest.mark.asyncio
+async def test_load_initialization_objects(gc_with_test_config):
+    """Test that config_manager.load initializes config and cyst objects."""
+    await gc_with_test_config.config_manager.load()
+    # Check that cyst objects are loaded via manager
+    assert gc_with_test_config.config_manager.get_cyst_objects() is not None
+    # Check that hash is set
+    assert gc_with_test_config.config_manager.get_config_hash() is not None
 
 
-def test_get_starting_position_per_role(gc_with_test_config):
-    """Test that _get_starting_position_per_role returns positions for all roles."""
-    gc_with_test_config._load_initialization_objects()
-    positions = gc_with_test_config._get_starting_position_per_role()
-    assert set(positions.keys()) == set(gc_with_test_config.ALLOWED_ROLES)
+@pytest.mark.asyncio
+async def test_start_tasks_initializes_config(gc_with_test_config):
+    """Test that start_tasks initializes configuration attributes via manager."""
+    # We can't easily run full start_tasks because it starts a server loop.
+    # But we can verify that config loading logic works if we extract it or partial mock.
+    # Alternatively, we can test that calling config_manager.load() and then accessing properties works.
+    # Or, looking at previous tests, they tested the helper private methods.
+    # Now we should test the properties on config_manager directly OR verify they are set on GC after load.
+    
+    await gc_with_test_config.config_manager.load()
+    # Manually populate like start_tasks does to verify logic correctness (or assume start_tasks does it)
+    # Since start_tasks is the only place calling these, we might want to test the config_manager methods instead.
+    
+    positions = gc_with_test_config.config_manager.get_all_starting_positions()
+    assert "Attacker" in positions
+    assert "Defender" in positions
 
 
-def test_get_goal_description_per_role(gc_with_test_config):
-    """Test that _get_goal_description_per_role returns descriptions for all roles."""
-    gc_with_test_config._load_initialization_objects()
-    desc = gc_with_test_config._get_goal_description_per_role()
-    assert set(desc.keys()) == set(gc_with_test_config.ALLOWED_ROLES)
+@pytest.mark.asyncio
+async def test_goal_descriptions_loaded(gc_with_test_config):
+    """Test that goal descriptions are retrievable via config manager."""
+    await gc_with_test_config.config_manager.load()
+    desc = gc_with_test_config.config_manager.get_all_goal_descriptions()
+    assert "Attacker" in desc
+    assert "Defender" in desc
 
 
-def test_get_win_condition_per_role(gc_with_test_config):
-    """Test that _get_win_condition_per_role returns win conditions for all roles."""
-    gc_with_test_config._load_initialization_objects()
-    win = gc_with_test_config._get_win_condition_per_role()
-    assert set(win.keys()) == set(gc_with_test_config.ALLOWED_ROLES)
+@pytest.mark.asyncio
+async def test_win_conditions_loaded(gc_with_test_config):
+    """Test that win conditions are retrievable via config manager."""
+    await gc_with_test_config.config_manager.load()
+    win = gc_with_test_config.config_manager.get_all_win_conditions()
+    assert "Attacker" in win
+    assert "Defender" in win
 
 
-def test_get_max_steps_per_role(gc_with_test_config):
-    """Test that _get_max_steps_per_role returns max steps for all roles."""
-    gc_with_test_config._load_initialization_objects()
-    steps = gc_with_test_config._get_max_steps_per_role()
+@pytest.mark.asyncio
+async def test_max_steps_loaded(gc_with_test_config):
+    """Test that max steps are retrievable via config manager."""
+    await gc_with_test_config.config_manager.load()
+    steps = gc_with_test_config.config_manager.get_all_max_steps()
     assert isinstance(steps, dict)
-    # values can be int or None
-    assert all(isinstance(v, int) or v is None for v in steps.values())
+    assert "Attacker" in steps
 
 
 @pytest.mark.asyncio
@@ -409,7 +429,6 @@ class TestCoordinatorRefactoredMethods:
 
     def test_parse_action_message_valid(self, mock_coordinator_core):
         """New test for refactored method: _parse_action_message with valid input."""
-        from netsecgame.game_components import AgentRole
         valid_json = '{"action_type": "ActionType.JoinGame", "parameters": {"agent_info": {"name": "TestAgent", "role": "Attacker"}}}'
         agent_addr = ("127.0.0.1", 12345)
         

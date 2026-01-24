@@ -12,6 +12,7 @@ from netsecgame.game.global_defender import GlobalDefender
 from netsecgame.utils.utils import observation_as_dict, get_str_hash, store_trajectories_to_jsonl
 from netsecgame.game.config_parser import ConfigParser
 from netsecgame.game.agent_server import AgentServer
+from netsecgame.game.configuration_manager import ConfigurationManager
 from cyst.api.environment.environment import Environment
 
 
@@ -88,6 +89,10 @@ class GameCoordinator:
         self._service_port = service_port
         # for reading configuration locally
         self._task_config_file = task_config_file
+        
+        # Configuration Manager
+        self.config_manager = ConfigurationManager(task_config_file, service_host, service_port)
+        
         self.logger = logging.getLogger("AIDojo-GameCoordinator")
         self.ALLOWED_ROLES = allowed_roles
         self._cyst_objects = None
@@ -170,80 +175,6 @@ class GameCoordinator:
         finally:
             self.logger.info(f"{__class__.__name__} has exited.")
 
-    async def _fetch_initialization_objects(self):
-        """Send a REST request to MAIN and fetch initialization objects of CYST simulator."""
-        async with ClientSession() as session:
-            try:
-                async with session.get(f"http://{self._service_host}:{self._service_port}/cyst_init_objects") as response:
-                    if response.status == 200:
-                        response = await response.json()
-                        self.logger.debug(response)
-                        env = Environment.create()
-                        self._CONFIG_FILE_HASH = get_str_hash(response)
-                        self._cyst_objects = env.configuration.general.load_configuration(response)
-                        self.logger.debug(f"Initialization objects received:{self._cyst_objects}")
-                        #self.task_config = ConfigParser(config_dict=response["task_configuration"])
-                    else:
-                        self.logger.error(f"Failed to fetch initialization objects. Status: {response.status}")
-            except Exception as e:
-               self.logger.error(f"Error fetching initialization objects: {e}")
-        # Temporary fix
-        self.task_config = ConfigParser(self._task_config_file)
-    
-    def _load_initialization_objects(self)->None:
-        """
-        Loads task configuration from a local file.
-        """
-        self.task_config = ConfigParser(self._task_config_file)
-        self._cyst_objects = self.task_config.get_scenario()
-        self._CONFIG_FILE_HASH = get_str_hash(str(self._cyst_objects))
-
-    def _get_starting_position_per_role(self)->dict:
-        """
-        Method for finding starting position for each agent role in the game.
-        """
-        starting_positions = {}
-        for agent_role in AgentRole:
-            try:
-                starting_positions[agent_role] = self.task_config.get_start_position(agent_role=agent_role)
-                self.logger.info(f"Starting position for role '{agent_role}': {starting_positions[agent_role]}")
-            except KeyError:
-                starting_positions[agent_role] = {}
-        return starting_positions
-    
-    def _get_win_condition_per_role(self)-> dict:
-        """
-        Method for finding wininng conditions for each agent role in the game.
-        """
-        win_conditions = {}
-        for agent_role in AgentRole:
-            try:
-                win_conditions[agent_role] = self.task_config.get_win_conditions(agent_role=agent_role)
-            except KeyError:
-                win_conditions[agent_role] = {}
-            self.logger.info(f"Win condition for role '{agent_role}': {win_conditions[agent_role]}")
-        return win_conditions
-    
-    def _get_goal_description_per_role(self)->dict:
-        """
-        Method for finding goal description for each agent role in the game.
-        """
-        goal_descriptions ={}
-        for agent_role in AgentRole:
-            try:
-                goal_descriptions[agent_role] = self.task_config.get_goal_description(agent_role=agent_role)
-            except KeyError:
-                goal_descriptions[agent_role] = ""
-            self.logger.info(f"Goal description for role '{agent_role}': {goal_descriptions[agent_role]}")
-        return goal_descriptions
-    
-    def _get_max_steps_per_role(self)->dict:
-        """
-        Method for finding max amount of steps in 1 episode for each agent role in the game.
-        """
-        max_steps = {role:self.task_config.get_max_steps(role) for role in AgentRole}
-        return max_steps
-    
     async def start_tcp_server(self):
         """
         Starts TPC sever for the agent communication.
@@ -293,32 +224,30 @@ class GameCoordinator:
         )
 
 
-        # initialize the game objects
-        if self._service_host: #get the task config using REST API
-            self.logger.info(f"Fetching task configuration from {self._service_host}:{self._service_port}")
-            await self._fetch_initialization_objects()
-        elif self._task_config_file: # load task config locally from a file
-            self.logger.info(f"Loading task configuration from file: {self._task_config_file}")
-            self._load_initialization_objects()
-        else:
-            raise ValueError("Task configuration not specified")
+        # Initialize configuration manager and load the configuration
+        await self.config_manager.load()
+        self._cyst_objects = self.config_manager.get_cyst_objects()
+        
+        if self.config_manager.get_config_hash():
+             self._CONFIG_FILE_HASH = self.config_manager.get_config_hash()
 
-             
         # Read configuration
-        self._starting_positions_per_role = self._get_starting_position_per_role()
-        self._win_conditions_per_role = self._get_win_condition_per_role()
-        self._goal_description_per_role = self._get_goal_description_per_role()
-        self._steps_limit_per_role = self._get_max_steps_per_role()
+        # Read configuration
+        self._starting_positions_per_role = self.config_manager.get_all_starting_positions()
+        self._win_conditions_per_role = self.config_manager.get_all_win_conditions()
+        self._goal_description_per_role = self.config_manager.get_all_goal_descriptions()
+        self._steps_limit_per_role = self.config_manager.get_all_max_steps()
+        
         self.logger.debug(f"Timeouts set to:{self._steps_limit_per_role}")
-        if self.task_config.get_use_global_defender():
+        if self.config_manager.get_use_global_defender():
             self._global_defender = GlobalDefender()
         else:
             self._global_defender = None
-        self._use_dynamic_ips = self.task_config.get_use_dynamic_addresses()
+        self._use_dynamic_ips = self.config_manager.get_use_dynamic_ips()
         self.logger.info(f"Change IP every episode set to: {self._use_dynamic_ips}")
-        self._rewards = self.task_config.get_rewards(["step", "success", "fail", "false_positive"])
+        self._rewards = self.config_manager.get_rewards(["step", "success", "fail", "false_positive"])
         self.logger.info(f"Rewards set to:{self._rewards}")
-        self._min_required_players = self.task_config.get_required_num_players()
+        self._min_required_players = self.config_manager.get_required_num_players()
         self.logger.info(f"Min player requirement set to:{self._min_required_players}")
         # run self initialization
         self._initialize()

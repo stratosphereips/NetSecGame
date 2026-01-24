@@ -406,7 +406,7 @@ class NetSecGame(GameCoordinator):
             for ips in self._networks.values():
                 all_ips.update(ips)
             firewall = {ip:set() for ip in all_ips}
-            if self.task_config.get_use_firewall():
+            if self.config_manager.get_use_firewall():
                 self.logger.info("Firewall enabled - processing FW rules")
                 # LOCAL NETWORKS
                 for net, ips in self._networks.items():
@@ -1086,7 +1086,7 @@ class NetSecGame(GameCoordinator):
         self.logger.info('--- Reseting NSG Environment to its initial state ---')
         # change IPs if needed
         # This is done ONLY if it is (i) enabled in the task config and (ii) all agents requested it
-        if self.task_config.get_use_dynamic_addresses():
+        if self.config_manager.get_use_dynamic_ips():
             if all(self._randomize_topology_requests.values()):
                 self.logger.info("All agents requested reset with randomized topology.")
                 self._dynamic_ip_change()
