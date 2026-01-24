@@ -41,7 +41,7 @@ def get_starting_position_from_cyst_config(cyst_objects):
 class CYSTCoordinator(GameCoordinator):
 
     def __init__(self, game_host:str, game_port:int, service_host:str, service_port:int, allowed_roles=["Attacker", "Defender", "Benign"]):
-        super().__init__(game_host, game_port, service_host, service_port, allowed_roles)
+        super().__init__(game_host, game_port, service_host, service_port, task_config_file=None)
         self._id_to_cystid = {}
         self._cystid_to_id  = {}
         self._known_agent_roles = {}

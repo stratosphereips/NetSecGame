@@ -37,6 +37,7 @@ class GameCoordinator:
         host (str): Host address for the game server.
         port (int): Port number for the game server.
         logger (logging.Logger): Logger for the GameCoordinator.
+        config_manager (ConfigurationManager): Manager for game configuration.
         _tasks (set): Set of active asyncio tasks.
         shutdown_flag (asyncio.Event): Event to signal shutdown.
         _reset_event (asyncio.Event): Event to signal game reset.
@@ -46,10 +47,6 @@ class GameCoordinator:
         _reset_done_condition (asyncio.Condition): Condition for reset completion.
         _reset_lock (asyncio.Lock): Lock for reset operations.
         _agents_lock (asyncio.Lock): Lock for agent operations.
-        _service_host (str): Host for remote configuration service.
-        _service_port (int): Port for remote configuration service.
-        _task_config_file (str): Path to local task configuration file.
-        ALLOWED_ROLES (list): List of allowed agent roles.
         _cyst_objects: CYST simulator initialization objects.
         _cyst_object_string: String representation of CYST objects.
         _agent_action_queue (asyncio.Queue): Queue for agent actions.
@@ -69,10 +66,10 @@ class GameCoordinator:
         _agent_rewards (dict): Rewards per agent address.
         _agent_trajectories (dict): Trajectories per agent address.
     """
-    def __init__(self, game_host: str, game_port: int, service_host:str, service_port:int, task_config_file:str,allowed_roles=["Attacker", "Defender", "Benign"]) -> None:
+    def __init__(self, game_host: str, game_port: int, service_host:str, service_port:int, task_config_file:str) -> None:
         self.host = game_host
         self.port = game_port
-        self.logger = logging.getLogger("AIDojo-GameCoordinator")
+        self.logger = logging.getLogger("GameCoordinator")
 
         self._tasks = set()
         self.shutdown_flag = asyncio.Event()
@@ -83,21 +80,10 @@ class GameCoordinator:
         self._reset_done_condition = asyncio.Condition()
         self._reset_lock = asyncio.Lock()
         self._agents_lock = asyncio.Lock()
-        
-        # for accessing configuration remotely
-        self._service_host = service_host
-        self._service_port = service_port
-        # for reading configuration locally
-        self._task_config_file = task_config_file
-        
+  
         # Configuration Manager
         self.config_manager = ConfigurationManager(task_config_file, service_host, service_port)
-        
-        self.logger = logging.getLogger("AIDojo-GameCoordinator")
-        self.ALLOWED_ROLES = allowed_roles
-        self._cyst_objects = None
-        self._cyst_object_string = None
-        
+   
         # prepare agent communication
         self._agent_action_queue = asyncio.Queue()
         self._agent_response_queues = {}
@@ -231,7 +217,6 @@ class GameCoordinator:
         if self.config_manager.get_config_hash():
              self._CONFIG_FILE_HASH = self.config_manager.get_config_hash()
 
-        # Read configuration
         # Read configuration
         self._starting_positions_per_role = self.config_manager.get_all_starting_positions()
         self._win_conditions_per_role = self.config_manager.get_all_win_conditions()

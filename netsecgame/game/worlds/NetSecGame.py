@@ -20,8 +20,8 @@ from netsecgame.utils.utils import get_logging_level
 
 class NetSecGame(GameCoordinator):
 
-    def __init__(self, game_host, game_port, task_config:str, allowed_roles=["Attacker", "Defender", "Benign"], seed=None):
-        super().__init__(game_host, game_port, service_host=None, service_port=None, allowed_roles=allowed_roles, task_config_file=task_config)
+    def __init__(self, game_host, game_port, task_config:str, seed=None):
+        super().__init__(game_host, game_port, service_host=None, service_port=None, task_config_file=task_config)
 
         # Internal data structure of the NSG
         self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
