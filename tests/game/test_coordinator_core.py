@@ -378,3 +378,87 @@ async def test_process_game_action_ongoing_episode(initialized_coordinator, empt
     assert '"reward": 0' in msg_json
     assert '"end": false' in msg_json
     assert '"info": {}' in msg_json
+
+# -----------------------
+# New tests for refactored methods (_parse_action, _dispatch_action, run_game)
+# -----------------------
+class TestCoordinatorRefactoredMethods:
+    @pytest.fixture
+    def mock_coordinator_core(self):
+        # Create a mock coordinator slightly different from integration fixtures to purely test logic
+        coord = MagicMock(spec=GameCoordinator)
+        coord.logger = MagicMock()
+        coord._agent_action_queue = AsyncMock()
+        coord.shutdown_flag = MagicMock()
+        # Side effect to stop loop after one iteration
+        coord.shutdown_flag.is_set.side_effect = [False, True]
+        
+        # Bind refactored methods
+        coord._parse_action_message = GameCoordinator._parse_action_message.__get__(coord)
+        coord._dispatch_action = GameCoordinator._dispatch_action.__get__(coord)
+        coord.run_game = GameCoordinator.run_game.__get__(coord)
+        
+        # Set __name__ for the mocked handlers so assert .__name__ works
+        coord._process_join_game_action.__name__ = "_process_join_game_action"
+        coord._process_quit_game_action.__name__ = "_process_quit_game_action"
+        coord._process_reset_game_action.__name__ = "_process_reset_game_action"
+        coord._process_game_action.__name__ = "_process_game_action"
+        
+        return coord
+
+    def test_parse_action_message_valid(self, mock_coordinator_core):
+        """New test for refactored method: _parse_action_message with valid input."""
+        from netsecgame.game_components import AgentRole
+        valid_json = '{"action_type": "ActionType.JoinGame", "parameters": {"agent_info": {"name": "TestAgent", "role": "Attacker"}}}'
+        agent_addr = ("127.0.0.1", 12345)
+        
+        action = mock_coordinator_core._parse_action_message(agent_addr, valid_json)
+        
+        assert action is not None
+        assert action.type == ActionType.JoinGame
+        assert action.parameters["agent_info"].role == AgentRole.Attacker
+
+    def test_parse_action_message_invalid(self, mock_coordinator_core):
+        """New test for refactored method: _parse_action_message with invalid input."""
+        invalid_json = '{"invalid": "json"}'
+        agent_addr = ("127.0.0.1", 12345)
+        
+        action = mock_coordinator_core._parse_action_message(agent_addr, invalid_json)
+        
+        assert action is None
+        mock_coordinator_core.logger.error.assert_called()
+        # Verify agent address is in the error log
+        args, _ = mock_coordinator_core.logger.error.call_args
+        assert str(agent_addr) in args[0]
+
+    def test_dispatch_action(self, mock_coordinator_core):
+        """New test for refactored method: _dispatch_action routing."""
+        action = Action(ActionType.ScanNetwork, parameters={})
+        agent_addr = ("127.0.0.1", 12345)
+        
+        mock_coordinator_core._dispatch_action(agent_addr, action)
+        
+        mock_coordinator_core._spawn_task.assert_called_once()
+        args = mock_coordinator_core._spawn_task.call_args[0]
+        # Should route to _process_game_action for ScanNetwork
+        assert args[0].__name__ == "_process_game_action"
+
+    @pytest.mark.asyncio
+    async def test_run_game_flow(self, mock_coordinator_core):
+        """New test for refactored method: run_game flow (parse -> dispatch)."""
+        agent_addr = ("127.0.0.1", 12345)
+        valid_json = '{"action_type": "ActionType.ScanNetwork", "parameters": {}}'
+        
+        # Setup queue
+        mock_coordinator_core._agent_action_queue.get.return_value = (agent_addr, valid_json)
+        
+        with patch.object(mock_coordinator_core, '_parse_action_message') as mock_parse, \
+             patch.object(mock_coordinator_core, '_dispatch_action') as mock_dispatch:
+             
+            mock_action = Action(ActionType.ScanNetwork, {})
+            mock_parse.return_value = mock_action
+            
+            await mock_coordinator_core.run_game()
+            
+            mock_parse.assert_called_once_with(agent_addr, valid_json)
+            mock_dispatch.assert_called_once_with(agent_addr, mock_action)
