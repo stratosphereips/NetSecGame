@@ -26,7 +26,7 @@ class AgentServer(asyncio.Protocol):
         self.answers_queues = agent_response_queues
         self.max_connections = max_connections
         self.current_connections = 0
-        self.logger = logging.getLogger("AIDojo-AgentServer")
+        self.logger = logging.getLogger("AgentServer")
     
     async def handle_agent_quit(self, peername:tuple):
         """
