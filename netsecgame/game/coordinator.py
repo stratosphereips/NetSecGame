@@ -358,22 +358,19 @@ class GameCoordinator:
         """
         match action.type:
             case ActionType.JoinGame:
-                self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.JoinGame by {agent_addr}")
+                self.logger.debug(f"[{agent_addr}] Start processing of ActionType.JoinGame")
                 self._spawn_task(self._process_join_game_action, agent_addr, action)
             case ActionType.QuitGame:
-                self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.QuitGame by {agent_addr}")
+                self.logger.debug(f"[{agent_addr}] Start processing of ActionType.QuitGame")
                 self._spawn_task(self._process_quit_game_action, agent_addr)
             case ActionType.ResetGame:
-                self.logger.debug(f"About agent {agent_addr}. Start processing of ActionType.ResetGame by {agent_addr}")
+                self.logger.debug(f"[{agent_addr}] Start processing of ActionType.ResetGame")
                 self._spawn_task(self._process_reset_game_action, agent_addr, action)
-            case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService:
-                self.logger.debug(f"About agent {agent_addr}. Start processing of {action.type} by {agent_addr}")
-                self._spawn_task(self._process_game_action, agent_addr, action)
-            case ActionType.BlockIP:
-                self.logger.debug(f"About agent {agent_addr}. Start processing of {action.type} by {agent_addr}")
+            case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService | ActionType.BlockIP:
+                self.logger.debug(f"[{agent_addr}] Start processing of {action.type}")
                 self._spawn_task(self._process_game_action, agent_addr, action)
             case _:
-                self.logger.warning(f"About agent {agent_addr}. Unsupported action type: {action}!")
+                self.logger.warning(f"[{agent_addr}] Unsupported action type: {action}!")
 
     async def run_game(self):
         """
@@ -387,7 +384,7 @@ class GameCoordinator:
             agent_addr, message = await self._agent_action_queue.get()
             if message is not None:
                 self.logger.info(f"Coordinator received from agent {agent_addr}: {message}.")
-                
+
                 action = self._parse_action_message(agent_addr, message)
                 if action:
                     self._dispatch_action(agent_addr, action)
