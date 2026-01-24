@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from types import SimpleNamespace
 
 from netsecgame.game.coordinator import GameCoordinator
-from netsecgame.game_components import ActionType, Action, AgentStatus, GameState, Observation, GameStatus
+from netsecgame.game_components import ActionType, Action, AgentStatus, GameState, Observation, GameStatus, AgentRole
 from netsecgame.game.coordinator import convert_msg_dict_to_json
 
 # -----------------------
@@ -45,7 +45,6 @@ def gc_with_test_config(test_config_file_path):
         game_port=9999,
         service_host=None,  # force local config loading
         service_port=0,
-        allowed_roles=["Attacker", "Defender", "Benign"],
         task_config_file=test_config_file_path,
     )
 
