@@ -5,7 +5,7 @@ import socket
 import json
 from abc import ABC 
 
-from netsecgame.game_components import Action, GameState, Observation, ActionType, GameStatus, AgentInfo, ProtocolConfig
+from netsecgame.game_components import Action, GameState, Observation, ActionType, GameStatus, AgentInfo, ProtocolConfig, AgentRole
 
 class BaseAgent(ABC):
     """
@@ -152,7 +152,7 @@ class BaseAgent(ABC):
         try:
             self._logger.info(f'Registering agent as {self.role}')
             status, observation_dict, message = self.communicate(Action(ActionType.JoinGame,
-                                                                         parameters={"agent_info":AgentInfo(self.__class__.__name__,self.role)}))
+                                                                         parameters={"agent_info":AgentInfo(self.__class__.__name__,self.role.value)}))
             if status is GameStatus.CREATED:
                 self._logger.info(f"\tRegistration successful! {message}")
                 return Observation(GameState.from_dict(observation_dict["state"]), observation_dict["reward"], observation_dict["end"], message)
@@ -184,7 +184,7 @@ class BaseAgent(ABC):
 if __name__ == "__main__":
     # Example usage of BaseAgent
     GAME_PORT = 5000 # Change to the appropriate port
-    agent = BaseAgent("localhost", GAME_PORT, "Attacker")
+    agent = BaseAgent("localhost", GAME_PORT, AgentRole.Attacker)
     # Register the agent
     observation = agent.register()
     if observation:

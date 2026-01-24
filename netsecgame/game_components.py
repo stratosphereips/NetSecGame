@@ -373,7 +373,10 @@ class AgentInfo():
         Returns:
             AgentInfo: The created AgentInfo object.
         """
-        return cls(**data)
+        if isinstance(data, str):
+            data = ast.literal_eval(data)
+        processed = {"name": data["name"], "role": AgentRole.from_string(data["role"])}
+        return cls(**processed)   
 
 @dataclass(frozen=True, slots=True)
 class Action:
@@ -400,6 +403,8 @@ class Action:
             # Check if v is a dataclass AND ensuring it is an instance, not the class itself
             if dataclasses.is_dataclass(v) and not isinstance(v, type):
                 params[k] = asdict(v)
+            elif isinstance(v, dict):
+                params[k] = v
             elif isinstance(v, bool):  # Handle boolean values
                 params[k] = v
             else:
@@ -831,13 +836,22 @@ class AgentStatus(enum.Enum):
             raise ValueError(f"Invalid AgentStatus: {name}")
 
 @enum.unique
-class AgentRole(enum.Enum):
+class AgentRole(str, enum.Enum):
     """
     Enum representing possible roles of agents.
     """
     Attacker = "Attacker"
     Defender = "Defender"
     Benign = "Benign"
+
+    def __repr__(self) -> str:
+        """
+        Return the string representation of the AgentRole.
+
+        Returns:
+            str: The agent role as a string.
+        """
+        return self.value
 
     def to_string(self) -> str:
         """
@@ -900,3 +914,10 @@ class ProtocolConfig:
     END_OF_MESSAGE: bytes = b"EOF"
     BUFFER_SIZE: int = 8192
 
+if __name__ == "__main__":
+    role_str = AgentRole.Attacker.to_string()
+    role = AgentRole.from_string(role_str)
+    action = Action(ActionType.JoinGame, parameters={"agent_info": {"role": role, "name": "TestAgent"}})
+    print(action)
+    print(action.to_json())
+    print(action.from_json(action.to_json()))
