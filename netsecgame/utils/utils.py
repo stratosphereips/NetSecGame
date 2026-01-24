@@ -127,7 +127,7 @@ def observation_to_str(observation: Observation) -> str:
         # No more escaped JSON strings inside the JSON.
         return json.dumps(observation_as_dict(observation))
     except Exception as e:
-        print(f"Error in encoding observation '{observation}' to JSON string: {e}")
+        logging.getLogger(__name__).error(f"Error in encoding observation '{observation}' to JSON string: {e}")
         raise e
 
 def observation_from_dict(data: dict) -> Observation:
@@ -157,7 +157,7 @@ def observation_from_dict(data: dict) -> Observation:
             info=data.get("info", {})
         )
     except Exception as e:
-        print(f"Error in creating Observation from dict: {e}")
+        logging.getLogger(__name__).error(f"Error in creating Observation from dict: {e}")
         raise e
 
 def observation_from_str(json_str: str) -> Observation:
@@ -179,7 +179,7 @@ def observation_from_str(json_str: str) -> Observation:
         return observation_from_dict(data)
         
     except Exception as e:
-        print(f"Error in creating Observation from string: {e}")
+        logging.getLogger(__name__).error(f"Error in creating Observation from string: {e}")
         raise e
 
 def parse_log_content(log_content:str)->Optional[list]:
@@ -192,10 +192,10 @@ def parse_log_content(log_content:str)->Optional[list]:
             logs.append({"source_host":ip, "action_type":action_type})
         return logs
     except json.JSONDecodeError as e:
-        print(f"Error decoding JSON: {e}")
+        logging.getLogger(__name__).error(f"Error decoding JSON: {e}")
         return None
     except TypeError as e:
-        print(f"Error decoding JSON: {e}")
+        logging.getLogger(__name__).error(f"Error decoding JSON: {e}")
         return None
 
 def get_logging_level(debug_level):
