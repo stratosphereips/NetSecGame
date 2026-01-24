@@ -16,7 +16,8 @@ def mock_writer():
     writer.get_extra_info = MagicMock(return_value=('127.0.0.1', 12345))  # ✅ Sync method
     writer.write = MagicMock()                                           # ✅ Sync method
     writer.drain = AsyncMock()                                           # ✅ Async method
-    writer.close = AsyncMock()                                           # ✅ Async method
+    writer.close = MagicMock()                                           # ✅ Sync method, wait_closed is separate
+    writer.wait_closed = AsyncMock()                                     # ✅ Async method
     return writer
 
 @pytest.fixture
@@ -54,7 +55,8 @@ def make_writer_with_peer():
         writer.get_extra_info = MagicMock(return_value=(ip, port))  # get_extra_info is sync
         writer.write = MagicMock()                                   # write is sync
         writer.drain = AsyncMock()                                   # drain is async
-        writer.close = AsyncMock()                                   # close is async
+        writer.close = MagicMock()                                   # close is sync
+        writer.wait_closed = AsyncMock()                             # wait_closed is async
         return writer
     return _make
 
@@ -268,7 +270,9 @@ async def test_answer_queue_response_is_sent_to_agent(agent_server, mock_writer)
 async def test_cancelled_error_cleanup(agent_server, mock_writer):
     peername = ('127.0.0.1', 12345)
     mock_writer.get_extra_info = MagicMock(return_value=peername)
-    mock_writer.close = AsyncMock()
+    # mock_writer comes with correct mocks from fixture, but let's ensure wait_closed is tracked
+    # close is already MagicMock from fixture update, but if we want to be explicit:
+    mock_writer.close = MagicMock()
     mock_writer.wait_closed = AsyncMock()
     reader = AsyncMock()
     reader.read = AsyncMock(side_effect=asyncio.CancelledError())
