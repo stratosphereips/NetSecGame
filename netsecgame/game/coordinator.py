@@ -418,7 +418,7 @@ class GameCoordinator:
             if agent_addr not in self.agents:
                 agent_name = action.parameters["agent_info"].name
                 agent_role = action.parameters["agent_info"].role
-                if agent_role in self.ALLOWED_ROLES:
+                if agent_role in AgentRole:
                     # add agent to the world
                     new_agent_game_state, new_agent_goal_state = await self.register_agent(agent_addr, agent_role, self._starting_positions_per_role[agent_role], self._win_conditions_per_role[agent_role])
                     if new_agent_game_state: # successful registration
