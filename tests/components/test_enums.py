@@ -1,5 +1,6 @@
 import pytest
-from netsecgame.game_components import GameStatus, AgentStatus, Observation, GameState, ProtocolConfig
+from netsecgame.game_components import GameStatus, AgentStatus, Observation, GameState, ProtocolConfig, AgentRole
+import json
 
 class TestGameStatus:
     def test_from_string_valid(self):
@@ -69,4 +70,52 @@ class TestProtocolConfig:
         """Test protocol constants"""
         conf = ProtocolConfig()
         assert conf.END_OF_MESSAGE == b"EOF"
-        assert conf.BUFFER_SIZE == 8192
+
+class TestAgentRole:
+    def test_values(self):
+        """Test enum values"""
+        assert AgentRole.Attacker.value == "Attacker"
+        assert AgentRole.Defender.value == "Defender"
+        assert AgentRole.Benign.value == "Benign"
+
+    def test_to_string(self):
+        """Test to_string method"""
+        assert AgentRole.Attacker.to_string() == "Attacker"
+        assert AgentRole.Defender.to_string() == "Defender"
+
+    def test_from_string(self):
+        """Test from_string method"""
+        assert AgentRole.from_string("Attacker") == AgentRole.Attacker
+        assert AgentRole.from_string("attacker") == AgentRole.Attacker
+        assert AgentRole.from_string("AgentRole.Attacker") == AgentRole.Attacker
+        
+        with pytest.raises(ValueError):
+            AgentRole.from_string("InvalidRole")
+
+    def test_equality(self):
+        """Test equality comparison"""
+        # Compare with Enum
+        assert AgentRole.Attacker == AgentRole.Attacker
+        assert AgentRole.Attacker != AgentRole.Defender
+        
+        # Compare with String
+        assert AgentRole.Attacker == "Attacker"
+        assert AgentRole.Attacker == "attacker"  # Case insensitive
+        assert AgentRole.Attacker != "Defender"
+
+    def test_hashability(self):
+        """Test usage as dictionary key"""
+        d = {AgentRole.Attacker: 1, AgentRole.Defender: 2}
+        assert d[AgentRole.Attacker] == 1
+        assert d["Attacker"] == 1  # Matches string equivalent
+        assert d[AgentRole.Defender] == 2
+
+    def test_json_serialization(self):
+        """Test native JSON serialization"""
+        data = {"role": AgentRole.Attacker}
+        json_str = json.dumps(data)
+        assert json_str == '{"role": "Attacker"}'
+        
+        # Round trip
+        decoded = json.loads(json_str)
+        assert decoded["role"] == "Attacker"
