@@ -147,29 +147,33 @@ Upon which the game server is created on `localhost:9000` to which the agents ca
 ### Components of the NetSecGame Environment
 The NetSecGame has several components in the following files:
 ```
-├── NetSecgame/
+├── netsecgame/
 |	├── agents/
 |		├── base_agent.py # Basic agent class. Defines the API for agent-server communication
 |	├── game/
 |		├── scenarios/
-|		    ├── tiny_scenario_configuration.py
-|		    ├── smaller_scenario_configuration.py
-|		    ├── scenario_configuration.py
-|		    ├── three_net_configuration.py
+|		    ├── three_net_scenario.py
+|		    ├── two_nets.py
+|		    ├── two_nets_tiny.py
+|		    ├── two_nets_small.py
+|		    ├── one_net.py
 |		├── worlds/
 |   		├── NetSecGame.py # (NSG) basic simulation 
 |   		├── RealWorldNetSecGame.py # Extension of `NSG` - runs actions in the *network of the host computer*
 |   		├── CYSTCoordinator.py # Extension of `NSG` - runs simulation in CYST engine.
 |   		├── WhiteBoxNetSecGame.py # Extension of `NSG` - provides agents with full list of actions upon registration.
 |		├── config_parser.py # NSG task configuration parser
+|		├── configuration_manager.py # Manages the loading and access of game configuration.
 |		├── coordinator.py # Core game server. Not to be run as stand-alone world (see worlds/)
+|		├── agent_server.py # Class used for serving the agents when connecting to the game run by the GameCoordinator.
 |	    ├── global_defender.py # Stochastic (non-agentic defender)
 |	├── game_components.py # contains basic building blocks of the environment
 |	├── utils/
 |		├── utils.py
-|		├── log_parser.py
+|		├── trajectory_recorder.py
+|		├── trajectory_analysis.py
+|		├── aidojo_log_colorizer.py
 |		├── gamaplay_graphs.py
-|		├── actions_parser.py
 ```
 Some compoments are described in detail in following sections:
 
