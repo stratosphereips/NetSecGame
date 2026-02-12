@@ -20,8 +20,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         default="win_rate_over_episodes.png",
-        help="Output PNG filename for the running win rate plot "
-             "(default: win_rate_over_episodes.png).",
+        help=(
+            "Output PNG filename for the running win rate plot. "
+            "The file (and its companion .log) will be saved in the same "
+            "directory as the input log file, using this value as the "
+            "filename (default: win_rate_over_episodes.png)."
+        ),
     )
     return parser.parse_args()
 
@@ -41,7 +45,13 @@ def main() -> None:
     episodes = 0
     wins = 0
     running_win_rates = []
-    winrate_log_path = Path(args.output).with_suffix(".log")
+
+    # Always store the outputs next to the source log file. We only honour the
+    # *name* part of --output; any directory components are ignored so that the
+    # PNG and its .log live alongside the input log.
+    output_name = Path(args.output).name
+    output_png_path = log_path.with_name(output_name)
+    winrate_log_path = output_png_path.with_suffix(".log")
 
     with log_path.open("r", encoding="utf-8", errors="ignore") as f, winrate_log_path.open(
         "w", encoding="utf-8"
@@ -91,8 +101,8 @@ def main() -> None:
     plt.ylim(0.0, 1.0)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(args.output, dpi=150)
-    print(f"Saved win-rate plot to: {args.output}")
+    plt.savefig(output_png_path, dpi=150)
+    print(f"Saved win-rate plot to: {output_png_path}")
     print(f"Saved win-rate log to: {winrate_log_path}")
 
 
