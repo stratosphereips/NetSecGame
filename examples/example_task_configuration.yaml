@@ -7,7 +7,7 @@
 coordinator:
   agents:
     Attacker: # Configuration of 'Attacker' agents
-      max_steps: 25
+      max_steps: 50
       goal:
         description: "Exfiltrate data from Samba server to remote C&C server."
         is_any_part_of_goal_random: True
