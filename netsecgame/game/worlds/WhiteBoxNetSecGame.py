@@ -15,8 +15,8 @@ class WhiteBoxNetSecGame(NetSecGame):
     WhiteBoxNetSecGame is an extension for the NetSecGame environment
     that provides list of all possible actions to each agent that registers in the game.
     """
-    def __init__(self, game_host, game_port, task_config, allowed_roles=["Attacker", "Defender", "Benign"], seed=42, include_block_action=False):
-        super().__init__(game_host, game_port, task_config, allowed_roles, seed)
+    def __init__(self, game_host, game_port, task_config, seed=None, include_block_action=False):
+        super().__init__(game_host, game_port, task_config, seed)
         self._all_actions = None
         self._include_block_action = include_block_action
 
