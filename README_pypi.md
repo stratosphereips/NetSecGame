@@ -30,7 +30,7 @@ NetSecGame separates the game server from the interacting agents, ensuring flexi
 ```bash
 docker pull stratosphereips/netsecgame
 docker run -d --rm --name nsg-server \
-    -v $(pwd)/<scenarion-configuration>.yaml:/netsecgame/netsecenv_conf.yaml \
+    -v $(pwd)/<scenario-configuration>.yaml:/netsecgame/netsecenv_conf.yaml \
     -v $(pwd)/logs:/netsecgame/logs \
     -p 9000:9000 stratosphereips/netsecgame
 ```
