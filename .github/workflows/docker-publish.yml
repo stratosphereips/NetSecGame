@@ -58,3 +58,32 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+
+      # DO NOT PUBLISH THE WHITEBOX VERSION FOR NOW
+      # # Extract metadata (tags, labels) for Docker Whitebox variant
+      # - name: Extract Docker metadata (Whitebox)
+      #   id: meta-whitebox
+      #   uses: docker/metadata-action@v5
+      #   with:
+      #     images: ${{ env.IMAGE_NAME }}
+      #     flavor: |
+      #       latest=auto
+      #       suffix=-whitebox,onlatest=true
+      #     tags: |
+      #       type=raw,value=latest,enable={{is_default_branch}}
+      #       type=ref,event=branch
+      #       type=ref,event=tag
+      #       type=sha
+
+      # - name: Build and push Docker image (Whitebox)
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     push: ${{ github.event_name != 'pull_request' }} # Don't push on PRs, just build
+      #     tags: ${{ steps.meta-whitebox.outputs.tags }}
+      #     labels: ${{ steps.meta-whitebox.outputs.labels }}
+      #     build-args: |
+      #       GAME_MODULE=netsecgame.game.worlds.WhiteBoxNetSecGame
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max

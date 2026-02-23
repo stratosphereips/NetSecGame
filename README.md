@@ -18,6 +18,13 @@ Optionally, you can build the image locally with:
 docker build -t netsecgame:local .
 ```
 
+To build a Whitebox version of the game image locally, you can use the `--build-arg` flag to override the default module path:
+> [!WARNING]
+> The Whitebox variant is currently experimental.
+```bash
+docker build --build-arg GAME_MODULE="netsecgame.game.worlds.WhiteBoxNetSecGame" -t netsecgame:local-whitebox .
+```
+
 ### Installing from source
 In case you need to modify the envirment and run directly, we recommed to insall it in a virtual environemnt (Python vevn or Conda):
 #### Python venv

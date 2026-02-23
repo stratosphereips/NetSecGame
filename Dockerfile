@@ -22,11 +22,15 @@ WORKDIR  ${DESTINATION_DIR}
 # If a requirements.txt file is in the repository
 RUN if [ -f pyproject.toml ]; then pip install .[server] ; fi
 
+ARG GAME_MODULE="netsecgame.game.worlds.NetSecGame"
+# Pass the build argument to an environment variable so CMD can use it
+ENV ENV_GAME_MODULE=$GAME_MODULE
+
 # Expose the port the coordinator will run on
 EXPOSE 9000 
 
 # Run the Python script when the container launches (with default arguments --task_config=netsecenv_conf.yaml --game_port=9000 --game_host=0.0.0.0)
-ENTRYPOINT ["python3", "-m", "netsecgame.game.worlds.NetSecGame", "--task_config=netsecenv_conf.yaml", "--game_port=9000", "--game_host=0.0.0.0"]
+ENTRYPOINT ["sh", "-c", "exec python3 -m ${ENV_GAME_MODULE} --task_config=netsecenv_conf.yaml --game_port=9000 --game_host=0.0.0.0 \"$@\"", "--"]
 
 # Default command arguments (can be overridden at runtime)
 CMD ["--debug_level=INFO"]
