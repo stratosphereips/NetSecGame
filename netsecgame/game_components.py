@@ -448,7 +448,7 @@ class Action:
         params: Dict[str, Any] = {}
         for k, v in data_dict["parameters"].items():
             match k:
-                case "source_host" | "target_host" | "blocked_host":
+                case "source_host" | "target_host" | "blocked_host" | "blocked_ip":
                     params[k] = IP.from_dict(v)
                 case "target_network":
                     params[k] = Network.from_dict(v)

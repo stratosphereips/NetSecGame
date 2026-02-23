@@ -158,3 +158,4 @@ figures/*
 .vscode/settings.json
 trajectories/*
 *.tar.gz
+casts/*

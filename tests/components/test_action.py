@@ -450,6 +450,23 @@ class TestComponentAction:
             assert action_dict["action_type"] == str(action.type)
             assert len(action_dict["parameters"]) == 0
 
+    def test_action_to_dict_block_ip(self):
+            action = Action(
+                action_type=ActionType.BlockIP,
+                parameters={
+                    "target_host": IP("192.168.1.0"),
+                    "source_host": IP("192.168.1.1"),
+                    "blocked_ip": IP("1.1.1.1")
+                }
+            )
+            action_dict = action.as_dict
+            new_action = Action.from_dict(action_dict)
+            assert action == new_action
+            assert action_dict["action_type"] == str(action.type)
+            assert action_dict["parameters"]["target_host"] == {'ip': '192.168.1.0'}
+            assert action_dict["parameters"]["source_host"] == {'ip': '192.168.1.1'}
+            assert action_dict["parameters"]["blocked_ip"] == {'ip': '1.1.1.1'}
+
     def test_action_type_eq_unsupported(self):
         """Test ActionType equality with unsupported type"""
         assert (ActionType.FindData == 123) is False
