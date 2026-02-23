@@ -304,11 +304,13 @@ class ConfigParser():
             case "Attacker":
                 try:
                     description = self.config['coordinator']['agents'][agent_role]["goal"]["description"]
+                    self.validate_goal_description(agent_role, description)
                 except KeyError:
                     description = ""
             case "Defender":
                 try:
                     description = self.config['coordinator']['agents'][agent_role]["goal"]["description"]
+                    self.validate_goal_description(agent_role, description)
                 except KeyError:
                     description = ""
             case "Benign":
@@ -316,6 +318,37 @@ class ConfigParser():
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
         return description
+
+    def validate_goal_description(self, agent_role: str, description: str):
+        """
+        Warns if the goal description misses key targets from the actual win conditions.
+        """
+        if not description:
+            return  # No description to validate
+            
+        description_lower = description.lower()
+        missing_elements = []
+
+        try:
+            win_conditions = self.config['coordinator']['agents'][agent_role]['goal']
+        except KeyError:
+            return
+
+        # Check controlled hosts
+        for host in win_conditions.get('controlled_hosts', []):
+            if str(host) not in description_lower and str(host) != "random":
+                missing_elements.append(f"Controlled Host: {host}")
+                
+        # Check known data targets
+        for host, data_set in win_conditions.get('known_data', {}).items():
+            if str(host) not in description_lower and str(host) != "random":
+                # Only require host IP if it isn't "random"
+                missing_elements.append(f"Target Host IP defined for data: {host}")
+
+        if missing_elements:
+            self.logger.warning(
+                f"[{agent_role}] Goal description '{description}' might be missing some actual win condition targets: {missing_elements}"
+            )
 
     def get_rewards(self, reward_names:list,  default_value=0)->dict:
         "Reads configuration for rewards for cases listed in 'rewards_names'"
