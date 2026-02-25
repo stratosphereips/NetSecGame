@@ -30,7 +30,7 @@ requires-python = ">=3.12"
 # dependencies allowing to run the game server and the simulation
 server = [
     "aiohttp>=3.11",      
-    "cyst-core>=0.5.0",   
+    "cyst-core>=0.6.6",   
     "Faker>=23.2",          
     "numpy>=1.26",        
     "PyYAML>=6.0",        
