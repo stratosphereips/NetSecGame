@@ -173,7 +173,7 @@ class BaseAgent(ABC):
             Observation: The initial observation after the reset if successful, None otherwise.
         """
         self._logger.debug("Requesting game reset")
-        status, observation_dict, message = self.communicate(Action(ActionType.ResetGame, parameters={"request_trajectory": request_trajectory, "randomize_topology": randomize_topology}))
+        status, observation_dict, message = self.communicate(Action(ActionType.ResetGame, parameters={"request_trajectory": request_trajectory, "randomize_topology": randomize_topology, "randomize_topology_seed": randomize_topology_seed}))
         if status:
             self._logger.debug('\tReset successful')
             return Observation(GameState.from_dict(observation_dict["state"]), observation_dict["reward"], observation_dict["end"], message)
