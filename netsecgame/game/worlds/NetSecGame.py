@@ -39,25 +39,26 @@ class NetSecGame(GameCoordinator):
         self._network_mapping = {}
         self._ip_mapping = {}
         
-        
-        np.random.seed(seed)
-        random.seed(seed)
-        self._seed = seed
-        self.logger.info(f'Setting env seed to {seed}')
+        # Set the random seed
+        self._set_random_seed(seed)
 
-    def _set_random_seed(self, seed):
+    def _set_random_seed(self, seed)->None:
         """
         Sets the random seed for the environment.
 
         Args:
             seed (int): The random seed to set.
         """
-        np.random.seed(seed)
-        random.seed(seed)
         self._seed = seed
-        # if faker is used, seed it too
-        if hasattr(self, '_faker_object'):
-            self._faker_object.seed(seed)
+        if seed is not None:
+            np.random.seed(seed)
+            random.seed(seed)
+            # if faker is used, seed it too
+            if hasattr(self, '_faker_object'):
+                Faker.seed(seed)
+            self.logger.info(f'Setting env seed to {seed}')
+        else:
+            self.logger.warning("No seed provided, using random seed")
 
     def _initialize(self)->None:
         """
@@ -694,21 +695,24 @@ class NetSecGame(GameCoordinator):
     #     self.logger.info(f"Mapping IPs done:{mapping_ips}")
     #     return mapping_nets, mapping_ips
     
-    def _create_new_network_mapping(self, max_attempts: int = 10, seed=None) -> tuple:
+    def _create_new_network_mapping(self, max_attempts: int = 10, seed=None) -> tuple[Dict[Network, Network], Dict[IP, IP]]:
         """ 
         Generates new network addresses (preserving relative distance between networks)
         and maps host IPs by preserving their relative offset within the subnet.
         """
-        self.logger.info(f"Generating new network and IP address mapping with seed {seed} (max attempts: {max_attempts})")
+        #self.logger.info(f"Generating new network and IP address mapping with seed {seed} (max attempts: {max_attempts})")
 
-        # setup random generators
-        if seed is not None:
-            fake = Faker()
-            fake.seed_instance(seed)
-            rng = random.Random(seed)
-        else:
-            fake = self._faker_object
-            rng = random
+        # # setup random generators
+        # if seed is not None:
+        #     fake = Faker()
+        #     fake.seed_instance(seed)
+        #     rng = random.Random(seed)
+        # else:
+        #     fake = self._faker_object
+        #     rng = random
+        fake = self._faker_object
+        rng = random
+        
 
         mapping_nets = {}
         mapping_ips = {}
@@ -1251,25 +1255,23 @@ class NetSecGame(GameCoordinator):
         """
         # write all steps in the episode replay buffer in the file
         self.logger.info('--- Reseting NSG Environment to its initial state ---')
-        # change IPs if needed
-        # This is done ONLY if it is (i) enabled in the task config and (ii) all agents requested it
-        if self.config_manager.get_use_dynamic_ips():
-            if all(self._randomize_topology_requests.values()):
+        # Change IPs only if
+        #  (i) it is allowed in the task configuration
+        #  (ii) all agents requested it
+        #  (iii) all agents agreed on the same seed
+        if self.config_manager.get_use_dynamic_ips(): # (i) allowed in task configuration
+            new_seed_value = None
+            if all(self._randomize_topology_requests.values()): # (ii) all agents requested it
                 self.logger.info("All agents requested reset with randomized topology.")
-                topology_reset_seed = None
-                if len(set(self._randomize_topology_seed_requests.values())) == 1:
-                    topology_reset_seed = list(set(self._randomize_topology_seed_requests.values()))[0]
-                    self.logger.info(f"Using agreed seed {topology_reset_seed} for topology randomization.")
+                if len(set(self._randomize_topology_seed_requests.values())) == 1: # (iii) all agents agreed on the same seed
+                    new_seed_value = list(set(self._randomize_topology_seed_requests.values()))[0]
+                    self.logger.info(f"All agents agreed on seed {new_seed_value} for topology randomization.")
                 else:
-                    # No agreement on the seed, use None
-                    topology_reset_seed = None
                     self.logger.info(f"No agreed seed for topology randomization. Using random seed.")
                 self._randomize_topology_seed_requests.clear()
-                self._dynamic_ip_change(seed=topology_reset_seed)
-                np.random.seed(topology_reset_seed)
-                random.seed(topology_reset_seed)
-                self._seed = topology_reset_seed
-                self.logger.info(f'Setting env seed to {topology_reset_seed}')
+                if new_seed_value is not None:
+                    self._set_random_seed(new_seed_value)
+                    self._dynamic_ip_change(seed=new_seed_value)
             else:
                 self.logger.info("Not all agents requested a topology randomization. Keeping the current one.")
         # reset self._data to orignal state
