@@ -9,7 +9,7 @@ import netaddr, re
 import json
 from faker import Faker
 from pathlib import Path
-from typing import Iterable, Any
+from typing import Iterable, Any, Set, Dict
 from collections import defaultdict
 
 from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service, AgentRole
@@ -59,7 +59,7 @@ class NetSecGame(GameCoordinator):
         if hasattr(self, '_faker_object'):
             self._faker_object.seed(seed)
 
-    def _initialize(self):
+    def _initialize(self)->None:
         """
         Initializes the NetSecGame environment.
 
@@ -86,7 +86,7 @@ class NetSecGame(GameCoordinator):
         else:
             self.logger.error("CYST configuration not loaded, cannot initialize the environment!")
 
-    def _get_hosts_from_view(self, view_hosts:Iterable, allowed_hosts=None)->set[IP]:
+    def _get_hosts_from_view(self, view_hosts:Iterable, allowed_hosts=None)->Set[IP]:
         """
         Parses view and translates all keywords. Produces set of controlled host (IP)
         Args:
@@ -120,7 +120,7 @@ class NetSecGame(GameCoordinator):
                 self.logger.error(f"Unsupported value encountered in view_hosts: {host}")
         return hosts
 
-    def _get_services_from_view(self, view_known_services:dict)->dict:
+    def _get_services_from_view(self, view_known_services:dict)->Dict[IP, Set[Service]]:
         """
         Parses view and translates all keywords. Produces dict of known services {IP: set(Service)}
 
@@ -159,7 +159,7 @@ class NetSecGame(GameCoordinator):
         # re-map all IPs based on current mapping in self._ip_mapping
         return known_services
 
-    def _get_data_from_view(self, view_known_data:dict, keyword_scope:str="host", exclude_types=["log"])->dict:
+    def _get_data_from_view(self, view_known_data:dict, keyword_scope:str="host", exclude_types=["log"])->Dict[IP, Set[Data]]:
         """
         Parses view and translates all keywords. Produces dict of known data {IP: set(Data)}
         
@@ -210,7 +210,7 @@ class NetSecGame(GameCoordinator):
         # re-map all IPs based on current mapping in self._ip_mapping
         return known_data
     
-    def _get_networks_from_view(self, view_known_networks:Iterable)->set[Network]:
+    def _get_networks_from_view(self, view_known_networks:Iterable)->Set[Network]:
         """
         Parses view and translates all keywords. Produces set of known networks (Network).
         Args:
@@ -824,7 +824,7 @@ class NetSecGame(GameCoordinator):
         self.logger.info(f"Mapping IPs done: {mapping_ips}")
         return mapping_nets, mapping_ips
     
-    def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
+    def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> Set[Service]:
         """
         Returns set of Service tuples from given hostIP
         """
@@ -841,7 +841,7 @@ class NetSecGame(GameCoordinator):
             self.logger.debug("\tServices not found because target IP does not exists.")
         return found_services
 
-    def _get_networks_from_host(self, host_ip)->set:
+    def _get_networks_from_host(self, host_ip)->Set[Network]:
         """
         Returns set of IPs the host has access to
         """
@@ -851,7 +851,7 @@ class NetSecGame(GameCoordinator):
                 networks.add(net)
         return networks
 
-    def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
+    def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->Set[Data]:
         """
         Returns set of Data tuples from given host IP
         Check if the host is in the list of controlled hosts
@@ -1193,7 +1193,7 @@ class NetSecGame(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _get_all_local_ips(self)->set:
+    def _get_all_local_ips(self)->Set[IP]:
         local_ips = set()
         for net, ips in self._networks.items():
             if netaddr.IPNetwork(str(net)).ip.is_private():
@@ -1202,7 +1202,14 @@ class NetSecGame(GameCoordinator):
         self.logger.info(f"\t\t\tLocal ips: {local_ips}")
         return local_ips
     
-    def update_log_file(self, known_data:set, action, target_host:IP):
+    def update_log_file(self, known_data:set, action, target_host:IP)->None:
+        """
+        Updates the log file in the target host.
+        Args:
+            known_data (set): Set of known data.
+            action (Action): Action to be recorded.
+            target_host (IP): Target host.
+        """
         hostaname = self._ip_to_hostname[target_host]
         self.logger.debug(f"Updating log file in host {hostaname}")
         try:
