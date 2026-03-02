@@ -7,7 +7,7 @@ import hashlib
 import json
 import logging
 import os
-from typing import Optional
+from typing import Optional, Set
 
 # --- Third-Party Imports ---
 import jsonlines
@@ -240,13 +240,13 @@ def read_trajectories_from_jsonl(filepath:str)->list:
     """
     raise NotImplementedError("This function is not yet implemented.")
 
-def generate_valid_actions(state: GameState, include_blocks=False)->list:
+def generate_valid_actions(state: GameState, include_blocks=False)->Set[Action]:
     """Function that generates a list of all valid actions in a given GameState
     Args:
         state (GameState): The current game state.
         include_blocks (bool): Whether to include BlockIP actions. Defaults to False.
     Returns:
-        list: A list of valid Action objects.    
+        set: A set of valid Action objects.    
     """
     valid_actions = set()
     def is_fw_blocked(state, src_ip, dst_ip)->bool:
@@ -293,7 +293,7 @@ def generate_valid_actions(state: GameState, include_blocks=False)->list:
                     if not is_fw_blocked(state, source_host,target_host):
                         for blocked_ip in state.known_hosts:
                             valid_actions.add(Action(ActionType.BlockIP, {"target_host":target_host, "source_host":source_host, "blocked_host":blocked_ip}))
-    return list(valid_actions)  
+    return valid_actions  
 
 if __name__ == "__main__":
     state = GameState(known_networks={Network("1.1.1.1", 24),Network("1.1.1.2", 24)},
