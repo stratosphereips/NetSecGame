@@ -119,7 +119,7 @@ def test_get_logging_level():
 
 def test_generate_valid_actions(sample_gamestate):
     actions = generate_valid_actions(sample_gamestate, include_blocks=True)
-    assert isinstance(actions, list)
+    assert isinstance(actions, set)
     assert len(actions) > 0
     # Check for specific expected actions based on sample state
     # Controlled host is 10.0.0.1
