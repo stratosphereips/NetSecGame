@@ -1,3 +1,4 @@
+.coverage
 .git
 .github
 .gitignore
@@ -16,10 +17,9 @@ netsecgame.egg-info/
 notebooks/
 NetSecGameAgents/
 site/
-tests/
 trajectories/
 readme_images/
 tests/
 *trajectories*.json
-README.md
+README*.md
 mkdocs.yml
