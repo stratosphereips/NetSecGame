@@ -419,11 +419,13 @@ class ConfigParser():
         """
         Get if the randomization should be done only once or at the beginning of every episode
         """
+        # TODO Remove in future
         try:
             randomize_goal_every_episode = self.config["coordinator"]["agents"]["attackers"]["goal"]["is_any_part_of_goal_random"]
         except KeyError:
             # Option is not in the configuration - default to FALSE
             randomize_goal_every_episode = default_value
+        raise DeprecationWarning("This function is deprecated.")
         return randomize_goal_every_episode
     
     def get_use_firewall(self, default_value: bool = False)->bool:
