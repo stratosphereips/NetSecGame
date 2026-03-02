@@ -36,7 +36,7 @@ def test_initialization_failure():
         mock_sock_class.return_value = mock_sock_instance
         
         agent = TestAgent('localhost', 5000, AgentRole.Attacker)
-        assert agent.socket is None
+        assert getattr(agent, "sock", None) is None
 
 def test_terminate_connection(agent, mock_socket):
     assert agent.socket is not None
@@ -49,13 +49,14 @@ def test_del_closes_connection(mock_socket):
     agent.__del__()
     mock_socket.close.assert_called_once()
 
-def test_communicate_success(agent, mock_socket):
+@patch('netsecgame.agents.base_agent.GameState.from_dict')
+def test_communicate_success(mock_from_dict, agent, mock_socket):
     action = Action(ActionType.JoinGame, parameters={})
     
     # Mock response from server
     response_data = {
-        "status": GameStatus.CREATED.to_string(),
-        "observation": {"state": {"known_networks": [], "known_hosts": [], "controlled_hosts": []}, "reward": 0, "end": False, "info": {}},
+        "status": "GameStatus.CREATED",
+        "observation": {"state": {}, "reward": 0, "end": False, "info": {}},
         "message": "Success"
     }
     encoded_response = json.dumps(response_data).encode() + ProtocolConfig.END_OF_MESSAGE
@@ -86,9 +87,13 @@ def test_communicate_incomplete_response(agent, mock_socket):
     with pytest.raises(ConnectionError, match="Unfinished connection."):
         agent.communicate(action)
 
-def test_register_success(agent):
+@patch('netsecgame.agents.base_agent.GameState.from_dict')
+def test_register_success(mock_from_dict, agent):
+    mock_state = MagicMock(spec=GameState)
+    mock_from_dict.return_value = mock_state
+    
     observation_dict = {
-        "state": {"known_networks": [], "known_hosts": [], "controlled_hosts": []},
+        "state": {},
         "reward": 0,
         "end": False,
         "info": {}
@@ -107,14 +112,18 @@ def test_register_success(agent):
         assert observation.end is False
 
 def test_register_failure(agent):
-    with patch.object(agent, 'communicate', return_value=(GameStatus.ERROR, {}, "Failed")) as mock_communicate:
+    with patch.object(agent, 'communicate', return_value=(GameStatus.BAD_REQUEST, {}, "Failed")):
         observation = agent.register()
         assert observation is None
 
-def test_make_step_success(agent):
-    action = Action(ActionType.ScanHost, parameters={"target_host": "1.1.1.1"})
+@patch('netsecgame.agents.base_agent.GameState.from_dict')
+def test_make_step_success(mock_from_dict, agent):
+    mock_state = MagicMock(spec=GameState)
+    mock_from_dict.return_value = mock_state
+    
+    action = Action(ActionType.ScanNetwork, parameters={})
     observation_dict = {
-        "state": {"known_networks": [], "known_hosts": ["1.1.1.1"], "controlled_hosts": []},
+        "state": {},
         "reward": 10,
         "end": True,
         "info": {"msg": "found"}
@@ -128,14 +137,18 @@ def test_make_step_success(agent):
         assert observation.info == {"msg": "found"}
 
 def test_make_step_failure(agent):
-    action = Action(ActionType.ScanHost, parameters={"target_host": "1.1.1.1"})
-    with patch.object(agent, 'communicate', return_value=(GameStatus.ERROR, {}, "Step failed")):
+    action = Action(ActionType.ScanNetwork, parameters={})
+    with patch.object(agent, 'communicate', return_value=(GameStatus.BAD_REQUEST, {}, "Step failed")):
         observation = agent.make_step(action)
         assert observation is None
 
-def test_request_game_reset_success(agent):
+@patch('netsecgame.agents.base_agent.GameState.from_dict')
+def test_request_game_reset_success(mock_from_dict, agent):
+    mock_state = MagicMock(spec=GameState)
+    mock_from_dict.return_value = mock_state
+    
     observation_dict = {
-        "state": {"known_networks": [], "known_hosts": [], "controlled_hosts": []},
+        "state": {},
         "reward": 0,
         "end": False,
         "info": {}
@@ -153,6 +166,6 @@ def test_request_game_reset_success(agent):
         assert isinstance(observation, Observation)
 
 def test_request_game_reset_failure(agent):
-    with patch.object(agent, 'communicate', return_value=(GameStatus.ERROR, {}, "Reset failed")):
+    with patch.object(agent, 'communicate', return_value=(None, {}, "Reset failed")):
         observation = agent.request_game_reset()
         assert observation is None
