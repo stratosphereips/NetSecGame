@@ -938,6 +938,9 @@ if __name__ == "__main__":
     role_str = AgentRole.Attacker.to_string()
     role = AgentRole.from_string(role_str)
     action = Action(ActionType.JoinGame, parameters={"agent_info": {"role": role, "name": "TestAgent"}})
-    print(action)
-    print(action.to_json())
-    print(action.from_json(action.to_json()))
+
+
+    reset_action = Action(ActionType.ResetGame, parameters={"request_trajectory": True, "randomize_topology": True, "randomize_topology_seed": 42})
+    print(reset_action)
+    print(reset_action.as_dict)
+    print(Action.from_dict(reset_action.as_dict))
