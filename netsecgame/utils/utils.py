@@ -7,7 +7,7 @@ import hashlib
 import json
 import logging
 import os
-from typing import Optional, Set
+from typing import Optional, Set, List, Dict, Any
 
 # --- Third-Party Imports ---
 import jsonlines
@@ -104,7 +104,7 @@ def state_as_ordered_string(state:GameState)->str:
     ret += "}"
     return ret
 
-def observation_as_dict(observation: Observation) -> dict:
+def observation_as_dict(observation: Observation) -> Dict[str, Any]:
     """
     Generates dict representation of a given Observation object.
     Acts as the single source of truth for the structure.
@@ -130,7 +130,7 @@ def observation_to_str(observation: Observation) -> str:
         logging.getLogger(__name__).error(f"Error in encoding observation '{observation}' to JSON string: {e}")
         raise e
 
-def observation_from_dict(data: dict) -> Observation:
+def observation_from_dict(data: Dict[str, Any]) -> Observation:
     """
     Reconstructs an Observation object from a dictionary representation.
     
