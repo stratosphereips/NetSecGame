@@ -45,6 +45,20 @@ class NetSecGame(GameCoordinator):
         self._seed = seed
         self.logger.info(f'Setting env seed to {seed}')
 
+    def _set_random_seed(self, seed):
+        """
+        Sets the random seed for the environment.
+
+        Args:
+            seed (int): The random seed to set.
+        """
+        np.random.seed(seed)
+        random.seed(seed)
+        self._seed = seed
+        # if faker is used, seed it too
+        if hasattr(self, '_faker_object'):
+            self._faker_object.seed(seed)
+
     def _initialize(self):
         """
         Initializes the NetSecGame environment.
@@ -1236,7 +1250,7 @@ class NetSecGame(GameCoordinator):
             if all(self._randomize_topology_requests.values()):
                 self.logger.info("All agents requested reset with randomized topology.")
                 topology_reset_seed = None
-                if len(set(self._randomize_topology_seed_requests.values())) != 0:
+                if len(set(self._randomize_topology_seed_requests.values())) == 1:
                     topology_reset_seed = list(set(self._randomize_topology_seed_requests.values()))[0]
                     self.logger.info(f"Using agreed seed {topology_reset_seed} for topology randomization.")
                 else:
@@ -1244,8 +1258,11 @@ class NetSecGame(GameCoordinator):
                     topology_reset_seed = None
                     self.logger.info(f"No agreed seed for topology randomization. Using random seed.")
                 self._randomize_topology_seed_requests.clear()
-                self._randomize_topology_seed_requests.clear() 
                 self._dynamic_ip_change(seed=topology_reset_seed)
+                np.random.seed(topology_reset_seed)
+                random.seed(topology_reset_seed)
+                self._seed = topology_reset_seed
+                self.logger.info(f'Setting env seed to {topology_reset_seed}')
             else:
                 self.logger.info("Not all agents requested a topology randomization. Keeping the current one.")
         # reset self._data to orignal state
