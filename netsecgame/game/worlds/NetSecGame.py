@@ -18,6 +18,18 @@ from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, E
 
 from netsecgame.utils.utils import get_logging_level
 
+def state_parts_deep_copy(state:GameState)->tuple:
+    """
+    Deep copies the relevant parts of the GameState.
+    """
+    new_nets = copy.deepcopy(state.known_networks)
+    new_known_h = copy.deepcopy(state.known_hosts)
+    new_controlled_h = copy.deepcopy(state.controlled_hosts)
+    new_services = copy.deepcopy(state.known_services)
+    new_data = copy.deepcopy(state.known_data)
+    new_blocked = copy.deepcopy(state.known_blocks)
+    return new_nets, new_known_h, new_controlled_h, new_services, new_data, new_blocked
+
 class NetSecGame(GameCoordinator):
 
     def __init__(self, game_host, game_port, task_config:str, seed=None):
@@ -865,14 +877,14 @@ class NetSecGame(GameCoordinator):
             else:
                 self.logger.debug(f"False positive for blocking {src_host} -> {dst_host} caused by the system configuration.")
 
-    def _state_parts_deep_copy(self, current:GameState)->tuple:
-        next_nets = copy.deepcopy(current.known_networks)
-        next_known_h = copy.deepcopy(current.known_hosts)
-        next_controlled_h = copy.deepcopy(current.controlled_hosts)
-        next_services = copy.deepcopy(current.known_services)
-        next_data = copy.deepcopy(current.known_data)
-        next_blocked = copy.deepcopy(current.known_blocks)
-        return next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked
+    # def _state_parts_deep_copy(self, current:GameState)->tuple:
+    #     next_nets = copy.deepcopy(current.known_networks)
+    #     next_known_h = copy.deepcopy(current.known_hosts)
+    #     next_controlled_h = copy.deepcopy(current.controlled_hosts)
+    #     next_services = copy.deepcopy(current.known_services)
+    #     next_data = copy.deepcopy(current.known_data)
+    #     next_blocked = copy.deepcopy(current.known_blocks)
+    #     return next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked
 
     def _firewall_check(self, src_ip:IP, dst_ip:IP)->bool:
         """Checks if firewall allows connection from 'src_ip to ''dst_ip'"""
@@ -886,7 +898,7 @@ class NetSecGame(GameCoordinator):
         """
         Executes the ScanNetwork action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         self.logger.debug(f"\t\tScanning {action.parameters['target_network']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             new_ips = set()
@@ -909,7 +921,7 @@ class NetSecGame(GameCoordinator):
         """
         Executes the FindServices action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         self.logger.debug(f"\t\tSearching for services in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
@@ -936,7 +948,7 @@ class NetSecGame(GameCoordinator):
         """
         Executes the FindData action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current)
         self.logger.debug(f"\t\tSearching for data in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
@@ -967,7 +979,7 @@ class NetSecGame(GameCoordinator):
         """
         Executes the ExfiltrateData action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         self.logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
         # Is the target host controlled?
         if action.parameters["target_host"] in current_state.controlled_hosts:
@@ -1014,7 +1026,7 @@ class NetSecGame(GameCoordinator):
         """
         Executes the ExploitService action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         # We don't check if the target is a known_host because it can be a blind attempt to attack
         self.logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
@@ -1064,7 +1076,7 @@ class NetSecGame(GameCoordinator):
         - Add the rule to the FW list
         - Update the state
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         # Is the src in the controlled hosts?
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             # Is the target in the controlled hosts?
