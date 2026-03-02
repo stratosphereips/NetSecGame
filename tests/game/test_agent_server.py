@@ -3,8 +3,8 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from contextlib import suppress
-from netsecgame.game.coordinator import AgentServer
 from netsecgame.game_components import Action, ActionType, ProtocolConfig
+from netsecgame.game.agent_server import AgentServer
 
 # -----------------------
 # Fixtures
