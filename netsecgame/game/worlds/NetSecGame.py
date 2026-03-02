@@ -877,15 +877,6 @@ class NetSecGame(GameCoordinator):
             else:
                 self.logger.debug(f"False positive for blocking {src_host} -> {dst_host} caused by the system configuration.")
 
-    # def _state_parts_deep_copy(self, current:GameState)->tuple:
-    #     next_nets = copy.deepcopy(current.known_networks)
-    #     next_known_h = copy.deepcopy(current.known_hosts)
-    #     next_controlled_h = copy.deepcopy(current.controlled_hosts)
-    #     next_services = copy.deepcopy(current.known_services)
-    #     next_data = copy.deepcopy(current.known_data)
-    #     next_blocked = copy.deepcopy(current.known_blocks)
-    #     return next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked
-
     def _firewall_check(self, src_ip:IP, dst_ip:IP)->bool:
         """Checks if firewall allows connection from 'src_ip to ''dst_ip'"""
         try:
