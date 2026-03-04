@@ -467,7 +467,7 @@ class Action:
                         params[k] = v
                     else:
                         params[k] = ast.literal_eval(v)
-                case "randomize_topology_seed":
+                case "seed":
                     if isinstance(v, int):
                         params[k] = v
                     elif v is None or v == "None":
