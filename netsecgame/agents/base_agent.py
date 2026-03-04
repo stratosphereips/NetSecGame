@@ -162,18 +162,18 @@ class BaseAgent(ABC):
         except Exception as e:
             self._logger.error(f'Exception in register(): {e}')
 
-    def request_game_reset(self, request_trajectory=False, randomize_topology=True, randomize_topology_seed=None) -> Observation|None:
+    def request_game_reset(self, request_trajectory=False, randomize_topology=True, seed=None) -> Observation|None:
         """
         Requests a game reset from the server. Optionally requests a trajectory and/or topology randomization.
         Args:
             request_trajectory (bool): If True, requests the server to provide a trajectory of the last episode.
             randomize_topology (bool): If True, requests the server to randomize the network topology for the next episode. Defaults to True.
-            randomize_topology_seed (int): If provided, requests the server to use this seed for randomizing the network topology. Defaults to None.
+            seed (int): If provided, requests the server to use this seed for randomizing the environment. Defaults to None.
         Returns:
             Observation: The initial observation after the reset if successful, None otherwise.
         """
         self._logger.debug("Requesting game reset")
-        status, observation_dict, message = self.communicate(Action(ActionType.ResetGame, parameters={"request_trajectory": request_trajectory, "randomize_topology": randomize_topology, "randomize_topology_seed": randomize_topology_seed}))
+        status, observation_dict, message = self.communicate(Action(ActionType.ResetGame, parameters={"request_trajectory": request_trajectory, "randomize_topology": randomize_topology, "seed": seed}))
         if status:
             self._logger.debug('\tReset successful')
             return Observation(GameState.from_dict(observation_dict["state"]), observation_dict["reward"], observation_dict["end"], message)
