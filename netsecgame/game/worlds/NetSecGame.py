@@ -1177,30 +1177,24 @@ class NetSecGame(GameCoordinator):
        goal_state = self._create_goal_state_from_view(agent_win_condition_view)
        return game_state, goal_state    
 
-    async def reset(self)->bool:
+    async def reset(self, seed:Optional[int]=None)->bool:
         """
         Function to reset the state of the game
         and prepare for a new episode
         """
         # write all steps in the episode replay buffer in the file
         self.logger.info('--- Reseting NSG Environment to its initial state ---')
+        if seed is not None:
+            self._set_random_seed(seed)
         # Change IPs only if
         #  (i) it is allowed in the task configuration
         #  (ii) all agents requested it
         #  (iii) all agents agreed on the same seed
         if self.config_manager.get_use_dynamic_ips(): # (i) allowed in task configuration
-            new_seed_value = None
             if all(self._randomize_topology_requests.values()): # (ii) all agents requested it
                 self.logger.info("All agents requested reset with randomized topology.")
-                if len(set(self._randomize_topology_seed_requests.values())) == 1: # (iii) all agents agreed on the same seed
-                    new_seed_value = list(set(self._randomize_topology_seed_requests.values()))[0]
-                    self.logger.info(f"All agents agreed on seed {new_seed_value} for topology randomization.")
-                else:
-                    self.logger.info(f"No agreed seed for topology randomization. Using random seed.")
-                self._randomize_topology_seed_requests.clear()
-                if new_seed_value is not None:
-                    self._set_random_seed(new_seed_value)
-                    self._dynamic_ip_change(seed=new_seed_value)
+                if seed is not None: # (iii) all agents agreed on the same seed
+                    self._dynamic_ip_change(seed=seed)
             else:
                 self.logger.info("Not all agents requested a topology randomization. Keeping the current one.")
         # reset self._data to orignal state
