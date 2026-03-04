@@ -9,7 +9,7 @@ import netaddr, re
 import json
 from faker import Faker
 from pathlib import Path
-from typing import Iterable, Any, Set, Dict
+from typing import Iterable, Any, Set, Dict, Optional
 from collections import defaultdict
 
 from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service, AgentRole
