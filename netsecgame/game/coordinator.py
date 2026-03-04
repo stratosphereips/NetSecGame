@@ -92,7 +92,7 @@ class GameCoordinator:
         # reset request per agent_addr (bool)
         self._reset_requests = {}
         self._randomize_topology_requests = {}
-        self._randomize_topology_seed_requests = {}
+        self._reset_seed_requests = {}
         self._agent_status = {}
         self._episode_ends = {}
         self._agent_observations = {}
@@ -420,12 +420,12 @@ class GameCoordinator:
         async with self._reset_lock:
             # add reset request for this agent
             self._reset_requests[agent_addr] = True
+            self._reset_seed_requests[agent_addr] = reset_action.parameters.get("seed", None)
+            self.logger.debug(f"Agent {agent_addr} requested reset with seed {self._reset_seed_requests[agent_addr]}")
             # register if the agent wants to randomize the topology
-            topology_reset_req = reset_action.parameters.get("randomize_topology", True)
             self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", True)
-            if topology_reset_req:
-                self._randomize_topology_seed_requests[agent_addr] = reset_action.parameters.get("randomize_topology_seed", None)
-                self.logger.debug(f"Agent {agent_addr} requested topology randomization with seed {self._randomize_topology_seed_requests[agent_addr]}")
+            if self._randomize_topology_requests[agent_addr]:
+                self.logger.debug(f"Agent {agent_addr} requested topology randomization with seed {self._reset_seed_requests[agent_addr]}")
             if all(self._reset_requests.values()):
                 # all agents want reset - reset the world
                 self.logger.debug(f"All agents requested reset, setting the event")
@@ -588,8 +588,14 @@ class GameCoordinator:
                 self.logger.debug("\tExiting reset_game task.")
                 break
             # wait until episode is finished by all agents
-            self.logger.info("Resetting game to initial state.")
-            await self.reset()
+            if len(set(self._reset_seed_requests.values())) == 1:
+                seed = list(self._reset_seed_requests.values())[0]
+                self.logger.info(f"Resetting game to initial state with seed: {seed}")
+            else:   
+                self.logger.info(f"Resetting game to initial state with no seed agreement")
+                seed = None
+            # reset the game
+            await self.reset(seed=seed)
             for agent in self.agents:
                 if self.config_manager.get_store_trajectories():
                     async with self._agents_lock:
@@ -606,7 +612,7 @@ class GameCoordinator:
                     self._episode_ends[agent] = False
                     self._reset_requests[agent] = False
                     self._randomize_topology_requests[agent] = False
-                    self._randomize_topology_seed_requests.pop(agent, None)
+                    self._reset_seed_requests.pop(agent, None)
                     self._agent_rewards[agent] = 0
                     self._agent_steps[agent] = 0
                     self._agent_false_positives[agent] = 0
@@ -676,9 +682,9 @@ class GameCoordinator:
                 async with self._reset_lock:
                     # remove agent from  topology reset requests
                     agent_info["topology_reset_request"] = self._randomize_topology_requests.pop(agent_addr, False)
-                    agent_info["topology_reset_seed"] = self._randomize_topology_seed_requests.pop(agent_addr, None)
                     # remove agent from reset requests
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
+                    agent_info["reset_seed"] = self._reset_seed_requests.pop(agent_addr, None)
                     # check if this agent was not preventing reset 
                     if any(self._reset_requests.values()):
                         self._reset_event.set()
@@ -703,10 +709,13 @@ class GameCoordinator:
         """
         raise NotImplementedError
     
-    async def reset(self)->bool:
+    async def reset(self, seed:Optional[int]=None)->bool:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         Must be implemented by the domain specific environment.
+
+        Args:
+            seed (int, optional): Seed for the random number generator. Defaults to None.
         """
         raise NotImplementedError
 
