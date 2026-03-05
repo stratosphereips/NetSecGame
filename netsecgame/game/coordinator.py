@@ -560,7 +560,7 @@ class GameCoordinator:
                         self._agent_status[agent] = AgentStatus.Fail
                     # dicrease the reward for false positives
                     self.logger.debug(f"Processing false positives for agent {agent}: {self._agent_false_positives[agent]}")
-                    self._agent_rewards[agent] -= self._agent_false_positives[agent] * self._rewards["false_positive"]
+                    self._agent_rewards[agent] += self._agent_false_positives[agent] * self._rewards["false_positive"]
             # clear the episode end event
             self._episode_end_event.clear()
             # notify all waiting agents

@@ -134,7 +134,14 @@ class ConfigurationManager:
         """Returns the rewards configuration."""
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
-        return self._parser.get_rewards(reward_names, default_value)
+        rewards = self._parser.get_rewards(reward_names, default_value)
+        if rewards.get("fail") > 0:
+            self.logger.warning("Fail reward is positive. This is not recommended.")
+        if rewards.get("false_positive") > 0:
+            self.logger.warning("False positive reward is positive. This is not recommended.")
+        if rewards.get("success") < 0:
+            self.logger.warning("Success reward is negative. This is not recommended.")
+        return rewards
         
     def get_use_dynamic_ips(self, default_value: bool = False) -> bool:
         if not self._parser:
