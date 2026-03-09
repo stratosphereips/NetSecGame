@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import Optional
 import signal
 import os
+import re
+import uuid
 
 from netsecgame.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, AgentRole
 from netsecgame.game.global_defender import GlobalDefender
@@ -25,6 +27,17 @@ def convert_msg_dict_to_json(msg_dict: dict) -> str:
         raise TypeError(f"Error when converting msg to JSON:{e}") from e
     return output_message
 
+def sanitize_agent_name(name:str)->str:
+    """
+    Sanitizes the agent name to be used as a filename.
+    """
+    safe_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', name)
+    safe_name = re.sub(r'_+', '_', safe_name)
+    safe_name = safe_name.strip('_')[:200]
+    if not safe_name:
+        self.logger.warning(f"Agent name is empty after sanitization. Using default name.")
+        return f"agent_{uuid.uuid4().hex[:8]}"
+    return safe_name
 
 class GameCoordinator:
     """
@@ -327,7 +340,7 @@ class GameCoordinator:
         try:
             self.logger.info(f"New Join request by  {agent_addr}.")
             if agent_addr not in self.agents:
-                agent_name = action.parameters["agent_info"].name
+                agent_name = sanitize_agent_name(str(action.parameters["agent_info"].name))
                 agent_role = action.parameters["agent_info"].role
                 if agent_role in AgentRole:
                     # add agent to the world
