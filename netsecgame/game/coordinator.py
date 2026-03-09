@@ -325,10 +325,26 @@ class GameCoordinator:
                 self.logger.info(f"Coordinator received from agent {agent_addr}: {message}.")
 
                 action = self._parse_action_message(agent_addr, message)
-                if action:
+                if action is not None:
                     self._dispatch_action(agent_addr, action)
+                else:
+                    self._spawn_task(self._respond_on_bad_request, agent_addr, "Malformed Action")
         self.logger.info("\tAction processing task stopped.")
-            
+
+    async def _respond_on_bad_request(self, agent_addr: tuple, message: str)->None:
+        """
+        Sends a response to the agent indicating that the request was bad.
+        """
+        output_message_dict = {
+            "to_agent": agent_addr,
+            "status": str(GameStatus.BAD_REQUEST),
+            "observation": None,
+            "message": {
+                "message": f"Bad request received: {message}",
+                }
+        }
+        await self._agent_response_queues[agent_addr].put(convert_msg_dict_to_json(output_message_dict))
+           
     async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
         """
         Method for processing Action of type ActionType.JoinGame
