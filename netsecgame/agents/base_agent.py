@@ -22,7 +22,7 @@ class BaseAgent(ABC):
             self._socket.connect((host, port))
         except socket.error as e:
             self._logger.error(f"Socket error: {e}")
-            self.sock = None
+            self._socket = None
         self._logger.info("Agent created")
     
     def __del__(self):
@@ -32,7 +32,7 @@ class BaseAgent(ABC):
                 self._socket.close()
                 self._logger.info("Socket closed")
             except socket.error as e:
-                print(f"Error closing socket: {e}")
+                self._logger.error(f"Error closing socket: {e}")
     
     def terminate_connection(self)->None:
         """Method for graceful termination of connection. Should be used by any class extending the BaseAgent."""
@@ -42,7 +42,7 @@ class BaseAgent(ABC):
                 self._socket = None
                 self._logger.info("Socket closed")
             except socket.error as e:
-                print(f"Error closing socket: {e}")
+                self._logger.error(f"Error closing socket: {e}")
     @property
     def socket(self)->socket.socket | None:
         return self._socket
