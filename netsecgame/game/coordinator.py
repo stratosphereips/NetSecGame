@@ -701,7 +701,7 @@ class GameCoordinator:
                     # remove agent from reset requests
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
                     # check if this agent was not preventing reset 
-                    if any(self._reset_requests.values()):
+                    if all(self._reset_requests.values()):
                         self._reset_event.set()
                     agent_info["episode_end"] = self._episode_ends.pop(agent_addr)
                     #check if this agent was not preventing episode end
