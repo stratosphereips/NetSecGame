@@ -35,7 +35,6 @@ def sanitize_agent_name(name:str)->str:
     safe_name = re.sub(r'_+', '_', safe_name)
     safe_name = safe_name.strip('_')[:200]
     if not safe_name:
-        self.logger.warning(f"Agent name is empty after sanitization. Using default name.")
         return f"agent_{uuid.uuid4().hex[:8]}"
     return safe_name
 
