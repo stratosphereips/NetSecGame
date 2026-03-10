@@ -481,3 +481,41 @@ class TestCoordinatorRefactoredMethods:
             
             mock_parse.assert_called_once_with(agent_addr, valid_json)
             mock_dispatch.assert_called_once_with(agent_addr, mock_action)
+
+    @pytest.mark.asyncio
+    async def test_run_game_malformed_action(self, mock_coordinator_core):
+        """New test for refactored method: run_game flow with malformed action."""
+        agent_addr = ("127.0.0.1", 12345)
+        invalid_json = '{"invalid": "json"}'
+        
+        # Setup queue
+        mock_coordinator_core._agent_action_queue.get.return_value = (agent_addr, invalid_json)
+        
+        with patch.object(mock_coordinator_core, '_parse_action_message') as mock_parse, \
+             patch.object(mock_coordinator_core, '_spawn_task') as mock_spawn:
+             
+            mock_parse.return_value = None
+            
+            await mock_coordinator_core.run_game()
+            
+            mock_parse.assert_called_once_with(agent_addr, invalid_json)
+            mock_spawn.assert_called_once_with(mock_coordinator_core._respond_on_bad_request, agent_addr, "Malformed Action")
+
+    @pytest.mark.asyncio
+    async def test_respond_on_bad_request(self, mock_coordinator_core):
+        """New test for _respond_on_bad_request."""
+        mock_coordinator_core._respond_on_bad_request = GameCoordinator._respond_on_bad_request.__get__(mock_coordinator_core)
+        agent_addr = ("127.0.0.1", 12345)
+        mock_coordinator_core._agent_response_queues = {agent_addr: asyncio.Queue()}
+        
+        await mock_coordinator_core._respond_on_bad_request(agent_addr, "Malformed Action")
+        
+        # Ensure the response is in the queue
+        assert not mock_coordinator_core._agent_response_queues[agent_addr].empty()
+        
+        response_json = await mock_coordinator_core._agent_response_queues[agent_addr].get()
+        response_data = json.loads(response_json)
+        
+        assert response_data["status"] == str(GameStatus.BAD_REQUEST)
+        assert response_data["observation"] is None
+        assert "Malformed Action" in response_data["message"]["message"]
