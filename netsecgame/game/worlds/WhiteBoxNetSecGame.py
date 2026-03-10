@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import json
+import warnings
 from pathlib import Path
 from netsecgame.utils.utils import get_logging_level
 from netsecgame.game_components import Action, ActionType
@@ -125,6 +126,12 @@ class WhiteBoxNetSecGame(NetSecGame):
 
     def _create_state_from_view(self, view, add_neighboring_nets = True):
         return super()._create_state_from_view(view, add_neighboring_nets=add_neighboring_nets)
+
+    def _dynamic_ip_change(self, max_attempts:int=10)->None:
+        warnings.warn("Dynamic IP change is not supported for WhiteBoxNetSecGame.", UserWarning)
+        self.logger.warning("Dynamic IP change is not supported for WhiteBoxNetSecGame.")
+        return None
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
