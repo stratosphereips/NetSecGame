@@ -665,8 +665,7 @@ class GameCoordinator:
             if self.shutdown_flag.is_set():
                 self.logger.debug("\tExiting reset_game task.")
                 break
-            if len(self.agents) > 0:
-                
+            if len(self.agents) > 0: 
                 # verify that all agents agreed on the seed (or sent None)
                 valid_seeding = False
                 valid_topology_change = False
@@ -674,25 +673,20 @@ class GameCoordinator:
                 if len(non_none_seeds) == 0: # no agent wants to change the seed
                     seed = None
                     valid_seeding = True
-                    self.logger.debug("No agent wants to change the seed")
                 elif len(set(non_none_seeds)) == 1: # all agents agree on the seed
                     seed = non_none_seeds[0]
                     valid_seeding = True
-                    self.logger.debug(f"All agents agree on the seed: {seed}")
                 else: # agents disagree on the seed
                     seed = None
-                    self.logger.debug("Agents disagree on the seed")
                 # verify that all agents agreed on the topology change (or sent None)
                 valid_seed_agents = [agent for agent in self.agents if self._reset_seed_requests[agent] is not None]
                 valid_topology_requests = [self._randomize_topology_requests[agent] for agent in valid_seed_agents]
                 if len(set(valid_topology_requests)) == 1: # all valid agents agree on the topology change
                     valid_topology_change = True
                     topology_change = valid_topology_requests[0]
-                    self.logger.debug(f"All agents agree on the topology change: {topology_change}")
                 else: # agents disagree on the topology change
                     valid_topology_change = False
                     topology_change = None
-                    self.logger.debug("Agents disagree on the topology change")
 
                 if valid_seeding and valid_topology_change:
                     await self._handle_valid_reset(seed, topology_change)
