@@ -175,7 +175,7 @@ class BaseAgent(ABC):
         """
         self._logger.debug("Requesting game reset")
         status, observation_dict, message = self.communicate(Action(ActionType.ResetGame, parameters={"request_trajectory": request_trajectory, "randomize_topology": randomize_topology, "seed": seed}))
-        if status:
+        if status is GameStatus.RESET_DONE:
             self._logger.debug('\tReset successful')
             return Observation(GameState.from_dict(observation_dict["state"]), observation_dict["reward"], observation_dict["end"], message)
         else:
