@@ -153,15 +153,15 @@ def test_request_game_reset_success(mock_from_dict, agent):
         "end": False,
         "info": {}
     }
-    with patch.object(agent, 'communicate', return_value=(GameStatus.OK, observation_dict, "Reset ok")) as mock_communicate:
-        observation = agent.request_game_reset(request_trajectory=True, randomize_topology=False, randomize_topology_seed=42)
+    with patch.object(agent, 'communicate', return_value=(GameStatus.RESET_DONE, observation_dict, "Reset ok")) as mock_communicate:
+        observation = agent.request_game_reset(request_trajectory=True, randomize_topology=False, seed=42)
         
         mock_communicate.assert_called_once()
         action_sent = mock_communicate.call_args[0][0]
         assert action_sent.action_type == ActionType.ResetGame
         assert action_sent.parameters["request_trajectory"] is True
         assert action_sent.parameters["randomize_topology"] is False
-        assert action_sent.parameters["randomize_topology_seed"] == 42
+        assert action_sent.parameters["seed"] == 42
         
         assert isinstance(observation, Observation)
 
