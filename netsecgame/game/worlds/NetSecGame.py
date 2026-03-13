@@ -1177,7 +1177,7 @@ class NetSecGame(GameCoordinator):
        goal_state = self._create_goal_state_from_view(agent_win_condition_view)
        return game_state, goal_state    
 
-    async def reset(self, seed:Optional[int]=None)->bool:
+    async def reset(self, seed:Optional[int]=None, topology_change:Optional[bool]=None)->bool:
         """
         Function to reset the state of the game
         and prepare for a new episode
@@ -1186,17 +1186,10 @@ class NetSecGame(GameCoordinator):
         self.logger.info('--- Reseting NSG Environment to its initial state ---')
         if seed is not None:
             self._set_random_seed(seed)
-        # Change IPs only if
-        #  (i) it is allowed in the task configuration
-        #  (ii) all agents requested it
-        #  (iii) all agents agreed on the same seed
-        if self.config_manager.get_use_dynamic_ips(): # (i) allowed in task configuration
-            if all(self._randomize_topology_requests.values()): # (ii) all agents requested it
-                self.logger.info("All agents requested reset with randomized topology.")
-                if seed is not None: # (iii) all agents agreed on the same seed
-                    self._dynamic_ip_change(seed=seed)
-            else:
-                self.logger.info("Not all agents requested a topology randomization. Keeping the current one.")
+
+        if self.config_manager.get_use_dynamic_ips(): #topology change is allowed
+            if topology_change: # agents agree on topology change
+                self._dynamic_ip_change(seed=seed)
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state
