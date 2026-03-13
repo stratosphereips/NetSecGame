@@ -715,7 +715,8 @@ class GameCoordinator:
                     agent_info["reset_seed"] = self._reset_seed_requests.pop(agent_addr, None)
                     # check if this agent was not preventing reset 
                     if all(self._reset_requests.values()):
-                        self._reset_event.set()
+                        if len(self.agents) > 0:
+                            self._reset_event.set()
                     agent_info["episode_end"] = self._episode_ends.pop(agent_addr)
                     #check if this agent was not preventing episode end
                     if all(self._episode_ends.values()):
