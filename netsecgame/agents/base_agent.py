@@ -4,7 +4,7 @@ import logging
 import socket
 import json
 from abc import ABC
-from typing import Optional, Tuple, Dict
+from typing import Optional, Tuple, Dict, Any
 
 from netsecgame.game_components import Action, GameState, Observation, ActionType, GameStatus, AgentInfo, ProtocolConfig, AgentRole
 
