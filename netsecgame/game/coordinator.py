@@ -604,6 +604,53 @@ class GameCoordinator:
                 self._episode_rewards_condition.notify_all()
         self.logger.info("\tReward assignment task stopped.")
 
+    
+    async def _handle_invalid_reset(self, error_msg:str):
+        """Task that handles invalid reset"""
+        self.logger.error(error_msg)
+        for agent in self.agents:
+            async with self._agents_lock:
+                output_message_dict = {
+                    "to_agent": agent,
+                    "status": str(GameStatus.BAD_REQUEST),
+                    "observation": None,
+                    "message": {"message": error_msg},
+                }
+                response_msg_json = convert_msg_dict_to_json(output_message_dict)
+                await self._agent_response_queues[agent].put(response_msg_json)
+        self.shutdown_flag.set()
+    
+    
+    async def _handle_valid_reset(self, seed: Optional[int], topology_change: Optional[bool]):
+        """Task that handles valid reset"""
+        self.logger.info(f"Resetting game to initial state with seed: {seed} and topology change: {topology_change}")
+        # reset the game 
+        await self.reset(seed=seed, topology_change=topology_change)
+        for agent in self.agents:
+            if self.config_manager.get_store_trajectories():
+                async with self._agents_lock:
+                    self._store_trajectory_to_file(agent)
+            self.logger.debug(f"Resetting agent {agent}")
+            agent_role = self.agents[agent][1]
+            # reset the agent in the world
+            new_state, new_goal_state = await self.reset_agent(agent, agent_role, self._starting_positions_per_role[agent_role], self._win_conditions_per_role[agent_role])
+            new_observation = Observation(new_state, 0, False, {})
+            async with self._agents_lock:
+                self._agent_states[agent] = new_state
+                self._agent_goal_states[agent] = new_goal_state
+                self._agent_observations[agent] = new_observation
+                self._episode_ends[agent] = False
+                self._reset_requests[agent] = False
+                self._randomize_topology_requests.pop(agent, None)
+                self._reset_seed_requests.pop(agent, None)
+                self._agent_rewards[agent] = 0
+                self._agent_steps[agent] = 0
+                self._agent_false_positives[agent] = 0
+                if self.agents[agent][1].lower() == "attacker":
+                    self._agent_status[agent] = AgentStatus.PlayingWithTimeout
+                else:
+                    self._agent_status[agent] = AgentStatus.Playing
+    
     async def _reset_game(self):
         """Task that waits for all agents to request resets"""
         self.logger.debug("Starting task for game reset handelling.")
@@ -618,39 +665,47 @@ class GameCoordinator:
             if self.shutdown_flag.is_set():
                 self.logger.debug("\tExiting reset_game task.")
                 break
-            # wait until episode is finished by all agents
-            if len(set(self._reset_seed_requests.values())) == 1:
-                seed = list(self._reset_seed_requests.values())[0]
-                self.logger.info(f"Resetting game to initial state with seed: {seed}")
-            else:   
-                self.logger.info(f"Resetting game to initial state with no seed agreement")
-                seed = None
-            # reset the game
-            await self.reset(seed=seed)
-            for agent in self.agents:
-                if self.config_manager.get_store_trajectories():
-                    async with self._agents_lock:
-                        self._store_trajectory_to_file(agent)
-                self.logger.debug(f"Resetting agent {agent}")
-                agent_role = self.agents[agent][1]
-                # reset the agent in the world
-                new_state, new_goal_state = await self.reset_agent(agent, agent_role, self._starting_positions_per_role[agent_role], self._win_conditions_per_role[agent_role])
-                new_observation = Observation(new_state, 0, False, {})
-                async with self._agents_lock:
-                    self._agent_states[agent] = new_state
-                    self._agent_goal_states[agent] = new_goal_state
-                    self._agent_observations[agent] = new_observation
-                    self._episode_ends[agent] = False
-                    self._reset_requests[agent] = False
-                    self._randomize_topology_requests[agent] = False
-                    self._reset_seed_requests.pop(agent, None)
-                    self._agent_rewards[agent] = 0
-                    self._agent_steps[agent] = 0
-                    self._agent_false_positives[agent] = 0
-                    if self.agents[agent][1].lower() == "attacker":
-                        self._agent_status[agent] = AgentStatus.PlayingWithTimeout
-                    else:
-                        self._agent_status[agent] = AgentStatus.Playing
+            if len(self.agents) > 0:
+                
+                # verify that all agents agreed on the seed (or sent None)
+                valid_seeding = False
+                valid_topology_change = False
+                non_none_seeds = [seed for seed in self._reset_seed_requests.values() if seed is not None]
+                if len(non_none_seeds) == 0: # no agent wants to change the seed
+                    seed = None
+                    valid_seeding = True
+                    self.logger.debug("No agent wants to change the seed")
+                elif len(set(non_none_seeds)) == 1: # all agents agree on the seed
+                    seed = non_none_seeds[0]
+                    valid_seeding = True
+                    self.logger.debug(f"All agents agree on the seed: {seed}")
+                else: # agents disagree on the seed
+                    seed = None
+                    self.logger.debug("Agents disagree on the seed")
+                # verify that all agents agreed on the topology change (or sent None)
+                valid_seed_agents = [agent for agent in self.agents if self._reset_seed_requests[agent] is not None]
+                valid_topology_requests = [self._randomize_topology_requests[agent] for agent in valid_seed_agents]
+                if len(set(valid_topology_requests)) == 1: # all valid agents agree on the topology change
+                    valid_topology_change = True
+                    topology_change = valid_topology_requests[0]
+                    self.logger.debug(f"All agents agree on the topology change: {topology_change}")
+                else: # agents disagree on the topology change
+                    valid_topology_change = False
+                    topology_change = None
+                    self.logger.debug("Agents disagree on the topology change")
+
+                if valid_seeding and valid_topology_change:
+                    await self._handle_valid_reset(seed, topology_change)
+                    self._reset_event.clear()  
+                    # notify all waiting agents
+                    async with self._reset_done_condition:
+                        self._reset_done_condition.notify_all()
+                elif not valid_seeding:
+                    await self._handle_invalid_reset("Agents disagree on the seed. Undefined state. Stopping the game")
+                    self._reset_event.clear()  
+                elif not valid_topology_change:
+                    await self._handle_invalid_reset("Agents disagree on the topology change. Undefined state. Stopping the game")
+                    self._reset_event.clear()  
             self._reset_event.clear()  
             # notify all waiting agents
             async with self._reset_done_condition:
