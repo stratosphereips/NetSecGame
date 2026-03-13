@@ -3,7 +3,8 @@
 import logging
 import socket
 import json
-from abc import ABC 
+from abc import ABC
+from typing import Optional, Tuple, Dict
 
 from netsecgame.game_components import Action, GameState, Observation, ActionType, GameStatus, AgentInfo, ProtocolConfig, AgentRole
 
@@ -55,7 +56,7 @@ class BaseAgent(ABC):
     def logger(self)->logging.Logger:
         return self._logger
 
-    def make_step(self, action: Action) -> Observation | None:
+    def make_step(self, action: Action) -> Optional[Observation]:
         """
         Executes a single step in the environment by sending the agent's action to the server and receiving the resulting observation.
 
@@ -75,7 +76,7 @@ class BaseAgent(ABC):
         else:
             return None
     
-    def communicate(self, data:Action)-> tuple:
+    def communicate(self, data:Action)-> Tuple[GameStatus, Dict[str, Any], Optional[str]]:
         """
         Exchanges data with the server and returns the server's response.
         This method sends an `Action` object to the server and waits for a response.
@@ -102,7 +103,7 @@ class BaseAgent(ABC):
                 self._logger.error(f'Exception in _send_data(): {e}')
                 raise e
             
-        def _receive_data(socket)->tuple:
+        def _receive_data(socket)->Tuple[GameStatus, Dict[str, Any], Optional[str]]:
             """
             Receive data from server
             """
@@ -138,7 +139,7 @@ class BaseAgent(ABC):
         _send_data(self._socket, data)
         return _receive_data(self._socket)
     
-    def register(self)->Observation | None:
+    def register(self)->Optional[Observation]:
         """
         Method for registering agent to the game server.
         Classname is used as agent name and the role is based on the 'role' argument.
@@ -162,7 +163,7 @@ class BaseAgent(ABC):
         except Exception as e:
             self._logger.error(f'Exception in register(): {e}')
 
-    def request_game_reset(self, request_trajectory=False, randomize_topology=True, seed=None) -> Observation|None:
+    def request_game_reset(self, request_trajectory:bool=False, randomize_topology:bool=True, seed:Optional[int]=None) -> Optional[Observation]:
         """
         Requests a game reset from the server. Optionally requests a trajectory and/or topology randomization.
         Args:
