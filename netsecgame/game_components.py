@@ -471,7 +471,6 @@ class Action:
                     if isinstance(v, int):
                         params[k] = v
                     elif v is None or v == "None":
-                        print("Setting topology randomization seed to None")
                         params[k] = None
                     else:
                         raise ValueError(f"Unsupported value in {k}: {v}")
