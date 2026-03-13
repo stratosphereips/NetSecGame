@@ -448,12 +448,14 @@ class GameCoordinator:
         async with self._reset_lock:
             # add reset request for this agent
             self._reset_requests[agent_addr] = True
+            # get the seed for the reset (default None - no change to the rng)
             self._reset_seed_requests[agent_addr] = reset_action.parameters.get("seed", None)
             self.logger.debug(f"Agent {agent_addr} requested reset with seed {self._reset_seed_requests[agent_addr]}")
+            # record topology randomization request
+            #  - ONLY consider agents that submitted seed
             # register if the agent wants to randomize the topology
-            self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", True)
-            if self._randomize_topology_requests[agent_addr]:
-                self.logger.debug(f"Agent {agent_addr} requested topology randomization with seed {self._reset_seed_requests[agent_addr]}")
+            if self._reset_seed_requests[agent_addr] is not None:
+                self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", True)
             if all(self._reset_requests.values()):
                 # all agents want reset - reset the world
                 self.logger.debug(f"All agents requested reset, setting the event")
