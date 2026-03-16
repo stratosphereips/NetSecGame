@@ -55,7 +55,7 @@ def get_str_hash(string, hash_func='sha256'):
     hash_algorithm.update(string.encode('utf-8'))
     return hash_algorithm.hexdigest()
 
-def read_replay_buffer_from_csv(csvfile:str)->list:
+def read_replay_buffer_from_csv(csvfile:str)->List[Tuple[GameState, Action, float, GameState, bool]]:
     """
     Function to read steps from a CSV file
      and restore the objects in the replay buffer.

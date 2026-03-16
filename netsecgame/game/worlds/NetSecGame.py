@@ -712,9 +712,6 @@ class NetSecGame(GameCoordinator):
             fallback_pool = list(new_net_obj)[1:-1]
             rng.shuffle(fallback_pool)
             
-            # Use a pointer/index for fallback pool so we don't need 'next()'
-            fallback_index = 0
-
             # Sort hosts for deterministic processing order
             hosts = self._networks[net]
             sorted_hosts = sorted(hosts, key=lambda x: repr(x))

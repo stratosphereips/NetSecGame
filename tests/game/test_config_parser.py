@@ -1,5 +1,4 @@
 import pytest
-import sys
 from unittest.mock import patch, mock_open, MagicMock
 
 # 1. Define the mocks you need for THIS file
