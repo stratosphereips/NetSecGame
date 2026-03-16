@@ -56,7 +56,6 @@ coordinator:
       max_steps: 25 # timout set for the role `Attacker`
       goal: # Definition of the goal state
         description: "Exfiltrate data from Samba server to remote C&C server."
-        is_any_part_of_goal_random: True
         known_networks: []
         known_hosts: []
         controlled_hosts: []
@@ -74,7 +73,6 @@ coordinator:
     Defender:
       goal:
         description: "Block all attackers"
-        is_any_part_of_goal_random: False
         known_networks: []
         known_hosts: []
         controlled_hosts: []
@@ -111,7 +109,7 @@ With the configuration ready the environment can be started in selected port
 docker run -d --rm --name nsg-server\
   -v $(pwd)/examples/example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml \
   -v $(pwd)/logs:/netsecgame/logs \
-  -p 9000:9000 stratosphereips/netsecgame
+  -p 9000:9000 stratosphereips/netsecgame \
   --debug_level="INFO"
 ```
 `--name nsg-server`: specifies the name of the container
@@ -130,7 +128,7 @@ docker run -d --rm --name netsecgame-server ^
   -p 9000:9000 ^
   -v "%cd%\examples\example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml" ^
   -v "%cd%\logs:/netsecgame/logs" ^
-  stratosphereips/netsecgame:latest
+  stratosphereips/netsecgame:latest \
   --debug_level="INFO"
 ```
 
@@ -139,7 +137,7 @@ The environment can be started locally with from the root folder of the reposito
 ```bash
 python3 -m netsecgame.game.worlds.NetSecGame \
   --task_config=./examples/example_task_configuration.yaml \
-  --game_port=9000
+  --game_port=9000 \
   --debug_level="INFO"
 ```
 Upon which the game server is created on `localhost:9000` to which the agents can connect to interact in the NetSecGame.
@@ -173,7 +171,9 @@ The NetSecGame has several components in the following files:
 |		├── trajectory_recorder.py
 |		├── trajectory_analysis.py
 |		├── aidojo_log_colorizer.py
-|		├── gamaplay_graphs.py
+|		├── gameplay_graphs.py
+|		├── actions_parser.py
+|		├── log_parser.py
 ```
 Some compoments are described in detail in following sections:
 
