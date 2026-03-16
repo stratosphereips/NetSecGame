@@ -6,8 +6,18 @@
 import re
 import csv
 import argparse
+from typing import List, Dict, Any
 
-def parse_actions_taken(filename):
+def parse_actions_taken(filename: str) -> List[Dict[str, Any]]:
+    """
+    Parses actions taken from a log file.
+
+    Args:
+        filename (str): The path to the log file.
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries representing actions taken.
+    """
     with open(filename, 'r') as file:
         lines = file.readlines()
 
@@ -58,7 +68,17 @@ def parse_actions_taken(filename):
 
     return all_actions
 
-def write_actions_to_csv(actions, output_filename):
+def write_actions_to_csv(actions: List[Dict[str, Any]], output_filename: str) -> None:
+    """
+    Writes parsed actions to a CSV file.
+
+    Args:
+        actions (List[Dict[str, Any]]): The list of parsed actions to write.
+        output_filename (str): The path to the output CSV file.
+
+    Returns:
+        None
+    """
     with open(output_filename, 'w', newline='') as csvfile:
         fieldnames = ['episode', 'action_number', 'action_type', 'target']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
