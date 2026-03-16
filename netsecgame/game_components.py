@@ -406,6 +406,10 @@ class Action:
                 params[k] = v
             elif isinstance(v, bool):  # Handle boolean values
                 params[k] = v
+            elif isinstance(v, int):  # Handle integer values
+                params[k] = v
+            elif v is None:
+                params[k] = None
             else:
                 params[k] = str(v)
         return {"action_type": str(self.action_type), "parameters": params}
@@ -463,6 +467,13 @@ class Action:
                         params[k] = v
                     else:
                         params[k] = ast.literal_eval(v)
+                case "seed":
+                    if isinstance(v, int):
+                        params[k] = v
+                    elif v is None or v == "None":
+                        params[k] = None
+                    else:
+                        raise ValueError(f"Unsupported value in {k}: {v}")
                 case _:
                     raise ValueError(f"Unsupported value in {k}: {v}")
         return cls(action_type=action_type, parameters=params)
@@ -921,11 +932,3 @@ class ProtocolConfig:
     """
     END_OF_MESSAGE: bytes = b"EOF"
     BUFFER_SIZE: int = 8192
-
-if __name__ == "__main__":
-    role_str = AgentRole.Attacker.to_string()
-    role = AgentRole.from_string(role_str)
-    action = Action(ActionType.JoinGame, parameters={"agent_info": {"role": role, "name": "TestAgent"}})
-    print(action)
-    print(action.to_json())
-    print(action.from_json(action.to_json()))

@@ -9,7 +9,7 @@ import netaddr, re
 import json
 from faker import Faker
 from pathlib import Path
-from typing import Iterable, Any
+from typing import Iterable, Any, Set, Dict, Optional
 from collections import defaultdict
 
 from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service, AgentRole
@@ -17,6 +17,18 @@ from netsecgame.game.coordinator import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
 from netsecgame.utils.utils import get_logging_level
+
+def state_parts_deep_copy(state:GameState)->tuple:
+    """
+    Deep copies the relevant parts of the GameState.
+    """
+    new_nets = copy.deepcopy(state.known_networks)
+    new_known_h = copy.deepcopy(state.known_hosts)
+    new_controlled_h = copy.deepcopy(state.controlled_hosts)
+    new_services = copy.deepcopy(state.known_services)
+    new_data = copy.deepcopy(state.known_data)
+    new_blocked = copy.deepcopy(state.known_blocks)
+    return new_nets, new_known_h, new_controlled_h, new_services, new_data, new_blocked
 
 class NetSecGame(GameCoordinator):
 
@@ -39,13 +51,28 @@ class NetSecGame(GameCoordinator):
         self._network_mapping = {}
         self._ip_mapping = {}
         
-        
-        np.random.seed(seed)
-        random.seed(seed)
-        self._seed = seed
-        self.logger.info(f'Setting env seed to {seed}')
+        # Set the random seed
+        self._set_random_seed(seed)
 
-    def _initialize(self):
+    def _set_random_seed(self, seed)->None:
+        """
+        Sets the random seed for the environment.
+
+        Args:
+            seed (int): The random seed to set.
+        """
+        self._seed = seed
+        if seed is not None:
+            np.random.seed(seed)
+            random.seed(seed)
+            # if faker is used, seed it too
+            if hasattr(self, '_faker_object'):
+                Faker.seed(seed)
+            self.logger.info(f'Setting env seed to {seed}')
+        else:
+            self.logger.warning("No seed provided, using random seed")
+
+    def _initialize(self)->None:
         """
         Initializes the NetSecGame environment.
 
@@ -72,7 +99,7 @@ class NetSecGame(GameCoordinator):
         else:
             self.logger.error("CYST configuration not loaded, cannot initialize the environment!")
 
-    def _get_hosts_from_view(self, view_hosts:Iterable, allowed_hosts=None)->set[IP]:
+    def _get_hosts_from_view(self, view_hosts:Iterable, allowed_hosts=None)->Set[IP]:
         """
         Parses view and translates all keywords. Produces set of controlled host (IP)
         Args:
@@ -106,7 +133,7 @@ class NetSecGame(GameCoordinator):
                 self.logger.error(f"Unsupported value encountered in view_hosts: {host}")
         return hosts
 
-    def _get_services_from_view(self, view_known_services:dict)->dict:
+    def _get_services_from_view(self, view_known_services:dict)->Dict[IP, Set[Service]]:
         """
         Parses view and translates all keywords. Produces dict of known services {IP: set(Service)}
 
@@ -145,7 +172,7 @@ class NetSecGame(GameCoordinator):
         # re-map all IPs based on current mapping in self._ip_mapping
         return known_services
 
-    def _get_data_from_view(self, view_known_data:dict, keyword_scope:str="host", exclude_types=["log"])->dict:
+    def _get_data_from_view(self, view_known_data:dict, keyword_scope:str="host", exclude_types=["log"])->Dict[IP, Set[Data]]:
         """
         Parses view and translates all keywords. Produces dict of known data {IP: set(Data)}
         
@@ -196,7 +223,7 @@ class NetSecGame(GameCoordinator):
         # re-map all IPs based on current mapping in self._ip_mapping
         return known_data
     
-    def _get_networks_from_view(self, view_known_networks:Iterable)->set[Network]:
+    def _get_networks_from_view(self, view_known_networks:Iterable)->Set[Network]:
         """
         Parses view and translates all keywords. Produces set of known networks (Network).
         Args:
@@ -477,13 +504,18 @@ class NetSecGame(GameCoordinator):
         self.logger.info(f"\tintitial self._ip_mapping: {self._ip_mapping}")
         self.logger.info("CYST configuration processed successfully")
 
-    def _dynamic_ip_change(self, max_attempts:int=10)-> None:
+    def _dynamic_ip_change(self, max_attempts:int=10, seed=None)-> None:
         """
         Changes the IP and network addresses in the environment
+        Args:
+            max_attempts (int, optional): Maximum number of attempts to find a valid mapping. Defaults to 10.
+            seed (int, optional): Seed for random number generator. Defaults to None.
+        Returns:
+            None
         """
         self.logger.info("Changing IP and Network addresses in the environment")
         # find a new IP and network mapping 
-        mapping_nets, mapping_ips = self._create_new_network_mapping(max_attempts)
+        mapping_nets, mapping_ips = self._create_new_network_mapping(max_attempts, seed=seed)
         
         # update ALL data structure in the environment with the new mappings
         
@@ -600,71 +632,138 @@ class NetSecGame(GameCoordinator):
         for ip, mapping in self._ip_mapping.items():
             self._ip_mapping[ip] = mapping_ips[mapping]
         self.logger.debug(f"self._ip_mapping: {self._ip_mapping}")
+    
+    def _create_new_network_mapping(self, max_attempts: int = 10, seed=None) -> tuple[Dict[Network, Network], Dict[IP, IP]]:
+        """ 
+        Generates new network addresses (preserving relative distance between networks)
+        and maps host IPs by preserving their relative offset within the subnet.
+        """
+        #self.logger.info(f"Generating new network and IP address mapping with seed {seed} (max attempts: {max_attempts})")
 
-    def _create_new_network_mapping(self, max_attempts:int=10)->tuple:
-        """ Method that generates random IP and Network addreses
-          while following the topology loaded in the environment.
-         All internal data structures are updated with the newly generated addresses."""
+        # # setup random generators
+        # if seed is not None:
+        #     fake = Faker()
+        #     fake.seed_instance(seed)
+        #     rng = random.Random(seed)
+        # else:
+        #     fake = self._faker_object
+        #     rng = random
         fake = self._faker_object
+        rng = random
+        
+
         mapping_nets = {}
         mapping_ips = {}
-        # generate mapping for networks
+        
+        # sort networks for deterministic processing (order should be deterministic in Python 3.7+ but we enforce it)
+        sorted_networks = sorted(self._networks.keys(), key=str)
+
+        # generate network mappings (Preserves distance between private networks)
         private_nets = []
-        for net in self._networks.keys():
+        for net in sorted_networks:
             if netaddr.IPNetwork(str(net)).ip.is_private():
                 private_nets.append(net)
             else:
                 mapping_nets[net] = Network(fake.ipv4_public(), net.mask)
         
-        # for private networks, we want to keep the distances among them
-        private_nets_sorted = sorted(private_nets)
-        valid_valid_network_mapping = False
+        # Private Network logic
+        valid_network_mapping = False
         counter_iter = 0
-        while not valid_valid_network_mapping:
-            try:
-                # find the new lowest networks
-                new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets_sorted[0].mask}")
-                # store its new mapping
-                mapping_nets[private_nets[0]] = Network(str(new_base.network), private_nets_sorted[0].mask)
-                base = netaddr.IPNetwork(str(private_nets_sorted[0]))
-                is_private_net_checks = []
-                for i in range(1,len(private_nets_sorted)):
-                    current = netaddr.IPNetwork(str(private_nets_sorted[i]))
-                    # find the distance before mapping
-                    diff_ip = current.ip - base.ip
-                    # find the new mapping 
-                    new_net_addr = netaddr.IPNetwork(str(mapping_nets[private_nets_sorted[0]])).ip + diff_ip
-                    # evaluate if its still a private network
-                    is_private_net_checks.append(new_net_addr.is_private())
-                    # store the new mapping
-                    mapping_nets[private_nets_sorted[i]] = Network(str(new_net_addr), private_nets_sorted[i].mask)
-                if False not in is_private_net_checks: # verify that ALL new networks are still in the private ranges
-                    valid_valid_network_mapping = True
-            except IndexError as e:
-                self.logger.info(f"Dynamic address sampling failed, re-trying. {e}")
-                counter_iter +=1
-                if counter_iter > max_attempts:
-                    self.logger.error(f"Dynamic address failed more than {max_attempts} times - stopping.")
-                    exit(-1)
-                # Invalid IP address boundary
-        self.logger.info(f"New network mapping:{mapping_nets}")
         
-        # genereate mapping for ips:
-        for net,ips in self._networks.items():
-            ip_list = list(netaddr.IPNetwork(str(mapping_nets[net])))[1:]
-            # remove broadcast and network ip from the list
-            random.shuffle(ip_list)
-            for i,ip in enumerate(ips):
-                mapping_ips[ip] = IP(str(ip_list[i]))
-            # Always add keywords 'random' and 'all_local' 'all_attackers' to the mapping
-            mapping_ips['random'] = 'random'
-            mapping_ips['all_local'] = 'all_local'
-            mapping_ips['all_attackers'] = 'all_attackers'
+        while not valid_network_mapping:
+            try:
+                # Pick a random start for the first private network
+                new_base = netaddr.IPNetwork(f"{fake.ipv4_private()}/{private_nets[0].mask}")
+                mapping_nets[private_nets[0]] = Network(str(new_base.network), private_nets[0].mask)
+                
+                base_orig = netaddr.IPNetwork(str(private_nets[0]))
+                checks = []
+                
+                for i in range(1, len(private_nets)):
+                    current_orig = netaddr.IPNetwork(str(private_nets[i]))
+                    # Calculate distance between Network A and Network B
+                    diff = current_orig.ip - base_orig.ip
+                    
+                    # Apply distance to new base
+                    new_net_ip = netaddr.IPNetwork(str(mapping_nets[private_nets[0]])).ip + diff
+                    
+                    checks.append(new_net_ip.is_private())
+                    mapping_nets[private_nets[i]] = Network(str(new_net_ip), private_nets[i].mask)
+                
+                if all(checks): 
+                    valid_network_mapping = True
+            except IndexError:
+                counter_iter += 1
+                if counter_iter > max_attempts:
+                    self.logger.error(f"Failed to generate valid network mapping in {max_attempts} attempts - exiting.")
+                    exit(-1)
 
-        self.logger.info(f"Mapping IPs done:{mapping_ips}")
+        self.logger.info(f"New network mapping: {mapping_nets}")
+
+        # 4. MAP IPS (Preserves distance/offset within subnet)
+        for net in sorted_networks:
+            if net not in mapping_nets: continue
+
+            orig_net_obj = netaddr.IPNetwork(str(net))
+            new_net_obj = netaddr.IPNetwork(str(mapping_nets[net]))
+            
+            # Prepare fallback pool (deterministic shuffle) just in case an offset fails
+            # We exclude .0 and .255 explicitly from the list
+            fallback_pool = list(new_net_obj)[1:-1]
+            rng.shuffle(fallback_pool)
+            
+            # Sort hosts for deterministic processing order
+            hosts = self._networks[net]
+            sorted_hosts = sorted(hosts, key=lambda x: repr(x))
+
+            for host in sorted_hosts:
+                try:
+                    old_host_ip = netaddr.IPAddress(str(host))
+                    
+                    # Calculate Offset: (Host IP) - (Network Address)
+                    # e.g. 192.168.1.55 - 192.168.1.0 = 55
+                    offset = old_host_ip - orig_net_obj.network
+                    
+                    # Apply Offset to New Network
+                    # e.g. 10.0.0.0 + 55 = 10.0.0.55
+                    new_host_ip = new_net_obj.network + offset
+
+                    # Verify validity:
+                    # 1. Must be inside the new subnet (cidr check)
+                    # 2. Must not be the Network Address (.0) or Broadcast (.255)
+                    if (new_host_ip in new_net_obj and 
+                        new_host_ip != new_net_obj.network and 
+                        new_host_ip != new_net_obj.broadcast):
+                        
+                        mapping_ips[host] = IP(str(new_host_ip))
+                        
+                        # Optimization: If this IP happens to be in our fallback pool,
+                        # remove it so fallback logic doesn't re-assign it later.
+                        # (Checking efficient sets is faster, but list remove is safe here for small subnets)
+                        if new_host_ip in fallback_pool:
+                            fallback_pool.remove(new_host_ip)
+                    else:
+                        raise ValueError("Offset calculated invalid IP")
+
+                except (ValueError, TypeError, netaddr.AddrFormatError):
+                    # Fallback Strategy: Assign next available random IP from the pool
+                    # This handles edge cases or weird topology mismatches gracefully
+                    if fallback_pool:
+                        safe_ip = fallback_pool.pop(0) # Take first available from shuffled pool
+                        mapping_ips[host] = IP(str(safe_ip))
+                        self.logger.warning(f"Offset failed for {host}, assigned fallback {safe_ip}")
+                    else:
+                        self.logger.error(f"Subnet exhausted for {net}")
+
+        # Static mappings
+        mapping_ips['random'] = 'random'
+        mapping_ips['all_local'] = 'all_local'
+        mapping_ips['all_attackers'] = 'all_attackers'
+
+        self.logger.info(f"Mapping IPs done: {mapping_ips}")
         return mapping_nets, mapping_ips
     
-    def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> set:
+    def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> Set[Service]:
         """
         Returns set of Service tuples from given hostIP
         """
@@ -681,7 +780,7 @@ class NetSecGame(GameCoordinator):
             self.logger.debug("\tServices not found because target IP does not exists.")
         return found_services
 
-    def _get_networks_from_host(self, host_ip)->set:
+    def _get_networks_from_host(self, host_ip)->Set[Network]:
         """
         Returns set of IPs the host has access to
         """
@@ -691,7 +790,7 @@ class NetSecGame(GameCoordinator):
                 networks.add(net)
         return networks
 
-    def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->set:
+    def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->Set[Data]:
         """
         Returns set of Data tuples from given host IP
         Check if the host is in the list of controlled hosts
@@ -775,15 +874,6 @@ class NetSecGame(GameCoordinator):
             else:
                 self.logger.debug(f"False positive for blocking {src_host} -> {dst_host} caused by the system configuration.")
 
-    def _state_parts_deep_copy(self, current:GameState)->tuple:
-        next_nets = copy.deepcopy(current.known_networks)
-        next_known_h = copy.deepcopy(current.known_hosts)
-        next_controlled_h = copy.deepcopy(current.controlled_hosts)
-        next_services = copy.deepcopy(current.known_services)
-        next_data = copy.deepcopy(current.known_data)
-        next_blocked = copy.deepcopy(current.known_blocks)
-        return next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked
-
     def _firewall_check(self, src_ip:IP, dst_ip:IP)->bool:
         """Checks if firewall allows connection from 'src_ip to ''dst_ip'"""
         try:
@@ -796,7 +886,7 @@ class NetSecGame(GameCoordinator):
         """
         Executes the ScanNetwork action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         self.logger.debug(f"\t\tScanning {action.parameters['target_network']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             new_ips = set()
@@ -819,7 +909,7 @@ class NetSecGame(GameCoordinator):
         """
         Executes the FindServices action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         self.logger.debug(f"\t\tSearching for services in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
@@ -846,7 +936,7 @@ class NetSecGame(GameCoordinator):
         """
         Executes the FindData action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current)
         self.logger.debug(f"\t\tSearching for data in {action.parameters['target_host']}")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current.controlled_hosts:
             if self._firewall_check(action.parameters["source_host"], action.parameters['target_host']):
@@ -877,7 +967,7 @@ class NetSecGame(GameCoordinator):
         """
         Executes the ExfiltrateData action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         self.logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
         # Is the target host controlled?
         if action.parameters["target_host"] in current_state.controlled_hosts:
@@ -924,7 +1014,7 @@ class NetSecGame(GameCoordinator):
         """
         Executes the ExploitService action in the environment
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         # We don't check if the target is a known_host because it can be a blind attempt to attack
         self.logger.info(f"\t\tAttempting to ExploitService in '{action.parameters['target_host']}':'{action.parameters['target_service']}'")
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
@@ -974,7 +1064,7 @@ class NetSecGame(GameCoordinator):
         - Add the rule to the FW list
         - Update the state
         """
-        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = self._state_parts_deep_copy(current_state)
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         # Is the src in the controlled hosts?
         if "source_host" in action.parameters.keys() and action.parameters["source_host"] in current_state.controlled_hosts:
             # Is the target in the controlled hosts?
@@ -1033,7 +1123,7 @@ class NetSecGame(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _get_all_local_ips(self)->set:
+    def _get_all_local_ips(self)->Set[IP]:
         local_ips = set()
         for net, ips in self._networks.items():
             if netaddr.IPNetwork(str(net)).ip.is_private():
@@ -1042,7 +1132,14 @@ class NetSecGame(GameCoordinator):
         self.logger.info(f"\t\t\tLocal ips: {local_ips}")
         return local_ips
     
-    def update_log_file(self, known_data:set, action, target_host:IP):
+    def update_log_file(self, known_data:set, action, target_host:IP)->None:
+        """
+        Updates the log file in the target host.
+        Args:
+            known_data (set): Set of known data.
+            action (Action): Action to be recorded.
+            target_host (IP): Target host.
+        """
         hostaname = self._ip_to_hostname[target_host]
         self.logger.debug(f"Updating log file in host {hostaname}")
         try:
@@ -1077,21 +1174,19 @@ class NetSecGame(GameCoordinator):
        goal_state = self._create_goal_state_from_view(agent_win_condition_view)
        return game_state, goal_state    
 
-    async def reset(self)->bool:
+    async def reset(self, seed:Optional[int]=None, topology_change:Optional[bool]=None)->bool:
         """
         Function to reset the state of the game
         and prepare for a new episode
         """
         # write all steps in the episode replay buffer in the file
         self.logger.info('--- Reseting NSG Environment to its initial state ---')
-        # change IPs if needed
-        # This is done ONLY if it is (i) enabled in the task config and (ii) all agents requested it
-        if self.config_manager.get_use_dynamic_ips():
-            if all(self._randomize_topology_requests.values()):
-                self.logger.info("All agents requested reset with randomized topology.")
-                self._dynamic_ip_change()
-            else:
-                self.logger.info("Not all agents requested a topology randomization. Keeping the current one.")
+        if seed is not None:
+            self._set_random_seed(seed)
+
+        if self.config_manager.get_use_dynamic_ips(): #topology change is allowed
+            if topology_change: # agents agree on topology change
+                self._dynamic_ip_change(seed=seed)
         # reset self._data to orignal state
         self._data = copy.deepcopy(self._data_original)
         # reset self._data_content to orignal state

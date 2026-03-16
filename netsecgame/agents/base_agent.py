@@ -3,7 +3,8 @@
 import logging
 import socket
 import json
-from abc import ABC 
+from abc import ABC
+from typing import Optional, Tuple, Dict, Any
 
 from netsecgame.game_components import Action, GameState, Observation, ActionType, GameStatus, AgentInfo, ProtocolConfig, AgentRole
 
@@ -55,7 +56,7 @@ class BaseAgent(ABC):
     def logger(self)->logging.Logger:
         return self._logger
 
-    def make_step(self, action: Action) -> Observation | None:
+    def make_step(self, action: Action) -> Optional[Observation]:
         """
         Executes a single step in the environment by sending the agent's action to the server and receiving the resulting observation.
 
@@ -75,7 +76,7 @@ class BaseAgent(ABC):
         else:
             return None
     
-    def communicate(self, data:Action)-> tuple:
+    def communicate(self, data:Action)-> Tuple[GameStatus, Dict[str, Any], Optional[str]]:
         """
         Exchanges data with the server and returns the server's response.
         This method sends an `Action` object to the server and waits for a response.
@@ -102,7 +103,7 @@ class BaseAgent(ABC):
                 self._logger.error(f'Exception in _send_data(): {e}')
                 raise e
             
-        def _receive_data(socket)->tuple:
+        def _receive_data(socket)->Tuple[GameStatus, Dict[str, Any], Optional[str]]:
             """
             Receive data from server
             """
@@ -138,7 +139,7 @@ class BaseAgent(ABC):
         _send_data(self._socket, data)
         return _receive_data(self._socket)
     
-    def register(self)->Observation | None:
+    def register(self)->Optional[Observation]:
         """
         Method for registering agent to the game server.
         Classname is used as agent name and the role is based on the 'role' argument.
@@ -162,19 +163,28 @@ class BaseAgent(ABC):
         except Exception as e:
             self._logger.error(f'Exception in register(): {e}')
 
-    def request_game_reset(self, request_trajectory=False, randomize_topology=True, randomize_topology_seed=None) -> Observation|None:
-        """
-        Requests a game reset from the server. Optionally requests a trajectory and/or topology randomization.
+    def request_game_reset(
+        self, 
+        request_trajectory: bool = False, 
+        randomize_topology: bool = False, 
+        seed: Optional[int] = None
+    ) -> Optional[Observation]:
+        """Request a game reset from the server.
         Args:
-            request_trajectory (bool): If True, requests the server to provide a trajectory of the last episode.
-            randomize_topology (bool): If True, requests the server to randomize the network topology for the next episode. Defaults to True.
-            randomize_topology_seed (int): If provided, requests the server to use this seed for randomizing the network topology. Defaults to None.
+            request_trajectory: If True, requests the server to provide a 
+                trajectory of the last episode.
+            randomize_topology: If True, requests the server to randomize the 
+                network topology for the next episode. Defaults to False.
+            seed: If provided, requests the server to use this seed for 
+                randomizing the environment. Required if randomize_topology is True.
         Returns:
-            Observation: The initial observation after the reset if successful, None otherwise.
+            The initial observation after the reset if successful, None otherwise.
         """
+        if seed is None and randomize_topology:
+            raise ValueError("Topology randomization without seed is not supported.")
         self._logger.debug("Requesting game reset")
-        status, observation_dict, message = self.communicate(Action(ActionType.ResetGame, parameters={"request_trajectory": request_trajectory, "randomize_topology": randomize_topology}))
-        if status:
+        status, observation_dict, message = self.communicate(Action(ActionType.ResetGame, parameters={"request_trajectory": request_trajectory, "randomize_topology": randomize_topology, "seed": seed}))
+        if status is GameStatus.RESET_DONE:
             self._logger.debug('\tReset successful')
             return Observation(GameState.from_dict(observation_dict["state"]), observation_dict["reward"], observation_dict["end"], message)
         else:

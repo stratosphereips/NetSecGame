@@ -104,6 +104,7 @@ class GameCoordinator:
         # reset request per agent_addr (bool)
         self._reset_requests = {}
         self._randomize_topology_requests = {}
+        self._reset_seed_requests = {}
         self._agent_status = {}
         self._episode_ends = {}
         self._agent_observations = {}
@@ -447,8 +448,14 @@ class GameCoordinator:
         async with self._reset_lock:
             # add reset request for this agent
             self._reset_requests[agent_addr] = True
+            # get the seed for the reset (default None - no change to the rng)
+            self._reset_seed_requests[agent_addr] = reset_action.parameters.get("seed", None)
+            self.logger.debug(f"Agent {agent_addr} requested reset with seed {self._reset_seed_requests[agent_addr]}")
+            # record topology randomization request
+            #  - ONLY consider agents that submitted seed
             # register if the agent wants to randomize the topology
-            self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", True)
+            if self._reset_seed_requests[agent_addr] is not None:
+                self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", True)
             if all(self._reset_requests.values()):
                 # all agents want reset - reset the world
                 self.logger.debug(f"All agents requested reset, setting the event")
@@ -559,36 +566,37 @@ class GameCoordinator:
                 asyncio.create_task(self.shutdown_flag.wait())],
                 return_when=asyncio.FIRST_COMPLETED,
             )
-             # Check if shutdown_flag was set
+            # Check if shutdown_flag was set
             if self.shutdown_flag.is_set():
                 self.logger.debug("\tExiting reward assignment task.")
                 break
-            self.logger.info("Episode finished. Assigning final rewards to agents.")
-            async with self._agents_lock:
-                attackers = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "attacker"]
-                defenders = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "defender"]
-                successful_attack = False
-                # award attackers
-                for agent in attackers:
-                    self.logger.debug(f"Processing reward for agent {agent}")
-                    if self._agent_status[agent] is AgentStatus.Success:
-                        self._agent_rewards[agent] += self._rewards["success"]
-                        successful_attack = True
-                    else:
-                        self._agent_rewards[agent] += self._rewards["fail"]
-                
-                # award defenders
-                for agent in defenders:
-                    self.logger.debug(f"Processing reward for agent {agent}")
-                    if not successful_attack:
-                        self._agent_rewards[agent] += self._rewards["success"]
-                        self._agent_status[agent] = AgentStatus.Success
-                    else:
-                        self._agent_rewards[agent] += self._rewards["fail"]
-                        self._agent_status[agent] = AgentStatus.Fail
-                    # dicrease the reward for false positives
-                    self.logger.debug(f"Processing false positives for agent {agent}: {self._agent_false_positives[agent]}")
-                    self._agent_rewards[agent] += self._agent_false_positives[agent] * self._rewards["false_positive"]
+            if len(self.agents) > 0:        
+                self.logger.info("Episode finished. Assigning final rewards to agents.")
+                async with self._agents_lock:
+                    attackers = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "attacker"]
+                    defenders = [a for a,(_, a_role) in self.agents.items() if a_role.lower() == "defender"]
+                    successful_attack = False
+                    # award attackers
+                    for agent in attackers:
+                        self.logger.debug(f"Processing reward for agent {agent}")
+                        if self._agent_status[agent] is AgentStatus.Success:
+                            self._agent_rewards[agent] += self._rewards["success"]
+                            successful_attack = True
+                        else:
+                            self._agent_rewards[agent] += self._rewards["fail"]
+                    
+                    # award defenders
+                    for agent in defenders:
+                        self.logger.debug(f"Processing reward for agent {agent}")
+                        if not successful_attack:
+                            self._agent_rewards[agent] += self._rewards["success"]
+                            self._agent_status[agent] = AgentStatus.Success
+                        else:
+                            self._agent_rewards[agent] += self._rewards["fail"]
+                            self._agent_status[agent] = AgentStatus.Fail
+                        # dicrease the reward for false positives
+                        self.logger.debug(f"Processing false positives for agent {agent}: {self._agent_false_positives[agent]}")
+                        self._agent_rewards[agent] += self._agent_false_positives[agent] * self._rewards["false_positive"]
             # clear the episode end event
             self._episode_end_event.clear()
             # notify all waiting agents
@@ -596,6 +604,53 @@ class GameCoordinator:
                 self._episode_rewards_condition.notify_all()
         self.logger.info("\tReward assignment task stopped.")
 
+    
+    async def _handle_invalid_reset(self, error_msg:str):
+        """Task that handles invalid reset"""
+        self.logger.error(error_msg)
+        for agent in self.agents:
+            async with self._agents_lock:
+                output_message_dict = {
+                    "to_agent": agent,
+                    "status": str(GameStatus.BAD_REQUEST),
+                    "observation": None,
+                    "message": {"message": error_msg},
+                }
+                response_msg_json = convert_msg_dict_to_json(output_message_dict)
+                await self._agent_response_queues[agent].put(response_msg_json)
+        self.shutdown_flag.set()
+    
+    
+    async def _handle_valid_reset(self, seed: Optional[int], topology_change: Optional[bool]):
+        """Task that handles valid reset"""
+        self.logger.info(f"Resetting game to initial state with seed: {seed} and topology change: {topology_change}")
+        # reset the game 
+        await self.reset(seed=seed, topology_change=topology_change)
+        for agent in self.agents:
+            if self.config_manager.get_store_trajectories():
+                async with self._agents_lock:
+                    self._store_trajectory_to_file(agent)
+            self.logger.debug(f"Resetting agent {agent}")
+            agent_role = self.agents[agent][1]
+            # reset the agent in the world
+            new_state, new_goal_state = await self.reset_agent(agent, agent_role, self._starting_positions_per_role[agent_role], self._win_conditions_per_role[agent_role])
+            new_observation = Observation(new_state, 0, False, {})
+            async with self._agents_lock:
+                self._agent_states[agent] = new_state
+                self._agent_goal_states[agent] = new_goal_state
+                self._agent_observations[agent] = new_observation
+                self._episode_ends[agent] = False
+                self._reset_requests[agent] = False
+                self._randomize_topology_requests.pop(agent, None)
+                self._reset_seed_requests.pop(agent, None)
+                self._agent_rewards[agent] = 0
+                self._agent_steps[agent] = 0
+                self._agent_false_positives[agent] = 0
+                if self.agents[agent][1].lower() == "attacker":
+                    self._agent_status[agent] = AgentStatus.PlayingWithTimeout
+                else:
+                    self._agent_status[agent] = AgentStatus.Playing
+    
     async def _reset_game(self):
         """Task that waits for all agents to request resets"""
         self.logger.debug("Starting task for game reset handelling.")
@@ -610,32 +665,41 @@ class GameCoordinator:
             if self.shutdown_flag.is_set():
                 self.logger.debug("\tExiting reset_game task.")
                 break
-            # wait until episode is finished by all agents
-            self.logger.info("Resetting game to initial state.")
-            await self.reset()
-            for agent in self.agents:
-                if self.config_manager.get_store_trajectories():
-                    async with self._agents_lock:
-                        self._store_trajectory_to_file(agent)
-                self.logger.debug(f"Resetting agent {agent}")
-                agent_role = self.agents[agent][1]
-                # reset the agent in the world
-                new_state, new_goal_state = await self.reset_agent(agent, agent_role, self._starting_positions_per_role[agent_role], self._win_conditions_per_role[agent_role])
-                new_observation = Observation(new_state, 0, False, {})
-                async with self._agents_lock:
-                    self._agent_states[agent] = new_state
-                    self._agent_goal_states[agent] = new_goal_state
-                    self._agent_observations[agent] = new_observation
-                    self._episode_ends[agent] = False
-                    self._reset_requests[agent] = False
-                    self._randomize_topology_requests[agent] = False
-                    self._agent_rewards[agent] = 0
-                    self._agent_steps[agent] = 0
-                    self._agent_false_positives[agent] = 0
-                    if self.agents[agent][1].lower() == "attacker":
-                        self._agent_status[agent] = AgentStatus.PlayingWithTimeout
-                    else:
-                        self._agent_status[agent] = AgentStatus.Playing
+            if len(self.agents) > 0: 
+                # verify that all agents agreed on the seed (or sent None)
+                valid_seeding = False
+                valid_topology_change = False
+                non_none_seeds = [seed for seed in self._reset_seed_requests.values() if seed is not None]
+                if len(non_none_seeds) == 0: # no agent wants to change the seed
+                    seed = None
+                    valid_seeding = True
+                elif len(set(non_none_seeds)) == 1: # all agents agree on the seed
+                    seed = non_none_seeds[0]
+                    valid_seeding = True
+                else: # agents disagree on the seed
+                    seed = None
+                # verify that all agents agreed on the topology change (or sent None)
+                valid_seed_agents = [agent for agent in self.agents if self._reset_seed_requests[agent] is not None]
+                valid_topology_requests = [self._randomize_topology_requests[agent] for agent in valid_seed_agents]
+                if len(set(valid_topology_requests)) == 1: # all valid agents agree on the topology change
+                    valid_topology_change = True
+                    topology_change = valid_topology_requests[0]
+                else: # agents disagree on the topology change
+                    valid_topology_change = False
+                    topology_change = None
+
+                if valid_seeding and valid_topology_change:
+                    await self._handle_valid_reset(seed, topology_change)
+                    self._reset_event.clear()  
+                    # notify all waiting agents
+                    async with self._reset_done_condition:
+                        self._reset_done_condition.notify_all()
+                elif not valid_seeding:
+                    await self._handle_invalid_reset("Agents disagree on the seed. Undefined state. Stopping the game")
+                    self._reset_event.clear()  
+                elif not valid_topology_change:
+                    await self._handle_invalid_reset("Agents disagree on the topology change. Undefined state. Stopping the game")
+                    self._reset_event.clear()  
             self._reset_event.clear()  
             # notify all waiting agents
             async with self._reset_done_condition:
@@ -700,9 +764,11 @@ class GameCoordinator:
                     agent_info["topology_reset_request"] = self._randomize_topology_requests.pop(agent_addr, False)
                     # remove agent from reset requests
                     agent_info["reset_request"] = self._reset_requests.pop(agent_addr)
+                    agent_info["reset_seed"] = self._reset_seed_requests.pop(agent_addr, None)
                     # check if this agent was not preventing reset 
                     if all(self._reset_requests.values()):
-                        self._reset_event.set()
+                        if len(self.agents) > 0:
+                            self._reset_event.set()
                     agent_info["episode_end"] = self._episode_ends.pop(agent_addr)
                     #check if this agent was not preventing episode end
                     if all(self._episode_ends.values()):
@@ -724,10 +790,13 @@ class GameCoordinator:
         """
         raise NotImplementedError
     
-    async def reset(self)->bool:
+    async def reset(self, seed:Optional[int]=None)->bool:
         """
         Domain specific method of the environment. Creates the initial state of the agent.
         Must be implemented by the domain specific environment.
+
+        Args:
+            seed (int, optional): Seed for the random number generator. Defaults to None.
         """
         raise NotImplementedError
 
