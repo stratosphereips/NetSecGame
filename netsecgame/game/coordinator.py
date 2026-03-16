@@ -123,7 +123,7 @@ class GameCoordinator:
         # trajectories per agent_addr
         self._agent_trajectories = {}
     
-    def _spawn_task(self, coroutine, *args, **kwargs)->asyncio.Task:
+    def _spawn_task(self, coroutine:asyncio.coroutine, *args:tuple, **kwargs:dict)->asyncio.Task:
         """
         Helper function to make sure all tasks are registered for proper termination.
         
