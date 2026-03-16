@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
     
     
       
@@ -580,6 +580,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.worlds.NetSecGame.NetSecGame.update_log_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_log_file
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -882,6 +893,17 @@
     <span class="md-ellipsis">
       
         reset
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.worlds.NetSecGame.NetSecGame.update_log_file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_log_file
       
     </span>
   </a>
@@ -1359,7 +1381,8 @@
 <span class="normal">120</span>
 <span class="normal">121</span>
 <span class="normal">122</span>
-<span class="normal">123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">game_host</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">game_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">service_host</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">service_port</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">task_config_file</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">123</span>
+<span class="normal">124</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">game_host</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">game_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">service_host</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">service_port</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">task_config_file</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">game_host</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">game_port</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;GameCoordinator&quot;</span><span class="p">)</span>
@@ -1388,6 +1411,7 @@
     <span class="c1"># reset request per agent_addr (bool)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_reset_requests</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_randomize_topology_requests</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_reset_seed_requests</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_agent_status</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_episode_ends</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_agent_observations</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1439,18 +1463,18 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">792</span>
-<span class="normal">793</span>
-<span class="normal">794</span>
-<span class="normal">795</span>
-<span class="normal">796</span>
-<span class="normal">797</span>
-<span class="normal">798</span>
-<span class="normal">799</span>
-<span class="normal">800</span>
-<span class="normal">801</span>
-<span class="normal">802</span>
-<span class="normal">803</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_false_positive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent</span><span class="p">:</span><span class="nb">tuple</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">861</span>
+<span class="normal">862</span>
+<span class="normal">863</span>
+<span class="normal">864</span>
+<span class="normal">865</span>
+<span class="normal">866</span>
+<span class="normal">867</span>
+<span class="normal">868</span>
+<span class="normal">869</span>
+<span class="normal">870</span>
+<span class="normal">871</span>
+<span class="normal">872</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_false_positive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent</span><span class="p">:</span><span class="nb">tuple</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Method for adding false positive to the agent.</span>
 <span class="sd">    Args:</span>
@@ -1519,8 +1543,7 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">151</span>
-<span class="normal">152</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">152</span>
 <span class="normal">153</span>
 <span class="normal">154</span>
 <span class="normal">155</span>
@@ -1528,7 +1551,8 @@ Args:
 <span class="normal">157</span>
 <span class="normal">158</span>
 <span class="normal">159</span>
-<span class="normal">160</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">create_agent_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_addr</span><span class="p">:</span><span class="nb">tuple</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
+<span class="normal">160</span>
+<span class="normal">161</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">create_agent_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_addr</span><span class="p">:</span><span class="nb">tuple</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates a queue for the given agent address if it doesn&#39;t already exist.</span>
 
@@ -1560,40 +1584,40 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">741</span>
-<span class="normal">742</span>
-<span class="normal">743</span>
-<span class="normal">744</span>
-<span class="normal">745</span>
-<span class="normal">746</span>
-<span class="normal">747</span>
-<span class="normal">748</span>
-<span class="normal">749</span>
-<span class="normal">750</span>
-<span class="normal">751</span>
-<span class="normal">752</span>
-<span class="normal">753</span>
-<span class="normal">754</span>
-<span class="normal">755</span>
-<span class="normal">756</span>
-<span class="normal">757</span>
-<span class="normal">758</span>
-<span class="normal">759</span>
-<span class="normal">760</span>
-<span class="normal">761</span>
-<span class="normal">762</span>
-<span class="normal">763</span>
-<span class="normal">764</span>
-<span class="normal">765</span>
-<span class="normal">766</span>
-<span class="normal">767</span>
-<span class="normal">768</span>
-<span class="normal">769</span>
-<span class="normal">770</span>
-<span class="normal">771</span>
-<span class="normal">772</span>
-<span class="normal">773</span>
-<span class="normal">774</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">goal_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_addr</span><span class="p">:</span><span class="nb">tuple</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">810</span>
+<span class="normal">811</span>
+<span class="normal">812</span>
+<span class="normal">813</span>
+<span class="normal">814</span>
+<span class="normal">815</span>
+<span class="normal">816</span>
+<span class="normal">817</span>
+<span class="normal">818</span>
+<span class="normal">819</span>
+<span class="normal">820</span>
+<span class="normal">821</span>
+<span class="normal">822</span>
+<span class="normal">823</span>
+<span class="normal">824</span>
+<span class="normal">825</span>
+<span class="normal">826</span>
+<span class="normal">827</span>
+<span class="normal">828</span>
+<span class="normal">829</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span>
+<span class="normal">837</span>
+<span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">goal_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_addr</span><span class="p">:</span><span class="nb">tuple</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Check if the goal conditons were satisfied in a given game state</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1649,14 +1673,14 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">890</span>
-<span class="normal">891</span>
-<span class="normal">892</span>
-<span class="normal">893</span>
-<span class="normal">894</span>
-<span class="normal">895</span>
-<span class="normal">896</span>
-<span class="normal">897</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_agent_benign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_addr</span><span class="p">:</span><span class="nb">tuple</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">959</span>
+<span class="normal">960</span>
+<span class="normal">961</span>
+<span class="normal">962</span>
+<span class="normal">963</span>
+<span class="normal">964</span>
+<span class="normal">965</span>
+<span class="normal">966</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_agent_benign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_addr</span><span class="p">:</span><span class="nb">tuple</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Check if the agent is benign (defender, normal)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1690,11 +1714,11 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">670</span>
-<span class="normal">671</span>
-<span class="normal">672</span>
-<span class="normal">673</span>
-<span class="normal">674</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">register_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_id</span><span class="p">:</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">agent_role</span><span class="p">:</span><span class="n">AgentRole</span><span class="p">,</span> <span class="n">agent_initial_view</span><span class="p">:</span><span class="nb">dict</span><span class="p">,</span> <span class="n">agent_win_condition_view</span><span class="p">:</span><span class="nb">dict</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">tuple</span><span class="p">[</span><span class="n">GameState</span><span class="p">,</span> <span class="n">GameState</span><span class="p">]:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">register_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_id</span><span class="p">:</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">agent_role</span><span class="p">:</span><span class="n">AgentRole</span><span class="p">,</span> <span class="n">agent_initial_view</span><span class="p">:</span><span class="nb">dict</span><span class="p">,</span> <span class="n">agent_win_condition_view</span><span class="p">:</span><span class="nb">dict</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">tuple</span><span class="p">[</span><span class="n">GameState</span><span class="p">,</span> <span class="n">GameState</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Domain specific method of the environment. Creates the initial state of the agent.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1725,11 +1749,11 @@ Args:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">676</span>
-<span class="normal">677</span>
-<span class="normal">678</span>
-<span class="normal">679</span>
-<span class="normal">680</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">remove_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_id</span><span class="p">:</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">:</span><span class="n">GameState</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">remove_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_id</span><span class="p">:</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">:</span><span class="n">GameState</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Domain specific method of the environment. Creates the initial state of the agent.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1744,7 +1768,7 @@ Args:
 
 
 <h3 id="netsecgame.game.coordinator.GameCoordinator.reset" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">reset</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">reset</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-async"><code>async</code></small>
@@ -1759,17 +1783,54 @@ Args:
 Must be implemented by the domain specific environment.</p>
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>seed</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Seed for the random number generator. Defaults to None.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">727</span>
-<span class="normal">728</span>
-<span class="normal">729</span>
-<span class="normal">730</span>
-<span class="normal">731</span>
-<span class="normal">732</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">793</span>
+<span class="normal">794</span>
+<span class="normal">795</span>
+<span class="normal">796</span>
+<span class="normal">797</span>
+<span class="normal">798</span>
+<span class="normal">799</span>
+<span class="normal">800</span>
+<span class="normal">801</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Domain specific method of the environment. Creates the initial state of the agent.</span>
 <span class="sd">    Must be implemented by the domain specific environment.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        seed (int, optional): Seed for the random number generator. Defaults to None.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
@@ -1794,8 +1855,7 @@ Must be implemented by the domain specific environment.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">162</span>
-<span class="normal">163</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">163</span>
 <span class="normal">164</span>
 <span class="normal">165</span>
 <span class="normal">166</span>
@@ -1803,7 +1863,8 @@ Must be implemented by the domain specific environment.</p>
 <span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span>
-<span class="normal">171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
+<span class="normal">171</span>
+<span class="normal">172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Wrapper for ayncio run function. Starts all tasks in AIDojo</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1841,8 +1902,7 @@ and dispatching them to the appropriate handler using <code>_dispatch_action</co
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">313</span>
-<span class="normal">314</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">314</span>
 <span class="normal">315</span>
 <span class="normal">316</span>
 <span class="normal">317</span>
@@ -1859,7 +1919,8 @@ and dispatching them to the appropriate handler using <code>_dispatch_action</co
 <span class="normal">328</span>
 <span class="normal">329</span>
 <span class="normal">330</span>
-<span class="normal">331</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_game</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">331</span>
+<span class="normal">332</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_game</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Main game loop task. </span>
 
@@ -1904,12 +1965,12 @@ and dispatching them to the appropriate handler using <code>_dispatch_action</co
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">144</span>
-<span class="normal">145</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">145</span>
 <span class="normal">146</span>
 <span class="normal">147</span>
 <span class="normal">148</span>
-<span class="normal">149</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">shutdown_signal_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
+<span class="normal">149</span>
+<span class="normal">150</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">shutdown_signal_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Logs the signal reception and sets the shutdown flag to initiate graceful termination.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1945,8 +2006,7 @@ and dispatching them to the appropriate handler using <code>_dispatch_action</co
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">203</span>
-<span class="normal">204</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">204</span>
 <span class="normal">205</span>
 <span class="normal">206</span>
 <span class="normal">207</span>
@@ -2011,7 +2071,8 @@ and dispatching them to the appropriate handler using <code>_dispatch_action</co
 <span class="normal">266</span>
 <span class="normal">267</span>
 <span class="normal">268</span>
-<span class="normal">269</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">269</span>
+<span class="normal">270</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    High level funciton to start all the other asynchronous tasks.</span>
 <span class="sd">    - Reads the conf of the coordinator</span>
@@ -2104,8 +2165,7 @@ and dispatching them to the appropriate handler using <code>_dispatch_action</co
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">173</span>
-<span class="normal">174</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">174</span>
 <span class="normal">175</span>
 <span class="normal">176</span>
 <span class="normal">177</span>
@@ -2132,7 +2192,8 @@ and dispatching them to the appropriate handler using <code>_dispatch_action</co
 <span class="normal">198</span>
 <span class="normal">199</span>
 <span class="normal">200</span>
-<span class="normal">201</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start_tcp_server</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">201</span>
+<span class="normal">202</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">start_tcp_server</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Starts TPC sever for the agent communication.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2188,12 +2249,12 @@ Must be implemented by the domain specific environment.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/coordinator.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">720</span>
-<span class="normal">721</span>
-<span class="normal">722</span>
-<span class="normal">723</span>
-<span class="normal">724</span>
-<span class="normal">725</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_id</span><span class="p">:</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">:</span><span class="n">GameState</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span><span class="n">Action</span><span class="p">):</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">786</span>
+<span class="normal">787</span>
+<span class="normal">788</span>
+<span class="normal">789</span>
+<span class="normal">790</span>
+<span class="normal">791</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_id</span><span class="p">:</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">:</span><span class="n">GameState</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span><span class="n">Action</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Domain specific method of the environment. Creates the initial state of the agent.</span>
 <span class="sd">    Must be implemented by the domain specific environment.</span>
@@ -2238,19 +2299,7 @@ Must be implemented by the domain specific environment.</p>
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>netsecgame/game/worlds/NetSecGame.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">35</span>
 <span class="normal">36</span>
 <span class="normal">37</span>
 <span class="normal">38</span>
@@ -2261,7 +2310,16 @@ Must be implemented by the domain specific environment.</p>
 <span class="normal">43</span>
 <span class="normal">44</span>
 <span class="normal">45</span>
-<span class="normal">46</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">game_host</span><span class="p">,</span> <span class="n">game_port</span><span class="p">,</span> <span class="n">task_config</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">game_host</span><span class="p">,</span> <span class="n">game_port</span><span class="p">,</span> <span class="n">task_config</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">game_host</span><span class="p">,</span> <span class="n">game_port</span><span class="p">,</span> <span class="n">service_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">service_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_config_file</span><span class="o">=</span><span class="n">task_config</span><span class="p">)</span>
 
     <span class="c1"># Internal data structure of the NSG</span>
@@ -2280,11 +2338,8 @@ Must be implemented by the domain specific environment.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">_network_mapping</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_ip_mapping</span> <span class="o">=</span> <span class="p">{}</span>
 
-
-    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-    <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_seed</span> <span class="o">=</span> <span class="n">seed</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Setting env seed to </span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># Set the random seed</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_set_random_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -2305,7 +2360,7 @@ Must be implemented by the domain specific environment.</p>
 
 
 <h3 id="netsecgame.game.worlds.NetSecGame.NetSecGame.reset" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">reset</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">reset</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">topology_change</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-async"><code>async</code></small>
@@ -2322,44 +2377,40 @@ and prepare for a new episode</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/worlds/NetSecGame.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1080</span>
-<span class="normal">1081</span>
-<span class="normal">1082</span>
-<span class="normal">1083</span>
-<span class="normal">1084</span>
-<span class="normal">1085</span>
-<span class="normal">1086</span>
-<span class="normal">1087</span>
-<span class="normal">1088</span>
-<span class="normal">1089</span>
-<span class="normal">1090</span>
-<span class="normal">1091</span>
-<span class="normal">1092</span>
-<span class="normal">1093</span>
-<span class="normal">1094</span>
-<span class="normal">1095</span>
-<span class="normal">1096</span>
-<span class="normal">1097</span>
-<span class="normal">1098</span>
-<span class="normal">1099</span>
-<span class="normal">1100</span>
-<span class="normal">1101</span>
-<span class="normal">1102</span>
-<span class="normal">1103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1177</span>
+<span class="normal">1178</span>
+<span class="normal">1179</span>
+<span class="normal">1180</span>
+<span class="normal">1181</span>
+<span class="normal">1182</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span>
+<span class="normal">1191</span>
+<span class="normal">1192</span>
+<span class="normal">1193</span>
+<span class="normal">1194</span>
+<span class="normal">1195</span>
+<span class="normal">1196</span>
+<span class="normal">1197</span>
+<span class="normal">1198</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">topology_change</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function to reset the state of the game</span>
 <span class="sd">    and prepare for a new episode</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># write all steps in the episode replay buffer in the file</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;--- Reseting NSG Environment to its initial state ---&#39;</span><span class="p">)</span>
-    <span class="c1"># change IPs if needed</span>
-    <span class="c1"># This is done ONLY if it is (i) enabled in the task config and (ii) all agents requested it</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_manager</span><span class="o">.</span><span class="n">get_use_dynamic_ips</span><span class="p">():</span>
-        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_randomize_topology_requests</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;All agents requested reset with randomized topology.&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_dynamic_ip_change</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Not all agents requested a topology randomization. Keeping the current one.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_random_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_manager</span><span class="o">.</span><span class="n">get_use_dynamic_ips</span><span class="p">():</span> <span class="c1">#topology change is allowed</span>
+        <span class="k">if</span> <span class="n">topology_change</span><span class="p">:</span> <span class="c1"># agents agree on topology change</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dynamic_ip_change</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
     <span class="c1"># reset self._data to orignal state</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data_original</span><span class="p">)</span>
     <span class="c1"># reset self._data_content to orignal state</span>
@@ -2369,6 +2420,79 @@ and prepare for a new episode</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">_fw_blocks</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_agent_fw_rules</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.game.worlds.NetSecGame.NetSecGame.update_log_file" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">update_log_file</span><span class="p">(</span><span class="n">known_data</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">target_host</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Updates the log file in the target host.
+Args:
+    known_data (set): Set of known data.
+    action (Action): Action to be recorded.
+    target_host (IP): Target host.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/game/worlds/NetSecGame.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1135</span>
+<span class="normal">1136</span>
+<span class="normal">1137</span>
+<span class="normal">1138</span>
+<span class="normal">1139</span>
+<span class="normal">1140</span>
+<span class="normal">1141</span>
+<span class="normal">1142</span>
+<span class="normal">1143</span>
+<span class="normal">1144</span>
+<span class="normal">1145</span>
+<span class="normal">1146</span>
+<span class="normal">1147</span>
+<span class="normal">1148</span>
+<span class="normal">1149</span>
+<span class="normal">1150</span>
+<span class="normal">1151</span>
+<span class="normal">1152</span>
+<span class="normal">1153</span>
+<span class="normal">1154</span>
+<span class="normal">1155</span>
+<span class="normal">1156</span>
+<span class="normal">1157</span>
+<span class="normal">1158</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update_log_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">known_data</span><span class="p">:</span><span class="nb">set</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">target_host</span><span class="p">:</span><span class="n">IP</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updates the log file in the target host.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        known_data (set): Set of known data.</span>
+<span class="sd">        action (Action): Action to be recorded.</span>
+<span class="sd">        target_host (IP): Target host.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hostaname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ip_to_hostname</span><span class="p">[</span><span class="n">target_host</span><span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Updating log file in host </span><span class="si">{</span><span class="n">hostaname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">current_log_file</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">owner</span> <span class="o">==</span> <span class="s2">&quot;system&quot;</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">hostaname</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">hostaname</span><span class="p">]</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">current_log_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">current_log_file</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span> 
+            <span class="n">content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">current_log_file</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="n">content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;source_host&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;source_host&quot;</span><span class="p">]),</span> <span class="s1">&#39;action_type&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">type</span><span class="p">)})</span>
+        <span class="n">new_content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t\t\t</span><span class="s2">Log not found in host </span><span class="si">{</span><span class="n">hostaname</span><span class="si">}</span><span class="s2">. Creating new one.&quot;</span><span class="p">)</span>
+        <span class="n">new_content</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;source_host&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;source_host&quot;</span><span class="p">]),</span> <span class="s1">&#39;action_type&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">type</span><span class="p">)}]</span>
+        <span class="n">new_content</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">new_content</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">hostaname</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Data</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;logfile&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">new_content</span><span class="p">)</span> <span class="p">,</span> <span class="n">content</span><span class="o">=</span> <span class="n">new_content</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
