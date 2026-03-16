@@ -10,6 +10,7 @@ nav:
     - agent_server.md
     - game_components.md
     - configuration_manager.md
+    - config_parser.md
     - game_coordinator.md
     - worlds.md
 
