@@ -91,7 +91,7 @@ coordinator:
         blocked_ips: {}
         known_blocks: {}
 
-env: # Environment configuraion
+env: # Environment configuration
   scenario: 'two_networks_tiny' # use the smallest topology for this example
   use_global_defender: False # Do not use global SIEM Defender
   use_dynamic_addresses: False # Do not randomize IP addresses
