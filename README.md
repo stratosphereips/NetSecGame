@@ -127,7 +127,7 @@ With the configuration ready the environment can be started in selected port
 docker run -d --rm --name nsg-server\
   -v $(pwd)/examples/example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml \
   -v $(pwd)/logs:/netsecgame/logs \
-  -p 9000:9000 stratosphereips/netsecgame
+  -p 9000:9000 stratosphereips/netsecgame \
   --debug_level="INFO"
 ```
 `--name nsg-server`: specifies the name of the container
@@ -146,7 +146,7 @@ docker run -d --rm --name netsecgame-server ^
   -p 9000:9000 ^
   -v "%cd%\examples\example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml" ^
   -v "%cd%\logs:/netsecgame/logs" ^
-  stratosphereips/netsecgame:latest
+  stratosphereips/netsecgame:latest ^
   --debug_level="INFO"
 ```
 
