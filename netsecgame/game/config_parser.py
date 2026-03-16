@@ -3,8 +3,6 @@
 # Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
 
 import yaml
-# This is used so the agent can see the environment and game components
-import importlib
 from netsecgame.game_components import IP, Data, Network, Service
 import netaddr
 import logging
@@ -386,25 +384,15 @@ class ConfigParser():
         """
         Get the scenario config objects based on the configuration. Only import objects that are selected via importlib.
         """
-        allowed_names = {
-            "scenario1" : "netsecgame.game.scenarios.scenario_configuration",
-            "scenario1_small" : "netsecgame.game.scenarios.smaller_scenario_configuration",
-            "scenario1_tiny" : "netsecgame.game.scenarios.tiny_scenario_configuration",
-            "one_network": "netsecgame.game.scenarios.one_net",
-            "three_net_scenario": "netsecgame.game.scenarios.three_net_scenario",
-            "two_networks": "netsecgame.game.scenarios.two_nets", # same as scenario1
-            "two_networks_small": "netsecgame.game.scenarios.two_nets_small", # same as scenario1_small
-            "two_networks_tiny": "netsecgame.game.scenarios.two_nets_tiny", # same as scenario1_small
-
-        }
         scenario_name = self.config['env']['scenario']
         # make sure to validate the input
-        if scenario_name not in allowed_names:
-            raise ValueError(f"Unsupported scenario: {scenario_name}")
+        if scenario_name not in SCENARIO_REGISTRY:
+            raise ValueError(
+                f"Unsupported scenario: {scenario_name}. "
+                f"Available scenarios: {list(SCENARIO_REGISTRY.keys())}"
+            )
         
-        # import the correct module
-        module = importlib.import_module(allowed_names[scenario_name])
-        return module.configuration_objects
+        return SCENARIO_REGISTRY[scenario_name]
 
     def get_seed(self, whom):
         """
