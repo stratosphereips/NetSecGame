@@ -110,6 +110,7 @@ class ConfigurationManager:
         """Returns the starting position configuration for a specific role.
         Args:
             role (str): The role of the agent.
+
         Returns:
             dict: The starting position configuration for the specified role.
         """
