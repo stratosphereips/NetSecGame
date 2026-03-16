@@ -6,8 +6,9 @@ import os
 import json
 import warnings
 from pathlib import Path
+from typing import Iterable, Any, Set, Dict, Optional, Tuple, List
 from netsecgame.utils.utils import get_logging_level
-from netsecgame.game_components import Action, ActionType
+from netsecgame.game_components import GameState, Action, ActionType, Service, IP
 from netsecgame.game.worlds.NetSecGame import NetSecGame
 
 
@@ -16,12 +17,28 @@ class WhiteBoxNetSecGame(NetSecGame):
     WhiteBoxNetSecGame is an extension for the NetSecGame environment
     that provides list of all possible actions to each agent that registers in the game.
     """
-    def __init__(self, game_host, game_port, task_config, seed=None, include_block_action=True):
+    def __init__(self, game_host: str, game_port: int, task_config: str, seed: Optional[int] = None, include_block_action: bool = True):
+        """
+        Initializes the WhiteBoxNetSecGame.
+
+        Args:
+            game_host (str): The host for the game server.
+            game_port (int): The port for the game server.
+            task_config (str): Path to the task configuration file.
+            seed (Optional[int]): Random seed.
+            include_block_action (bool): Whether to include BlockIP actions.
+        """
         super().__init__(game_host, game_port, task_config, seed)
         self._all_actions = None
         self._include_block_action = include_block_action
 
-    def _initialize(self):
+    def _initialize(self) -> None:
+        """
+        Initializes the game state and generates all possible actions.
+
+        Returns:
+            None
+        """
         # First do the parent initialization
         super()._initialize()
         # All components are initialized, now we can set the action mapping
@@ -34,9 +51,10 @@ class WhiteBoxNetSecGame(NetSecGame):
 
     def _generate_all_actions(self)-> list[Action]:
         """
-        Generate a list of all possible actions for the game.
+        Generates a list of all possible actions for the game.
+
         Returns:
-            list[Action]: List of all possible actions.
+            List[Action]: List of all possible actions.
         """
         actions = []
         all_ips = [self._ip_mapping[ip] for ip in self._ip_to_hostname.keys()]
@@ -124,10 +142,29 @@ class WhiteBoxNetSecGame(NetSecGame):
         return actions
 
 
-    def _create_state_from_view(self, view, add_neighboring_nets = True):
+    def _create_state_from_view(self, view: Dict[str, Any], add_neighboring_nets: bool = True) -> GameState:
+        """
+        Creates a GameState from a view.
+
+        Args:
+            view (Dict[str, Any]): The view dictionary.
+            add_neighboring_nets (bool): Whether to add neighboring networks.
+
+        Returns:
+            GameState: The generated game state.
+        """
         return super()._create_state_from_view(view, add_neighboring_nets=add_neighboring_nets)
 
-    def _dynamic_ip_change(self, max_attempts:int=10)->None:
+    def _dynamic_ip_change(self, max_attempts: int = 10) -> None:
+        """
+        Dynamic IP change is not supported for WhiteBoxNetSecGame.
+
+        Args:
+            max_attempts (int): Maximum number of attempts.
+
+        Returns:
+            None
+        """
         warnings.warn("Dynamic IP change is not supported for WhiteBoxNetSecGame.", UserWarning)
         self.logger.warning("Dynamic IP change is not supported for WhiteBoxNetSecGame.")
         return None
