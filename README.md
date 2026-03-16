@@ -155,7 +155,7 @@ The environment can be started locally with from the root folder of the reposito
 ```bash
 python3 -m netsecgame.game.worlds.NetSecGame \
   --task_config=./examples/example_task_configuration.yaml \
-  --game_port=9000
+  --game_port=9000 \
   --debug_level="INFO"
 ```
 Upon which the game server is created on `localhost:9000` to which the agents can connect to interact in the NetSecGame.
