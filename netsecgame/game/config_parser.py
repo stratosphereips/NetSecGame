@@ -17,9 +17,16 @@ class ConfigParser():
         task_config_file (str|None): Path to the configuration file
         config_dict (dict|None): Dictionary with configuration data
     """
-    def __init__(self, task_config_file:str|None=None, config_dict:dict|None=None):
+    def __init__(self, task_config_file:Optional[str]=None, config_dict:Optional[dict]=None)->None:
         """
         Initializes the configuration parser. Required either path to a confgiuration file or a dict with configuraitons.
+        
+        Args:
+            task_config_file (Optional[str]): Path to the configuration file
+            config_dict (Optional[dict]): Dictionary with configuration data
+        
+        Returns:
+            None
         """
         self.logger = logging.getLogger('ConfigParser')
         if task_config_file:
