@@ -6,7 +6,7 @@ from . import (
     three_net_scenario,
     two_nets,
     two_nets_tiny,
-    two_nets_small,
+    two_nets_small, 
 )
 
 # Static Registry
