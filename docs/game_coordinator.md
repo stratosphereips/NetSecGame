@@ -25,4 +25,3 @@ The episode starts with sufficient amount of agents registering in the game. Eac
 
 
 ::: netsecgame.game.coordinator.GameCoordinator
-::: netsecgame.game.worlds.NetSecGame.NetSecGame
