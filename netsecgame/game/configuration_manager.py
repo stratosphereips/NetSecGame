@@ -100,13 +100,25 @@ class ConfigurationManager:
     # Accessors
     # -------------------------------------------------------------------------
 
-    def get_cyst_objects(self):
+    def get_cyst_objects(self) -> Iterable[Any]:
+        """
+        Returns the loaded CYST configuration objects.
+
+        Returns:
+            Any: The CYST configuration objects (usually a list of NodeConfig, etc.).
+        """
         return self._cyst_objects
 
     def get_config_hash(self) -> Optional[str]:
+        """
+        Returns the hash of the loaded configuration.
+
+        Returns:
+            Optional[str]: The hexadecimal hash of the configuration, or None if not loaded.
+        """
         return self._config_file_hash
         
-    def get_starting_position(self, role: str) -> dict:
+    def get_starting_position(self, role: str) -> Dict[str, Any]:
         """Returns the starting position configuration for a specific role.
         Args:
             role (str): The role of the agent.
@@ -118,7 +130,7 @@ class ConfigurationManager:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_start_position(agent_role=role)
 
-    def get_win_conditions(self, role: str) -> dict:
+    def get_win_conditions(self, role: str) -> Dict[str, Any]:
         """Returns the win conditions for a specific role.
         Args:
             role (str): The role of the agent.
@@ -154,7 +166,7 @@ class ConfigurationManager:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_max_steps(role)
 
-    def get_rewards(self, reward_names: List[str] = ["step", "success", "fail", "false_positive"], default_value: int = 0) -> dict:
+    def get_rewards(self, reward_names: List[str] = ["step", "success", "fail", "false_positive"], default_value: int = 0) -> Dict[str, Any]:
         """Returns the rewards configuration.
         Args:
             reward_names (List[str]): The names of the rewards.
@@ -270,7 +282,12 @@ class ConfigurationManager:
         return goal_descriptions
 
     def get_all_max_steps(self) -> Dict[str, Optional[int]]:
-        """Returns max steps for all roles."""
+        """
+        Returns max steps for all roles.
+
+        Returns:
+            Dict[str, Optional[int]]: A dictionary mapping roles to their maximum steps.
+        """
         # Using self.get_max_steps might raise RuntimeError if checks are there, 
         # but simpler to just call parser directly or the single accessor since we are inside the class.
         # However, the single accessor has the check.
@@ -285,7 +302,7 @@ class ConfigurationManager:
             default_value (bool): The default value for the store trajectories.
         
         Returns:
-            bool: The store trajectories configuration.
+            bool: True if trajectories should be stored, False otherwise.
         """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")

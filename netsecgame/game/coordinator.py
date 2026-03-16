@@ -2,12 +2,7 @@ import logging
 import json
 import asyncio
 from datetime import datetime
-from typing import Optional
-import signal
-import os
-import re
-import uuid
-
+from typing import Optional, Dict, Any, List, Set, Tuple, Union, Callable, Coroutine
 from netsecgame.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, AgentRole
 from netsecgame.game.global_defender import GlobalDefender
 from netsecgame.utils.utils import observation_as_dict,store_trajectories_to_jsonl
@@ -15,9 +10,15 @@ from netsecgame.game.agent_server import AgentServer
 from netsecgame.game.configuration_manager import ConfigurationManager
 
 
-def convert_msg_dict_to_json(msg_dict: dict) -> str:
+def convert_msg_dict_to_json(msg_dict: Dict[str, Any]) -> str:
     """
-    Helper function to create text-base messge from a dictionary. Used in the Agent-Game communication.
+    Helper function to create text-base message from a dictionary. Used in the Agent-Game communication.
+
+    Args:
+        msg_dict (Dict[str, Any]): The dictionary containing the message data.
+
+    Returns:
+        str: The JSON string representation of the message.
     """
     try:
         # Convert message into string representation
@@ -27,9 +28,15 @@ def convert_msg_dict_to_json(msg_dict: dict) -> str:
         raise TypeError(f"Error when converting msg to JSON:{e}") from e
     return output_message
 
-def sanitize_agent_name(name:str)->str:
+def sanitize_agent_name(name: str) -> str:
     """
     Sanitizes the agent name to be used as a filename.
+
+    Args:
+        name (str): The raw agent name.
+
+    Returns:
+        str: A sanitized, safe string for filenames.
     """
     safe_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', name)
     safe_name = re.sub(r'_+', '_', safe_name)
@@ -160,9 +167,12 @@ class GameCoordinator:
             self._agent_response_queues[agent_addr] = asyncio.Queue()
             self.logger.info(f"Created queue for agent {agent_addr}. {len(self._agent_response_queues)} queues in total.")
     
-    def run(self)->None:
+    def run(self) -> None:
         """
-        Wrapper for ayncio run function. Starts all tasks in AIDojo
+        Wrapper for asyncio run function. Starts all tasks in AIDojo.
+
+        Returns:
+            None
         """
         try:
             asyncio.run(self.start_tasks())
@@ -171,9 +181,12 @@ class GameCoordinator:
         finally:
             self.logger.info(f"{__class__.__name__} has exited.")
 
-    async def start_tcp_server(self):
+    async def start_tcp_server(self) -> None:
         """
-        Starts TPC sever for the agent communication.
+        Starts the TCP server for agent communication.
+
+        Returns:
+            None
         """
         server = None
         try:
@@ -201,13 +214,12 @@ class GameCoordinator:
                 await server.wait_closed()
             self.logger.info("\tTCP server task stopped")
 
-    async def start_tasks(self):
+    async def start_tasks(self) -> None:
         """
-        High level funciton to start all the other asynchronous tasks.
-        - Reads the conf of the coordinator
-        - Creates queues
-        - Start the main part of the coordinator
-        - Start a server that listens for agents
+        High level function to start all asynchronous tasks.
+
+        Returns:
+            None
         """
         loop = asyncio.get_running_loop()
         
@@ -331,9 +343,16 @@ class GameCoordinator:
                     self._spawn_task(self._respond_on_bad_request, agent_addr, "Malformed Action")
         self.logger.info("\tAction processing task stopped.")
 
-    async def _respond_on_bad_request(self, agent_addr: tuple, message: str)->None:
+    async def _respond_on_bad_request(self, agent_addr: tuple, message: str) -> None:
         """
         Sends a response to the agent indicating that the request was bad.
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+            message (str): The descriptive error message.
+
+        Returns:
+            None
         """
         output_message_dict = {
             "to_agent": agent_addr,
@@ -345,13 +364,16 @@ class GameCoordinator:
         }
         await self._agent_response_queues[agent_addr].put(convert_msg_dict_to_json(output_message_dict))
            
-    async def _process_join_game_action(self, agent_addr: tuple, action: Action)->None:
+    async def _process_join_game_action(self, agent_addr: tuple, action: Action) -> None:
         """
-        Method for processing Action of type ActionType.JoinGame
-        Inputs: 
-            -   agent_addr (tuple)
-            -   JoinGame Action
-        Outputs: None (Method stores reposnse in the agent's response queue)
+        Processes an Action of type ActionType.JoinGame.
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+            action (Action): The JoinGame Action object.
+
+        Returns:
+            None
         """
         try:
             self.logger.info(f"New Join request by  {agent_addr}.")
@@ -417,12 +439,15 @@ class GameCoordinator:
         finally:
             self.logger.debug(f"Cleaning up after JoinGame for {agent_addr}.")
     
-    async def _process_quit_game_action(self, agent_addr: tuple)->None:
+    async def _process_quit_game_action(self, agent_addr: tuple) -> None:
         """
-        Method for processing Action of type ActionType.QuitGame
-        Inputs: 
-            -   agent_addr (tuple)
-        Outputs: None
+        Processes an Action of type ActionType.QuitGame.
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+
+        Returns:
+            None
         """
         try:
             if agent_addr in self._agent_states:
@@ -437,12 +462,16 @@ class GameCoordinator:
         finally:
             self.logger.debug(f"Cleaning up after QuitGame for {agent_addr}.")
     
-    async def _process_reset_game_action(self, agent_addr: tuple, reset_action:Action)->None:
+    async def _process_reset_game_action(self, agent_addr: tuple, reset_action: Action) -> None:
         """
-        Method for processing Action of type ActionType.ResetGame
-        Inputs: 
-            -   agent_addr (tuple)
-        Outputs: None
+        Processes an Action of type ActionType.ResetGame.
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+            reset_action (Action): The ResetGame Action object.
+
+        Returns:
+            None
         """
         self.logger.debug("Beginning the _process_reset_game_action.")
         async with self._reset_lock:
@@ -485,13 +514,16 @@ class GameCoordinator:
         response_msg_json = convert_msg_dict_to_json(output_message_dict)
         await self._agent_response_queues[agent_addr].put(response_msg_json)
 
-    async def _process_game_action(self, agent_addr: tuple, action:Action)->None:
+    async def _process_game_action(self, agent_addr: tuple, action: Action) -> None:
         """
-        Method for processing Action of type ActionType.GameAction
-        Inputs: 
-            -   agent_addr (tuple)
-            -   action (Action)
-        Outputs: None
+        Processes a generic game action (Scan, Exploit, etc.).
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+            action (Action): The Action object to process.
+
+        Returns:
+            None
         """
         if self._episode_ends[agent_addr]:
             self.logger.warning(f"Agent {agent_addr}({self.agents[agent_addr]}) is attempting to play action {action} after the end of the episode!")
@@ -556,8 +588,13 @@ class GameCoordinator:
         response_msg_json = convert_msg_dict_to_json(output_message_dict)
         await self._agent_response_queues[agent_addr].put(response_msg_json)
 
-    async def _assign_rewards_episode_end(self):
-        """Task that waits for all agents to finish and assigns rewards."""
+    async def _assign_rewards_episode_end(self) -> None:
+        """
+        Task that waits for all agents to finish and then assigns final rewards.
+
+        Returns:
+            None
+        """
         self.logger.debug("Starting task for episode end reward assigning.")
         while not self.shutdown_flag.is_set():
             # wait until episode is finished by all agents
@@ -605,8 +642,16 @@ class GameCoordinator:
         self.logger.info("\tReward assignment task stopped.")
 
     
-    async def _handle_invalid_reset(self, error_msg:str):
-        """Task that handles invalid reset"""
+    async def _handle_invalid_reset(self, error_msg: str) -> None:
+        """
+        Handles an invalid reset request by notifying agents and shutting down.
+
+        Args:
+            error_msg (str): The error message explaining why the reset is invalid.
+
+        Returns:
+            None
+        """
         self.logger.error(error_msg)
         for agent in self.agents:
             async with self._agents_lock:
@@ -621,8 +666,17 @@ class GameCoordinator:
         self.shutdown_flag.set()
     
     
-    async def _handle_valid_reset(self, seed: Optional[int], topology_change: Optional[bool]):
-        """Task that handles valid reset"""
+    async def _handle_valid_reset(self, seed: Optional[int], topology_change: Optional[bool]) -> None:
+        """
+        Handles a valid reset request by resetting the world and agents.
+
+        Args:
+            seed (Optional[int]): The random seed to use for the new episode.
+            topology_change (Optional[bool]): Whether to randomize the topology.
+
+        Returns:
+            None
+        """
         self.logger.info(f"Resetting game to initial state with seed: {seed} and topology change: {topology_change}")
         # reset the game 
         await self.reset(seed=seed, topology_change=topology_change)
@@ -651,8 +705,13 @@ class GameCoordinator:
                 else:
                     self._agent_status[agent] = AgentStatus.Playing
     
-    async def _reset_game(self):
-        """Task that waits for all agents to request resets"""
+    async def _reset_game(self) -> None:
+        """
+        Task that waits for all agents to request resets and coordinates the process.
+
+        Returns:
+            None
+        """
         self.logger.debug("Starting task for game reset handelling.")
         while not self.shutdown_flag.is_set():
             # wait until episode is finished by all agents
@@ -706,10 +765,17 @@ class GameCoordinator:
                 self._reset_done_condition.notify_all()
         self.logger.info("\tReset game task stopped.")
     
-    def _initialize_new_player(self, agent_addr:tuple, agent_current_state:GameState, agent_current_goal_state:GameState) -> Observation:
+    def _initialize_new_player(self, agent_addr: tuple, agent_current_state: GameState, agent_current_goal_state: GameState) -> Observation:
         """
-        Method to initialize new player upon joining the game.
-        Returns initial observation for the agent based on the agent's role
+        Initializes a new player's state and data upon joining the game.
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+            agent_current_state (GameState): The initial state assigned to the agent.
+            agent_current_goal_state (GameState): The goal state assigned to the agent.
+
+        Returns:
+            Observation: The initial observation for the agent.
         """
         self.logger.info(f"\tInitializing new player{agent_addr}")
         agent_name, agent_role = self.agents[agent_addr]
@@ -731,24 +797,58 @@ class GameCoordinator:
         # create initial observation
         return Observation(self._agent_states[agent_addr], 0, False, {})
 
-    async def register_agent(self, agent_id:tuple, agent_role:AgentRole, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+    async def register_agent(self, agent_id: tuple, agent_role: AgentRole, agent_initial_view: Dict[str, Any], agent_win_condition_view: Dict[str, Any]) -> Tuple[GameState, GameState]:
         """
-        Domain specific method of the environment. Creates the initial state of the agent.
+        Domain-specific method to register an agent and create its initial and goal states.
+
+        Args:
+            agent_id (tuple): The identifier for the agent.
+            agent_role (AgentRole): The role of the agent.
+            agent_initial_view (Dict[str, Any]): The initial starting view for the agent.
+            agent_win_condition_view (Dict[str, Any]): The win conditions for the agent.
+
+        Returns:
+            Tuple[GameState, GameState]: A tuple containing (initial_state, goal_state).
         """
         raise NotImplementedError
     
-    async def remove_agent(self, agent_id:tuple, agent_state:GameState)->bool:
+    async def remove_agent(self, agent_id: tuple, agent_state: GameState) -> bool:
         """
-        Domain specific method of the environment. Creates the initial state of the agent.
+        Domain-specific method to remove an agent from the environment.
+
+        Args:
+            agent_id (tuple): The identifier for the agent.
+            agent_state (GameState): The last known state of the agent.
+
+        Returns:
+            bool: True if removal was successful, False otherwise.
         """
         raise NotImplementedError
 
-    async def reset_agent(self, agent_id:tuple, agent_role:AgentRole, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+    async def reset_agent(self, agent_id: tuple, agent_role: AgentRole, agent_initial_view: Dict[str, Any], agent_win_condition_view: Dict[str, Any]) -> Tuple[GameState, GameState]:
+        """
+        Domain-specific method to reset an agent's state for a new episode.
+
+        Args:
+            agent_id (tuple): The identifier for the agent.
+            agent_role (AgentRole): The role of the agent.
+            agent_initial_view (Dict[str, Any]): The new starting view for the agent.
+            agent_win_condition_view (Dict[str, Any]): The win conditions for the agent.
+
+        Returns:
+            Tuple[GameState, GameState]: A tuple containing (new_state, new_goal_state).
+        """
         raise NotImplementedError
 
-    async def _remove_agent_from_game(self, agent_addr):
+    async def _remove_agent_from_game(self, agent_addr: tuple) -> Dict[str, Any]:
         """
-        Removes player from the game. Should be called AFTER QuitGame action was processed by the world.
+        Removes a player from the GameCoordinator's tracking and returns their final info.
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing final agent statistics and state.
         """
         self.logger.info(f"Removing player {agent_addr} from the GameCoordinator")
         agent_info = {}
@@ -783,10 +883,17 @@ class GameCoordinator:
                 self.logger.info(f"\t Player {agent_addr} not present in the game!")
             return agent_info
 
-    async def step(self, agent_id:tuple, agent_state:GameState, action:Action):
+    async def step(self, agent_id: tuple, agent_state: GameState, action: Action) -> GameState:
         """
-        Domain specific method of the environment. Creates the initial state of the agent.
-        Must be implemented by the domain specific environment.
+        Domain-specific method to perform an action in the environment.
+
+        Args:
+            agent_id (tuple): The identifier for the agent.
+            agent_state (GameState): The current state of the agent.
+            action (Action): The action to perform.
+
+        Returns:
+            GameState: The new state of the agent after the action.
         """
         raise NotImplementedError
     
@@ -800,20 +907,35 @@ class GameCoordinator:
         """
         raise NotImplementedError
 
-    def _initialize(self):
+    def _initialize(self) -> None:
         """
-        Initialize the game state and other necessary components. This is called at the start of the game after the configuration is loaded.
-        Must be implemented by the domain specific environment.
+        Initializes the environment state and components.
+
+        Returns:
+            None
         """
         raise NotImplementedError
 
-    def goal_check(self, agent_addr:tuple)->bool:
+    def goal_check(self, agent_addr: tuple) -> bool:
         """
-        Check if the goal conditons were satisfied in a given game state
+        Checks if the goal conditions for specific agent were satisfied.
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+
+        Returns:
+            bool: True if the goal is reached, False otherwise.
         """
-        def goal_dict_satistfied(goal_dict:dict, known_dict: dict)-> bool:
+        def goal_dict_satistfied(goal_dict: Dict[Any, Set], known_dict: Dict[Any, Set]) -> bool:
             """
-            Helper function for checking if a goal dictionary condition is satisfied
+            Helper function for checking if a goal dictionary condition is satisfied.
+
+            Args:
+                goal_dict (Dict[Any, Set]): The target dictionary (IP -> set of values).
+                known_dict (Dict[Any, Set]): The agent's currently known values.
+
+            Returns:
+                bool: True if known_dict satisfies the goal_dict.
             """
             # check if we have all IPs that should have some values (are keys in goal_dict)
             if goal_dict.keys() <= known_dict.keys():
@@ -842,7 +964,16 @@ class GameCoordinator:
         self.logger.debug(f"\t{goal_reached}")
         return all(goal_reached.values())
 
-    def is_detected(self, agent:tuple)->bool:
+    def is_detected(self, agent: tuple) -> bool:
+        """
+        Checks if the agent's last action was detected by the global defender.
+
+        Args:
+            agent (tuple): The address of the agent.
+
+        Returns:
+            bool: True if detected, False otherwise.
+        """
         if self._global_defender:
             detection = self._global_defender.stochastic_with_threshold(self._agent_last_action[agent], self._agent_trajectories[agent]["trajectory"]["actions"])
             self.logger.debug(f"Global Detection result: {detection}")
@@ -851,7 +982,16 @@ class GameCoordinator:
             # No global defender
             return False
 
-    def is_timeout(self, agent:tuple)->bool:
+    def is_timeout(self, agent: tuple) -> bool:
+        """
+        Checks if the agent has reached its maximum step limit.
+
+        Args:
+            agent (tuple): The address of the agent.
+
+        Returns:
+            bool: True if timeout reached, False otherwise.
+        """
         timeout_reached = False
         if self._steps_limit_per_role[self.agents[agent][1]]:
             if self._agent_steps[agent] >= self._steps_limit_per_role[self.agents[agent][1]]:
@@ -919,7 +1059,16 @@ class GameCoordinator:
             episode_end = True
         return episode_end
 
-    def _reset_trajectory(self, agent_addr:tuple)->dict:
+    def _reset_trajectory(self, agent_addr: tuple) -> Dict[str, Any]:
+        """
+        Resets and initializes a new trajectory dictionary for an agent.
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+
+        Returns:
+            Dict[str, Any]: The initial trajectory dictionary.
+        """
         agent_name, agent_role = self.agents[agent_addr]
         self.logger.debug(f"Resetting trajectory of {agent_addr}")
         return {
@@ -933,9 +1082,19 @@ class GameCoordinator:
                 "agent_name":agent_name
             }
 
-    def _add_step_to_trajectory(self, agent_addr:tuple, action:Action, reward:float, next_state:GameState, end_reason:str|None=None)-> None:
+    def _add_step_to_trajectory(self, agent_addr: tuple, action: Action, reward: float, next_state: GameState, end_reason: Optional[str] = None) -> None:
         """
-        Method for adding one step to the agent trajectory.
+        Adds a single step (state, action, reward) to the agent's trajectory.
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+            action (Action): The action performed.
+            reward (float): The reward received.
+            next_state (GameState): The resulting state.
+            end_reason (Optional[str]): An optional reason if the episode ended.
+
+        Returns:
+            None
         """
         if agent_addr in self._agent_trajectories:
             self.logger.debug(f"Adding step to trajectory of {agent_addr}")
@@ -945,9 +1104,16 @@ class GameCoordinator:
             if end_reason:
                 self._agent_trajectories[agent_addr]["end_reason"] = end_reason
     
-    def _store_trajectory_to_file(self, agent_addr:tuple, location="./logs/trajectories")-> None:
+    def _store_trajectory_to_file(self, agent_addr: tuple, location: str = "./logs/trajectories") -> None:
         """
-        Method for storing the agent trajectory to a file.
+        Stores the collected trajectory for an agent to a JSONL file.
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+            location (str): The directory where the file should be saved.
+
+        Returns:
+            None
         """
         if agent_addr in self.agents:
             agent_name, agent_role = self.agents[agent_addr]
@@ -958,9 +1124,15 @@ class GameCoordinator:
         else:
             self.logger.warning(f"Agent {agent_addr} not found in agents list, can't store trajectory to file.")
     
-    def is_agent_benign(self, agent_addr:tuple)->bool:
+    def is_agent_benign(self, agent_addr: tuple) -> bool:
         """
-        Check if the agent is benign (defender, normal)
+        Checks if the agent has a benign role (Defender or Benign).
+
+        Args:
+            agent_addr (tuple): The address of the agent.
+
+        Returns:
+            bool: True if the agent is benign, False otherwise.
         """
         if agent_addr not in self.agents:
             return False
