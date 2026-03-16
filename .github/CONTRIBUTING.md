@@ -14,6 +14,7 @@ All contributions are welcomed, thank you for taking the time to contribute to t
 The following git branches permanent in the repository:
 
 - `main`: contains the stable version of the repository. All new features should be based on this branch.
+- `aidojo-stable`: contains the stable version of the repository for AI Dojo Project.
    
 ## Naming Git branches for Pull Requests
 
@@ -23,7 +24,6 @@ to follow when contributing:
 
 - name-bugfix-<>:        pull request branch, contains one bugfix,
 - name-docs-<>:          pull request branch, contains documentation work,
-- name-enhance-<>:       pull request branch, contains one enhancement (not a new feature, but improvement nonetheless)
 - name-feature-<>:       pull request branch, contains a new feature,
 - name-refactor-<>:      pull request branch, contains code refactoring,
 
