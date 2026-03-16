@@ -87,7 +87,6 @@ coordinator:
     Defender:
       goal:
         description: "Block all attackers"
-        is_any_part_of_goal_random: False
         known_networks: []
         known_hosts: []
         controlled_hosts: []
