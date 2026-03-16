@@ -238,7 +238,7 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
 5. Playing `Find Services` can be used to discover hosts (if those have any active services)
 6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
-7. The `BlockIP` action needs its three parameters (Source host, Target host, and Blocked host) to be in the controlled list of the Agent. 
+7. The `BlockIP` action needs its `source_host` and  `target_host` parameters to be in the controlled list of the Agent. 
 
 > [!NOTE]  
 > The global defender, available in the previous environment versions, will not be supported in the future. To enable backward compatibility, the global defender functionality can be enabled by adding `use_global_defender: True` to the configuration YAML file in the `env` section. This option is disabled by default.
