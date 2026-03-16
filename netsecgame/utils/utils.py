@@ -7,7 +7,7 @@ import hashlib
 import json
 import logging
 import os
-from typing import Optional, Set, List, Dict, Any
+from typing import Optional, Set, List, Dict, Any, Tuple
 
 # --- Third-Party Imports ---
 import jsonlines
