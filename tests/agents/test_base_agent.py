@@ -169,3 +169,7 @@ def test_request_game_reset_failure(agent):
     with patch.object(agent, 'communicate', return_value=(None, {}, "Reset failed")):
         observation = agent.request_game_reset()
         assert observation is None
+
+def test_request_game_reset_missing_seed(agent):
+    with pytest.raises(ValueError, match="Topology randomization without seed is not supported."):
+        agent.request_game_reset(randomize_topology=True)
