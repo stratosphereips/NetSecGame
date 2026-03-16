@@ -105,6 +105,7 @@ class NetSecGame(GameCoordinator):
         Args:
             view_hosts (Iterable): The view containing host information.
             allowed_hosts (list, optional): A list of host to start from if 'random' is specified. Defaults to None.
+
         Returns:
             set: A set of controlled hosts.
         """
@@ -180,6 +181,7 @@ class NetSecGame(GameCoordinator):
             view_known_data (dict): The view containing known data information.
             keyword_scope (str, optional): Scope of keywords like 'random' or 'all'. Defaults to "host" (i.e., only data from the specified host are considered).
             exclude_types (list, optional): List of data types to exclude when selecting data. Defaults to ["log"].
+
         Returns:
             dict: A dictionary mapping IP addresses to sets of known data.
         """
@@ -228,6 +230,7 @@ class NetSecGame(GameCoordinator):
         Parses view and translates all keywords. Produces set of known networks (Network).
         Args:
             view_known_networks (Iterable): The view containing known networks information.
+
         Returns:
             set: A set of known networks.
         """
@@ -257,6 +260,7 @@ class NetSecGame(GameCoordinator):
         Args:
             view (dict): The view containing goal state information.
             allowed_hosts (set, optional): A set of allowed hosts for random selection. Defaults to None.
+
         Returns:
             GameState: The generated goal state.
         """
@@ -510,6 +514,7 @@ class NetSecGame(GameCoordinator):
         Args:
             max_attempts (int, optional): Maximum number of attempts to find a valid mapping. Defaults to 10.
             seed (int, optional): Seed for random number generator. Defaults to None.
+
         Returns:
             None
         """

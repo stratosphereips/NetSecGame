@@ -114,7 +114,6 @@ class ConfigurationManager:
         Returns:
             dict: The starting position configuration for the specified role.
         """
-    
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_start_position(agent_role=role)
@@ -123,6 +122,7 @@ class ConfigurationManager:
         """Returns the win conditions for a specific role.
         Args:
             role (str): The role of the agent.
+
         Returns:
             dict: The win conditions for the specified role.
         """
@@ -134,6 +134,7 @@ class ConfigurationManager:
         """Returns the goal description for a specific role.
         Args:
             role (str): The role of the agent.
+
         Returns:
             str: The goal description for the specified role.
         """
@@ -145,6 +146,7 @@ class ConfigurationManager:
         """Returns the max steps for a specific role.
         Args:
             role (str): The role of the agent.
+
         Returns:
             Optional[int]: The max steps for the specified role.
         """
@@ -157,6 +159,7 @@ class ConfigurationManager:
         Args:
             reward_names (List[str]): The names of the rewards.
             default_value (int): The default value for the rewards.
+
         Returns:
             dict: The rewards configuration.
         """
@@ -175,6 +178,7 @@ class ConfigurationManager:
         """Returns the use dynamic ips configuration.
         Args:
             default_value (bool): The default value for the use dynamic ips.
+
         Returns:
             bool: The use dynamic ips configuration.
         """
@@ -186,6 +190,7 @@ class ConfigurationManager:
         """Returns the use global defender configuration.
         Args:
             default_value (bool): The default value for the use global defender.
+
         Returns:
             bool: The use global defender configuration.
         """
@@ -195,8 +200,10 @@ class ConfigurationManager:
         
     def get_required_num_players(self, default_value: int = 1) -> int:
         """Returns the required number of players configuration.
+
         Args:
             default_value (int): The default value for the required number of players.
+
         Returns:
             int: The required number of players configuration.
         """
@@ -206,8 +213,10 @@ class ConfigurationManager:
 
     def get_use_firewall(self, default_value: bool = True) -> bool:
         """Returns the use firewall configuration.
+
         Args:
             default_value (bool): The default value for the use firewall.
+
         Returns:
             bool: The use firewall configuration.
         """
@@ -217,6 +226,7 @@ class ConfigurationManager:
 
     def get_all_starting_positions(self) -> Dict[str, Any]:
         """Returns starting positions for all roles.
+
         Returns:
             Dict[str, Any]: The starting positions for all roles.
         """
@@ -231,6 +241,7 @@ class ConfigurationManager:
 
     def get_all_win_conditions(self) -> Dict[str, Any]:
         """Returns win conditions for all roles.
+
         Returns:
             Dict[str, Any]: The win conditions for all roles.
         """
@@ -245,6 +256,7 @@ class ConfigurationManager:
 
     def get_all_goal_descriptions(self) -> Dict[str, str]:
         """Returns goal descriptions for all roles.
+
         Returns:
             Dict[str, str]: The goal descriptions for all roles.
         """

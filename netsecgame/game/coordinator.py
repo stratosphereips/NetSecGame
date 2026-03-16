@@ -131,7 +131,7 @@ class GameCoordinator:
             coroutine: The coroutine function to schedule.
             *args: Positional arguments to pass to the coroutine.
             **kwargs: Keyword arguments to pass to the coroutine.
-            
+
         Returns:
             asyncio.Task: The created task object.
         """
@@ -276,7 +276,7 @@ class GameCoordinator:
         Args:
             agent_addr (tuple): The address of the agent sending the message (used for logging context).
             message (str): The raw JSON string message received from the agent.
-            
+
         Returns:
             Optional[Action]: The parsed Action object if successful, None otherwise.
         """
@@ -876,6 +876,7 @@ class GameCoordinator:
         Update the status of an agent based on reaching the goal, timeout or detection.
         Args:
             agent (tuple): The agent to update the status of.
+
         Returns:
             AgentStatus: The new status of the agent.
         """
@@ -900,6 +901,7 @@ class GameCoordinator:
         Update the episode end status of an agent.
         Args:
             agent (tuple): The agent to update the episode end status of.
+
         Returns:
             bool: True if the episode has ended, False otherwise.
         """

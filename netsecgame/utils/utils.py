@@ -31,6 +31,7 @@ def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
         filepath (str): The path to the file to hash.
         hash_func (str): The hash function to use (default is 'sha256').
         chunk_size (int): The size of each chunk to read from the file (default is 4096 bytes).
+
     Returns:
         str: The hexadecimal hash of the file.
     """
@@ -48,6 +49,7 @@ def get_str_hash(string, hash_func='sha256'):
     Args:
         string (str): The input string to hash.
         hash_func (str): The hash function to use (default is 'sha256').
+
     Returns:
         str: The hexadecimal hash of the input string.
     """
@@ -235,6 +237,7 @@ def read_trajectories_from_jsonl(filepath:str)->list:
     Read trajectories from a JSONL file.
     Args:
         filepath (str): Path to the JSONL file.
+
     Returns:
         list: List of trajectories read from the file.
     """
@@ -245,6 +248,7 @@ def generate_valid_actions(state: GameState, include_blocks=False)->Set[Action]:
     Args:
         state (GameState): The current game state.
         include_blocks (bool): Whether to include BlockIP actions. Defaults to False.
+
     Returns:
         set: A set of valid Action objects.    
     """

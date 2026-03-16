@@ -24,7 +24,7 @@ class ConfigParser():
         Args:
             task_config_file (Optional[str]): Path to the configuration file
             config_dict (Optional[dict]): Dictionary with configuration data
-        
+
         Returns:
             None
         """
