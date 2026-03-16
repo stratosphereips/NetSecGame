@@ -163,16 +163,25 @@ class BaseAgent(ABC):
         except Exception as e:
             self._logger.error(f'Exception in register(): {e}')
 
-    def request_game_reset(self, request_trajectory:bool=False, randomize_topology:bool=True, seed:Optional[int]=None) -> Optional[Observation]:
-        """
-        Requests a game reset from the server. Optionally requests a trajectory and/or topology randomization.
+    def request_game_reset(
+        self, 
+        request_trajectory: bool = False, 
+        randomize_topology: bool = False, 
+        seed: Optional[int] = None
+    ) -> Optional[Observation]:
+        """Request a game reset from the server.
         Args:
-            request_trajectory (bool): If True, requests the server to provide a trajectory of the last episode.
-            randomize_topology (bool): If True, requests the server to randomize the network topology for the next episode. Defaults to True.
-            seed (int): If provided, requests the server to use this seed for randomizing the environment. Defaults to None.
+            request_trajectory: If True, requests the server to provide a 
+                trajectory of the last episode.
+            randomize_topology: If True, requests the server to randomize the 
+                network topology for the next episode. Defaults to False.
+            seed: If provided, requests the server to use this seed for 
+                randomizing the environment. Required if randomize_topology is True.
         Returns:
-            Observation: The initial observation after the reset if successful, None otherwise.
+            The initial observation after the reset if successful, None otherwise.
         """
+        if seed is None and randomize_topology:
+            raise ValueError("Topology randomization without seed is not supported.")
         self._logger.debug("Requesting game reset")
         status, observation_dict, message = self.communicate(Action(ActionType.ResetGame, parameters={"request_trajectory": request_trajectory, "randomize_topology": randomize_topology, "seed": seed}))
         if status is GameStatus.RESET_DONE:
