@@ -3,11 +3,12 @@
 # Author: Ondrej Lukas, ondrej.lukas@aic.fel.cvut.cz
 
 import yaml
-from netsecgame.game_components import IP, Data, Network, Service
 import netaddr
 import logging
 from random import randint
 from  typing import Optional
+from netsecgame.game_components import IP, Data, Network, Service
+from netsecgame.game.scenarios import SCENARIO_REGISTRY
 
 class ConfigParser():
     """
