@@ -57,7 +57,6 @@ coordinator:
       max_steps: 25 # timeout set for the role `Attacker`
       goal: # Definition of the goal state
         description: "Exfiltrate data from Samba server to remote C&C server."
-        is_any_part_of_goal_random: True
         known_networks: []
         known_hosts: []
         controlled_hosts: []
