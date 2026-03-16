@@ -2,14 +2,31 @@ import pytest
 import sys
 from unittest.mock import patch, mock_open, MagicMock
 
-sys.modules['aiohttp'] = MagicMock()
-sys.modules['cyst'] = MagicMock()
-sys.modules['cyst.api'] = MagicMock()
-sys.modules['cyst.api.environment'] = MagicMock()
-sys.modules['cyst.api.environment.environment'] = MagicMock()
-sys.modules['faker'] = MagicMock()
+# 1. Define the mocks you need for THIS file
+MOCK_MODULES = {
+    'aiohttp': MagicMock(),
+    'cyst': MagicMock(),
+    'cyst.api': MagicMock(),
+    'cyst.api.environment': MagicMock(),
+    'cyst.api.environment.environment': MagicMock(),
+    'faker': MagicMock()
+}
 
+# 2. Use a fixture to safely inject and clean up the mocks
+@pytest.fixture(scope="module", autouse=True)
+def isolate_mocks():
+    """
+    Safely injects mocks into sys.modules only for the duration of this module.
+    Once the tests in this file finish, patch.dict automatically restores the original sys.modules.
+    """
+    with patch.dict('sys.modules', MOCK_MODULES):
+        yield  # The tests run here
+
+# 3. Standard imports
+# Because you implemented the Lazy Registry earlier, importing ConfigParser 
+# here is safe and won't prematurely trigger real 'cyst' imports.
 from netsecgame.game.config_parser import ConfigParser
+from netsecgame.game.scenarios import SCENARIO_REGISTRY
 from netsecgame.game_components import IP, Data, Network, Service
 
 # --- Mock Configurations ---
@@ -244,16 +261,13 @@ def test_get_win_conditions(parser):
     with pytest.raises(ValueError):
         parser.get_win_conditions("Unknown")
 
-@patch('importlib.import_module')
-def test_get_scenario(mock_import, parser):
-    mock_module = MagicMock()
-    mock_module.configuration_objects = {"scenario": "objects"}
-    mock_import.return_value = mock_module
-
-    objects = parser.get_scenario()
-
-    mock_import.assert_called_once_with("netsecgame.game.scenarios.scenario_configuration")
-    assert objects == {"scenario": "objects"}
+def test_get_scenario(parser):
+    test_scenario_name = "scenario1" 
+    parser.config = {'env': {'scenario': test_scenario_name}}
+    result = parser.get_scenario()
+    
+    assert result is not None
+    assert result == SCENARIO_REGISTRY[test_scenario_name]
 
 def test_get_scenario_invalid(empty_parser):
     empty_parser.config = {"env": {"scenario": "unsupported_scenario"}}
