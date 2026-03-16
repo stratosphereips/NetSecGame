@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-Report security vulnerabilities to stratosphere+[repository_name]@aic.fel.cvut.cz. We are a small team. We will acknowledge your email as soon as we can. Report security vulnerabilities in third-party modules to the person or 
+Report security vulnerabilities to stratosphere@aic.fel.cvut.cz. We are a small team. We will acknowledge your email as soon as we can. Report security vulnerabilities in third-party modules to the person or 
 team maintaining the module.
 
 ## Disclosure Policy
