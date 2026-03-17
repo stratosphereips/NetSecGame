@@ -56,6 +56,7 @@ class NetSecGame(GameCoordinator):
         self._networks = {} # A `dict` of the networks present in the environment. Keys: `Network` objects, values `set` of `IP` objects.
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
         self._data_content = {}
+        self._data = {}
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         self._fw_blocks = {}
         self._agent_fw_rules = {}
