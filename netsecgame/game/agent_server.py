@@ -1,6 +1,6 @@
 import logging
 import asyncio
-from typing import Dict, Any, Tuple, Optional
+from typing import Dict, Tuple
 from netsecgame.game_components import Action, ActionType, ProtocolConfig
 
 class AgentServer(asyncio.Protocol):
