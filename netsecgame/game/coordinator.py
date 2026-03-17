@@ -8,6 +8,8 @@ from netsecgame.game.global_defender import GlobalDefender
 from netsecgame.utils.utils import observation_as_dict,store_trajectories_to_jsonl
 from netsecgame.game.agent_server import AgentServer
 from netsecgame.game.configuration_manager import ConfigurationManager
+import re
+import uuid
 
 
 def convert_msg_dict_to_json(msg_dict: Dict[str, Any]) -> str:
@@ -130,7 +132,7 @@ class GameCoordinator:
         # trajectories per agent_addr
         self._agent_trajectories = {}
     
-    def _spawn_task(self, coroutine:asyncio.coroutine, *args:tuple, **kwargs:dict)->asyncio.Task:
+    def _spawn_task(self, coroutine:Coroutine, *args:tuple, **kwargs:dict)->asyncio.Task:
         """
         Helper function to make sure all tasks are registered for proper termination.
         
