@@ -1,16 +1,17 @@
 import logging
 import json
 import asyncio
+import re
+import uuid
+import signal
+import os
 from datetime import datetime
-from typing import Optional, Dict, Any, List, Set, Tuple, Union, Callable, Coroutine
+from typing import Optional, Dict, Any, List, Set, Tuple, Coroutine
 from netsecgame.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, AgentRole
 from netsecgame.game.global_defender import GlobalDefender
 from netsecgame.utils.utils import observation_as_dict,store_trajectories_to_jsonl
 from netsecgame.game.agent_server import AgentServer
 from netsecgame.game.configuration_manager import ConfigurationManager
-import re
-import uuid
-
 
 def convert_msg_dict_to_json(msg_dict: Dict[str, Any]) -> str:
     """
