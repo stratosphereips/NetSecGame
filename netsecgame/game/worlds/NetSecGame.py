@@ -9,7 +9,7 @@ import netaddr, re
 import json
 from faker import Faker
 from pathlib import Path
-from typing import Iterable, Any, Set, Dict, Optional
+from typing import Iterable, Any, Set, Dict, Optional, Tuple, List
 from collections import defaultdict
 
 from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service, AgentRole
@@ -18,9 +18,16 @@ from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, E
 
 from netsecgame.utils.utils import get_logging_level
 
-def state_parts_deep_copy(state:GameState)->tuple:
+def state_parts_deep_copy(state: GameState) -> Tuple[Set[Network], Set[IP], Set[IP], Dict[IP, Set[Service]], Dict[IP, Set[Data]], Dict[IP, Set[IP]]]:
     """
     Deep copies the relevant parts of the GameState.
+
+    Args:
+        state (GameState): The game state to copy from.
+
+    Returns:
+        Tuple[Set[Network], Set[IP], Set[IP], Dict[IP, Set[Service]], Dict[IP, Set[Data]], Dict[IP, Set[IP]]]:
+            The copied parts (known_networks, known_hosts, controlled_hosts, known_services, known_data, known_blocks).
     """
     new_nets = copy.deepcopy(state.known_networks)
     new_known_h = copy.deepcopy(state.known_hosts)
@@ -32,15 +39,24 @@ def state_parts_deep_copy(state:GameState)->tuple:
 
 class NetSecGame(GameCoordinator):
 
-    def __init__(self, game_host, game_port, task_config:str, seed=None):
+    def __init__(self, game_host: str, game_port: int, task_config: str, seed: Optional[int] = None):
+        """
+        Initializes the NetSecGame world.
+
+        Args:
+            game_host (str): The host for the game server.
+            game_port (int): The port for the game server.
+            task_config (str): Path to the task configuration file.
+            seed (Optional[int]): Random seed for reproducibility.
+        """
         super().__init__(game_host, game_port, service_host=None, service_port=None, task_config_file=task_config)
 
         # Internal data structure of the NSG
         self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
         self._networks = {} # A `dict` of the networks present in the environment. Keys: `Network` objects, values `set` of `IP` objects.
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
-        self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
-        self._data_content = {} # ??? Not sure. Added by by sebas to fix error in reading config file
+        self._data_content = {}
+        self._data = {}
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         self._fw_blocks = {}
         self._agent_fw_rules = {}
@@ -60,6 +76,9 @@ class NetSecGame(GameCoordinator):
 
         Args:
             seed (int): The random seed to set.
+
+        Returns:
+            None
         """
         self._seed = seed
         if seed is not None:
@@ -86,8 +105,8 @@ class NetSecGame(GameCoordinator):
         # Load CYST configuration
         if self._cyst_objects is not None:
             self._process_cyst_config(self._cyst_objects)
-                    # Check if dynamic network and ip adddresses are required
-            if self._use_dynamic_ips:
+                    # Check if dynamic network and ip addresses are required
+            if self._use_dynamic_addresses:
                 self.logger.info("Dynamic change of the IP and network addresses enabled")
                 self._faker_object = Faker()
                 Faker.seed(self._seed)  
@@ -104,9 +123,10 @@ class NetSecGame(GameCoordinator):
         Parses view and translates all keywords. Produces set of controlled host (IP)
         Args:
             view_hosts (Iterable): The view containing host information.
-            allowed_hosts (list, optional): A list of host to start from if 'random' is specified. Defaults to None.
+            allowed_hosts (Optional[List[IP]]): A list of hosts to start from if 'random' is specified.
+
         Returns:
-            set: A set of controlled hosts.
+            Set[IP]: A set of controlled hosts.
         """
         hosts = set()
         self.logger.debug(f'\tParsing hosts from view: {view_hosts}')
@@ -138,10 +158,10 @@ class NetSecGame(GameCoordinator):
         Parses view and translates all keywords. Produces dict of known services {IP: set(Service)}
 
         Args:
-            view_known_services (dict): The view containing known services information.
+            view_known_services (Dict[IP, Iterable]): The view containing known services information.
 
         Returns:
-            dict: A dictionary mapping IP addresses to sets of known services.
+            Dict[IP, Set[Service]]: A dictionary mapping IP addresses to sets of known services.
         """
         # TODO: Add keyword scope parameter (like in _get_data_from_view)
         known_services = {}
@@ -177,11 +197,12 @@ class NetSecGame(GameCoordinator):
         Parses view and translates all keywords. Produces dict of known data {IP: set(Data)}
         
         Args:
-            view_known_data (dict): The view containing known data information.
-            keyword_scope (str, optional): Scope of keywords like 'random' or 'all'. Defaults to "host" (i.e., only data from the specified host are considered).
-            exclude_types (list, optional): List of data types to exclude when selecting data. Defaults to ["log"].
+            view_known_data (Dict[IP, Iterable]): The view containing known data information.
+            keyword_scope (str): Scope of keywords like 'random' or 'all'. Defaults to "host".
+            exclude_types (List[str]): List of data types to exclude. Defaults to ["log"].
+
         Returns:
-            dict: A dictionary mapping IP addresses to sets of known data.
+            Dict[IP, Set[Data]]: A dictionary mapping IP addresses to sets of known data.
         """
         known_data = {}
         for ip, data_list in view_known_data.items():
@@ -228,8 +249,9 @@ class NetSecGame(GameCoordinator):
         Parses view and translates all keywords. Produces set of known networks (Network).
         Args:
             view_known_networks (Iterable): The view containing known networks information.
+
         Returns:
-            set: A set of known networks.
+            Set[Network]: A set of known networks.
         """
         known_networks = set()
         for net in view_known_networks:
@@ -255,8 +277,9 @@ class NetSecGame(GameCoordinator):
         """
         Builds a GameState from given view (dict). All keywords are replaced by valid options.
         Args:
-            view (dict): The view containing goal state information.
-            allowed_hosts (set, optional): A set of allowed hosts for random selection. Defaults to None.
+            view (Dict[str, Any]): The view containing goal state information.
+            allowed_hosts (Optional[Set[IP]]): A set of allowed hosts for random selection.
+
         Returns:
             GameState: The generated goal state.
         """
@@ -280,7 +303,12 @@ class NetSecGame(GameCoordinator):
         Builds a GameState from given view.
         If there is a keyword 'random' used, it is replaced by a valid option at random.
 
-        Currently, we artificially extend the knonw_networks with +- 1 in the third octet.
+        Args:
+            view (Dict[str, Any]): The view containing state information.
+            add_neighboring_nets (bool): Whether to add neighboring networks.
+
+        Returns:
+            GameState: The generated state.
         """
         self.logger.info(f'Generating state from view:{view}')
         # re-map all networks based on current mapping in self._network_mapping
@@ -325,9 +353,15 @@ class NetSecGame(GameCoordinator):
         self.logger.info(f"Generated GameState:{game_state}")
         return game_state
 
-    def _process_cyst_config(self, configuration_objects:list[Any])-> None:
+    def _process_cyst_config(self, configuration_objects: List[Any]) -> None:
         """
-        Process the cyst configuration file
+        Processes the CYST configuration objects to set up the environment.
+
+        Args:
+            configuration_objects (List[Any]): List of configuration objects from CYST.
+
+        Returns:
+            None
         """
         nodes = []
         node_to_id = {}
@@ -347,7 +381,13 @@ class NetSecGame(GameCoordinator):
             elif isinstance(o, ExploitConfig):
                 exploits.append(o)
 
-        def process_node_config(node_obj:NodeConfig) -> None:
+        def process_node_config(node_obj: NodeConfig) -> None:
+            """
+            Processes a single NodeConfig object.
+
+            Args:
+                node_obj (NodeConfig): The node configuration to process.
+            """
             self.logger.info(f"\tProcessing config of node '{node_obj.id}'")
             #save the complete object
             node_objects[node_obj.id] = node_obj
@@ -397,7 +437,16 @@ class NetSecGame(GameCoordinator):
                     # Service does not contain any data
                     pass
 
-        def process_router_config(router_obj:RouterConfig)->None:
+        def process_router_config(router_obj: RouterConfig) -> Optional[bool]:
+            """
+            Processes a single RouterConfig object.
+
+            Args:
+                router_obj (RouterConfig): The router configuration to process.
+
+            Returns:
+                Optional[bool]: False if the router should be skipped, None otherwise.
+            """
             self.logger.info(f"\tProcessing config of router '{router_obj.id}'")
             # Process a router
             # Add the router to the list of nodes. This goes
@@ -427,7 +476,13 @@ class NetSecGame(GameCoordinator):
                     for rule in chain.rules:
                         fw_rules.append(rule)
         
-        def process_firewall()->dict:
+        def process_firewall() -> Dict[IP, Set[IP]]:
+            """
+            Processes firewall rules and generates the connectivity mapping.
+
+            Returns:
+                Dict[IP, Set[IP]]: Mapping of IP to sets of allowed destination IPs.
+            """
             # process firewall rules
             all_ips = set()
             for ips in self._networks.values():
@@ -508,8 +563,9 @@ class NetSecGame(GameCoordinator):
         """
         Changes the IP and network addresses in the environment
         Args:
-            max_attempts (int, optional): Maximum number of attempts to find a valid mapping. Defaults to 10.
-            seed (int, optional): Seed for random number generator. Defaults to None.
+            max_attempts (int): Maximum number of attempts to find a valid mapping.
+            seed (Optional[int]): Seed for random number generator.
+
         Returns:
             None
         """
@@ -633,10 +689,17 @@ class NetSecGame(GameCoordinator):
             self._ip_mapping[ip] = mapping_ips[mapping]
         self.logger.debug(f"self._ip_mapping: {self._ip_mapping}")
     
-    def _create_new_network_mapping(self, max_attempts: int = 10, seed=None) -> tuple[Dict[Network, Network], Dict[IP, IP]]:
-        """ 
+    def _create_new_network_mapping(self, max_attempts: int = 10, seed: Optional[int] = None) -> Tuple[Dict[Network, Network], Dict[IP, IP]]:
+        """
         Generates new network addresses (preserving relative distance between networks)
         and maps host IPs by preserving their relative offset within the subnet.
+
+        Args:
+            max_attempts (int): Maximum number of mapping attempts.
+            seed (Optional[int]): Random seed.
+
+        Returns:
+            Tuple[Dict[Network, Network], Dict[IP, IP]]: The network and IP mappings.
         """
         #self.logger.info(f"Generating new network and IP address mapping with seed {seed} (max attempts: {max_attempts})")
 
@@ -763,9 +826,16 @@ class NetSecGame(GameCoordinator):
         self.logger.info(f"Mapping IPs done: {mapping_ips}")
         return mapping_nets, mapping_ips
     
-    def _get_services_from_host(self, host_ip:str, controlled_hosts:set)-> Set[Service]:
+    def _get_services_from_host(self, host_ip: IP, controlled_hosts: Set[IP]) -> Set[Service]:
         """
-        Returns set of Service tuples from given hostIP
+        Returns a set of services found on a given host.
+
+        Args:
+            host_ip (IP): The IP of the host.
+            controlled_hosts (Set[IP]): Set of controlled host IPs.
+
+        Returns:
+            Set[Service]: Set of services found on the host.
         """
         found_services = set()
         if host_ip in self._ip_to_hostname: #is it existing IP?
@@ -780,9 +850,15 @@ class NetSecGame(GameCoordinator):
             self.logger.debug("\tServices not found because target IP does not exists.")
         return found_services
 
-    def _get_networks_from_host(self, host_ip)->Set[Network]:
+    def _get_networks_from_host(self, host_ip: IP) -> Set[Network]:
         """
-        Returns set of IPs the host has access to
+        Returns the set of networks the host is part of.
+
+        Args:
+            host_ip (IP): The IP of the host.
+
+        Returns:
+            Set[Network]: Set of networks.
         """
         networks = set()
         for net, values in self._networks.items():
@@ -790,10 +866,16 @@ class NetSecGame(GameCoordinator):
                 networks.add(net)
         return networks
 
-    def _get_data_in_host(self, host_ip:str, controlled_hosts:set)->Set[Data]:
+    def _get_data_in_host(self, host_ip: IP, controlled_hosts: Set[IP]) -> Set[Data]:
         """
-        Returns set of Data tuples from given host IP
-        Check if the host is in the list of controlled hosts
+        Returns a set of data objects found on a given host if it is controlled.
+
+        Args:
+            host_ip (IP): The IP of the host.
+            controlled_hosts (Set[IP]): Set of controlled host IPs.
+
+        Returns:
+            Set[Data]: Set of data objects found.
         """
         data = set()
         if host_ip in controlled_hosts: #only return data if the agent controls the host
@@ -804,7 +886,17 @@ class NetSecGame(GameCoordinator):
             self.logger.debug("\t\t\tCan't get data in host. The host is not controlled.")
         return data
     
-    def _get_known_blocks_in_host(self, host_ip:str, controlled_hosts:set)->set:
+    def _get_known_blocks_in_host(self, host_ip: IP, controlled_hosts: Set[IP]) -> Set[IP]:
+        """
+        Returns a set of known firewall blocks from a host if it is controlled.
+
+        Args:
+            host_ip (IP): The IP of the host.
+            controlled_hosts (Set[IP]): Set of controlled host IPs.
+
+        Returns:
+            Set[IP]: Set of blocked IPs.
+        """
         known_blocks = set()
         if host_ip in controlled_hosts: #only return data if the agent controls the host
             if host_ip in self._ip_to_hostname:
@@ -814,9 +906,16 @@ class NetSecGame(GameCoordinator):
             self.logger.debug("\t\t\tCan't get data in host. The host is not controlled.")
         return known_blocks
 
-    def _get_data_content(self, host_ip:str, data_id:str)->str|None:
+    def _get_data_content(self, host_ip: IP, data_id: str) -> Optional[str]:
         """
-        Returns content of data identified by a host_ip and data_ip.
+        Returns the content of data identified by a host IP and data ID.
+
+        Args:
+            host_ip (IP): The IP of the host.
+            data_id (str): The identifier of the data.
+
+        Returns:
+            Optional[str]: The content string if found, else None.
         """
         content = None
         if host_ip in self._ip_to_hostname: #is it existing IP?
@@ -829,16 +928,17 @@ class NetSecGame(GameCoordinator):
             self.logger.debug("Data content not found because target IP does not exists.")
         return content
     
-    def _execute_action(self, current_state:GameState, action:Action, agent_id:tuple)-> GameState:
+    def _execute_action(self, current_state: GameState, action: Action, agent_id: Tuple[str, int]) -> GameState:
         """
-        Execute the action and update the values in the state
-        Before this function it was checked if the action was successful
-        So in here all actions were already successful.
+        Executes the given action and updates the game state.
 
-        - actions_type: Define if the action is simulated in netsecenv or in the real world
-        - agent_id: is the name or type of agent that requested the action
+        Args:
+            current_state (GameState): The current game state.
+            action (Action): The action to execute.
+            agent_id (Tuple[str, int]): identifier of the agent requesting the action.
 
-        Returns: A new GameState
+        Returns:
+            GameState: The new game state after execution.
         """
         next_state = None
         match action.type:
@@ -858,7 +958,18 @@ class NetSecGame(GameCoordinator):
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
         
-    def _record_false_positive(self, src_ip:IP, dst_ip:IP, agent_id:tuple)-> None:
+    def _record_false_positive(self, src_ip: IP, dst_ip: IP, agent_id: Tuple[str, int]) -> None:
+        """
+        Records a false positive if a connection block affects a benign agent.
+
+        Args:
+            src_ip (IP): Source host IP.
+            dst_ip (IP): Destination host IP.
+            agent_id (Tuple[str, int]): Identifier of the author agent.
+
+        Returns:
+            None
+        """
         # only record false positive if the agent is benign
         if self.is_agent_benign(agent_id):
             # find agent(s) that created the rule
@@ -874,17 +985,34 @@ class NetSecGame(GameCoordinator):
             else:
                 self.logger.debug(f"False positive for blocking {src_host} -> {dst_host} caused by the system configuration.")
 
-    def _firewall_check(self, src_ip:IP, dst_ip:IP)->bool:
-        """Checks if firewall allows connection from 'src_ip to ''dst_ip'"""
+    def _firewall_check(self, src_ip: IP, dst_ip: IP) -> bool:
+        """
+        Checks if the firewall allows a connection from source to destination.
+
+        Args:
+            src_ip (IP): Source host IP.
+            dst_ip (IP): Destination host IP.
+
+        Returns:
+            bool: True if connection is allowed, False otherwise.
+        """
         try:
             connection_allowed = dst_ip in self._firewall[src_ip]
         except KeyError:
             connection_allowed = False
         return connection_allowed
 
-    def _execute_scan_network_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
+    def _execute_scan_network_action(self, current_state: GameState, action: Action, agent_id: Tuple[str, int]) -> GameState:
         """
-        Executes the ScanNetwork action in the environment
+        Executes the ScanNetwork action in the environment.
+
+        Args:
+            current_state (GameState): The current game state.
+            action (Action): The ScanNetwork action to execute.
+            agent_id (Tuple[str, int]): Identifier of the requesting agent.
+
+        Returns:
+            GameState: The updated game state.
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         self.logger.debug(f"\t\tScanning {action.parameters['target_network']}")
@@ -905,9 +1033,17 @@ class NetSecGame(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _execute_find_services_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
+    def _execute_find_services_action(self, current_state: GameState, action: Action, agent_id: Tuple[str, int]) -> GameState:
         """
-        Executes the FindServices action in the environment
+        Executes the FindServices action in the environment.
+
+        Args:
+            current_state (GameState): The current game state.
+            action (Action): The FindServices action to execute.
+            agent_id (Tuple[str, int]): Identifier of the requesting agent.
+
+        Returns:
+            GameState: The updated game state.
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         self.logger.debug(f"\t\tSearching for services in {action.parameters['target_host']}")
@@ -932,9 +1068,17 @@ class NetSecGame(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_find_data_action(self, current:GameState, action:Action, agent_id:tuple)->GameState:
+    def _execute_find_data_action(self, current: GameState, action: Action, agent_id: Tuple[str, int]) -> GameState:
         """
-        Executes the FindData action in the environment
+        Executes the FindData action in the environment.
+
+        Args:
+            current (GameState): The current game state.
+            action (Action): The FindData action to execute.
+            agent_id (Tuple[str, int]): Identifier of the requesting agent.
+
+        Returns:
+            GameState: The updated game state.
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current)
         self.logger.debug(f"\t\tSearching for data in {action.parameters['target_host']}")
@@ -963,9 +1107,17 @@ class NetSecGame(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_exfiltrate_data_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
+    def _execute_exfiltrate_data_action(self, current_state: GameState, action: Action, agent_id: Tuple[str, int]) -> GameState:
         """
-        Executes the ExfiltrateData action in the environment
+        Executes the ExfiltrateData action in the environment.
+
+        Args:
+            current_state (GameState): The current game state.
+            action (Action): The ExfiltrateData action to execute.
+            agent_id (Tuple[str, int]): Identifier of the requesting agent.
+
+        Returns:
+            GameState: The updated game state.
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         self.logger.info(f"\t\tAttempting to Exfiltrate {action.parameters['data']} from {action.parameters['source_host']} to {action.parameters['target_host']}")
@@ -1010,9 +1162,17 @@ class NetSecGame(GameCoordinator):
             self.logger.debug("\t\t\tCan not exfiltrate. Target host is not controlled.")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_exploit_service_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
+    def _execute_exploit_service_action(self, current_state: GameState, action: Action, agent_id: Tuple[str, int]) -> GameState:
         """
-        Executes the ExploitService action in the environment
+        Executes the ExploitService action in the environment.
+
+        Args:
+            current_state (GameState): The current game state.
+            action (Action): The ExploitService action to execute.
+            agent_id (Tuple[str, int]): Identifier of the requesting agent.
+
+        Returns:
+            GameState: The updated game state.
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         # We don't check if the target is a known_host because it can be a blind attempt to attack
@@ -1050,19 +1210,17 @@ class NetSecGame(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
     
-    def _execute_block_ip_action(self, current_state:GameState, action:Action, agent_id:tuple)->GameState:
+    def _execute_block_ip_action(self, current_state: GameState, action: Action, agent_id: Tuple[str, int]) -> GameState:
         """
-        Executes the BlockIP action 
-        - The action has BlockIP("target_host": IP object, "source_host": IP object, "blocked_host": IP object)
-        - The target host is the host where the blocking will be applied (the FW)
-        - The source host is the host that the agent uses to connect to the target host. A host that must be controlled by the agent
-        - The blocked host is the host that will be included in the FW list to be blocked.
+        Executes the BlockIP action in the environment.
 
-        Logic:
-        - Check if the agent controls the source host
-        - Check if the agent controls the target host
-        - Add the rule to the FW list
-        - Update the state
+        Args:
+            current_state (GameState): The current game state.
+            action (Action): The BlockIP action to execute.
+            agent_id (Tuple[str, int]): Identifier of the requesting agent.
+
+        Returns:
+            GameState: The updated game state.
         """
         next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
         # Is the src in the controlled hosts?
@@ -1123,7 +1281,13 @@ class NetSecGame(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _get_all_local_ips(self)->Set[IP]:
+    def _get_all_local_ips(self) -> Set[IP]:
+        """
+        Returns all private IP addresses present in the environment.
+
+        Returns:
+            Set[IP]: A set of private IPs.
+        """
         local_ips = set()
         for net, ips in self._networks.items():
             if netaddr.IPNetwork(str(net)).ip.is_private():
@@ -1132,13 +1296,17 @@ class NetSecGame(GameCoordinator):
         self.logger.info(f"\t\t\tLocal ips: {local_ips}")
         return local_ips
     
-    def update_log_file(self, known_data:set, action, target_host:IP)->None:
+    def update_log_file(self, known_data: Dict[IP, Set[Data]], action: Action, target_host: IP) -> None:
         """
-        Updates the log file in the target host.
+        Updates the log file on the target host with the provided action details.
+
         Args:
-            known_data (set): Set of known data.
-            action (Action): Action to be recorded.
-            target_host (IP): Target host.
+            known_data (Dict[IP, Set[Data]]): Current known data mappings.
+            action (Action): The action to record in the log.
+            target_host (IP): The IP of the host where the log is updated.
+
+        Returns:
+            None
         """
         hostaname = self._ip_to_hostname[target_host]
         self.logger.debug(f"Updating log file in host {hostaname}")
@@ -1157,34 +1325,85 @@ class NetSecGame(GameCoordinator):
             new_content = json.dumps(new_content)
         self._data[hostaname].add(Data(owner="system", id="logfile", type="log", size=len(new_content) , content= new_content))
 
-    async def register_agent(self, agent_id, agent_role:AgentRole, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
+    async def register_agent(self, agent_id: Tuple[str, int], agent_role: AgentRole, agent_initial_view: Dict[str, Any], agent_win_condition_view: Dict[str, Any]) -> Tuple[GameState, GameState]:
+        """
+        Registers an agent and creates its initial and goal states.
+
+        Args:
+            agent_id (Tuple[str, int]): Identifier of the agent.
+            agent_role (AgentRole): Role assigned to the agent.
+            agent_initial_view (Dict[str, Any]): View for initial state generation.
+            agent_win_condition_view (Dict[str, Any]): View for goal state generation.
+
+        Returns:
+            Tuple[GameState, GameState]: (initial_state, goal_state).
+        """
         start_game_state = self._create_state_from_view(agent_initial_view)
         goal_state = self._create_goal_state_from_view(agent_win_condition_view)
         return start_game_state, goal_state
 
-    async def remove_agent(self, agent_id, agent_state)->bool:
+    async def remove_agent(self, agent_id: Tuple[str, int], agent_state: GameState) -> bool:
+        """
+        Removes an agent from the game.
+
+        Args:
+            agent_id (Tuple[str, int]): Identifier of the agent.
+            agent_state (GameState): Final state of the agent.
+
+        Returns:
+            bool: Always True.
+        """
         # No action is required
         return True
         
-    async def step(self, agent_id, agent_state, action)->GameState:
+    async def step(self, agent_id: Tuple[str, int], agent_state: GameState, action: Action) -> GameState:
+        """
+        Processes a single game step for an agent.
+
+        Args:
+            agent_id (Tuple[str, int]): Identifier of the agent.
+            agent_state (GameState): Current state of the agent.
+            action (Action): Action to perform.
+
+        Returns:
+            GameState: The resulting game state.
+        """
         return self._execute_action(agent_state, action, agent_id)
 
-    async def reset_agent(self, agent_id, agent_role:AgentRole, agent_initial_view:dict, agent_win_condition_view:dict)->tuple[GameState, GameState]:
-       game_state = self._create_state_from_view(agent_initial_view)
-       goal_state = self._create_goal_state_from_view(agent_win_condition_view)
-       return game_state, goal_state    
-
-    async def reset(self, seed:Optional[int]=None, topology_change:Optional[bool]=None)->bool:
+    async def reset_agent(self, agent_id: Tuple[str, int], agent_role: AgentRole, agent_initial_view: Dict[str, Any], agent_win_condition_view: Dict[str, Any]) -> Tuple[GameState, GameState]:
         """
-        Function to reset the state of the game
-        and prepare for a new episode
+        Resets an agent's state for a new episode.
+
+        Args:
+            agent_id (Tuple[str, int]): Identifier of the agent.
+            agent_role (AgentRole): Role assigned to the agent.
+            agent_initial_view (Dict[str, Any]): View for initial state generation.
+            agent_win_condition_view (Dict[str, Any]): View for goal state generation.
+
+        Returns:
+            Tuple[GameState, GameState]: (reset_state, goal_state).
+        """
+        game_state = self._create_state_from_view(agent_initial_view)
+        goal_state = self._create_goal_state_from_view(agent_win_condition_view)
+        return game_state, goal_state
+
+    async def reset(self, seed: Optional[int] = None, topology_change: Optional[bool] = None) -> bool:
+        """
+        Resets the entire world to its initial state for a new episode.
+
+        Args:
+            seed (Optional[int]): New random seed if provided.
+            topology_change (Optional[bool]): Whether a dynamic topology change should occur.
+
+        Returns:
+            bool: Always True.
         """
         # write all steps in the episode replay buffer in the file
         self.logger.info('--- Reseting NSG Environment to its initial state ---')
         if seed is not None:
             self._set_random_seed(seed)
 
-        if self.config_manager.get_use_dynamic_ips(): #topology change is allowed
+        if self.config_manager.get_use_dynamic_addresses(): #topology change is allowed
             if topology_change: # agents agree on topology change
                 self._dynamic_ip_change(seed=seed)
         # reset self._data to orignal state

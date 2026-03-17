@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Iterable
 from aiohttp import ClientSession
 
 from netsecgame.game.config_parser import ConfigParser
@@ -100,38 +100,81 @@ class ConfigurationManager:
     # Accessors
     # -------------------------------------------------------------------------
 
-    def get_cyst_objects(self):
+    def get_cyst_objects(self) -> Iterable[Any]:
+        """
+        Returns the loaded CYST configuration objects.
+
+        Returns:
+            Any: The CYST configuration objects (usually a list of NodeConfig, etc.).
+        """
         return self._cyst_objects
 
     def get_config_hash(self) -> Optional[str]:
+        """
+        Returns the hash of the loaded configuration.
+
+        Returns:
+            Optional[str]: The hexadecimal hash of the configuration, or None if not loaded.
+        """
         return self._config_file_hash
         
-    def get_starting_position(self, role: str) -> dict:
-        """Returns the starting position configuration for a specific role."""
+    def get_starting_position(self, role: str) -> Dict[str, Any]:
+        """Returns the starting position configuration for a specific role.
+        Args:
+            role (str): The role of the agent.
+
+        Returns:
+            dict: The starting position configuration for the specified role.
+        """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_start_position(agent_role=role)
 
-    def get_win_conditions(self, role: str) -> dict:
-        """Returns the win conditions for a specific role."""
+    def get_win_conditions(self, role: str) -> Dict[str, Any]:
+        """Returns the win conditions for a specific role.
+        Args:
+            role (str): The role of the agent.
+
+        Returns:
+            dict: The win conditions for the specified role.
+        """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_win_conditions(agent_role=role)
 
     def get_goal_description(self, role: str) -> str:
-        """Returns the goal description for a specific role."""
+        """Returns the goal description for a specific role.
+        Args:
+            role (str): The role of the agent.
+
+        Returns:
+            str: The goal description for the specified role.
+        """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_goal_description(agent_role=role)
         
     def get_max_steps(self, role: str) -> Optional[int]:
-        """Returns the max steps for a specific role."""
+        """Returns the max steps for a specific role.
+        Args:
+            role (str): The role of the agent.
+
+        Returns:
+            Optional[int]: The max steps for the specified role.
+        """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_max_steps(role)
 
-    def get_rewards(self, reward_names: List[str] = ["step", "success", "fail", "false_positive"], default_value: int = 0) -> dict:
-        """Returns the rewards configuration."""
+    def get_rewards(self, reward_names: List[str] = ["step", "success", "fail", "false_positive"], default_value: int = 0) -> Dict[str, Any]:
+        """Returns the rewards configuration.
+        Args:
+            reward_names (List[str]): The names of the rewards.
+            default_value (int): The default value for the rewards.
+
+        Returns:
+            dict: The rewards configuration.
+        """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         rewards = self._parser.get_rewards(reward_names, default_value)
@@ -143,28 +186,62 @@ class ConfigurationManager:
             self.logger.warning("Success reward is negative. This is not recommended.")
         return rewards
         
-    def get_use_dynamic_ips(self, default_value: bool = False) -> bool:
+    def get_use_dynamic_addresses(self, default_value: bool = False) -> bool:
+        """Returns the use dynamic addresses configuration.
+        Args:
+            default_value (bool): The default value for the use dynamic addresses.
+
+        Returns:
+            bool: The use dynamic addresses configuration.
+        """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_use_dynamic_addresses(default_value)
         
     def get_use_global_defender(self, default_value: bool = False) -> bool:
+        """Returns the use global defender configuration.
+        Args:
+            default_value (bool): The default value for the use global defender.
+
+        Returns:
+            bool: The use global defender configuration.
+        """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_use_global_defender(default_value)
         
     def get_required_num_players(self, default_value: int = 1) -> int:
+        """Returns the required number of players configuration.
+
+        Args:
+            default_value (int): The default value for the required number of players.
+
+        Returns:
+            int: The required number of players configuration.
+        """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_required_num_players(default_value)
 
     def get_use_firewall(self, default_value: bool = True) -> bool:
+        """Returns the use firewall configuration.
+
+        Args:
+            default_value (bool): The default value for the use firewall.
+
+        Returns:
+            bool: The use firewall configuration.
+        """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_use_firewall(default_value)
 
     def get_all_starting_positions(self) -> Dict[str, Any]:
-        """Returns starting positions for all roles."""
+        """Returns starting positions for all roles.
+
+        Returns:
+            Dict[str, Any]: The starting positions for all roles.
+        """
         starting_positions = {}
         for agent_role in AgentRole:
             try:
@@ -175,7 +252,11 @@ class ConfigurationManager:
         return starting_positions
 
     def get_all_win_conditions(self) -> Dict[str, Any]:
-        """Returns win conditions for all roles."""
+        """Returns win conditions for all roles.
+
+        Returns:
+            Dict[str, Any]: The win conditions for all roles.
+        """
         win_conditions = {}
         for agent_role in AgentRole:
             try:
@@ -186,7 +267,11 @@ class ConfigurationManager:
         return win_conditions
 
     def get_all_goal_descriptions(self) -> Dict[str, str]:
-        """Returns goal descriptions for all roles."""
+        """Returns goal descriptions for all roles.
+
+        Returns:
+            Dict[str, str]: The goal descriptions for all roles.
+        """
         goal_descriptions = {}
         for agent_role in AgentRole:
             try:
@@ -197,7 +282,12 @@ class ConfigurationManager:
         return goal_descriptions
 
     def get_all_max_steps(self) -> Dict[str, Optional[int]]:
-        """Returns max steps for all roles."""
+        """
+        Returns max steps for all roles.
+
+        Returns:
+            Dict[str, Optional[int]]: A dictionary mapping roles to their maximum steps.
+        """
         # Using self.get_max_steps might raise RuntimeError if checks are there, 
         # but simpler to just call parser directly or the single accessor since we are inside the class.
         # However, the single accessor has the check.
@@ -205,7 +295,15 @@ class ConfigurationManager:
         # Iterating over AgentRole is correct.
         return {role: self.get_max_steps(role) for role in AgentRole}
     
-    def get_store_trajectories(self, default_value: bool = False) -> bool:
+    def get_store_trajectories(self, default_value: bool = False) -> bool:  
+        """Returns the store trajectories configuration.
+
+        Args:
+            default_value (bool): The default value for the store trajectories.
+        
+        Returns:
+            bool: True if trajectories should be stored, False otherwise.
+        """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_store_trajectories(default_value)

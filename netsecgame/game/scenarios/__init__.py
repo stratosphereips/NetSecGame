@@ -5,6 +5,8 @@ from . import (
     one_net,
     three_net_scenario,
     two_nets,
+    two_nets_tiny,
+    two_nets_small, 
 )
 
 # Static Registry
@@ -15,4 +17,6 @@ SCENARIO_REGISTRY = {
     "one_network": one_net.configuration_objects,
     "three_net_scenario": three_net_scenario.configuration_objects,
     "two_networks": two_nets.configuration_objects,
+    "two_networks_tiny": two_nets_tiny.configuration_objects,
+    "two_networks_small": two_nets_small.configuration_objects,
 }

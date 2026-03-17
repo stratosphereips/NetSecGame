@@ -6,20 +6,27 @@ import yaml
 import netaddr
 import logging
 from random import randint
-from  typing import Optional
+from typing import Optional, Dict, Any, List, Set, Union
 from netsecgame.game_components import IP, Data, Network, Service
 from netsecgame.game.scenarios import SCENARIO_REGISTRY
 
 class ConfigParser():
     """
-    Class to deal with the configuration file of NetSecGame Coordinator
-    Args:
-        task_config_file (str|None): Path to the configuration file
-        config_dict (dict|None): Dictionary with configuration data
+    Class to deal with the configuration file of NetSecGame Coordinator.
+
+    Provides methods to read agent-specific and environment-wide configurations
+    from YAML files or dictionaries.
     """
-    def __init__(self, task_config_file:str|None=None, config_dict:dict|None=None):
+    def __init__(self, task_config_file:Optional[str]=None, config_dict:Optional[dict]=None)->None:
         """
-        Initializes the configuration parser. Required either path to a confgiuration file or a dict with configuraitons.
+        Initializes the configuration parser. Required either path to a configuration file or a dict with configurations.
+        
+        Args:
+            task_config_file (Optional[str]): Path to the configuration file
+            config_dict (Optional[dict]): Dictionary with configuration data
+
+        Returns:
+            None
         """
         self.logger = logging.getLogger('ConfigParser')
         if task_config_file:
@@ -29,9 +36,15 @@ class ConfigParser():
         else:
             self.logger.error("You must provide either the configuration file or a dictionary with the configuration!")
 
-    def read_config_file(self, conf_file_name:str):
+    def read_config_file(self, conf_file_name: str) -> None:
         """
-        reads configuration file
+        Reads the configuration from a YAML file.
+
+        Args:
+            conf_file_name (str): Path to the configuration file.
+
+        Returns:
+            None
         """
         try:
             with open(conf_file_name) as source:
@@ -42,7 +55,13 @@ class ConfigParser():
     
     def read_env_action_data(self, action_name: str) -> float:
         """
-        Generic function to read the known data for any agent and goal of position
+        Reads the success probability for a specific environment action.
+
+        Args:
+            action_name (str): The name of the action.
+
+        Returns:
+            float: The success probability (defaults to 1.0 if not found).
         """
         try:
             action_success_p = self.config['env']['actions'][action_name]['prob_success']
@@ -50,9 +69,16 @@ class ConfigParser():
             action_success_p = 1
         return action_success_p
 
-    def read_agents_known_data(self, type_agent: str, type_data: str) -> dict:
+    def read_agents_known_data(self, type_agent: str, type_data: str) -> Dict[IP, Set[Union[Data, str]]]:
         """
-        Generic function to read the known data for any agent and goal of position
+        Reads the known data for a specific agent and category (goal/start_position).
+
+        Args:
+            type_agent (str): The role or type of the agent.
+            type_data (str): The category of data (e.g., 'goal', 'start_position').
+
+        Returns:
+            Dict[IP, Set[Union[Data, str]]]: A mapping of IP addresses to sets of Data objects or 'random' keywords.
         """
         known_data_conf = self.config['coordinator']['agents'][type_agent][type_data]['known_data']
         known_data = {}
@@ -75,9 +101,16 @@ class ConfigParser():
                 known_data = {}
         return known_data
 
-    def read_agents_known_blocks(self, type_agent: str, type_data: str) -> dict:
+    def read_agents_known_blocks(self, type_agent: str, type_data: str) -> Dict[IP, Union[List[IP], str]]:
         """
-        Generic function to read the known blocks for any agent and goal of position
+        Reads the known firewall blocks for a specific agent and category.
+
+        Args:
+            type_agent (str): The role or type of the agent.
+            type_data (str): The category of data.
+
+        Returns:
+            Dict[IP, Union[List[IP], str]]: A mapping of target IP addresses to blocked IPs or 'all_attackers'.
         """
         known_blocks_conf = self.config["coordinator"]['agents'][type_agent][type_data]['known_blocks']
         known_blocks = {}
@@ -94,9 +127,16 @@ class ConfigParser():
                 raise ValueError(f"Unsupported value in 'known_blocks': {known_blocks_conf}")
         return known_blocks
     
-    def read_agents_known_services(self, type_agent: str, type_data: str) -> dict:
+    def read_agents_known_services(self, type_agent: str, type_data: str) -> Dict[IP, List[Union[Service, str]]]:
         """
-        Generic function to read the known services for any agent and goal of position
+        Reads the known services for a specific agent and category.
+
+        Args:
+            type_agent (str): The role or type of the agent.
+            type_data (str): The category of data.
+
+        Returns:
+            Dict[IP, List[Union[Service, str]]]: A mapping of IP addresses to lists of Service objects or 'random' keywords.
         """
         known_services_conf = self.config["coordinator"]['agents'][type_agent][type_data]['known_services']
         known_services = {}
@@ -124,9 +164,16 @@ class ConfigParser():
                 known_services = {}
         return known_services
 
-    def read_agents_known_networks(self, type_agent: str, type_data: str) -> set:
+    def read_agents_known_networks(self, type_agent: str, type_data: str) -> Set[Network]:
         """
-        Generic function to read the known networks for any agent and goal of position
+        Reads the known networks for a specific agent and category.
+
+        Args:
+            type_agent (str): The role or type of the agent.
+            type_data (str): The category of data.
+
+        Returns:
+            Set[Network]: A set of known Network objects.
         """
         known_networks_conf = self.config['coordinator']['agents'][type_agent][type_data]['known_networks']
         known_networks = set()
@@ -140,9 +187,16 @@ class ConfigParser():
                 self.logger.error('Configuration problem with the known networks')
         return known_networks
 
-    def read_agents_known_hosts(self, type_agent: str, type_data: str) -> set:
+    def read_agents_known_hosts(self, type_agent: str, type_data: str) -> Set[Union[IP, str]]:
         """
-        Generic function to read the known hosts for any agent and goal of position
+        Reads the known hosts for a specific agent and category.
+
+        Args:
+            type_agent (str): The role or type of the agent.
+            type_data (str): The category of data.
+
+        Returns:
+            Set[Union[IP, str]]: A set of host IP objects or keywords ('random', 'all_local').
         """
         known_hosts_conf = self.config['coordinator']['agents'][type_agent][type_data]['known_hosts']
         known_hosts = set()
@@ -160,9 +214,16 @@ class ConfigParser():
                     self.logger.error(f'Configuration problem with the known hosts: {e}')
         return known_hosts
 
-    def read_agents_controlled_hosts(self, type_agent: str, type_data: str) -> set:
+    def read_agents_controlled_hosts(self, type_agent: str, type_data: str) -> Set[Union[IP, str]]:
         """
-        Generic function to read the controlled hosts for any agent and goal of position
+        Reads the controlled hosts for a specific agent and category.
+
+        Args:
+            type_agent (str): The role or type of the agent.
+            type_data (str): The category of data.
+
+        Returns:
+            Set[Union[IP, str]]: A set of controlled host IPs or keywords ('random', 'all_local').
         """
         controlled_hosts_conf = self.config['coordinator']['agents'][type_agent][type_data]['controlled_hosts']
         controlled_hosts = set()
@@ -180,10 +241,15 @@ class ConfigParser():
                     self.logger.error(f'Configuration problem with the controlled hosts: {e}')
         return controlled_hosts
 
-    def get_player_win_conditions(self, type_of_player:str):
+    def get_player_win_conditions(self, type_of_player: str) -> Dict[str, Any]:
         """
-        Get the goal of the player
-        type_of_player: Can be 'attackers' or 'defenders' 
+        Retrieves the win conditions for a specific player type.
+
+        Args:
+            type_of_player (str): The player type (e.g., 'attackers', 'defenders').
+
+        Returns:
+            Dict[str, Any]: A dictionary containing goal configurations (nets, hosts, etc.).
         """
         # Read known nets
         known_networks = self.read_agents_known_networks(type_of_player, 'goal')
@@ -216,10 +282,15 @@ class ConfigParser():
 
         return player_goal
     
-    def get_player_start_position(self, type_of_player:str):
+    def get_player_start_position(self, type_of_player: str) -> Dict[str, Any]:
         """
-        Generate the starting position of an attacking agent
-        type_of_player: Can be 'attackers' or 'defenders' 
+        Generates the starting position for a specific player type.
+
+        Args:
+            type_of_player (str): The player type (e.g., 'attackers', 'defenders').
+
+        Returns:
+            Dict[str, Any]: A dictionary containing starting configuration.
         """
         # Read known nets
         known_networks = self.read_agents_known_networks(type_of_player, 'start_position')
@@ -245,7 +316,16 @@ class ConfigParser():
 
         return player_start_position
 
-    def get_start_position(self, agent_role:str):
+    def get_start_position(self, agent_role: str) -> Dict[str, Any]:
+        """
+        Returns the starting position based on the agent's role.
+
+        Args:
+            agent_role (str): The role of the agent ('Attacker', 'Defender', 'Benign').
+
+        Returns:
+            Dict[str, Any]: The starting state configuration.
+        """
         match agent_role:
             case "Attacker":
                 return self.get_player_start_position(agent_role)
@@ -262,8 +342,17 @@ class ConfigParser():
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
     
-    def get_win_conditions(self, agent_role):
-         match agent_role:
+    def get_win_conditions(self, agent_role: str) -> Dict[str, Any]:
+        """
+        Returns the win conditions based on the agent's role.
+
+        Args:
+            agent_role (str): The role of the agent.
+
+        Returns:
+            Dict[str, Any]: The win conditions configuration.
+        """
+        match agent_role:
             case "Attacker":
                 return self.get_player_win_conditions(agent_role)
             case "Defender":
@@ -281,9 +370,15 @@ class ConfigParser():
             case _:
                 raise ValueError(f"Unsupported agent role: {agent_role}")
     
-    def get_max_steps(self, role=str)->Optional[int]:
+    def get_max_steps(self, role: str) -> Optional[int]:
         """
-        Get the max steps based on agent's role
+        Retrieves the maximum steps allowed for a specific role.
+
+        Args:
+            role (str): The role of the agent.
+
+        Returns:
+            Optional[int]: The maximum steps, or None if no limit is set.
         """
         try:
             max_steps = int(self.config['coordinator']['agents'][role]["max_steps"])
@@ -295,9 +390,15 @@ class ConfigParser():
             self.logger.warning(f"Unsupported value in 'coordinator.agents.{role}.max_steps': {e}. Setting value to default=None (no step limit)")
         return max_steps
 
-    def get_goal_description(self, agent_role)->str:
+    def get_goal_description(self, agent_role: str) -> str:
         """
-        Get goal description per role
+        Retrieves the textual goal description for a specific role.
+
+        Args:
+            agent_role (str): The role of the agent.
+
+        Returns:
+            str: The goal description string.
         """
         match agent_role:
             case "Attacker":
@@ -349,8 +450,17 @@ class ConfigParser():
                 f"[{agent_role}] Goal description '{description}' might be missing some actual win condition targets: {missing_elements}"
             )
 
-    def get_rewards(self, reward_names:list,  default_value=0)->dict:
-        "Reads configuration for rewards for cases listed in 'rewards_names'"
+    def get_rewards(self, reward_names: List[str], default_value: int = 0) -> Dict[str, Any]:
+        """
+        Reads configuration for rewards for specific categories.
+
+        Args:
+            reward_names (List[str]): List of reward keys to read from the configuration.
+            default_value (int): Default reward value if not specified. Defaults to 0.
+
+        Returns:
+            Dict[str, Any]: A mapping of reward names to their values.
+        """
         rewards = {}
         for name in reward_names:
             try:
@@ -381,9 +491,12 @@ class ConfigParser():
             store_trajectories = default_value
         return store_trajectories
     
-    def get_scenario(self):
+    def get_scenario(self) -> Any:
         """
-        Get the scenario config objects based on the configuration. Only import objects that are selected via importlib.
+        Retrieves the scenario configuration objects.
+
+        Returns:
+            Any: The scenario configuration (usually a list of NodeConfig, etc.).
         """
         scenario_name = self.config['env']['scenario']
         # make sure to validate the input
@@ -395,9 +508,15 @@ class ConfigParser():
         
         return SCENARIO_REGISTRY[scenario_name]
 
-    def get_seed(self, whom):
+    def get_seed(self, whom: str) -> int:
         """
-        Get the seeds
+        Retrieves the random seed for a specific component.
+
+        Args:
+            whom (str): The component name (e.g., 'coordinator', 'env').
+
+        Returns:
+            int: The random seed.
         """
         seed = self.config[whom]['random_seed']
         if seed == 'random':
@@ -417,10 +536,15 @@ class ConfigParser():
         raise DeprecationWarning("This function is deprecated.")
         return randomize_goal_every_episode
     
-    def get_use_firewall(self, default_value: bool = False)->bool:
+    def get_use_firewall(self, default_value: bool = False) -> bool:
         """
-        Retrieves if the firewall functionality is allowed for netsecgame.
-        Default: False
+        Checks if firewall functionality is enabled.
+
+        Args:
+            default_value (bool): Default value if not found. Defaults to False.
+
+        Returns:
+            bool: True if firewalls should be used, False otherwise.
         """
         try:
             use_firewall = self.config['env']['use_firewall']   
@@ -428,14 +552,32 @@ class ConfigParser():
             use_firewall = default_value
         return use_firewall
 
-    def get_use_global_defender(self, default_value: bool = False)->bool:
+    def get_use_global_defender(self, default_value: bool = False) -> bool:
+        """
+        Checks if the global defender is enabled.
+
+        Args:
+            default_value (bool): Default value if not found. Defaults to False.
+
+        Returns:
+            bool: True if global defender should be used, False otherwise.
+        """
         try:
             use_global_defender = self.config['env']['use_global_defender']
         except KeyError:
             use_global_defender = default_value
         return use_global_defender
     
-    def get_required_num_players(self, default_value: int = 1)->int:
+    def get_required_num_players(self, default_value: int = 1) -> int:
+        """
+        Retrieves the required number of players.
+
+        Args:
+            default_value (int): Default number of players. Defaults to 1.
+
+        Returns:
+            int: The required number of players.
+        """
         try:
             required_players = int(self.config['env']['required_players'])
         except KeyError:

@@ -57,7 +57,6 @@ coordinator:
       max_steps: 25 # timeout set for the role `Attacker`
       goal: # Definition of the goal state
         description: "Exfiltrate data from Samba server to remote C&C server."
-        is_any_part_of_goal_random: True
         known_networks: []
         known_hosts: []
         controlled_hosts: []
@@ -75,7 +74,6 @@ coordinator:
     Defender:
       goal:
         description: "Block all attackers."
-        is_any_part_of_goal_random: False
         known_networks: []
         known_hosts: []
         controlled_hosts: []
@@ -92,7 +90,7 @@ coordinator:
         blocked_ips: {}
         known_blocks: {}
 
-env: # Environment configuraion
+env: # Environment configuration
   scenario: 'two_networks_tiny' # use the smallest topology for this example
   use_global_defender: False # Do not use global SIEM Defender
   use_dynamic_addresses: False # Do not randomize IP addresses

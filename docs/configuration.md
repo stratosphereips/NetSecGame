@@ -12,7 +12,7 @@ The environment part defines the properties of the environment for the task (see
     -  `two_networks_small` - single client and 5 servers in separate local networks + remote C&C server
     -  `two_networks` - 5 clients and 5 servers in separate local networks + remote C&C server
     -  `three_net_scenario` - 5 clients in a local network, 5 servers split in 2 additional local networks + remote C&C server
-- `save_tajectories` - if `True`, interaction of the agents is serialized and stored in a file
+- `save_trajectories` - if `True`, interaction of the agents is serialized and stored in a file
 - `use_dynamic_addresses` - if `True`, the network and IP addresses defined in `scenario` are randomly changed at the beginning of an episode (the network topology is kept as defined in the `scenario`. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask). The change also depend on the input from the agents:
 
 ### Available topologies
@@ -55,10 +55,10 @@ There are 5 topologies available in NSG:
 
 |Task configuration| Agent reset request | Result|
 |----------------------|----------------------|----------------------|
-|`use_dynamic_ips = True` | `randomize_topology = True`| Changed topology |
-|`use_dynamic_ips = True` | `randomize_topology = False`| SAME topology |
-|`use_dynamic_ips = False` | `randomize_topology = True`| SAME topology |
-|`use_dynamic_ips = False` | `randomize_topology = False`| SAME topology |
+|`use_dynamic_addresses = True` | `randomize_topology = True`| Changed topology |
+|`use_dynamic_addresses = True` | `randomize_topology = False`| SAME topology |
+|`use_dynamic_addresses = False` | `randomize_topology = True`| SAME topology |
+|`use_dynamic_addresses = False` | `randomize_topology = False`| SAME topology |
 
 In summary, the topology change (IP randomization) can't change without allowing it in the task configuration. If allowed in the task config YAML, it can still be rejected by the agents.
 
@@ -67,7 +67,7 @@ In summary, the topology change (IP randomization) can't change without allowing
 - `required_players` - Minimum required players for the game to start (default 1)
 - `rewards`:
     - `success` - sets reward which agent gets when it reaches the goal (default 100)
-    - `fail` - sets the reward that which agent does not reach it's objective (default -10)
+    - `fail` - sets the reward which agent gets when it does not reach its objective (default -10)
     - `step` - sets reward which agent gets for every step taken (default -1)
     - `false_positive` - sets reward for a false positive action (default -5)
 - `actions` - defines the probability of success for every ActionType
@@ -159,7 +159,6 @@ coordinator:
             max_steps: 20
             goal:
                 description: "Exfiltrate data from Samba server to remote C&C server."
-                is_any_part_of_goal_random: True
                 known_networks: []
                 known_hosts: []
                 controlled_hosts: []
@@ -205,7 +204,7 @@ Example of defender configuration:
         blocked_ips: {}
         known_blocks: {}
 ```
-As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In the curent implementation, the *Defender* wins, if **NO ATTACKER** reaches their goal. 
+As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In the current implementation, the *Defender* wins, if **NO ATTACKER** reaches their goal. 
 
 ### Trajectory storing and analysis
 

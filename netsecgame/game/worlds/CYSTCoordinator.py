@@ -20,6 +20,7 @@ def get_starting_position_from_cyst_config(cyst_objects):
 
     Args:
         cyst_objects (list): List of CYST configuration objects.
+
     Returns:
         dict: A dictionary mapping agent identifiers to their starting known hosts and networks.
     """

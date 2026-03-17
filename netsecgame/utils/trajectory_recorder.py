@@ -11,7 +11,14 @@ class TrajectoryRecorder:
     """
     Manages the recording and storage of agent trajectories.
     """
-    def __init__(self, agent_name: str, agent_role: str):
+    def __init__(self, agent_name: str, agent_role: str) -> None:
+        """
+        Initializes the TrajectoryRecorder.
+
+        Args:
+            agent_name (str): The name of the agent.
+            agent_role (str): The role of the agent.
+        """
         self.agent_name = agent_name
         self.agent_role = agent_role
         self.logger = logging.getLogger(f"TrajectoryRecorder-{agent_name}")
@@ -19,9 +26,7 @@ class TrajectoryRecorder:
         self.reset()
 
     def reset(self) -> None:
-        """
-        Resets the trajectory data for a new episode.
-        """
+        """Resets the trajectory data for a new episode."""
         self.logger.debug(f"Resetting trajectory for {self.agent_name}")
         self._data = {
             "trajectory": {
@@ -56,14 +61,19 @@ class TrajectoryRecorder:
 
     def add_initial_state(self, state: GameState) -> None:
         """
-        Adds the initial state to the trajectory (optional, depending on how you want to track s_0).
-        The original code initialized trajectory with states=[agent_state.as_dict].
+        Adds the initial state to the trajectory history.
+
+        Args:
+            state (GameState): The initial game state.
         """
         self._data["trajectory"]["states"].append(state.as_dict)
 
     def get_trajectory(self) -> Dict[str, Any]:
         """
         Returns the current trajectory data.
+
+        Returns:
+            Dict[str, Any]: The trajectory dictionary.
         """
         return self._data
 
@@ -72,7 +82,7 @@ class TrajectoryRecorder:
         Saves the recorded trajectory to a JSONL file.
 
         Args:
-            location (str): Directory to save the file.
+            location (str): Directory to save the file. Defaults to "./logs/trajectories".
         """
         filename = f"{datetime.now():%Y-%m-%d}_{self.agent_name}_{self.agent_role}"
         try:

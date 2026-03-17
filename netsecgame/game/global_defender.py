@@ -1,7 +1,7 @@
-# Author: Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 from itertools import groupby
-from netsecgame.game_components import ActionType, Action
 from random import random
+from typing import List, Dict, Any
+from netsecgame.game_components import ActionType, Action
 
 
 class GlobalDefender:
@@ -42,9 +42,15 @@ class GlobalDefender:
             ActionType.FindData: 2,
         }
    
-    def stochastic(self, action_type:ActionType)->bool:
+    def stochastic(self, action_type: ActionType) -> bool:
         """
-        Simple random detection based on predefied probability and ActionType
+        Performs a simple random detection based on predefined probability for an ActionType.
+
+        Args:
+            action_type (ActionType): The type of action to check for detection.
+
+        Returns:
+            bool: True if detected, False otherwise.
         """
         roll = random()
         if roll < self._DEFAULT_DETECTION_PROBS[action_type]:
@@ -52,9 +58,17 @@ class GlobalDefender:
         else:
             return False
 
-    def stochastic_with_threshold(self, action: Action, episode_actions:list, tw_size:int=5)-> bool:
+    def stochastic_with_threshold(self, action: Action, episode_actions: List[Dict[str, Any]], tw_size: int = 5) -> bool:
         """
-        Only detect based on set probabilities if pre-defined thresholds are crossed.
+        Determines detection based on set probabilities, but only if pre-defined thresholds are crossed.
+
+        Args:
+            action (Action): The current action being performed.
+            episode_actions (List[Dict[str, Any]]): The history of actions in the current episode.
+            tw_size (int): The size of the time window to consider for thresholds. Defaults to 5.
+
+        Returns:
+            bool: True if the action is detected, False otherwise.
         """
         # extend the episode with the latest action
         # We need to copy the list before the copying, so we avoid modifying it when it is returned. Modifycation of passed list is the default behavior in Python

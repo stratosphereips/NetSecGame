@@ -24,13 +24,15 @@ from netsecgame.game_components import (
     Service,
 )
 
-def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
+def get_file_hash(filepath: str, hash_func: str = 'sha256', chunk_size: int = 4096) -> str:
     """
     Computes hash of a given file.
+
     Args:
         filepath (str): The path to the file to hash.
         hash_func (str): The hash function to use (default is 'sha256').
         chunk_size (int): The size of each chunk to read from the file (default is 4096 bytes).
+
     Returns:
         str: The hexadecimal hash of the file.
     """
@@ -42,12 +44,14 @@ def get_file_hash(filepath, hash_func='sha256', chunk_size=4096):
             chunk = file.read(chunk_size)
     return hash_algorithm.hexdigest()
 
-def get_str_hash(string, hash_func='sha256'):
+def get_str_hash(string: str, hash_func: str = 'sha256') -> str:
     """
     Computes hash of a given string.
+
     Args:
         string (str): The input string to hash.
         hash_func (str): The hash function to use (default is 'sha256').
+
     Returns:
         str: The hexadecimal hash of the input string.
     """
@@ -55,13 +59,15 @@ def get_str_hash(string, hash_func='sha256'):
     hash_algorithm.update(string.encode('utf-8'))
     return hash_algorithm.hexdigest()
 
-def read_replay_buffer_from_csv(csvfile:str)->List[Tuple[GameState, Action, float, GameState, bool]]:
+def read_replay_buffer_from_csv(csvfile: str) -> List[Tuple[GameState, Action, float, GameState, bool]]:
     """
-    Function to read steps from a CSV file
-     and restore the objects in the replay buffer.
+    Reads steps from a CSV file and restores objects for the replay buffer.
 
-     expected colums in the csv:
-     state_t0, action_t0, reward_t1, state_t1, done_t1
+    Args:
+        csvfile (str): Path to the CSV file.
+
+    Returns:
+        List[Tuple[GameState, Action, float, GameState, bool]]: The restored replay buffer.
     """
     raise DeprecationWarning("This function is deprecated and will be removed in future versions.")
     buffer = []
@@ -75,11 +81,17 @@ def read_replay_buffer_from_csv(csvfile:str)->List[Tuple[GameState, Action, floa
         pass
     return buffer
 
-def store_replay_buffer_in_csv(replay_buffer:list, filename:str, delimiter:str=";")->None:
+def store_replay_buffer_in_csv(replay_buffer: List[Tuple[GameState, Action, float, GameState, bool]], filename: str, delimiter: str = ";") -> None:
     """
-    Function to store steps from a replay buffer in CSV file.
-     Expected format of replay buffer items:
-     (state_t0:GameState, action_t0:Action, reward_t1:float, state_t1:GameState, done_t1:bool)
+    Stores steps from a replay buffer into a CSV file.
+
+    Args:
+        replay_buffer (List[Tuple[GameState, Action, float, GameState, bool]]): The buffer items to store.
+        filename (str): The name of the output file.
+        delimiter (str): The delimiter to use in the CSV (default is ';').
+
+    Returns:
+        None
     """
     raise DeprecationWarning("This function is deprecated and will be removed in future versions.")
     with open(filename, 'a') as f_object:
@@ -87,7 +99,16 @@ def store_replay_buffer_in_csv(replay_buffer:list, filename:str, delimiter:str="
         for (s_t, a_t, r, s_t1, done) in replay_buffer:
             writer_object.writerow([s_t.as_json(), a_t.as_json(), r, s_t1.as_json(), done])
 
-def state_as_ordered_string(state:GameState)->str:
+def state_as_ordered_string(state: GameState) -> str:
+    """
+    Converts a GameState into a deterministic ordered string representation.
+
+    Args:
+        state (GameState): The game state to convert.
+
+    Returns:
+        str: The ordered string representation of the state.
+    """
     ret = ""
     ret += f"nets:[{','.join([str(x) for x in sorted(state.known_networks)])}],"
     ret += f"hosts:[{','.join([str(x) for x in sorted(state.known_hosts)])}],"
@@ -106,8 +127,13 @@ def state_as_ordered_string(state:GameState)->str:
 
 def observation_as_dict(observation: Observation) -> Dict[str, Any]:
     """
-    Generates dict representation of a given Observation object.
-    Acts as the single source of truth for the structure.
+    Generates a dictionary representation of a given Observation object.
+
+    Args:
+        observation (Observation): The observation object to convert.
+
+    Returns:
+        Dict[str, Any]: The dictionary representation of the observation.
     """
     return {
         'state': observation.state.as_dict,
@@ -119,8 +145,13 @@ def observation_as_dict(observation: Observation) -> Dict[str, Any]:
 
 def observation_to_str(observation: Observation) -> str:
     """
-    Generates JSON string representation of a given Observation object.
-    Relies on observation_as_dict to define the structure.
+    Generates a JSON string representation of a given Observation object.
+
+    Args:
+        observation (Observation): The observation object to convert.
+
+    Returns:
+        str: The JSON string representation.
     """
     try:
         # Clean JSON structure: {"state": {...}, "reward": 0, ...}
@@ -135,8 +166,8 @@ def observation_from_dict(data: Dict[str, Any]) -> Observation:
     Reconstructs an Observation object from a dictionary representation.
     
     Args:
-        data (dict): The dictionary containing observation data.
-        
+        data (Dict[str, Any]): The dictionary containing observation data.
+
     Returns:
         Observation: The reconstructed Observation namedtuple.
     """
@@ -182,7 +213,16 @@ def observation_from_str(json_str: str) -> Observation:
         logging.getLogger(__name__).error(f"Error in creating Observation from string: {e}")
         raise e
 
-def parse_log_content(log_content:str)->Optional[list]:
+def parse_log_content(log_content: str) -> Optional[List[Dict[str, Any]]]:
+    """
+    Parses a JSON string of log content into a list of log entries.
+
+    Args:
+        log_content (str): The raw JSON log content.
+
+    Returns:
+        Optional[List[Dict[str, Any]]]: A list of log entries if successful, None otherwise.
+    """
     try:
         logs = []
         data = json.loads(log_content)
@@ -198,9 +238,15 @@ def parse_log_content(log_content:str)->Optional[list]:
         logging.getLogger(__name__).error(f"Error decoding JSON: {e}")
         return None
 
-def get_logging_level(debug_level):
+def get_logging_level(debug_level: str) -> int:
     """
-    Configure logging level based on the provided debug_level string.
+    Configures the logging level based on the provided debug_level string.
+
+    Args:
+        debug_level (str): The level name (e.g., 'DEBUG', 'INFO').
+
+    Returns:
+        int: The corresponding logging level constant.
     """
     log_levels = {
         "DEBUG": logging.DEBUG,
@@ -213,13 +259,17 @@ def get_logging_level(debug_level):
     level = log_levels.get(debug_level.upper(), logging.ERROR)
     return level
 
-def store_trajectories_to_jsonl(trajectories:list, dir:str, filename:str)->None:
+def store_trajectories_to_jsonl(trajectories: Any, dir: str, filename: str) -> None:
     """
-    Store trajectories to a JSONL file.
+    Stores trajectories to a JSONL file.
+
     Args:
-        trajectories (list): List of trajectory data to store.
+        trajectories (Any): The trajectory data to store (usually a dict or list).
         dir (str): Directory where the file will be stored.
         filename (str): Name of the file (without extension).
+
+    Returns:
+        None
     """
     # make sure the directory exists
     if not os.path.exists(dir):
@@ -230,13 +280,15 @@ def store_trajectories_to_jsonl(trajectories:list, dir:str, filename:str)->None:
     with jsonlines.open(filename, "a") as writer:
         writer.write(trajectories)
 
-def read_trajectories_from_jsonl(filepath:str)->list:
+def read_trajectories_from_jsonl(filepath: str) -> List[Any]:
     """
-    Read trajectories from a JSONL file.
+    Reads trajectories from a JSONL file.
+
     Args:
         filepath (str): Path to the JSONL file.
+
     Returns:
-        list: List of trajectories read from the file.
+        List[Any]: A list of trajectories read from the file.
     """
     raise NotImplementedError("This function is not yet implemented.")
 
@@ -245,6 +297,7 @@ def generate_valid_actions(state: GameState, include_blocks=False)->Set[Action]:
     Args:
         state (GameState): The current game state.
         include_blocks (bool): Whether to include BlockIP actions. Defaults to False.
+
     Returns:
         set: A set of valid Action objects.    
     """

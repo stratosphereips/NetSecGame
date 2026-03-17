@@ -115,12 +115,12 @@ class IP():
         """
         return cls(**data)
     
-    def __hash__(self)->int:
+    def __hash__(self) -> int:
         """
         Compute the hash of the IP.
 
         Returns:
-            hash: The hash value.
+            int: The hash value.
         """
         return hash(self.ip)
 
@@ -877,10 +877,10 @@ class AgentRole(str, enum.Enum):
         Compare AgentRole with another AgentRole or string.
 
         Args:
-             other (object): The object to compare.
+            other (object): The object to compare.
 
         Returns:
-             bool: True if equal, False otherwise.
+            bool: True if equal, False otherwise.
         """
         if isinstance(other, AgentRole):
              return self.value == other.value

@@ -6,11 +6,16 @@ nav:
   - Home: index.md
   - Architecture: architecture.md
   - Configuration: configuration.md
-  - API Reference: 
+  - Documentation: 
     - game_components.md
-    - game_coordinator.md
     - agent_server.md
     - configuration_manager.md
+    - config_parser.md
+    - game_coordinator.md
+    - worlds:
+      - NetSecGame.md
+      - WhiteBoxNetSecGame.md
+      
 
 plugins:
   - mkdocstrings:
@@ -20,11 +25,11 @@ plugins:
           options:
             heading_level: 2
             show_root_heading: true
-            show_signature: true
+            show_signature: false
             show_source: true
             members_order: alphabetical
             merge_init_into_class: true
-
+            filters: []
 markdown_extensions:
   - pymdownx.arithmatex
   - pymdownx.superfences

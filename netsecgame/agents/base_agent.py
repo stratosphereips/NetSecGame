@@ -14,7 +14,15 @@ class BaseAgent(ABC):
     Basic agent for the network based NetSecGame environment. Implemenets communication with the game server.
     """
 
-    def __init__(self, host, port, role:str)->None:
+    def __init__(self, host, port, role:AgentRole)->None:
+        """
+        Initializes the BaseAgent and connects it to the game server.
+
+        Args:
+            host (str): The host where the game server is running.
+            port (int): The port where the game server is running.
+            role (AgentRole): The assigned role of the agent (e.g., Attacker, Defender).
+        """
         self._connection_details = (host, port)
         self._logger = logging.getLogger(self.__class__.__name__)
         self._role = role
@@ -53,7 +61,8 @@ class BaseAgent(ABC):
         return self._role
     
     @property
-    def logger(self)->logging.Logger:
+    def logger(self) -> logging.Logger:
+        """Returns the logger instance for this agent."""
         return self._logger
 
     def make_step(self, action: Action) -> Optional[Observation]:
@@ -76,26 +85,30 @@ class BaseAgent(ABC):
         else:
             return None
     
-    def communicate(self, data:Action)-> Tuple[GameStatus, Dict[str, Any], Optional[str]]:
+    def communicate(self, data: Action) -> Tuple[GameStatus, Dict[str, Any], Optional[str]]:
         """
         Exchanges data with the server and returns the server's response.
-        This method sends an `Action` object to the server and waits for a response.
+
+        Sends an `Action` object to the server and waits for a response.
         The response is expected to be a JSON-encoded string containing status, observation, and message fields.
-        The method returns a tuple containing the parsed status, observation, and message.
+
         Args:
-            data (Action): The action to send to the server. Must be an instance of `Action`.
+            data (Action): The action to send to the server.
+
         Returns:
-            tuple: A tuple containing:
-                - status (GameStatus): The status object parsed from the server response.
-                - observation (dict): The observation data from the server.
-                - message (str or None): An optional message from the server.
+            Tuple[GameStatus, Dict[str, Any], Optional[str]]: A tuple containing:
+                - status (GameStatus): The status parsed from the server response.
+                - observation (Dict[str, Any]): The observation data from the server.
+                - message (Optional[str]): An optional message from the server.
+
         Raises:
             ValueError: If `data` is not of type `Action`.
-            ConnectionError: If the server response is incomplete or missing the end-of-message marker.
-            Exception: If there is an error sending data to the server.
+            ConnectionError: If the server response is incomplete.
+            Exception: If there is an error during communication.
         """
 
-        def _send_data(socket, msg:str)->None:
+        def _send_data(socket: socket.socket, msg: str) -> None:
+            """Internal method to send data over the socket."""
             try:
                 self._logger.debug(f'Sending: {msg}')
                 socket.sendall(msg.encode())
@@ -103,10 +116,8 @@ class BaseAgent(ABC):
                 self._logger.error(f'Exception in _send_data(): {e}')
                 raise e
             
-        def _receive_data(socket)->Tuple[GameStatus, Dict[str, Any], Optional[str]]:
-            """
-            Receive data from server
-            """
+        def _receive_data(socket: socket.socket) -> Tuple[GameStatus, Dict[str, Any], Optional[str]]:
+            """Internal method to receive data from the socket."""
             # Receive data from the server
             data = b""  # Initialize an empty byte string
 
@@ -139,16 +150,12 @@ class BaseAgent(ABC):
         _send_data(self._socket, data)
         return _receive_data(self._socket)
     
-    def register(self)->Optional[Observation]:
+    def register(self) -> Optional[Observation]:
         """
-        Method for registering agent to the game server.
-        Classname is used as agent name and the role is based on the 'role' argument.
-        Returns initial observation if registration was successful, None otherwise.
+        Registers the agent with the game server.
 
-        Args:
-            role (str): Role of the agent, either 'attacker' or 'defender'.
         Returns:
-            Observation: Initial observation if registration was successful, None otherwise.
+            Optional[Observation]: Initial observation if successful, None otherwise.
         """
         try:
             self._logger.info(f'Registering agent as {self.role}')

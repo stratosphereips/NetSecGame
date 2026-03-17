@@ -69,7 +69,6 @@ coordinator:
       max_steps: 25 # timout set for the role `Attacker`
       goal: # Definition of the goal state
         description: "Exfiltrate data from Samba server to remote C&C server."
-        is_any_part_of_goal_random: True
         known_networks: []
         known_hosts: []
         controlled_hosts: []
@@ -87,7 +86,6 @@ coordinator:
     Defender:
       goal:
         description: "Block all attackers"
-        is_any_part_of_goal_random: False
         known_networks: []
         known_hosts: []
         controlled_hosts: []
@@ -127,7 +125,7 @@ With the configuration ready the environment can be started in selected port
 docker run -d --rm --name nsg-server\
   -v $(pwd)/examples/example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml \
   -v $(pwd)/logs:/netsecgame/logs \
-  -p 9000:9000 stratosphereips/netsecgame
+  -p 9000:9000 stratosphereips/netsecgame \
   --debug_level="INFO"
 ```
 `--name nsg-server`: specifies the name of the container
@@ -146,7 +144,7 @@ docker run -d --rm --name netsecgame-server ^
   -p 9000:9000 ^
   -v "%cd%\examples\example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml" ^
   -v "%cd%\logs:/netsecgame/logs" ^
-  stratosphereips/netsecgame:latest
+  stratosphereips/netsecgame:latest ^
   --debug_level="INFO"
 ```
 
@@ -155,7 +153,7 @@ The environment can be started locally with from the root folder of the reposito
 ```bash
 python3 -m netsecgame.game.worlds.NetSecGame \
   --task_config=./examples/example_task_configuration.yaml \
-  --game_port=9000
+  --game_port=9000 \
   --debug_level="INFO"
 ```
 Upon which the game server is created on `localhost:9000` to which the agents can connect to interact in the NetSecGame.
@@ -164,7 +162,7 @@ Upon which the game server is created on `localhost:9000` to which the agents ca
 You can find user documentation at [https://stratosphereips.github.io/NetSecGame/](https://stratosphereips.github.io/NetSecGame/)
 
 ### Components of the NetSecGame Environment
-The architecture of the environment can be seen [here](docs/Architecture.md).
+The architecture of the environment can be seen [here](docs/architecture.md).
 The NetSecGame environment has several components in the following files:
 ```
 ├── netsecgame/
@@ -176,6 +174,10 @@ The NetSecGame environment has several components in the following files:
 |		    ├── smaller_scenario_configuration.py
 |		    ├── scenario_configuration.py
 |		    ├── three_net_scenario.py
+|		    ├── two_nets.py
+|		    ├── two_nets_tiny.py
+|		|   ├── two_nets_small.py
+|		|   ├── one_net.py
 |		├── worlds/
 |   		├── NetSecGame.py # (NSG) basic simulation 
 |   		├── RealWorldNetSecGame.py # Extension of `NSG` - runs actions in the *network of the host computer*
@@ -190,8 +192,9 @@ The NetSecGame environment has several components in the following files:
 |	├── utils/
 |		├── utils.py
 |		├── log_parser.py
-|		├── gamaplay_graphs.py
+|		├── gameplay_graphs.py
 |		├── actions_parser.py
+|		├── trajectory_recorder.py
 
 ```
 #### Directory Details
@@ -204,6 +207,7 @@ Modules for different world configurations:
 - `NetSecGame.py`: Coordinator for the Network Security Game.
 - `RealWorldNetSecGame.py`: Real-world NSG coordinator (actions are executed in the *real network*).
 - `CYSTCoordinator.py`: Coordinator for CYST-based simulations (requires CYST running).
+- `WhiteBoxNetSecGame.py`: Coordinator for Whitebox NSG (full action list provided to agents).
 
 ##### **`scenarios/`**
 Predefined scenario configurations:
@@ -211,6 +215,10 @@ Predefined scenario configurations:
 - `smaller_scenario_configuration.py`: A compact scenario configuration used for development and rapid testing.
 - `scenario_configuration.py`: The main scenario configuration.
 - `three_net_scenario.py`: Configuration for a three-network scenario. Used for the evaluation of the model overfitting.
+- `one_net.py`: A single network scenario.
+- `two_nets.py`: A two-network scenario.
+- `two_nets_tiny.py`: A tiny two-network scenario.
+- `two_nets_small.py`: A small two-network scenario.
 
 Implements the network game's configuration of hosts, data, services, and connections. It is taken from [CYST](https://pypi.org/project/cyst/).
 
@@ -218,15 +226,16 @@ Implements the network game's configuration of hosts, data, services, and connec
 Helper modules:
 - `utils.py`: General-purpose utilities.
 - `log_parser.py`: Tools for parsing game logs.
-- `gamaplay_graphs.py`: Tools for visualizing gameplay data.
+- `gameplay_graphs.py`: Tools for visualizing gameplay data.
 - `actions_parser.py`: Parsing and analyzing game actions.
+- `trajectory_recorder.py`: Tools for recording game trajectories.
 
 The [scenarios](#definition-of-the-network-topology) define the **topology** of a network (number of hosts, connections, networks, services, data, users, firewall rules, etc.) while the [task-configuration](#task-configuration) is to be used for definition of the exact task for the agent in one of the scenarios (with fix topology).
 - Agents compatible with the NetSecGame are located in a separate repository [NetSecGameAgents](https://github.com/stratosphereips/NetSecGameAgents/tree/main)
 
 ### Assumptions of the NetSecGame
 1. NetSecGame works with the closed-world assumption. Only the defined entities exist in the simulation.
-2. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
+2. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the attacker.
 (From commit d6d4ac9, July 18th, 2024, the new action BlockIP removes controlled hosts from the state of others. So the state can get smaller)
 
 - The action FindServices finds the new services in a host. If in a subsequent call to FindServices there are fewer services, they completely replace the list of previous services found. That is, each list of services is the final one, and no memory of previous open services is retained.
@@ -238,7 +247,7 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
 5. Playing `Find Services` can be used to discover hosts (if those have any active services)
 6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_newtworks`/`known_hosts`)
-7. The `BlockIP` action needs its three parameters (Source host, Target host, and Blocked host) to be in the controlled list of the Agent. 
+7. The `BlockIP` action needs its `source_host` and  `target_host` parameters to be in the controlled list of the Agent. 
 
 > [!NOTE]  
 > The global defender, available in the previous environment versions, will not be supported in the future. To enable backward compatibility, the global defender functionality can be enabled by adding `use_global_defender: True` to the configuration YAML file in the `env` section. This option is disabled by default.
@@ -319,7 +328,7 @@ This approach ensures that only repeated or excessive behavior is flagged, reduc
 
 
 ### Interaction with the Environment
-When the game server is created, [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main) connect to it and interact with the environment. In every step of the interaction, agents submits an [Action](./AIDojoCoordinator/docs/Components.md#actions) and receive [Observation](./AIDojoCoordinator/docs/Components.md#observations) with `next_state`, `reward`, `is_terminal`, `end`, and `info` values. Once the terminal state or timeout is reached, no more interaction is possible until the agent asks for a game reset. Each agent should extend the `BaseAgent` class in [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
+When the game server is created, [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main) connect to it and interact with the environment. In every step of the interaction, agents submits an [Action](./docs/game_components.md#netsecgame.game_components.Action) and receive [Observation](./docs/game_components.md#netsecgame.game_components.Observation) with `next_state`, `reward`, `is_terminal`, `end`, and `info` values. Once the terminal state or timeout is reached, no more interaction is possible until the agent asks for a game reset. Each agent should extend the `BaseAgent` class in [agents](https://github.com/stratosphereips/NetSecGameAgents/tree/main).
 
 ## Testing the environment
 

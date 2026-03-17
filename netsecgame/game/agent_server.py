@@ -1,5 +1,6 @@
 import logging
 import asyncio
+from typing import Dict, Tuple
 from netsecgame.game_components import Action, ActionType, ProtocolConfig
 
 class AgentServer(asyncio.Protocol):
@@ -13,14 +14,17 @@ class AgentServer(asyncio.Protocol):
         current_connections (int): Current number of connected agents.
         logger (logging.Logger): Logger for the AgentServer.
     """
-    def __init__(self, actions_queue, agent_response_queues, max_connections):
+    def __init__(self, actions_queue: asyncio.Queue, agent_response_queues: Dict[Tuple, asyncio.Queue], max_connections: int) -> None:
         """
         Initialize the AgentServer.
 
         Args:
             actions_queue (asyncio.Queue): Queue for actions from agents.
-            agent_response_queues (dict): Mapping of agent addresses to their response queues.
+            agent_response_queues (Dict[Tuple, asyncio.Queue]): Mapping of agent addresses to their response queues.
             max_connections (int): Maximum allowed concurrent agent connections.
+
+        Returns:
+            None
         """
         self.actions_queue = actions_queue
         self.answers_queues = agent_response_queues
@@ -28,25 +32,31 @@ class AgentServer(asyncio.Protocol):
         self.current_connections = 0
         self.logger = logging.getLogger("AgentServer")
     
-    async def handle_agent_quit(self, peername:tuple):
+    async def handle_agent_quit(self, peername: Tuple) -> None:
         """
         Helper function to handle agent disconnection.
 
         Args:
-            peername (tuple): The address of the disconnecting agent.
+            peername (Tuple): The address of the disconnecting agent.
+
+        Returns:
+            None
         """
         # Send a quit message to the Coordinator
         self.logger.info(f"\tHandling agent quit for {peername}.")
         quit_message = Action(ActionType.QuitGame, parameters={}).to_json()
         await self.actions_queue.put((peername, quit_message))
         
-    async def handle_new_agent(self, reader, writer):
+    async def handle_new_agent(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         """
         Handle a new agent connection.
 
         Args:
             reader (asyncio.StreamReader): Stream reader for the agent.
             writer (asyncio.StreamWriter): Stream writer for the agent.
+
+        Returns:
+            None
         """
         # get the peername of the writer
         peername = writer.get_extra_info("peername")
@@ -113,12 +123,15 @@ class AgentServer(asyncio.Protocol):
             except Exception:
                 # swallow exceptions on close to avoid crash on cleanup
                 pass
-    async def __call__(self, reader, writer):
+    async def __call__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         """
         Allow the server instance to be called as a coroutine.
 
         Args:
             reader (asyncio.StreamReader): Stream reader for the agent.
             writer (asyncio.StreamWriter): Stream writer for the agent.
+
+        Returns:
+            None
         """
         await self.handle_new_agent(reader, writer)
