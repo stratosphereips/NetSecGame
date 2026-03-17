@@ -45,7 +45,7 @@ Each data instance has two parameters:
 Examples:
 ```python
 d1 = Data("User1", "DatabaseData")
-d2 = Data("User1", "DatabaseData", size=42, type="txt", "SecretUserDatabase")
+d2 = Data("User1", "DatabaseData", size=42, type="txt", description="SecretUserDatabase")
 ```
 
 ### GameState
@@ -74,13 +74,13 @@ The Action consists of two parts
 #### List of ActionTypes
 - **JoinGame**, params={`agent_info`:AgentInfo(`<name>`, `<role>`)}: Used to register agent in a game with a given `<role>`.
 - **QuitGame**, params={}: Used for termination of agent's interaction.
-- **ResetGame**, params={`request_trajectory`:`bool` (default=`False`),  `randomize_topology`=`bool` (default=`True`)}: Used for requesting reset of the game to it's initial position. If `request_trajectory = True`, the coordinator will send back the complete trajectory of the previous run in the next message. If `randomize_topology`=`True`, the agent request topology to be changed in the next episode. NOTE: the topology is changed only if (i) the `use_dynamic_ips` is set to `True` in the task configuration AND all active agents ask for the change.
+- **ResetGame**, params={`request_trajectory`:`bool` (default=`False`),  `randomize_topology`=`bool` (default=`True`)}: Used for requesting reset of the game to its initial position. If `request_trajectory = True`, the coordinator will send back the complete trajectory of the previous run in the next message. If `randomize_topology`=`True`, the agent request topology to be changed in the next episode. NOTE: the topology is changed only if (i) the `use_dynamic_addresses` is set to `True` in the task configuration AND all active agents ask for the change.
 ---
 - **ScanNetwork**, params{`source_host`:`<IP>`, `target_network`:`<Network>`}: Scans the given `<Network>` from a specified source host. Discovers ALL hosts in a network that are accessible from `<IP>`. If successful, returns set of discovered `<IP>` objects.
 - **FindServices**, params={`source_host`:`<IP>`, `target_host`:`<IP>`}: Used to discover ALL services running in the `target_host` if the host is accessible from `source_host`. If successful, returns a set of all discovered `<Service>` objects.
-- **FindData**, params={`source_host`:`<IP>`, `target_host`:`<IP>`}: Searches `target_host` for data. If `source_host` differs from `target_host`, success depends on accessability from the `source_host`. If successful, returns a set of all discovered `<Data>` objects.
+- **FindData**, params={`source_host`:`<IP>`, `target_host`:`<IP>`}: Searches `target_host` for data. If `source_host` differs from `target_host`, success depends on accessibility from the `source_host`. If successful, returns a set of all discovered `<Data>` objects.
 - **ExploitService**, params={`source_host`:`<IP>`, `target_host`:`<IP>`, `target_service`:`<Service>`}: Exploits `target_service` in a specified `target_host`. If successful, the attacker gains control of the `target_host`.
-- **ExfiltrateData**, params{`source_host`:`<IP>`, `target_host`:`<IP>`, `data`:`<IP>`}: Copies `data` from the `source_host` to `target_host` IF both are controlled and `target_host` is accessible from `source_host`.
+- **ExfiltrateData**, params{`source_host`:`<IP>`, `target_host`:`<IP>`, `data`:`<Data>`}: Copies `data` from the `source_host` to `target_host` IF both are controlled and `target_host` is accessible from `source_host`.
 - **BlockIP**, params{`source_host`:`<IP>`, `target_host`:`<IP>`, `blocked_host`:`<IP>`}: Blocks communication from/to `blocked_host` on `target_host`. Requires control of `target_host`.
 
 ### Action preconditions and effects
@@ -97,8 +97,8 @@ In the following table, we describe the effects of selected actions and their pr
 
 #### Assumption and Conditions for Actions
 1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
-2. The `Find Data` action finds all the available data in the host if successful.
-3. The `Find Data` action requires ownership of the target host.
+2. The `FindData` action finds all the available data in the host if successful.
+3. The `FindData` action requires ownership of the target host.
 4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
 5. Playing `Find Services` can be used to discover hosts (if those have any active services)
 6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_networks`/`known_hosts`)
