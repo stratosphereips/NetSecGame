@@ -155,7 +155,7 @@ class WhiteBoxNetSecGame(NetSecGame):
         """
         return super()._create_state_from_view(view, add_neighboring_nets=add_neighboring_nets)
 
-    def _dynamic_ip_change(self, max_attempts: int = 10) -> None:
+    def _dynamic_ip_change(self, max_attempts: int = 10, seed=None) -> None:
         """
         Dynamic IP change is not supported for WhiteBoxNetSecGame.
 
