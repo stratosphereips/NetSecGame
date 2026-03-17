@@ -6,9 +6,9 @@ import os
 import json
 import warnings
 from pathlib import Path
-from typing import Iterable, Any, Set, Dict, Optional, Tuple, List
+from typing import Any, Dict, Optional, List
 from netsecgame.utils.utils import get_logging_level
-from netsecgame.game_components import GameState, Action, ActionType, Service, IP
+from netsecgame.game_components import GameState, Action, ActionType
 from netsecgame.game.worlds.NetSecGame import NetSecGame
 
 
@@ -49,7 +49,7 @@ class WhiteBoxNetSecGame(NetSecGame):
         } if self._all_actions is not None else {}
 
 
-    def _generate_all_actions(self)-> list[Action]:
+    def _generate_all_actions(self)-> List[Action]:
         """
         Generates a list of all possible actions for the game.
 
