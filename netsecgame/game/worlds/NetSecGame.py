@@ -55,8 +55,7 @@ class NetSecGame(GameCoordinator):
         self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
         self._networks = {} # A `dict` of the networks present in the environment. Keys: `Network` objects, values `set` of `IP` objects.
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
-        self._data = {} # Dict of all services in the environment. Keys: hostname (`str`), values `set` of `Service` objetcs.
-        self._data_content = {} # ??? Not sure. Added by by sebas to fix error in reading config file
+        self._data_content = {}
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
         self._fw_blocks = {}
         self._agent_fw_rules = {}
@@ -105,8 +104,8 @@ class NetSecGame(GameCoordinator):
         # Load CYST configuration
         if self._cyst_objects is not None:
             self._process_cyst_config(self._cyst_objects)
-                    # Check if dynamic network and ip adddresses are required
-            if self._use_dynamic_ips:
+                    # Check if dynamic network and ip addresses are required
+            if self._use_dynamic_addresses:
                 self.logger.info("Dynamic change of the IP and network addresses enabled")
                 self._faker_object = Faker()
                 Faker.seed(self._seed)  
@@ -1403,7 +1402,7 @@ class NetSecGame(GameCoordinator):
         if seed is not None:
             self._set_random_seed(seed)
 
-        if self.config_manager.get_use_dynamic_ips(): #topology change is allowed
+        if self.config_manager.get_use_dynamic_addresses(): #topology change is allowed
             if topology_change: # agents agree on topology change
                 self._dynamic_ip_change(seed=seed)
         # reset self._data to orignal state

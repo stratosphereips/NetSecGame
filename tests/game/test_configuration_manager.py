@@ -130,7 +130,7 @@ def test_accessors_without_load(manager_local):
         manager_local.get_max_steps("Attacker")
         
     with pytest.raises(RuntimeError, match="Configuration not loaded."):
-        manager_local.get_use_dynamic_ips()
+        manager_local.get_use_dynamic_addresses()
 
 @pytest.fixture
 def loaded_manager():

@@ -186,13 +186,13 @@ class ConfigurationManager:
             self.logger.warning("Success reward is negative. This is not recommended.")
         return rewards
         
-    def get_use_dynamic_ips(self, default_value: bool = False) -> bool:
-        """Returns the use dynamic ips configuration.
+    def get_use_dynamic_addresses(self, default_value: bool = False) -> bool:
+        """Returns the use dynamic addresses configuration.
         Args:
-            default_value (bool): The default value for the use dynamic ips.
+            default_value (bool): The default value for the use dynamic addresses.
 
         Returns:
-            bool: The use dynamic ips configuration.
+            bool: The use dynamic addresses configuration.
         """
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
