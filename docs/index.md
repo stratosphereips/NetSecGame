@@ -13,7 +13,7 @@ docker build -t netsecgame:local .
 ```
 
 ### Installing from source
-In case you need to modify the envirment and run directly, we recommed to insall it in a virtual environemnt (Python vevn or Conda):
+In case you need to modify the environment and run directly, we recommend installing it in a virtual environment (Python venv or Conda):
 #### Python venv
 1. Create new virtual environment
 ```bash
@@ -34,7 +34,7 @@ conda create --name aidojo python==3.12
 conda activate aidojo
 ```
 
-### After preparing virutual environment, install using pip:
+### After preparing virtual environment, install using pip:
 ```bash
 pip install -e .
 ```
@@ -89,13 +89,13 @@ coordinator:
         blocked_ips: {}
         known_blocks: {}
 
-env: # Environment configuraion
+env: # Environment configuration
   scenario: 'two_networks_tiny' # use the smallest topology for this example
   use_global_defender: False # Do not use global SIEM Defender
   use_dynamic_addresses: False # Do not randomize IP addresses
   use_firewall: True # Use firewall
   save_trajectories: False # Do not store trajectories
-  required_players: 1 # Minimal amount of agents requiered to start the game
+  required_players: 1 # Minimal number of agents required to start the game
   rewards: # Configurable reward function
     success: 100
     step: -1
@@ -120,7 +120,7 @@ docker run -d --rm --name nsg-server\
 
 ` -p <selected-port>:9000`: Mapping of the port in which the server runs
 
-`--debug_level` is an optional parameter to control the logging level `--debug_level=["DEBUG", "INFO", "WARNING", "CRITICAL"]` (defaul=`"INFO"`):
+`--debug_level` is an optional parameter to control the logging level `--debug_level=["DEBUG", "INFO", "WARNING", "CRITICAL"]` (default=`"INFO"`):
 ##### Running on Windows (with Docker desktop)
 When running on Windows, Docker desktop is required.
 ```batch
@@ -133,7 +133,7 @@ docker run -d --rm --name netsecgame-server ^
 ```
 
 #### Locally
-The environment can be started locally with from the root folder of the repository with following command:
+The environment can be started locally from the root folder of the repository with the following command:
 ```bash
 python3 -m netsecgame.game.worlds.NetSecGame \
   --task_config=./examples/example_task_configuration.yaml \
@@ -147,7 +147,7 @@ The NetSecGame has several components in the following files:
 ```
 ├── netsecgame/
 |	├── agents/
-|		├── base_agent.py # Basic agent class. Defines the API for agent-server communication
+|		├── base_agent.py # Basic agent class. Implements the API for agent-server communication
 |	├── game/
 |		├── scenarios/
 |		    ├── three_net_scenario.py
