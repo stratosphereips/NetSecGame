@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Iterable
 from aiohttp import ClientSession
 
 from netsecgame.game.config_parser import ConfigParser
