@@ -6,13 +6,16 @@ nav:
   - Home: index.md
   - Architecture: architecture.md
   - Configuration: configuration.md
-  - API Reference: 
-    - agent_server.md
+  - Documentation: 
     - game_components.md
+    - agent_server.md
     - configuration_manager.md
     - config_parser.md
     - game_coordinator.md
-    - worlds.md
+    - worlds:
+      - NetSecGame.md
+      - WhiteBoxNetSecGame.md
+      
 
 plugins:
   - mkdocstrings:
