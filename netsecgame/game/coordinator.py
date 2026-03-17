@@ -6,7 +6,7 @@ import uuid
 import signal
 import os
 from datetime import datetime
-from typing import Optional, Dict, Any, List, Set, Tuple, Coroutine
+from typing import Optional, Dict, Any, Set, Tuple, Coroutine
 from netsecgame.game_components import Action, Observation, ActionType, GameStatus, GameState, AgentStatus, AgentRole
 from netsecgame.game.global_defender import GlobalDefender
 from netsecgame.utils.utils import observation_as_dict,store_trajectories_to_jsonl
