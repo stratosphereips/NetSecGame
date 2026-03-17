@@ -235,7 +235,7 @@ The [scenarios](#definition-of-the-network-topology) define the **topology** of 
 
 ### Assumptions of the NetSecGame
 1. NetSecGame works with the closed-world assumption. Only the defined entities exist in the simulation.
-2. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the defender. The reward is a penalty, and the game ends.
+2. If the attacker does a successful action in the same step that the defender successfully detects the action, the priority goes to the attacker.
 (From commit d6d4ac9, July 18th, 2024, the new action BlockIP removes controlled hosts from the state of others. So the state can get smaller)
 
 - The action FindServices finds the new services in a host. If in a subsequent call to FindServices there are fewer services, they completely replace the list of previous services found. That is, each list of services is the final one, and no memory of previous open services is retained.
