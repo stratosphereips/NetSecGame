@@ -278,10 +278,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#after-preparing-virutual-environment-install-using-pip" class="md-nav__link">
+  <a href="#after-preparing-virtual-environment-install-using-pip" class="md-nav__link">
     <span class="md-ellipsis">
       
-        After preparing virutual environment, install using pip:
+        After preparing virtual environment, install using pip:
       
     </span>
   </a>
@@ -486,7 +486,7 @@
   <span class="md-ellipsis">
     
   
-    API Reference
+    Documentation
   
 
     
@@ -502,7 +502,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    API Reference
+    Documentation
   
 
           </label>
@@ -522,7 +522,91 @@
   <span class="md-ellipsis">
     
   
-    Game components
+    Game Components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="agent_server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="configuration_manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration manager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="config_parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config parser
   
 
     
@@ -570,15 +654,62 @@
   
   
   
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    worlds
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    worlds
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="agent_server/" class="md-nav__link">
+      <a href="NetSecGame/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Agent server
+    NetSecGame
   
 
     
@@ -599,14 +730,14 @@
   
   
     <li class="md-nav__item">
-      <a href="configuration_manager/" class="md-nav__link">
+      <a href="WhiteBoxNetSecGame/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Configuration manager
+    WhiteBoxNetSecGame
   
 
     
@@ -615,6 +746,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -716,10 +855,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#after-preparing-virutual-environment-install-using-pip" class="md-nav__link">
+  <a href="#after-preparing-virtual-environment-install-using-pip" class="md-nav__link">
     <span class="md-ellipsis">
       
-        After preparing virutual environment, install using pip:
+        After preparing virtual environment, install using pip:
       
     </span>
   </a>
@@ -865,7 +1004,7 @@
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>netsecgame:local<span class="w"> </span>.
 </code></pre></div></p>
 <h3 id="installing-from-source">Installing from source</h3>
-<p>In case you need to modify the envirment and run directly, we recommed to insall it in a virtual environemnt (Python vevn or Conda):</p>
+<p>In case you need to modify the environment and run directly, we recommend installing it in a virtual environment (Python venv or Conda):</p>
 <h4 id="python-venv">Python venv</h4>
 <ol>
 <li>Create new virtual environment
@@ -884,7 +1023,7 @@
 <div class="highlight"><pre><span></span><code>conda<span class="w"> </span>activate<span class="w"> </span>aidojo
 </code></pre></div></li>
 </ol>
-<h3 id="after-preparing-virutual-environment-install-using-pip">After preparing virutual environment, install using pip:</h3>
+<h3 id="after-preparing-virtual-environment-install-using-pip">After preparing virtual environment, install using pip:</h3>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </code></pre></div>
 <h2 id="quick-start">Quick Start</h2>
@@ -902,7 +1041,6 @@
 <span class="w">      </span><span class="nt">max_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">25</span><span class="w"> </span><span class="c1"># timout set for the role `Attacker`</span>
 <span class="w">      </span><span class="nt">goal</span><span class="p">:</span><span class="w"> </span><span class="c1"># Definition of the goal state</span>
 <span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Exfiltrate</span><span class="nv"> </span><span class="s">data</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">Samba</span><span class="nv"> </span><span class="s">server</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">remote</span><span class="nv"> </span><span class="s">C&amp;C</span><span class="nv"> </span><span class="s">server.&quot;</span>
-<span class="w">        </span><span class="nt">is_any_part_of_goal_random</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
 <span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
@@ -920,7 +1058,6 @@
 <span class="w">    </span><span class="nt">Defender</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">goal</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Block</span><span class="nv"> </span><span class="s">all</span><span class="nv"> </span><span class="s">attackers&quot;</span>
-<span class="w">        </span><span class="nt">is_any_part_of_goal_random</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
@@ -937,13 +1074,13 @@
 <span class="w">        </span><span class="nt">blocked_ips</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 <span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 
-<span class="nt">env</span><span class="p">:</span><span class="w"> </span><span class="c1"># Environment configuraion</span>
+<span class="nt">env</span><span class="p">:</span><span class="w"> </span><span class="c1"># Environment configuration</span>
 <span class="w">  </span><span class="nt">scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;two_networks_tiny&#39;</span><span class="w"> </span><span class="c1"># use the smallest topology for this example</span>
 <span class="w">  </span><span class="nt">use_global_defender</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span><span class="w"> </span><span class="c1"># Do not use global SIEM Defender</span>
 <span class="w">  </span><span class="nt">use_dynamic_addresses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span><span class="w"> </span><span class="c1"># Do not randomize IP addresses</span>
 <span class="w">  </span><span class="nt">use_firewall</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span><span class="w"> </span><span class="c1"># Use firewall</span>
 <span class="w">  </span><span class="nt">save_trajectories</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span><span class="w"> </span><span class="c1"># Do not store trajectories</span>
-<span class="w">  </span><span class="nt">required_players</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"> </span><span class="c1"># Minimal amount of agents requiered to start the game</span>
+<span class="w">  </span><span class="nt">required_players</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"> </span><span class="c1"># Minimal number of agents required to start the game</span>
 <span class="w">  </span><span class="nt">rewards</span><span class="p">:</span><span class="w"> </span><span class="c1"># Configurable reward function</span>
 <span class="w">    </span><span class="nt">success</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
 <span class="w">    </span><span class="nt">step</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1</span>
@@ -956,28 +1093,28 @@
 <p><div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--rm<span class="w"> </span>--name<span class="w"> </span>nsg-server<span class="se">\</span>
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/examples/example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/logs:/netsecgame/logs<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-p<span class="w"> </span><span class="m">9000</span>:9000<span class="w"> </span>stratosphereips/netsecgame
+<span class="w">  </span>-p<span class="w"> </span><span class="m">9000</span>:9000<span class="w"> </span>stratosphereips/netsecgame<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--debug_level<span class="o">=</span><span class="s2">&quot;INFO&quot;</span>
 </code></pre></div>
 <code>--name nsg-server</code>: specifies the name of the container</p>
 <p><code>-v &lt;your-configuration-yaml&gt;:/netsecgame/netsecenv_conf.yaml</code> : Mapping of the configuration file</p>
 <p><code>-v $(pwd)/logs:/netsecgame/logs</code>: Mapping of the folder where logs are stored</p>
 <p><code>-p &lt;selected-port&gt;:9000</code>: Mapping of the port in which the server runs</p>
-<p><code>--debug_level</code> is an optional parameter to control the logging level <code>--debug_level=["DEBUG", "INFO", "WARNING", "CRITICAL"]</code> (defaul=<code>"INFO"</code>):</p>
+<p><code>--debug_level</code> is an optional parameter to control the logging level <code>--debug_level=["DEBUG", "INFO", "WARNING", "CRITICAL"]</code> (default=<code>"INFO"</code>):</p>
 <h5 id="running-on-windows-with-docker-desktop">Running on Windows (with Docker desktop)</h5>
 <p>When running on Windows, Docker desktop is required.
 <div class="highlight"><pre><span></span><code>docker run -d --rm --name netsecgame-server <span class="se">^</span>
 <span class="se"> </span> -p 9000:9000 <span class="se">^</span>
 <span class="se"> </span> -v <span class="s2">&quot;</span><span class="nv">%cd%</span><span class="s2">\examples\example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml&quot;</span> <span class="se">^</span>
 <span class="se"> </span> -v <span class="s2">&quot;</span><span class="nv">%cd%</span><span class="s2">\logs:/netsecgame/logs&quot;</span> <span class="se">^</span>
-<span class="se"> </span> stratosphereips/netsecgame:latest
+<span class="se"> </span> stratosphereips/netsecgame:latest \
   --debug_level=<span class="s2">&quot;INFO&quot;</span>
 </code></pre></div></p>
 <h4 id="locally">Locally</h4>
-<p>The environment can be started locally with from the root folder of the repository with following command:
+<p>The environment can be started locally from the root folder of the repository with the following command:
 <div class="highlight"><pre><span></span><code>python3<span class="w"> </span>-m<span class="w"> </span>netsecgame.game.worlds.NetSecGame<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--task_config<span class="o">=</span>./examples/example_task_configuration.yaml<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--game_port<span class="o">=</span><span class="m">9000</span>
+<span class="w">  </span>--game_port<span class="o">=</span><span class="m">9000</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--debug_level<span class="o">=</span><span class="s2">&quot;INFO&quot;</span>
 </code></pre></div>
 Upon which the game server is created on <code>localhost:9000</code> to which the agents can connect to interact in the NetSecGame.</p>
@@ -985,7 +1122,7 @@ Upon which the game server is created on <code>localhost:9000</code> to which th
 <p>The NetSecGame has several components in the following files:
 <div class="highlight"><pre><span></span><code>├── netsecgame/
 |   ├── agents/
-|       ├── base_agent.py # Basic agent class. Defines the API for agent-server communication
+|       ├── base_agent.py # Basic agent class. Implements the API for agent-server communication
 |   ├── game/
 |       ├── scenarios/
 |           ├── three_net_scenario.py
@@ -1009,7 +1146,9 @@ Upon which the game server is created on <code>localhost:9000</code> to which th
 |       ├── trajectory_recorder.py
 |       ├── trajectory_analysis.py
 |       ├── aidojo_log_colorizer.py
-|       ├── gamaplay_graphs.py
+|       ├── gameplay_graphs.py
+|       ├── actions_parser.py
+|       ├── log_parser.py
 </code></pre></div>
 Some compoments are described in detail in following sections:</p>
 <ul>

@@ -389,7 +389,7 @@
   <span class="md-ellipsis">
     
   
-    API Reference
+    Documentation
   
 
     
@@ -405,7 +405,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    API Reference
+    Documentation
   
 
           </label>
@@ -425,7 +425,91 @@
   <span class="md-ellipsis">
     
   
-    Game components
+    Game Components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agent_server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration_manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration manager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config_parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config parser
   
 
     
@@ -473,15 +557,62 @@
   
   
   
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    worlds
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    worlds
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../agent_server/" class="md-nav__link">
+      <a href="../NetSecGame/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Agent server
+    NetSecGame
   
 
     
@@ -502,14 +633,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration_manager/" class="md-nav__link">
+      <a href="../WhiteBoxNetSecGame/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Configuration manager
+    WhiteBoxNetSecGame
   
 
     
@@ -518,6 +649,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -677,7 +816,7 @@
 <li><code>three_net_scenario</code> - 5 clients in a local network, 5 servers split in 2 additional local networks + remote C&amp;C server</li>
 </ul>
 </li>
-<li><code>save_tajectories</code> - if <code>True</code>, interaction of the agents is serialized and stored in a file</li>
+<li><code>save_trajectories</code> - if <code>True</code>, interaction of the agents is serialized and stored in a file</li>
 <li><code>use_dynamic_addresses</code> - if <code>True</code>, the network and IP addresses defined in <code>scenario</code> are randomly changed at the beginning of an episode (the network topology is kept as defined in the <code>scenario</code>. Relations between networks are kept, IPs inside networks are chosen at random based on the network IP and mask). The change also depend on the input from the agents:</li>
 </ul>
 <h3 id="available-topologies">Available topologies</h3>
@@ -728,22 +867,22 @@
 </thead>
 <tbody>
 <tr>
-<td><code>use_dynamic_ips = True</code></td>
+<td><code>use_dynamic_addresses = True</code></td>
 <td><code>randomize_topology = True</code></td>
 <td>Changed topology</td>
 </tr>
 <tr>
-<td><code>use_dynamic_ips = True</code></td>
+<td><code>use_dynamic_addresses = True</code></td>
 <td><code>randomize_topology = False</code></td>
 <td>SAME topology</td>
 </tr>
 <tr>
-<td><code>use_dynamic_ips = False</code></td>
+<td><code>use_dynamic_addresses = False</code></td>
 <td><code>randomize_topology = True</code></td>
 <td>SAME topology</td>
 </tr>
 <tr>
-<td><code>use_dynamic_ips = False</code></td>
+<td><code>use_dynamic_addresses = False</code></td>
 <td><code>randomize_topology = False</code></td>
 <td>SAME topology</td>
 </tr>
@@ -756,7 +895,7 @@
 <li><code>required_players</code> - Minimum required players for the game to start (default 1)</li>
 <li><code>rewards</code>:<ul>
 <li><code>success</code> - sets reward which agent gets when it reaches the goal (default 100)</li>
-<li><code>fail</code> - sets the reward that which agent does not reach it's objective (default -10)</li>
+<li><code>fail</code> - sets the reward which agent gets when it does not reach its objective (default -10)</li>
 <li><code>step</code> - sets reward which agent gets for every step taken (default -1)</li>
 <li><code>false_positive</code> - sets reward for a false positive action (default -5)</li>
 </ul>
@@ -861,7 +1000,6 @@ Additionally,  if `random` keyword is used in the goal definition,
 <span class="w">            </span><span class="nt">max_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
 <span class="w">            </span><span class="nt">goal</span><span class="p">:</span>
 <span class="w">                </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Exfiltrate</span><span class="nv"> </span><span class="s">data</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">Samba</span><span class="nv"> </span><span class="s">server</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">remote</span><span class="nv"> </span><span class="s">C&amp;C</span><span class="nv"> </span><span class="s">server.&quot;</span>
-<span class="w">                </span><span class="nt">is_any_part_of_goal_random</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
 <span class="w">                </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">                </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">                </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
@@ -903,7 +1041,7 @@ Additionally,  if `random` keyword is used in the goal definition,
 <span class="w">        </span><span class="nt">blocked_ips</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 <span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 </code></pre></div>
-As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In the curent implementation, the <em>Defender</em> wins, if <strong>NO ATTACKER</strong> reaches their goal. </p>
+As in other agents, the description is only a text for the agent, so it can know what is supposed to do to win. In the current implementation, the <em>Defender</em> wins, if <strong>NO ATTACKER</strong> reaches their goal. </p>
 <h3 id="trajectory-storing-and-analysis">Trajectory storing and analysis</h3>
 <p>The trajectory is a sequence of GameStates, Actions, and rewards in one run of a game. It contains the complete information of the actions played by the agent, the rewards observed and their effect on the state of the environment.</p>
 <p>Trajectories performed by the agents can be stored in a file using the following configuration (on the server side):</p>

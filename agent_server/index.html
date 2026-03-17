@@ -9,7 +9,7 @@
       
       
       
-        <link rel="prev" href="../game_coordinator/">
+        <link rel="prev" href="../game_components/">
       
       
         <link rel="next" href="../configuration_manager/">
@@ -23,7 +23,7 @@
     
     
       
-        <title>Agent server - Network Security Game</title>
+        <title>Agent Server - Network Security Game</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#netsecgame.game.agent_server.AgentServer" class="md-skip">
+        <a href="#agent-server" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Agent server
+              Agent Server
             
           </span>
         </div>
@@ -259,7 +259,7 @@
   <span class="md-ellipsis">
     
   
-    API Reference
+    Documentation
   
 
     
@@ -275,7 +275,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    API Reference
+    Documentation
   
 
           </label>
@@ -295,35 +295,7 @@
   <span class="md-ellipsis">
     
   
-    Game components
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../game_coordinator/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Game Coordinator
+    Game Components
   
 
     
@@ -350,6 +322,8 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -358,7 +332,7 @@
   <span class="md-ellipsis">
     
   
-    Agent server
+    Agent Server
   
 
     
@@ -376,7 +350,7 @@
   <span class="md-ellipsis">
     
   
-    Agent server
+    Agent Server
   
 
     
@@ -391,6 +365,8 @@
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">
@@ -486,6 +462,173 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config_parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../game_coordinator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Game Coordinator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    worlds
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    worlds
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NetSecGame/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NetSecGame
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WhiteBoxNetSecGame/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WhiteBoxNetSecGame
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -509,6 +652,8 @@
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">
@@ -584,14 +729,16 @@
 
 
 
-  <h1>Agent server</h1>
+<h1 id="agent-server">Agent Server</h1>
+<p>The Agent Server is responsible for managing the low-level communication between the agents and the game coordinator. It handles incoming TCP connections, manages agent registration, and facilitates the asynchronous message passing required for real-time interaction in the game.</p>
+
 
 <div class="doc doc-object doc-class">
 
 
 
 <h2 id="netsecgame.game.agent_server.AgentServer" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">netsecgame</span><span class="o">.</span><span class="n">game</span><span class="o">.</span><span class="n">agent_server</span><span class="o">.</span><span class="n">AgentServer</span><span class="p">(</span><span class="n">actions_queue</span><span class="p">,</span> <span class="n">agent_response_queues</span><span class="p">,</span> <span class="n">max_connections</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">netsecgame</span><span class="o">.</span><span class="n">game</span><span class="o">.</span><span class="n">agent_server</span><span class="o">.</span><span class="n">AgentServer</span></code>
 
 </h2>
 
@@ -708,7 +855,7 @@
                 <code>agent_response_queues</code>
             </td>
             <td>
-                  <code><span title="dict">dict</span></code>
+                  <code><span title="typing.Dict">Dict</span>[<span title="typing.Tuple">Tuple</span>, <span title="asyncio.Queue">Queue</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -739,6 +886,29 @@
     </table>
 
 
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>None</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
 
 
 
@@ -747,8 +917,7 @@
 
                   <details class="mkdocstrings-source">
                     <summary>Source code in <code>netsecgame/game/agent_server.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">16</span>
-<span class="normal">17</span>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">17</span>
 <span class="normal">18</span>
 <span class="normal">19</span>
 <span class="normal">20</span>
@@ -760,14 +929,21 @@
 <span class="normal">26</span>
 <span class="normal">27</span>
 <span class="normal">28</span>
-<span class="normal">29</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actions_queue</span><span class="p">,</span> <span class="n">agent_response_queues</span><span class="p">,</span> <span class="n">max_connections</span><span class="p">):</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actions_queue</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Queue</span><span class="p">,</span> <span class="n">agent_response_queues</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Queue</span><span class="p">],</span> <span class="n">max_connections</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Initialize the AgentServer.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        actions_queue (asyncio.Queue): Queue for actions from agents.</span>
-<span class="sd">        agent_response_queues (dict): Mapping of agent addresses to their response queues.</span>
+<span class="sd">        agent_response_queues (Dict[Tuple, asyncio.Queue]): Mapping of agent addresses to their response queues.</span>
 <span class="sd">        max_connections (int): Maximum allowed concurrent agent connections.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">actions_queue</span> <span class="o">=</span> <span class="n">actions_queue</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">answers_queues</span> <span class="o">=</span> <span class="n">agent_response_queues</span>
@@ -794,7 +970,7 @@
 
 
 <h3 id="netsecgame.game.agent_server.AgentServer.__call__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__call__</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__call__</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-async"><code>async</code></small>
@@ -855,23 +1031,52 @@
     </table>
 
 
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>None</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/agent_server.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">StreamReader</span><span class="p">,</span> <span class="n">writer</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">StreamWriter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Allow the server instance to be called as a coroutine.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        reader (asyncio.StreamReader): Stream reader for the agent.</span>
 <span class="sd">        writer (asyncio.StreamWriter): Stream writer for the agent.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_new_agent</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -884,7 +1089,7 @@
 
 
 <h3 id="netsecgame.game.agent_server.AgentServer.handle_agent_quit" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">handle_agent_quit</span><span class="p">(</span><span class="n">peername</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">handle_agent_quit</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-async"><code>async</code></small>
@@ -914,7 +1119,7 @@
                 <code>peername</code>
             </td>
             <td>
-                  <code><span title="tuple">tuple</span></code>
+                  <code><span title="typing.Tuple">Tuple</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -929,24 +1134,53 @@
     </table>
 
 
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>None</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/agent_server.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">35</span>
 <span class="normal">36</span>
 <span class="normal">37</span>
 <span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span>
-<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_agent_quit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peername</span><span class="p">:</span><span class="nb">tuple</span><span class="p">):</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_agent_quit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peername</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Helper function to handle agent disconnection.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        peername (tuple): The address of the disconnecting agent.</span>
+<span class="sd">        peername (Tuple): The address of the disconnecting agent.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Send a quit message to the Coordinator</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Handling agent quit for </span><span class="si">{</span><span class="n">peername</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
@@ -962,7 +1196,7 @@
 
 
 <h3 id="netsecgame.game.agent_server.AgentServer.handle_new_agent" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">handle_new_agent</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">handle_new_agent</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-async"><code>async</code></small>
@@ -1023,16 +1257,32 @@
     </table>
 
 
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>None</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/agent_server.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 43</span>
-<span class="normal"> 44</span>
-<span class="normal"> 45</span>
-<span class="normal"> 46</span>
-<span class="normal"> 47</span>
-<span class="normal"> 48</span>
-<span class="normal"> 49</span>
-<span class="normal"> 50</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 50</span>
 <span class="normal"> 51</span>
 <span class="normal"> 52</span>
 <span class="normal"> 53</span>
@@ -1097,13 +1347,26 @@
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span>
-<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_new_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_new_agent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">StreamReader</span><span class="p">,</span> <span class="n">writer</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">StreamWriter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Handle a new agent connection.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        reader (asyncio.StreamReader): Stream reader for the agent.</span>
 <span class="sd">        writer (asyncio.StreamWriter): Stream writer for the agent.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># get the peername of the writer</span>
     <span class="n">peername</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s2">&quot;peername&quot;</span><span class="p">)</span>

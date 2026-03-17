@@ -12,6 +12,8 @@
         <link rel="prev" href="../agent_server/">
       
       
+        <link rel="next" href="../config_parser/">
+      
       
         
       
@@ -64,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#configuration-manager" class="md-skip">
+        <a href="#netsecgame.game.configuration_manager.ConfigurationManager" class="md-skip">
           Skip to content
         </a>
       
@@ -257,7 +259,7 @@
   <span class="md-ellipsis">
     
   
-    API Reference
+    Documentation
   
 
     
@@ -273,7 +275,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    API Reference
+    Documentation
   
 
           </label>
@@ -293,35 +295,7 @@
   <span class="md-ellipsis">
     
   
-    Game components
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../game_coordinator/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Game Coordinator
+    Game Components
   
 
     
@@ -349,7 +323,7 @@
   <span class="md-ellipsis">
     
   
-    Agent server
+    Agent Server
   
 
     
@@ -426,17 +400,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configuration-manager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration Manager
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#netsecgame.game.configuration_manager.ConfigurationManager" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -447,6 +410,28 @@
   
     <nav class="md-nav" aria-label="ConfigurationManager">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager._fetch_remote_configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _fetch_remote_configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager._load_local_configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _load_local_configuration
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_all_goal_descriptions" class="md-nav__link">
@@ -493,6 +478,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_config_hash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_config_hash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_cyst_objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_cyst_objects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_goal_description" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -515,6 +522,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_required_num_players" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_required_num_players
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_rewards" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -530,6 +548,50 @@
     <span class="md-ellipsis">
       
         get_starting_position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_store_trajectories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_store_trajectories
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_use_dynamic_addresses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_use_dynamic_addresses
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_use_firewall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_use_firewall
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_use_global_defender" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_use_global_defender
       
     </span>
   </a>
@@ -563,257 +625,176 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#configparser" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ConfigParser
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ConfigParser
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="ConfigParser">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_goal_description" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_goal_description
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_max_steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_max_steps
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_player_start_position" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_player_start_position
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_player_win_conditions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_player_win_conditions
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_randomize_goal_every_episode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_randomize_goal_every_episode
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_rewards" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_rewards
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_scenario" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_scenario
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_seed" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_seed
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_store_trajectories" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_store_trajectories
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_use_dynamic_addresses" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_use_dynamic_addresses
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_use_firewall" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_use_firewall
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_controlled_hosts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_controlled_hosts
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_known_blocks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_known_blocks
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_known_data" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_known_data
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_known_hosts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_known_hosts
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_known_networks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_known_networks
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_known_services" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_known_services
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_config_file" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_config_file
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_env_action_data" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_env_action_data
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.validate_goal_description" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate_goal_description
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config_parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../game_coordinator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Game Coordinator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    worlds
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    worlds
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NetSecGame/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NetSecGame
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WhiteBoxNetSecGame/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WhiteBoxNetSecGame
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
       
     </li>
   
@@ -852,17 +833,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configuration-manager" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Configuration Manager
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#netsecgame.game.configuration_manager.ConfigurationManager" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -873,6 +843,28 @@
   
     <nav class="md-nav" aria-label="ConfigurationManager">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager._fetch_remote_configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _fetch_remote_configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager._load_local_configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _load_local_configuration
+      
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_all_goal_descriptions" class="md-nav__link">
@@ -919,6 +911,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_config_hash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_config_hash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_cyst_objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_cyst_objects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_goal_description" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -941,6 +955,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_required_num_players" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_required_num_players
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_rewards" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -956,6 +981,50 @@
     <span class="md-ellipsis">
       
         get_starting_position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_store_trajectories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_store_trajectories
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_use_dynamic_addresses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_use_dynamic_addresses
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_use_firewall" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_use_firewall
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.game.configuration_manager.ConfigurationManager.get_use_global_defender" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_use_global_defender
       
     </span>
   </a>
@@ -989,254 +1058,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#configparser" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ConfigParser
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ConfigParser
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="ConfigParser">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_goal_description" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_goal_description
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_max_steps" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_max_steps
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_player_start_position" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_player_start_position
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_player_win_conditions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_player_win_conditions
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_randomize_goal_every_episode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_randomize_goal_every_episode
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_rewards" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_rewards
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_scenario" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_scenario
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_seed" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_seed
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_store_trajectories" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_store_trajectories
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_use_dynamic_addresses" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_use_dynamic_addresses
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.get_use_firewall" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        get_use_firewall
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_controlled_hosts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_controlled_hosts
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_known_blocks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_known_blocks
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_known_data" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_known_data
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_known_hosts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_known_hosts
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_known_networks" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_known_networks
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_agents_known_services" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_agents_known_services
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_config_file" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_config_file
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.read_env_action_data" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        read_env_action_data
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#netsecgame.game.config_parser.ConfigParser.validate_goal_description" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate_goal_description
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -1256,7 +1077,6 @@
 
   <h1>Configuration manager</h1>
 
-<h2 id="configuration-manager">Configuration Manager</h2>
 <p>Configuration manager is a component of the game coordinator that handles the configuration of the game. It is responsible for loading the configuration from the YAML file and providing it to the game coordinator.</p>
 
 
@@ -1265,7 +1085,7 @@
 
 
 <h2 id="netsecgame.game.configuration_manager.ConfigurationManager" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">netsecgame</span><span class="o">.</span><span class="n">game</span><span class="o">.</span><span class="n">configuration_manager</span><span class="o">.</span><span class="n">ConfigurationManager</span><span class="p">(</span><span class="n">task_config_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">service_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">service_port</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">netsecgame</span><span class="o">.</span><span class="n">game</span><span class="o">.</span><span class="n">configuration_manager</span><span class="o">.</span><span class="n">ConfigurationManager</span></code>
 
 </h2>
 
@@ -1335,8 +1155,152 @@ and provides structured access to configuration data.</p>
 <div class="doc doc-object doc-function">
 
 
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager._fetch_remote_configuration" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_fetch_remote_configuration</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Fetches initialization objects from the remote service.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_remote_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fetches initialization objects from the remote service.&quot;&quot;&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;http://</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_port</span><span class="si">}</span><span class="s2">/cyst_init_objects&quot;</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">ClientSession</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">async</span> <span class="k">with</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
+                    <span class="n">config_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received config data: </span><span class="si">{</span><span class="n">config_data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                    <span class="c1"># Initialize CYST environment</span>
+                    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_config_file_hash</span> <span class="o">=</span> <span class="n">get_str_hash</span><span class="p">(</span><span class="n">config_data</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_cyst_objects</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">general</span><span class="o">.</span><span class="n">load_configuration</span><span class="p">(</span><span class="n">config_data</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialization objects received: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cyst_objects</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                    <span class="c1"># Initialize parser with the fetched dict (assuming it contains task_configuration or similar structure)</span>
+                    <span class="c1"># Note: The original coordinator code for remote fetch commented out creating ConfigParser:</span>
+                    <span class="c1"># #self.task_config = ConfigParser(config_dict=response[&quot;task_configuration&quot;])</span>
+                    <span class="c1"># usage of self.task_config in original code fell back to loading from file even if remote fetch happened?</span>
+                    <span class="c1"># &quot;Temporary fix&quot; comment in original code suggests fallback.</span>
+                    <span class="c1"># For this implementation, we should try to use the fetched config if possible.</span>
+                    <span class="c1"># If the API returns the same structure as the YAML file, we can pass it to ConfigParser(config_dict=...)</span>
+                    <span class="c1"># If not, we might need to rely on the file as the original code did for the parser part.</span>
+
+                    <span class="c1"># Let&#39;s assume for now we try to use the dictionary if available, otherwise fallback logic might be needed</span>
+                    <span class="c1"># derived from how the response is structured.</span>
+                    <span class="c1"># Looking at original code: response seems to be the full config.</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span><span class="n">config_dict</span><span class="o">=</span><span class="n">config_data</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to fetch initialization objects. Status: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Remote configuration fetch failed with status </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error fetching initialization objects: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Fallback to local file if remote fails? The original code did:</span>
+            <span class="c1"># self.task_config = ConfigParser(self._task_config_file)</span>
+            <span class="c1"># We can implement similar fallback behavior here if desired, or just raise.</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task_config_file</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Falling back to local configuration file.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_load_local_configuration</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">e</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager._load_local_configuration" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">_load_local_configuration</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Loads configuration from the local file.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span>
+<span class="normal">96</span>
+<span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_load_local_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads configuration from the local file.&quot;&quot;&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span><span class="n">task_config_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_task_config_file</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_cyst_objects</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_scenario</span><span class="p">()</span>
+    <span class="c1"># Original code does str(self._cyst_objects) for hash</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_config_file_hash</span> <span class="o">=</span> <span class="n">get_str_hash</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cyst_objects</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_all_goal_descriptions" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_all_goal_descriptions</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">get_all_goal_descriptions</span></code>
 
 </h3>
 
@@ -1346,19 +1310,50 @@ and provides structured access to configuration data.</p>
         <p>Returns goal descriptions for all roles.</p>
 
 
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dict[str, str]: The goal descriptions for all roles.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_goal_descriptions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns goal descriptions for all roles.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_goal_descriptions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns goal descriptions for all roles.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict[str, str]: The goal descriptions for all roles.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">goal_descriptions</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">agent_role</span> <span class="ow">in</span> <span class="n">AgentRole</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1377,7 +1372,7 @@ and provides structured access to configuration data.</p>
 
 
 <h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_all_max_steps" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_all_max_steps</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">get_all_max_steps</span></code>
 
 </h3>
 
@@ -1387,17 +1382,50 @@ and provides structured access to configuration data.</p>
         <p>Returns max steps for all roles.</p>
 
 
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Optional">Optional</span>[<span title="int">int</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dict[str, Optional[int]]: A dictionary mapping roles to their maximum steps.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_max_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns max steps for all roles.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_max_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns max steps for all roles.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict[str, Optional[int]]: A dictionary mapping roles to their maximum steps.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Using self.get_max_steps might raise RuntimeError if checks are there, </span>
     <span class="c1"># but simpler to just call parser directly or the single accessor since we are inside the class.</span>
     <span class="c1"># However, the single accessor has the check.</span>
@@ -1414,7 +1442,7 @@ and provides structured access to configuration data.</p>
 
 
 <h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_all_starting_positions" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_all_starting_positions</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">get_all_starting_positions</span></code>
 
 </h3>
 
@@ -1424,19 +1452,50 @@ and provides structured access to configuration data.</p>
         <p>Returns starting positions for all roles.</p>
 
 
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dict[str, Any]: The starting positions for all roles.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_starting_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns starting positions for all roles.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_starting_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns starting positions for all roles.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict[str, Any]: The starting positions for all roles.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">starting_positions</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">agent_role</span> <span class="ow">in</span> <span class="n">AgentRole</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1455,7 +1514,7 @@ and provides structured access to configuration data.</p>
 
 
 <h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_all_win_conditions" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_all_win_conditions</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">get_all_win_conditions</span></code>
 
 </h3>
 
@@ -1465,19 +1524,50 @@ and provides structured access to configuration data.</p>
         <p>Returns win conditions for all roles.</p>
 
 
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dict[str, Any]: The win conditions for all roles.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_win_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns win conditions for all roles.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_win_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns win conditions for all roles.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict[str, Any]: The win conditions for all roles.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">win_conditions</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">agent_role</span> <span class="ow">in</span> <span class="n">AgentRole</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
@@ -1495,25 +1585,182 @@ and provides structured access to configuration data.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_goal_description" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_goal_description</span><span class="p">(</span><span class="n">role</span><span class="p">)</span></code>
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_config_hash" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_config_hash</span></code>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Returns the goal description for a specific role.</p>
+        <p>Returns the hash of the loaded configuration.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="str">str</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional[str]: The hexadecimal hash of the configuration, or None if not loaded.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_goal_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the goal description for a specific role.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_config_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the hash of the loaded configuration.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Optional[str]: The hexadecimal hash of the configuration, or None if not loaded.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config_file_hash</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_cyst_objects" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_cyst_objects</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the loaded CYST configuration objects.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>Any</code></td>            <td>
+                  <code><span title="typing.Iterable">Iterable</span>[<span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The CYST configuration objects (usually a list of NodeConfig, etc.).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_cyst_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns the loaded CYST configuration objects.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Any: The CYST configuration objects (usually a list of NodeConfig, etc.).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cyst_objects</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_goal_description" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_goal_description</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the goal description for a specific role.
+Args:
+    role (str): The role of the agent.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>str</code></td>            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The goal description for the specified role.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_goal_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the goal description for a specific role.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        role (str): The role of the agent.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The goal description for the specified role.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_goal_description</span><span class="p">(</span><span class="n">agent_role</span><span class="o">=</span><span class="n">role</span><span class="p">)</span>
@@ -1527,24 +1774,61 @@ and provides structured access to configuration data.</p>
 
 
 <h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_max_steps" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_max_steps</span><span class="p">(</span><span class="n">role</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">get_max_steps</span></code>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Returns the max steps for a specific role.</p>
+        <p>Returns the max steps for a specific role.
+Args:
+    role (str): The role of the agent.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional[int]: The max steps for the specified role.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_max_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the max steps for a specific role.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_max_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the max steps for a specific role.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        role (str): The role of the agent.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Optional[int]: The max steps for the specified role.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_max_steps</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
@@ -1557,32 +1841,171 @@ and provides structured access to configuration data.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_rewards" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_rewards</span><span class="p">(</span><span class="n">reward_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;step&#39;</span><span class="p">,</span> <span class="s1">&#39;success&#39;</span><span class="p">,</span> <span class="s1">&#39;fail&#39;</span><span class="p">,</span> <span class="s1">&#39;false_positive&#39;</span><span class="p">],</span> <span class="n">default_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_required_num_players" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_required_num_players</span></code>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Returns the rewards configuration.</p>
+        <p>Returns the required number of players configuration.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>default_value</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default value for the required number of players.</p>
+              </div>
+            </td>
+            <td>
+                  <code>1</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>int</code></td>            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The required number of players configuration.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_rewards</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reward_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">,</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;fail&quot;</span><span class="p">,</span> <span class="s2">&quot;false_positive&quot;</span><span class="p">],</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the rewards configuration.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_required_num_players</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the required number of players configuration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        default_value (int): The default value for the required number of players.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: The required number of players configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_required_num_players</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_rewards" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_rewards</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the rewards configuration.
+Args:
+    reward_names (List[str]): The names of the rewards.
+    default_value (int): The default value for the rewards.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>dict</code></td>            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The rewards configuration.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_rewards</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reward_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">,</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;fail&quot;</span><span class="p">,</span> <span class="s2">&quot;false_positive&quot;</span><span class="p">],</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the rewards configuration.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        reward_names (List[str]): The names of the rewards.</span>
+<span class="sd">        default_value (int): The default value for the rewards.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The rewards configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
     <span class="n">rewards</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_rewards</span><span class="p">(</span><span class="n">reward_names</span><span class="p">,</span> <span class="n">default_value</span><span class="p">)</span>
@@ -1603,24 +2026,61 @@ and provides structured access to configuration data.</p>
 
 
 <h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_starting_position" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_starting_position</span><span class="p">(</span><span class="n">role</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">get_starting_position</span></code>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Returns the starting position configuration for a specific role.</p>
+        <p>Returns the starting position configuration for a specific role.
+Args:
+    role (str): The role of the agent.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>dict</code></td>            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The starting position configuration for the specified role.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_starting_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the starting position configuration for a specific role.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_starting_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the starting position configuration for a specific role.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        role (str): The role of the agent.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The starting position configuration for the specified role.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_start_position</span><span class="p">(</span><span class="n">agent_role</span><span class="o">=</span><span class="n">role</span><span class="p">)</span>
@@ -1633,25 +2093,396 @@ and provides structured access to configuration data.</p>
 <div class="doc doc-object doc-function">
 
 
-<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_win_conditions" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_win_conditions</span><span class="p">(</span><span class="n">role</span><span class="p">)</span></code>
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_store_trajectories" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_store_trajectories</span></code>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Returns the win conditions for a specific role.</p>
+        <p>Returns the store trajectories configuration.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>default_value</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default value for the store trajectories.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>bool</code></td>            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>True if trajectories should be stored, False otherwise.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_win_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the win conditions for a specific role.&quot;&quot;&quot;</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_store_trajectories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>  
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the store trajectories configuration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        default_value (bool): The default value for the store trajectories.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if trajectories should be stored, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_store_trajectories</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_use_dynamic_addresses" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_use_dynamic_addresses</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the use dynamic addresses configuration.
+Args:
+    default_value (bool): The default value for the use dynamic addresses.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>bool</code></td>            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The use dynamic addresses configuration.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_dynamic_addresses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the use dynamic addresses configuration.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        default_value (bool): The default value for the use dynamic addresses.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: The use dynamic addresses configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_use_dynamic_addresses</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_use_firewall" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_use_firewall</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the use firewall configuration.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>default_value</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The default value for the use firewall.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>bool</code></td>            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The use firewall configuration.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_firewall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the use firewall configuration.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        default_value (bool): The default value for the use firewall.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: The use firewall configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_use_firewall</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_use_global_defender" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_use_global_defender</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the use global defender configuration.
+Args:
+    default_value (bool): The default value for the use global defender.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>bool</code></td>            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The use global defender configuration.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_global_defender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the use global defender configuration.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        default_value (bool): The default value for the use global defender.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: The use global defender configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_use_global_defender</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.game.configuration_manager.ConfigurationManager.get_win_conditions" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_win_conditions</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Returns the win conditions for a specific role.
+Args:
+    role (str): The role of the agent.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>dict</code></td>            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The win conditions for the specified role.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/game/configuration_manager.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_win_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the win conditions for a specific role.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        role (str): The role of the agent.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The win conditions for the specified role.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_win_conditions</span><span class="p">(</span><span class="n">agent_role</span><span class="o">=</span><span class="n">role</span><span class="p">)</span>
@@ -1665,7 +2496,7 @@ and provides structured access to configuration data.</p>
 
 
 <h3 id="netsecgame.game.configuration_manager.ConfigurationManager.load" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">load</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">load</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-async"><code>async</code></small>
@@ -1707,1192 +2538,6 @@ Prioritizes remote service if configured, otherwise falls back to local file.</p
         <span class="bp">self</span><span class="o">.</span><span class="n">_load_local_configuration</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Task configuration source not specified (neither file nor service)&quot;</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div><h2 id="configparser">ConfigParser</h2>
-<p>ConfigParser is a class that is responsible for parsing the YAML configuration file and providing it to the game coordinator.</p>
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="netsecgame.game.config_parser.ConfigParser" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">netsecgame</span><span class="o">.</span><span class="n">game</span><span class="o">.</span><span class="n">config_parser</span><span class="o">.</span><span class="n">ConfigParser</span><span class="p">(</span><span class="n">task_config_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
-
-</h2>
-
-
-    <div class="doc doc-contents first">
-
-
-
-        <p>Class to deal with the configuration file of NetSecGame Coordinator
-Args:
-    task_config_file (str|None): Path to the configuration file
-    config_dict (dict|None): Dictionary with configuration data</p>
-
-        <p>Initializes the configuration parser. Required either path to a confgiuration file or a dict with configuraitons.</p>
-
-
-
-
-
-
-
-
-                  <details class="mkdocstrings-source">
-                    <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_config_file</span><span class="p">:</span><span class="nb">str</span><span class="o">|</span><span class="kc">None</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">:</span><span class="nb">dict</span><span class="o">|</span><span class="kc">None</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Initializes the configuration parser. Required either path to a confgiuration file or a dict with configuraitons.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;ConfigParser&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">task_config_file</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">read_config_file</span><span class="p">(</span><span class="n">task_config_file</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">config_dict</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config_dict</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;You must provide either the configuration file or a dictionary with the configuration!&quot;</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-                  </details>
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_goal_description" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_goal_description</span><span class="p">(</span><span class="n">agent_role</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Get goal description per role</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">298</span>
-<span class="normal">299</span>
-<span class="normal">300</span>
-<span class="normal">301</span>
-<span class="normal">302</span>
-<span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_goal_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_role</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get goal description per role</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">match</span> <span class="n">agent_role</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;Attacker&quot;</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">agent_role</span><span class="p">][</span><span class="s2">&quot;goal&quot;</span><span class="p">][</span><span class="s2">&quot;description&quot;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">validate_goal_description</span><span class="p">(</span><span class="n">agent_role</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">case</span> <span class="s2">&quot;Defender&quot;</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">agent_role</span><span class="p">][</span><span class="s2">&quot;goal&quot;</span><span class="p">][</span><span class="s2">&quot;description&quot;</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">validate_goal_description</span><span class="p">(</span><span class="n">agent_role</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">case</span> <span class="s2">&quot;Benign&quot;</span><span class="p">:</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported agent role: </span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">description</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_max_steps" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_max_steps</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Get the max steps based on agent's role</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span>
-<span class="normal">289</span>
-<span class="normal">290</span>
-<span class="normal">291</span>
-<span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span>
-<span class="normal">295</span>
-<span class="normal">296</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_max_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get the max steps based on agent&#39;s role</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">max_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">role</span><span class="p">][</span><span class="s2">&quot;max_steps&quot;</span><span class="p">])</span>
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="n">max_steps</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Item &#39;max_steps&#39; not found in &#39;coordinator.agents.</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">&#39;!. Setting value to default=None (no step limit)&quot;</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">max_steps</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported value in &#39;coordinator.agents.</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">.max_steps&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Setting value to default=None (no step limit)&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">max_steps</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_player_start_position" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_player_start_position</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Generate the starting position of an attacking agent
-type_of_player: Can be 'attackers' or 'defenders'</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span>
-<span class="normal">239</span>
-<span class="normal">240</span>
-<span class="normal">241</span>
-<span class="normal">242</span>
-<span class="normal">243</span>
-<span class="normal">244</span>
-<span class="normal">245</span>
-<span class="normal">246</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_player_start_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_of_player</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generate the starting position of an attacking agent</span>
-<span class="sd">    type_of_player: Can be &#39;attackers&#39; or &#39;defenders&#39; </span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Read known nets</span>
-    <span class="n">known_networks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_networks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;start_position&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Read known hosts</span>
-    <span class="n">known_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;start_position&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Read controlled hosts</span>
-    <span class="n">controlled_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_controlled_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;start_position&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Start services</span>
-    <span class="n">known_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_services</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;start_position&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Start data</span>
-    <span class="n">known_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_data</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;start_position&#39;</span><span class="p">)</span>
-
-    <span class="n">player_start_position</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">&#39;known_networks&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_networks</span>
-    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">&#39;controlled_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">controlled_hosts</span>
-    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">&#39;known_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_hosts</span>
-    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">&#39;known_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_data</span>
-    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">&#39;known_services&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_services</span>
-
-    <span class="k">return</span> <span class="n">player_start_position</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_player_win_conditions" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_player_win_conditions</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Get the goal of the player
-type_of_player: Can be 'attackers' or 'defenders'</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_player_win_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_of_player</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get the goal of the player</span>
-<span class="sd">    type_of_player: Can be &#39;attackers&#39; or &#39;defenders&#39; </span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Read known nets</span>
-    <span class="n">known_networks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_networks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Read known hosts</span>
-    <span class="n">known_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Read controlled hosts</span>
-    <span class="n">controlled_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_controlled_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Goal services</span>
-    <span class="n">known_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_services</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Read known blocks </span>
-    <span class="n">known_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_blocks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Goal data</span>
-    <span class="n">known_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_data</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
-
-    <span class="c1"># Blocks</span>
-    <span class="n">known_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_blocks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
-
-    <span class="n">player_goal</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;known_networks&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_networks</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;controlled_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">controlled_hosts</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;known_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_hosts</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;known_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_data</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;known_services&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_services</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;known_blocks&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_blocks</span>
-
-    <span class="k">return</span> <span class="n">player_goal</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_randomize_goal_every_episode" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_randomize_goal_every_episode</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Get if the randomization should be done only once or at the beginning of every episode</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">407</span>
-<span class="normal">408</span>
-<span class="normal">409</span>
-<span class="normal">410</span>
-<span class="normal">411</span>
-<span class="normal">412</span>
-<span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span>
-<span class="normal">418</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_randomize_goal_every_episode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get if the randomization should be done only once or at the beginning of every episode</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO Remove in future</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">randomize_goal_every_episode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;coordinator&quot;</span><span class="p">][</span><span class="s2">&quot;agents&quot;</span><span class="p">][</span><span class="s2">&quot;attackers&quot;</span><span class="p">][</span><span class="s2">&quot;goal&quot;</span><span class="p">][</span><span class="s2">&quot;is_any_part_of_goal_random&quot;</span><span class="p">]</span>
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="c1"># Option is not in the configuration - default to FALSE</span>
-        <span class="n">randomize_goal_every_episode</span> <span class="o">=</span> <span class="n">default_value</span>
-    <span class="k">raise</span> <span class="ne">DeprecationWarning</span><span class="p">(</span><span class="s2">&quot;This function is deprecated.&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">randomize_goal_every_episode</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_rewards" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_rewards</span><span class="p">(</span><span class="n">reward_names</span><span class="p">,</span> <span class="n">default_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Reads configuration for rewards for cases listed in 'rewards_names'</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">352</span>
-<span class="normal">353</span>
-<span class="normal">354</span>
-<span class="normal">355</span>
-<span class="normal">356</span>
-<span class="normal">357</span>
-<span class="normal">358</span>
-<span class="normal">359</span>
-<span class="normal">360</span>
-<span class="normal">361</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_rewards</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reward_names</span><span class="p">:</span><span class="nb">list</span><span class="p">,</span>  <span class="n">default_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">dict</span><span class="p">:</span>
-    <span class="s2">&quot;Reads configuration for rewards for cases listed in &#39;rewards_names&#39;&quot;</span>
-    <span class="n">rewards</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">reward_names</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">rewards</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s2">&quot;rewards&quot;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No reward value found for &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;. Usinng default reward(</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">)=</span><span class="si">{</span><span class="n">default_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">rewards</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_value</span>
-    <span class="k">return</span> <span class="n">rewards</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_scenario" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_scenario</span><span class="p">()</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Get the scenario config objects based on the configuration. Only import objects that are selected via importlib.</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">384</span>
-<span class="normal">385</span>
-<span class="normal">386</span>
-<span class="normal">387</span>
-<span class="normal">388</span>
-<span class="normal">389</span>
-<span class="normal">390</span>
-<span class="normal">391</span>
-<span class="normal">392</span>
-<span class="normal">393</span>
-<span class="normal">394</span>
-<span class="normal">395</span>
-<span class="normal">396</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_scenario</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get the scenario config objects based on the configuration. Only import objects that are selected via importlib.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">scenario_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;scenario&#39;</span><span class="p">]</span>
-    <span class="c1"># make sure to validate the input</span>
-    <span class="k">if</span> <span class="n">scenario_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SCENARIO_REGISTRY</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Unsupported scenario: </span><span class="si">{</span><span class="n">scenario_name</span><span class="si">}</span><span class="s2">. &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Available scenarios: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">SCENARIO_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">SCENARIO_REGISTRY</span><span class="p">[</span><span class="n">scenario_name</span><span class="p">]</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_seed" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_seed</span><span class="p">(</span><span class="n">whom</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Get the seeds</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">398</span>
-<span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span>
-<span class="normal">402</span>
-<span class="normal">403</span>
-<span class="normal">404</span>
-<span class="normal">405</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">whom</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get the seeds</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">seed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">whom</span><span class="p">][</span><span class="s1">&#39;random_seed&#39;</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">seed</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
-        <span class="n">seed</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">seed</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_store_trajectories" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_store_trajectories</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Read if the replay buffer should be stored in file</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">373</span>
-<span class="normal">374</span>
-<span class="normal">375</span>
-<span class="normal">376</span>
-<span class="normal">377</span>
-<span class="normal">378</span>
-<span class="normal">379</span>
-<span class="normal">380</span>
-<span class="normal">381</span>
-<span class="normal">382</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_store_trajectories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Read if the replay buffer should be stored in file</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">store_trajectories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;save_trajectories&#39;</span><span class="p">]</span>
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="c1"># Option is not in the configuration - default to FALSE</span>
-        <span class="n">store_trajectories</span> <span class="o">=</span> <span class="n">default_value</span>
-    <span class="k">return</span> <span class="n">store_trajectories</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_use_dynamic_addresses" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_use_dynamic_addresses</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Reads if the IP and Network addresses should be dynamically changed.</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">363</span>
-<span class="normal">364</span>
-<span class="normal">365</span>
-<span class="normal">366</span>
-<span class="normal">367</span>
-<span class="normal">368</span>
-<span class="normal">369</span>
-<span class="normal">370</span>
-<span class="normal">371</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_dynamic_addresses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Reads if the IP and Network addresses should be dynamically changed.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">use_dynamic_addresses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;use_dynamic_addresses&#39;</span><span class="p">]</span>
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="n">use_dynamic_addresses</span> <span class="o">=</span> <span class="n">default_value</span>
-    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">use_dynamic_addresses</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.get_use_firewall" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_use_firewall</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Retrieves if the firewall functionality is allowed for netsecgame.
-Default: False</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">420</span>
-<span class="normal">421</span>
-<span class="normal">422</span>
-<span class="normal">423</span>
-<span class="normal">424</span>
-<span class="normal">425</span>
-<span class="normal">426</span>
-<span class="normal">427</span>
-<span class="normal">428</span>
-<span class="normal">429</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_firewall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Retrieves if the firewall functionality is allowed for netsecgame.</span>
-<span class="sd">    Default: False</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">use_firewall</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;use_firewall&#39;</span><span class="p">]</span>   
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="n">use_firewall</span> <span class="o">=</span> <span class="n">default_value</span>
-    <span class="k">return</span> <span class="n">use_firewall</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.read_agents_controlled_hosts" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">read_agents_controlled_hosts</span><span class="p">(</span><span class="n">type_agent</span><span class="p">,</span> <span class="n">type_data</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Generic function to read the controlled hosts for any agent and goal of position</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_controlled_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generic function to read the controlled hosts for any agent and goal of position</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">controlled_hosts_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;controlled_hosts&#39;</span><span class="p">]</span>
-    <span class="n">controlled_hosts</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">ip</span> <span class="ow">in</span> <span class="n">controlled_hosts_conf</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPAddress</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
-            <span class="n">controlled_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">IP</span><span class="p">(</span><span class="n">ip</span><span class="p">))</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span> <span class="p">:</span>
-                <span class="c1"># A random start ip was asked for</span>
-                <span class="n">controlled_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;random&#39;</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">&#39;all_local&#39;</span><span class="p">:</span>
-                <span class="n">controlled_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;all_local&#39;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Configuration problem with the controlled hosts: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">controlled_hosts</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.read_agents_known_blocks" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">read_agents_known_blocks</span><span class="p">(</span><span class="n">type_agent</span><span class="p">,</span> <span class="n">type_data</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Generic function to read the known blocks for any agent and goal of position</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span>
-<span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span>
-<span class="normal">94</span>
-<span class="normal">95</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_known_blocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generic function to read the known blocks for any agent and goal of position</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">known_blocks_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;coordinator&quot;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;known_blocks&#39;</span><span class="p">]</span>
-    <span class="n">known_blocks</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">target_host</span><span class="p">,</span> <span class="n">block_list</span> <span class="ow">in</span> <span class="n">known_blocks_conf</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">target_host</span>  <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="n">target_host</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error when converting </span><span class="si">{</span><span class="n">target_host</span><span class="si">}</span><span class="s2"> to IP address object&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">block_list</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
-            <span class="n">known_blocks</span><span class="p">[</span><span class="n">target_host</span><span class="p">]</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">IP</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">block_list</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">block_list</span> <span class="o">==</span> <span class="s2">&quot;all_attackers&quot;</span><span class="p">:</span>
-            <span class="n">known_blocks</span><span class="p">[</span><span class="n">target_host</span><span class="p">]</span> <span class="o">=</span> <span class="n">block_list</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported value in &#39;known_blocks&#39;: </span><span class="si">{</span><span class="n">known_blocks_conf</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">known_blocks</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.read_agents_known_data" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">read_agents_known_data</span><span class="p">(</span><span class="n">type_agent</span><span class="p">,</span> <span class="n">type_data</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Generic function to read the known data for any agent and goal of position</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_known_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generic function to read the known data for any agent and goal of position</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">known_data_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;known_data&#39;</span><span class="p">]</span>
-    <span class="n">known_data</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">ip</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">known_data_conf</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Check the host is a good ip</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPAddress</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
-            <span class="n">known_data_host</span> <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
-            <span class="n">known_data</span><span class="p">[</span><span class="n">known_data_host</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">datum</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datum</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">datum</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
-                    <span class="n">known_data</span><span class="p">[</span><span class="n">known_data_host</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;random&quot;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">known_data_content_str_user</span> <span class="o">=</span>  <span class="n">datum</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="n">known_data_content_str_data</span> <span class="o">=</span>  <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                    <span class="n">known_data_content</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="n">known_data_content_str_user</span><span class="p">,</span> <span class="n">known_data_content_str_data</span><span class="p">)</span>
-                    <span class="n">known_data</span><span class="p">[</span><span class="n">known_data_host</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">known_data_content</span><span class="p">)</span>
-
-        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">):</span>
-            <span class="n">known_data</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">return</span> <span class="n">known_data</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.read_agents_known_hosts" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">read_agents_known_hosts</span><span class="p">(</span><span class="n">type_agent</span><span class="p">,</span> <span class="n">type_data</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Generic function to read the known hosts for any agent and goal of position</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_known_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generic function to read the known hosts for any agent and goal of position</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">known_hosts_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;known_hosts&#39;</span><span class="p">]</span>
-    <span class="n">known_hosts</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">ip</span> <span class="ow">in</span> <span class="n">known_hosts_conf</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPAddress</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
-            <span class="n">known_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">IP</span><span class="p">(</span><span class="n">ip</span><span class="p">))</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-            <span class="k">if</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
-                <span class="c1"># A random start ip was asked for</span>
-                <span class="n">known_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;random&#39;</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">&#39;all_local&#39;</span><span class="p">:</span>
-                <span class="n">known_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;all_local&#39;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Configuration problem with the known hosts: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">known_hosts</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.read_agents_known_networks" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">read_agents_known_networks</span><span class="p">(</span><span class="n">type_agent</span><span class="p">,</span> <span class="n">type_data</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Generic function to read the known networks for any agent and goal of position</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_known_networks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generic function to read the known networks for any agent and goal of position</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">known_networks_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;known_networks&#39;</span><span class="p">]</span>
-    <span class="n">known_networks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">net</span> <span class="ow">in</span> <span class="n">known_networks_conf</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">net</span><span class="p">:</span>
-                <span class="n">_</span> <span class="o">=</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPNetwork</span><span class="p">(</span><span class="n">net</span><span class="p">)</span>
-                <span class="n">host_part</span><span class="p">,</span> <span class="n">net_part</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
-                <span class="n">known_networks</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Network</span><span class="p">(</span><span class="n">host_part</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">net_part</span><span class="p">)))</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Configuration problem with the known networks&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">known_networks</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.read_agents_known_services" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">read_agents_known_services</span><span class="p">(</span><span class="n">type_agent</span><span class="p">,</span> <span class="n">type_data</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Generic function to read the known services for any agent and goal of position</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_known_services</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generic function to read the known services for any agent and goal of position</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">known_services_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;coordinator&quot;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;known_services&#39;</span><span class="p">]</span>
-    <span class="n">known_services</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">ip</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">known_services_conf</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Check the host is a good ip</span>
-            <span class="n">_</span> <span class="o">=</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPAddress</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
-            <span class="n">known_services_host</span> <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
-            <span class="n">known_services</span><span class="p">[</span><span class="n">known_services_host</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span> <span class="c1"># process each item in the list </span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span> <span class="c1"># Service defined as list</span>
-                    <span class="n">name</span> <span class="o">=</span> <span class="n">service</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="nb">type</span> <span class="o">=</span> <span class="n">service</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                    <span class="n">version</span> <span class="o">=</span> <span class="n">service</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
-                    <span class="n">is_local</span> <span class="o">=</span> <span class="n">service</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
-                    <span class="n">known_services</span><span class="p">[</span><span class="n">known_services_host</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Service</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">is_local</span><span class="p">))</span>
-                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span> <span class="c1"># keyword </span>
-                    <span class="k">if</span> <span class="n">service</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
-                        <span class="n">known_services</span><span class="p">[</span><span class="n">known_services_host</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;random&quot;</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported values in agent known_services</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported values in agent known_services</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">):</span>
-            <span class="n">known_services</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">return</span> <span class="n">known_services</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.read_config_file" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">read_config_file</span><span class="p">(</span><span class="n">conf_file_name</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>reads configuration file</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_config_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conf_file_name</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    reads configuration file</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf_file_name</span><span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-    <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error loading the configuration file</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">pass</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.read_env_action_data" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">read_env_action_data</span><span class="p">(</span><span class="n">action_name</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Generic function to read the known data for any agent and goal of position</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_env_action_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generic function to read the known data for any agent and goal of position</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">action_success_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;actions&#39;</span><span class="p">][</span><span class="n">action_name</span><span class="p">][</span><span class="s1">&#39;prob_success&#39;</span><span class="p">]</span>
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="n">action_success_p</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="k">return</span> <span class="n">action_success_p</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="netsecgame.game.config_parser.ConfigParser.validate_goal_description" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">validate_goal_description</span><span class="p">(</span><span class="n">agent_role</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Warns if the goal description misses key targets from the actual win conditions.</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>netsecgame/game/config_parser.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">321</span>
-<span class="normal">322</span>
-<span class="normal">323</span>
-<span class="normal">324</span>
-<span class="normal">325</span>
-<span class="normal">326</span>
-<span class="normal">327</span>
-<span class="normal">328</span>
-<span class="normal">329</span>
-<span class="normal">330</span>
-<span class="normal">331</span>
-<span class="normal">332</span>
-<span class="normal">333</span>
-<span class="normal">334</span>
-<span class="normal">335</span>
-<span class="normal">336</span>
-<span class="normal">337</span>
-<span class="normal">338</span>
-<span class="normal">339</span>
-<span class="normal">340</span>
-<span class="normal">341</span>
-<span class="normal">342</span>
-<span class="normal">343</span>
-<span class="normal">344</span>
-<span class="normal">345</span>
-<span class="normal">346</span>
-<span class="normal">347</span>
-<span class="normal">348</span>
-<span class="normal">349</span>
-<span class="normal">350</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_goal_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_role</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Warns if the goal description misses key targets from the actual win conditions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">description</span><span class="p">:</span>
-        <span class="k">return</span>  <span class="c1"># No description to validate</span>
-
-    <span class="n">description_lower</span> <span class="o">=</span> <span class="n">description</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-    <span class="n">missing_elements</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">win_conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">agent_role</span><span class="p">][</span><span class="s1">&#39;goal&#39;</span><span class="p">]</span>
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="k">return</span>
-
-    <span class="c1"># Check controlled hosts</span>
-    <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">win_conditions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;controlled_hosts&#39;</span><span class="p">,</span> <span class="p">[]):</span>
-        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">description_lower</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
-            <span class="n">missing_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Controlled Host: </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="c1"># Check known data targets</span>
-    <span class="k">for</span> <span class="n">host</span><span class="p">,</span> <span class="n">data_set</span> <span class="ow">in</span> <span class="n">win_conditions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;known_data&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">description_lower</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
-            <span class="c1"># Only require host IP if it isn&#39;t &quot;random&quot;</span>
-            <span class="n">missing_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Target Host IP defined for data: </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">missing_elements</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">] Goal description &#39;</span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2">&#39; might be missing some actual win condition targets: </span><span class="si">{</span><span class="n">missing_elements</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>

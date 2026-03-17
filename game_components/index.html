@@ -12,7 +12,7 @@
         <link rel="prev" href="../configuration/">
       
       
-        <link rel="next" href="../game_coordinator/">
+        <link rel="next" href="../agent_server/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Game components - Network Security Game</title>
+        <title>Game Components - Network Security Game</title>
       
     
     
@@ -66,7 +66,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#netsecgame.game_components" class="md-skip">
+        <a href="#game-components" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Game components
+              Game Components
             
           </span>
         </div>
@@ -259,7 +259,7 @@
   <span class="md-ellipsis">
     
   
-    API Reference
+    Documentation
   
 
     
@@ -275,7 +275,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    API Reference
+    Documentation
   
 
           </label>
@@ -294,6 +294,8 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           
@@ -302,7 +304,7 @@
   <span class="md-ellipsis">
     
   
-    Game components
+    Game Components
   
 
     
@@ -320,7 +322,7 @@
   <span class="md-ellipsis">
     
   
-    Game components
+    Game Components
   
 
     
@@ -335,6 +337,8 @@
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">
@@ -1113,34 +1117,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../game_coordinator/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Game Coordinator
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../agent_server/" class="md-nav__link">
         
   
@@ -1148,7 +1124,7 @@
   <span class="md-ellipsis">
     
   
-    Agent server
+    Agent Server
   
 
     
@@ -1190,6 +1166,173 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config_parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../game_coordinator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Game Coordinator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    worlds
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    worlds
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NetSecGame/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NetSecGame
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WhiteBoxNetSecGame/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WhiteBoxNetSecGame
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1213,6 +1356,8 @@
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">
@@ -1992,7 +2137,9 @@
 
 
 
-  <h1>Game components</h1>
+<h1 id="game-components">Game Components</h1>
+<p>This module contains the core building blocks and data structures used throughout the NetSecGame environment. These include fundamental types such as IP addresses, networks, services, data objects, and actions. These components are used to define both the environment's state and the interactions between agents and the world.</p>
+
 
 <div class="doc doc-object doc-module">
 
@@ -2030,7 +2177,7 @@
 
 
 <h3 id="netsecgame.game_components.Action" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">Action</span><span class="p">(</span><span class="n">action_type</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="nb">dict</span><span class="p">())</span></code>
+              <code class="highlight language-python"><span class="n">Action</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -2196,7 +2343,7 @@
 
 
 <h4 id="netsecgame.game_components.Action.__eq__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__eq__</span></code>
 
 </h4>
 
@@ -2303,7 +2450,7 @@
 
 
 <h4 id="netsecgame.game_components.Action.__hash__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__hash__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__hash__</span></code>
 
 </h4>
 
@@ -2367,7 +2514,7 @@
 
 
 <h4 id="netsecgame.game_components.Action.__repr__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__repr__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__repr__</span></code>
 
 </h4>
 
@@ -2427,7 +2574,7 @@
 
 
 <h4 id="netsecgame.game_components.Action.__str__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__str__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__str__</span></code>
 
 </h4>
 
@@ -2487,7 +2634,7 @@
 
 
 <h4 id="netsecgame.game_components.Action.from_dict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_dict</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -2543,7 +2690,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>Action</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="Action(action_type, parameters=dict())
+                  <code><a class="autorefs autorefs-internal" title="Action
 
   
       dataclass
@@ -2679,7 +2826,7 @@
 
 
 <h4 id="netsecgame.game_components.Action.from_json" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_json</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_json</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -2735,7 +2882,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>Action</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="Action(action_type, parameters=dict())
+                  <code><a class="autorefs autorefs-internal" title="Action
 
   
       dataclass
@@ -2788,7 +2935,7 @@
 
 
 <h4 id="netsecgame.game_components.Action.to_json" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">to_json</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">to_json</span></code>
 
 </h4>
 
@@ -2896,7 +3043,7 @@
 
 
 <h4 id="netsecgame.game_components.ActionType.__eq__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__eq__</span></code>
 
 </h4>
 
@@ -3005,7 +3152,7 @@
 
 
 <h4 id="netsecgame.game_components.ActionType.__hash__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__hash__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__hash__</span></code>
 
 </h4>
 
@@ -3067,7 +3214,7 @@
 
 
 <h4 id="netsecgame.game_components.ActionType.from_string" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_string</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_string</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -3209,7 +3356,7 @@
 
 
 <h4 id="netsecgame.game_components.ActionType.to_string" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">to_string</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">to_string</span></code>
 
 </h4>
 
@@ -3278,7 +3425,7 @@
 
 
 <h3 id="netsecgame.game_components.AgentInfo" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">AgentInfo</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">role</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">AgentInfo</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -3354,7 +3501,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentInfo.__repr__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__repr__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__repr__</span></code>
 
 </h4>
 
@@ -3414,7 +3561,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentInfo.from_dict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_dict</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -3470,7 +3617,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>AgentInfo</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="AgentInfo(name, role)
+                  <code><a class="autorefs autorefs-internal" title="AgentInfo
 
   
       dataclass
@@ -3575,7 +3722,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentRole.__eq__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__eq__</span></code>
 
 </h4>
 
@@ -3660,10 +3807,10 @@
 <span class="sd">    Compare AgentRole with another AgentRole or string.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">         other (object): The object to compare.</span>
+<span class="sd">        other (object): The object to compare.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">         bool: True if equal, False otherwise.</span>
+<span class="sd">        bool: True if equal, False otherwise.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">AgentRole</span><span class="p">):</span>
          <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
@@ -3680,7 +3827,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentRole.__hash__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__hash__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__hash__</span></code>
 
 </h4>
 
@@ -3740,7 +3887,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentRole.__repr__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__repr__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__repr__</span></code>
 
 </h4>
 
@@ -3800,7 +3947,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentRole.from_string" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_string</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_string</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -3948,7 +4095,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentRole.to_string" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">to_string</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">to_string</span></code>
 
 </h4>
 
@@ -4056,7 +4203,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentStatus.__eq__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__eq__</span></code>
 
 </h4>
 
@@ -4165,7 +4312,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentStatus.__hash__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__hash__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__hash__</span></code>
 
 </h4>
 
@@ -4227,7 +4374,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentStatus.from_string" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_string</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_string</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -4369,7 +4516,7 @@
 
 
 <h4 id="netsecgame.game_components.AgentStatus.to_string" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">to_string</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">to_string</span></code>
 
 </h4>
 
@@ -4438,7 +4585,7 @@
 
 
 <h3 id="netsecgame.game_components.Data" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">Data</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="nb">str</span><span class="p">())</span></code>
+              <code class="highlight language-python"><span class="n">Data</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -4547,7 +4694,7 @@
 
 
 <h4 id="netsecgame.game_components.Data.__hash__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__hash__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__hash__</span></code>
 
 </h4>
 
@@ -4607,7 +4754,7 @@
 
 
 <h4 id="netsecgame.game_components.Data.from_dict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_dict</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -4663,7 +4810,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>Data</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="Data(owner, id, size=0, type='', content=str())
+                  <code><a class="autorefs autorefs-internal" title="Data
 
   
       dataclass
@@ -4723,7 +4870,7 @@
 
 
 <h3 id="netsecgame.game_components.GameState" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">GameState</span><span class="p">(</span><span class="n">controlled_hosts</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">known_hosts</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">known_services</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span> <span class="n">known_data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span> <span class="n">known_networks</span><span class="o">=</span><span class="nb">set</span><span class="p">(),</span> <span class="n">known_blocks</span><span class="o">=</span><span class="nb">dict</span><span class="p">())</span></code>
+              <code class="highlight language-python"><span class="n">GameState</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -4752,7 +4899,7 @@
           <tr class="doc-section-item">
             <td><code><span title="netsecgame.game_components.GameState.controlled_hosts">controlled_hosts</span></code></td>
             <td>
-                  <code><span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="IP(ip)
+                  <code><span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="IP
 
   
       dataclass
@@ -4767,7 +4914,7 @@
           <tr class="doc-section-item">
             <td><code><span title="netsecgame.game_components.GameState.known_hosts">known_hosts</span></code></td>
             <td>
-                  <code><span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="IP(ip)
+                  <code><span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="IP
 
   
       dataclass
@@ -4782,11 +4929,11 @@
           <tr class="doc-section-item">
             <td><code><span title="netsecgame.game_components.GameState.known_services">known_services</span></code></td>
             <td>
-                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" title="IP(ip)
+                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" title="IP
 
   
       dataclass
-   (netsecgame.game_components.IP)" href="#netsecgame.game_components.IP">IP</a>, <span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="Service(name, type='unknown', version='unknown', is_local=True)
+   (netsecgame.game_components.IP)" href="#netsecgame.game_components.IP">IP</a>, <span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="Service
 
   
       dataclass
@@ -4801,11 +4948,11 @@
           <tr class="doc-section-item">
             <td><code><span title="netsecgame.game_components.GameState.known_data">known_data</span></code></td>
             <td>
-                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" title="IP(ip)
+                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" title="IP
 
   
       dataclass
-   (netsecgame.game_components.IP)" href="#netsecgame.game_components.IP">IP</a>, <span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="Data(owner, id, size=0, type='', content=str())
+   (netsecgame.game_components.IP)" href="#netsecgame.game_components.IP">IP</a>, <span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="Data
 
   
       dataclass
@@ -4820,7 +4967,7 @@
           <tr class="doc-section-item">
             <td><code><span title="netsecgame.game_components.GameState.known_networks">known_networks</span></code></td>
             <td>
-                  <code><span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="Network(ip, mask)
+                  <code><span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="Network
 
   
       dataclass
@@ -4835,11 +4982,11 @@
           <tr class="doc-section-item">
             <td><code><span title="netsecgame.game_components.GameState.known_blocks">known_blocks</span></code></td>
             <td>
-                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" title="IP(ip)
+                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" title="IP
 
   
       dataclass
-   (netsecgame.game_components.IP)" href="#netsecgame.game_components.IP">IP</a>, <span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="IP(ip)
+   (netsecgame.game_components.IP)" href="#netsecgame.game_components.IP">IP</a>, <span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="IP
 
   
       dataclass
@@ -4979,7 +5126,7 @@
 
 
 <h4 id="netsecgame.game_components.GameState.__str__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__str__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__str__</span></code>
 
 </h4>
 
@@ -5039,7 +5186,7 @@
 
 
 <h4 id="netsecgame.game_components.GameState.as_json" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">as_json</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">as_json</span></code>
 
 </h4>
 
@@ -5101,7 +5248,7 @@
 
 
 <h4 id="netsecgame.game_components.GameState.from_dict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_dict</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -5157,7 +5304,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>GameState</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="GameState(controlled_hosts=set(), known_hosts=set(), known_services=dict(), known_data=dict(), known_networks=set(), known_blocks=dict())
+                  <code><a class="autorefs autorefs-internal" title="GameState
 
   
       dataclass
@@ -5250,7 +5397,7 @@
 
 
 <h4 id="netsecgame.game_components.GameState.from_json" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_json</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_json</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -5306,7 +5453,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>GameState</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="GameState(controlled_hosts=set(), known_hosts=set(), known_services=dict(), known_data=dict(), known_networks=set(), known_blocks=dict())
+                  <code><a class="autorefs autorefs-internal" title="GameState
 
   
       dataclass
@@ -5407,7 +5554,7 @@
 
 
 <h4 id="netsecgame.game_components.GameStatus.__repr__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__repr__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__repr__</span></code>
 
 </h4>
 
@@ -5467,7 +5614,7 @@
 
 
 <h4 id="netsecgame.game_components.GameStatus.from_string" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_string</span><span class="p">(</span><span class="n">string</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_string</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -5603,7 +5750,7 @@
 
 
 <h3 id="netsecgame.game_components.IP" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">IP</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">IP</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -5668,7 +5815,7 @@
 
 
 <h4 id="netsecgame.game_components.IP.__eq__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__eq__</span></code>
 
 </h4>
 
@@ -5769,7 +5916,7 @@
 
 
 <h4 id="netsecgame.game_components.IP.__hash__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__hash__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__hash__</span></code>
 
 </h4>
 
@@ -5789,7 +5936,7 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-<td><code>hash</code></td>            <td>
+<td><code>int</code></td>            <td>
                   <code><span title="int">int</span></code>
             </td>
             <td>
@@ -5811,12 +5958,12 @@
 <span class="normal">122</span>
 <span class="normal">123</span>
 <span class="normal">124</span>
-<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">int</span><span class="p">:</span>
+<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the hash of the IP.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        hash: The hash value.</span>
+<span class="sd">        int: The hash value.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -5829,7 +5976,7 @@
 
 
 <h4 id="netsecgame.game_components.IP.__post_init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">__post_init__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">__post_init__</span></code>
 
 </h4>
 
@@ -5895,7 +6042,7 @@
 
 
 <h4 id="netsecgame.game_components.IP.__repr__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__repr__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__repr__</span></code>
 
 </h4>
 
@@ -5955,7 +6102,7 @@
 
 
 <h4 id="netsecgame.game_components.IP.from_dict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_dict</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -6011,7 +6158,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>IP</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="IP(ip)
+                  <code><a class="autorefs autorefs-internal" title="IP
 
   
       dataclass
@@ -6062,7 +6209,7 @@
 
 
 <h4 id="netsecgame.game_components.IP.is_private" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">is_private</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">is_private</span></code>
 
 </h4>
 
@@ -6145,7 +6292,7 @@
 
 
 <h3 id="netsecgame.game_components.Network" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">Network</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">Network</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -6221,7 +6368,7 @@
 
 
 <h4 id="netsecgame.game_components.Network.__gt__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__gt__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__gt__</span></code>
 
 </h4>
 
@@ -6247,7 +6394,7 @@
                 <code>other</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="Network(ip, mask)
+                  <code><a class="autorefs autorefs-internal" title="Network
 
   
       dataclass
@@ -6328,7 +6475,7 @@
 
 
 <h4 id="netsecgame.game_components.Network.__le__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__le__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__le__</span></code>
 
 </h4>
 
@@ -6354,7 +6501,7 @@
                 <code>other</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="Network(ip, mask)
+                  <code><a class="autorefs autorefs-internal" title="Network
 
   
       dataclass
@@ -6435,7 +6582,7 @@
 
 
 <h4 id="netsecgame.game_components.Network.__lt__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__lt__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__lt__</span></code>
 
 </h4>
 
@@ -6461,7 +6608,7 @@
                 <code>other</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="Network(ip, mask)
+                  <code><a class="autorefs autorefs-internal" title="Network
 
   
       dataclass
@@ -6542,7 +6689,7 @@
 
 
 <h4 id="netsecgame.game_components.Network.__repr__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__repr__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__repr__</span></code>
 
 </h4>
 
@@ -6602,7 +6749,7 @@
 
 
 <h4 id="netsecgame.game_components.Network.__str__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__str__</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="fm">__str__</span></code>
 
 </h4>
 
@@ -6662,7 +6809,7 @@
 
 
 <h4 id="netsecgame.game_components.Network.from_dict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_dict</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -6718,7 +6865,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>Network</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="Network(ip, mask)
+                  <code><a class="autorefs autorefs-internal" title="Network
 
   
       dataclass
@@ -6769,7 +6916,7 @@
 
 
 <h4 id="netsecgame.game_components.Network.is_private" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">is_private</span><span class="p">()</span></code>
+            <code class="highlight language-python"><span class="n">is_private</span></code>
 
 </h4>
 
@@ -6874,7 +7021,7 @@
           <tr class="doc-section-item">
             <td><code><span title="netsecgame.game_components.Observation.state">state</span></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="GameState(controlled_hosts=set(), known_hosts=set(), known_services=dict(), known_data=dict(), known_networks=set(), known_blocks=dict())
+                  <code><a class="autorefs autorefs-internal" title="GameState
 
   
       dataclass
@@ -6956,7 +7103,7 @@
 
 
 <h3 id="netsecgame.game_components.ProtocolConfig" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">ProtocolConfig</span><span class="p">(</span><span class="n">END_OF_MESSAGE</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;EOF&#39;</span><span class="p">,</span> <span class="n">BUFFER_SIZE</span><span class="o">=</span><span class="mi">8192</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">ProtocolConfig</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -7041,7 +7188,7 @@
 
 
 <h3 id="netsecgame.game_components.Service" class="doc doc-heading">
-              <code class="highlight language-python"><span class="n">Service</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;unknown&#39;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;unknown&#39;</span><span class="p">,</span> <span class="n">is_local</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+              <code class="highlight language-python"><span class="n">Service</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
@@ -7139,7 +7286,7 @@
 
 
 <h4 id="netsecgame.game_components.Service.from_dict" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">from_dict</span></code>
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
@@ -7195,7 +7342,7 @@
       <tbody>
           <tr class="doc-section-item">
 <td><code>Service</code></td>            <td>
-                  <code><a class="autorefs autorefs-internal" title="Service(name, type='unknown', version='unknown', is_local=True)
+                  <code><a class="autorefs autorefs-internal" title="Service
 
   
       dataclass
