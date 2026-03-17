@@ -6,8 +6,8 @@ import yaml
 import netaddr
 import logging
 from random import randint
-from typing import Optional, Dict, Any, List, Set, Union, Tuple, Iterable
-from netsecgame.game_components import IP, Data, Network, Service, AgentRole
+from typing import Optional, Dict, Any, List, Set, Union
+from netsecgame.game_components import IP, Data, Network, Service
 from netsecgame.game.scenarios import SCENARIO_REGISTRY
 
 class ConfigParser():
