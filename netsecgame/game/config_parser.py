@@ -19,7 +19,7 @@ class ConfigParser():
     """
     def __init__(self, task_config_file:Optional[str]=None, config_dict:Optional[dict]=None)->None:
         """
-        Initializes the configuration parser. Required either path to a confgiuration file or a dict with configuraitons.
+        Initializes the configuration parser. Required either path to a configuration file or a dict with configurations.
         
         Args:
             task_config_file (Optional[str]): Path to the configuration file
