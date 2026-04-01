@@ -1,7 +1,7 @@
 # add imports so that they are available when importing the package NetSecGame
 # e.g., from NetSecGame import GameState
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # Game components
 from .game_components import (
