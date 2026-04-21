@@ -43,67 +43,7 @@ python3 -m netsecgame.game.worlds.NetSecGame \
   --game_port=9000
 ```
 ### Configuration
-To start the game, a task configuration file must be provided. Task configuration specifies the starting points and goals for agents, the episode length, rewards, and other game properties. Here is an example of the configuration:
-```YAML
-# Example of the task configuration for NetSecGame
-# The objective of the Attacker in this task is to locate specific data
-# and exfiltrate it to a remote C&C server.
-# The scenario starts AFTER the initial breach of the local network
-# (the attacker controls 1 local device + the remote C&C server).
-
-coordinator: 
-  agents: 
-    Attacker: # Configuration of 'Attacker' agents
-      max_steps: 25 # timeout set for the role `Attacker`
-      goal: # Definition of the goal state
-        description: "Exfiltrate data from Samba server to remote C&C server."
-        known_networks: []
-        known_hosts: []
-        controlled_hosts: []
-        known_services: {}
-        known_data: {213.47.23.195: [[User1,DataFromServer1]]} # winning condition
-        known_blocks: {}
-      start_position: # Definition of the starting state (keywords "random" and "all" can be used)
-        known_networks: []
-        known_hosts: []
-        controlled_hosts: [213.47.23.195, random] # keyword 'random' will be replaced by randomly selected IP during initialization
-        known_services: {}
-        known_data: {}
-        known_blocks: {}
-
-    Defender:
-      goal:
-        description: "Block all attackers."
-        known_networks: []
-        known_hosts: []
-        controlled_hosts: []
-        known_services: {}
-        known_data: {}
-        known_blocks: {213.47.23.195: 'all_attackers'}
-
-      start_position:
-        known_networks: []
-        known_hosts: []
-        controlled_hosts: []
-        known_services: {}
-        known_data: {}
-        blocked_ips: {}
-        known_blocks: {}
-
-env: # Environment configuration
-  scenario: 'two_networks_tiny' # use the smallest topology for this example
-  use_global_defender: False # Do not use global SIEM Defender
-  use_dynamic_addresses: False # Do not randomize IP addresses
-  use_firewall: True # Use firewall
-  save_trajectories: False # Do not store trajectories
-  required_players: 1 # Minimal amount of agents required to start the game
-  rewards: # Configurable reward function
-    success: 100
-    step: -1
-    fail: -10
-    false_positive: -5
-```
-For detailed configuration instructions, please refer to the [Configuration Documentation](https://stratosphereips.github.io/NetSecGame/configuration/).
+A YAML task configuration file is required to start the game. It defines starting positions, goals, rewards, network topology, and other game properties. An example configuration is included in the [GitHub repository](https://github.com/stratosphereips/NetSecGame/tree/main/examples). For a full reference of all options, see the [Configuration Documentation](https://stratosphereips.github.io/NetSecGame/configuration/).
 
 ## Creating Agents
 
