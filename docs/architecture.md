@@ -74,7 +74,16 @@ The Action consists of two parts
 #### List of ActionTypes
 - **JoinGame**, params={`agent_info`:AgentInfo(`<name>`, `<role>`)}: Used to register agent in a game with a given `<role>`.
 - **QuitGame**, params={}: Used for termination of agent's interaction.
-- **ResetGame**, params={`request_trajectory`:`bool` (default=`False`),  `randomize_topology`=`bool` (default=`True`)}: Used for requesting reset of the game to its initial position. If `request_trajectory = True`, the coordinator will send back the complete trajectory of the previous run in the next message. If `randomize_topology`=`True`, the agent request topology to be changed in the next episode. NOTE: the topology is changed only if (i) the `use_dynamic_addresses` is set to `True` in the task configuration AND all active agents ask for the change.
+- **ResetGame**, params={`request_trajectory`:`bool` (default=`False`), `seed`:`int` (default=`None`), `randomize_topology`:`bool` (default=`False`)}: Used for requesting reset of the game to its initial position. If `request_trajectory = True`, the coordinator will send back the complete trajectory of the previous run in the next message. The `seed` parameter allows setting a specific random seed for reproducibility. If `randomize_topology=True`, the agent requests the topology to be randomized in the next episode.
+
+    !!! note "Topology Change & Seed Dependency"
+        A topology change can only be requested if the agent also submits a specific `seed`. If `seed` is omitted or `None`, the `randomize_topology` flag is ignored.
+
+    !!! warning "Consensus Requirement"
+        In multi-agent games, all agents must agree on the `seed` and `randomize_topology` values. If agents request conflicting seeds or topology change flags, the game will shut down.
+
+    !!! note
+        The topology is changed only if (i) the `use_dynamic_addresses` is set to `True` in the task configuration AND (ii) all active agents ask for the change.
 ---
 - **ScanNetwork**, params{`source_host`:`<IP>`, `target_network`:`<Network>`}: Scans the given `<Network>` from a specified source host. Discovers ALL hosts in a network that are accessible from `<IP>`. If successful, returns set of discovered `<IP>` objects.
 - **FindServices**, params={`source_host`:`<IP>`, `target_host`:`<IP>`}: Used to discover ALL services running in the `target_host` if the host is accessible from `source_host`. If successful, returns a set of all discovered `<Service>` objects.

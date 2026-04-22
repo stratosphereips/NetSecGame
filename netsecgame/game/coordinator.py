@@ -487,7 +487,7 @@ class GameCoordinator:
             #  - ONLY consider agents that submitted seed
             # register if the agent wants to randomize the topology
             if self._reset_seed_requests[agent_addr] is not None:
-                self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", True)
+                self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", False)
             if all(self._reset_requests.values()):
                 # all agents want reset - reset the world
                 self.logger.debug(f"All agents requested reset, setting the event")
@@ -728,40 +728,24 @@ class GameCoordinator:
                 self.logger.debug("\tExiting reset_game task.")
                 break
             if len(self.agents) > 0: 
-                # verify that all agents agreed on the seed (or sent None)
-                valid_seeding = False
-                valid_topology_change = False
-                non_none_seeds = [seed for seed in self._reset_seed_requests.values() if seed is not None]
-                if len(non_none_seeds) == 0: # no agent wants to change the seed
-                    seed = None
-                    valid_seeding = True
-                elif len(set(non_none_seeds)) == 1: # all agents agree on the seed
-                    seed = non_none_seeds[0]
-                    valid_seeding = True
-                else: # agents disagree on the seed
-                    seed = None
-                # verify that all agents agreed on the topology change (or sent None)
-                valid_seed_agents = [agent for agent in self.agents if self._reset_seed_requests[agent] is not None]
-                valid_topology_requests = [self._randomize_topology_requests[agent] for agent in valid_seed_agents]
-                if len(set(valid_topology_requests)) == 1: # all valid agents agree on the topology change
-                    valid_topology_change = True
-                    topology_change = valid_topology_requests[0]
-                else: # agents disagree on the topology change
-                    valid_topology_change = False
-                    topology_change = None
+                # 1. Validate Seeding (all non-None seeds must match)
+                unique_seeds = {seed for seed in self._reset_seed_requests.values() if seed is not None}
+                valid_seeding = len(unique_seeds) <= 1
+                seed = unique_seeds.pop() if len(unique_seeds) == 1 else None
+                
+                # 2. Validate Topology Change (only for agents who provided a seed)
+                unique_topology_requests = {self._randomize_topology_requests[a] for a in self.agents if self._reset_seed_requests.get(a) is not None}
+                valid_topology_change = len(unique_topology_requests) <= 1
+                topology_change = unique_topology_requests.pop() if len(unique_topology_requests) == 1 else False
 
-                if valid_seeding and valid_topology_change:
-                    await self._handle_valid_reset(seed, topology_change)
-                    self._reset_event.clear()  
-                    # notify all waiting agents
-                    async with self._reset_done_condition:
-                        self._reset_done_condition.notify_all()
-                elif not valid_seeding:
+                # 3. Handle Reset Actions
+                if not valid_seeding:
                     await self._handle_invalid_reset("Agents disagree on the seed. Undefined state. Stopping the game")
-                    self._reset_event.clear()  
                 elif not valid_topology_change:
                     await self._handle_invalid_reset("Agents disagree on the topology change. Undefined state. Stopping the game")
-                    self._reset_event.clear()  
+                else:
+                    await self._handle_valid_reset(seed, topology_change)
+
             self._reset_event.clear()  
             # notify all waiting agents
             async with self._reset_done_condition:
