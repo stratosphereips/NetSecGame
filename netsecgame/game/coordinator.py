@@ -487,7 +487,7 @@ class GameCoordinator:
             #  - ONLY consider agents that submitted seed
             # register if the agent wants to randomize the topology
             if self._reset_seed_requests[agent_addr] is not None:
-                self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", True)
+                self._randomize_topology_requests[agent_addr] = reset_action.parameters.get("randomize_topology", False)
             if all(self._reset_requests.values()):
                 # all agents want reset - reset the world
                 self.logger.debug(f"All agents requested reset, setting the event")
