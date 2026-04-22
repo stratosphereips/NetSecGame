@@ -1,0 +1,1419 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Getting Started - Network Security Game</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#getting-started" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Network Security Game" class="md-header__button md-logo" aria-label="Network Security Game" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Network Security Game
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Getting Started
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Network Security Game" class="md-nav__button md-logo" aria-label="Network Security Game" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Network Security Game
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docker (recommended)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker (recommended)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#building-the-image-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building the image locally
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pip-install-agent-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pip install (agent development)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#installing-from-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installing from source
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-game-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the Game Server
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running the Game Server">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In Docker
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="In Docker">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-on-windows-docker-desktop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running on Windows (Docker Desktop)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Locally
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-your-first-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating Your First Agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interaction-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interaction Flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../global_defender/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Global Defender
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../game_components/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Game Components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../base_agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base Agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agent_server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../game_coordinator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Game Coordinator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration_manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration Manager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config_parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_7" id="__nav_6_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worlds
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worlds
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NetSecGame/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NetSecGame
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WhiteBoxNetSecGame/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WhiteBoxNetSecGame
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_8" id="__nav_6_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utils
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utils
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../trajectory_recorder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory Recorder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#docker-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Docker (recommended)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker (recommended)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#building-the-image-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building the image locally
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pip-install-agent-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pip install (agent development)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#installing-from-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installing from source
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Task Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-the-game-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the Game Server
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running the Game Server">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#in-docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In Docker
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="In Docker">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-on-windows-docker-desktop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running on Windows (Docker Desktop)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Locally
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-your-first-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating Your First Agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interaction-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interaction Flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="getting-started">Getting Started</h1>
+<p>This guide covers installation, configuration, and running your first NetSecGame session.</p>
+<h2 id="installation">Installation</h2>
+<h3 id="docker-recommended">Docker (recommended)</h3>
+<p>The easiest way to run the NetSecGame server is via the official Docker image:</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>pull<span class="w"> </span>stratosphereips/netsecgame
+</code></pre></div>
+<h4 id="building-the-image-locally">Building the image locally</h4>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>netsecgame:local<span class="w"> </span>.
+</code></pre></div>
+<p>To build the experimental <strong>Whitebox</strong> variant (agents receive the full action list upon registration):</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>--build-arg<span class="w"> </span><span class="nv">GAME_MODULE</span><span class="o">=</span><span class="s2">&quot;netsecgame.game.worlds.WhiteBoxNetSecGame&quot;</span><span class="w"> </span>-t<span class="w"> </span>netsecgame:local-whitebox<span class="w"> </span>.
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The Whitebox variant is currently experimental.</p>
+</div>
+<h3 id="pip-install-agent-development">pip install (agent development)</h3>
+<p>To install the package for developing agents:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>netsecgame
+</code></pre></div>
+<p>To include dependencies for running the game server locally:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>netsecgame<span class="o">[</span>server<span class="o">]</span>
+</code></pre></div>
+<h3 id="installing-from-source">Installing from source</h3>
+<p>For modifying the environment itself, install in a virtual environment:</p>
+<p>=== "Python venv"
+    <div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>&lt;venv-name&gt;
+<span class="nb">source</span><span class="w"> </span>&lt;venv-name&gt;/bin/activate
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</code></pre></div></p>
+<p>=== "Conda"
+    <div class="highlight"><pre><span></span><code>conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>aidojo<span class="w"> </span><span class="nv">python</span><span class="o">==</span><span class="m">3</span>.12
+conda<span class="w"> </span>activate<span class="w"> </span>aidojo
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</code></pre></div></p>
+<h2 id="task-configuration">Task Configuration</h2>
+<p>A YAML configuration file defines the task for the NetSecGame. It specifies starting positions, goals, rewards, and environment properties.</p>
+<h3 id="example-configuration">Example Configuration</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># The objective of the Attacker in this task is to locate specific data</span>
+<span class="c1"># and exfiltrate it to a remote C&amp;C server.</span>
+<span class="c1"># The scenario starts AFTER the initial breach of the local network</span>
+<span class="c1"># (the attacker controls 1 local device + the remote C&amp;C server).</span>
+
+<span class="nt">coordinator</span><span class="p">:</span><span class="w"> </span>
+<span class="w">  </span><span class="nt">agents</span><span class="p">:</span><span class="w"> </span>
+<span class="w">    </span><span class="nt">Attacker</span><span class="p">:</span><span class="w"> </span><span class="c1"># Configuration of &#39;Attacker&#39; agents</span>
+<span class="w">      </span><span class="nt">max_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">25</span><span class="w"> </span><span class="c1"># timeout set for the role `Attacker`</span>
+<span class="w">      </span><span class="nt">goal</span><span class="p">:</span><span class="w"> </span><span class="c1"># Definition of the goal state</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Exfiltrate</span><span class="nv"> </span><span class="s">data</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">Samba</span><span class="nv"> </span><span class="s">server</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">remote</span><span class="nv"> </span><span class="s">C&amp;C</span><span class="nv"> </span><span class="s">server.&quot;</span>
+<span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">213.47.23.195</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[[</span><span class="nv">User1</span><span class="p p-Indicator">,</span><span class="nv">DataFromServer1</span><span class="p p-Indicator">]]}</span><span class="w"> </span><span class="c1"># winning condition</span>
+<span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">      </span><span class="nt">start_position</span><span class="p">:</span><span class="w"> </span><span class="c1"># Definition of the starting state</span>
+<span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">213.47.23.195</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">random</span><span class="p p-Indicator">]</span><span class="w"> </span><span class="c1"># &#39;random&#39; is replaced during init</span>
+<span class="w">        </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+
+<span class="w">    </span><span class="nt">Defender</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">goal</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Block</span><span class="nv"> </span><span class="s">all</span><span class="nv"> </span><span class="s">attackers&quot;</span>
+<span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">213.47.23.195</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;all_attackers&#39;</span><span class="p p-Indicator">}</span>
+
+<span class="w">      </span><span class="nt">start_position</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">        </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">blocked_ips</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+
+<span class="nt">env</span><span class="p">:</span><span class="w"> </span><span class="c1"># Environment configuration</span>
+<span class="w">  </span><span class="nt">scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;two_networks_tiny&#39;</span><span class="w"> </span><span class="c1"># use the smallest topology</span>
+<span class="w">  </span><span class="nt">use_global_defender</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">  </span><span class="nt">use_dynamic_addresses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">  </span><span class="nt">use_firewall</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">  </span><span class="nt">save_trajectories</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">  </span><span class="nt">required_players</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">rewards</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">success</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">    </span><span class="nt">step</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1</span>
+<span class="w">    </span><span class="nt">fail</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-10</span>
+<span class="w">    </span><span class="nt">false_positive</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-5</span>
+</code></pre></div>
+<p>For a full reference of all configuration options, see the <a href="../configuration/">Configuration Documentation</a>.</p>
+<h2 id="running-the-game-server">Running the Game Server</h2>
+<h3 id="in-docker">In Docker</h3>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--rm<span class="w"> </span>--name<span class="w"> </span>nsg-server<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/examples/example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/logs:/netsecgame/logs<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-p<span class="w"> </span><span class="m">9000</span>:9000<span class="w"> </span>stratosphereips/netsecgame<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--debug_level<span class="o">=</span><span class="s2">&quot;INFO&quot;</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--name nsg-server</code></td>
+<td>Name of the container</td>
+</tr>
+<tr>
+<td><code>-v &lt;config&gt;:/netsecgame/netsecenv_conf.yaml</code></td>
+<td>Mount your configuration file</td>
+</tr>
+<tr>
+<td><code>-v $(pwd)/logs:/netsecgame/logs</code></td>
+<td>Mount logs directory</td>
+</tr>
+<tr>
+<td><code>-p &lt;port&gt;:9000</code></td>
+<td>Expose the game server port</td>
+</tr>
+<tr>
+<td><code>--debug_level</code></td>
+<td>Logging level: <code>DEBUG</code>, <code>INFO</code>, <code>WARNING</code>, <code>CRITICAL</code> (default: <code>INFO</code>)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="running-on-windows-docker-desktop">Running on Windows (Docker Desktop)</h4>
+<div class="highlight"><pre><span></span><code>docker run -d --rm --name nsg-server ^
+  -p 9000:9000 ^
+  -v &quot;%cd%\examples\example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml&quot; ^
+  -v &quot;%cd%\logs:/netsecgame/logs&quot; ^
+  stratosphereips/netsecgame:latest ^
+  --debug_level=&quot;INFO&quot;
+</code></pre></div>
+<h3 id="locally">Locally</h3>
+<div class="highlight"><pre><span></span><code>python3<span class="w"> </span>-m<span class="w"> </span>netsecgame.game.worlds.NetSecGame<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--task_config<span class="o">=</span>./examples/example_task_configuration.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--game_port<span class="o">=</span><span class="m">9000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--debug_level<span class="o">=</span><span class="s2">&quot;INFO&quot;</span>
+</code></pre></div>
+<p>The game server will start on <code>localhost:9000</code>.</p>
+<h2 id="creating-your-first-agent">Creating Your First Agent</h2>
+<p>Agents connect to the game server and interact using the standard RL loop: submit an <a href="../game_components/">Action</a>, receive an <a href="../architecture/#observations">Observation</a>.</p>
+<p>All agents should extend the <a href="../base_agent/"><code>BaseAgent</code></a> class:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">netsecgame</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgent</span><span class="p">,</span> <span class="n">Action</span><span class="p">,</span> <span class="n">GameState</span><span class="p">,</span> <span class="n">Observation</span><span class="p">,</span> <span class="n">AgentRole</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyAgent</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">role</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">choose_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">observation</span><span class="p">:</span> <span class="n">Observation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Action</span><span class="p">:</span>
+        <span class="c1"># Define your logic here based on observation.state</span>
+        <span class="k">pass</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">MyAgent</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">9000</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">AgentRole</span><span class="o">.</span><span class="n">Attacker</span><span class="p">)</span>
+    <span class="n">observation</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
+
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">observation</span><span class="o">.</span><span class="n">end</span><span class="p">:</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">choose_action</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
+        <span class="n">observation</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">make_step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+    <span class="n">agent</span><span class="o">.</span><span class="n">terminate_connection</span><span class="p">()</span>
+</code></pre></div>
+<p>For full agent implementations, see the <a href="https://github.com/stratosphereips/NetSecGameAgents">NetSecGameAgents</a> repository.</p>
+<h2 id="interaction-flow">Interaction Flow</h2>
+<div class="highlight"><pre><span></span><code>sequenceDiagram
+    participant Agent
+    participant Server as NetSecGame Server
+
+    Agent-&gt;&gt;Server: JoinGame (register)
+    Server--&gt;&gt;Agent: Initial Observation (state, reward, end, info)
+
+    loop Until end == True
+        Agent-&gt;&gt;Server: Action (e.g., ScanNetwork, ExploitService)
+        Server--&gt;&gt;Agent: Observation (next_state, reward, end, info)
+    end
+
+    Agent-&gt;&gt;Server: ResetGame (optional)
+    Server--&gt;&gt;Agent: Initial Observation (new episode)
+
+    Agent-&gt;&gt;Server: QuitGame
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3056 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../WhiteBoxNetSecGame/">
+      
+      
+        <link rel="next" href="../trajectory_recorder/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Utils - Network Security Game</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#general-utilities" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Network Security Game" class="md-header__button md-logo" aria-label="Network Security Game" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Network Security Game
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Utils
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Network Security Game" class="md-nav__button md-logo" aria-label="Network Security Game" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Network Security Game
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../global_defender/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Global Defender
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../game_components/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Game Components
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../base_agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Base Agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../agent_server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../game_coordinator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Game Coordinator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration_manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration Manager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config_parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Config Parser
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_7" id="__nav_6_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Worlds
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Worlds
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../NetSecGame/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NetSecGame
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../WhiteBoxNetSecGame/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WhiteBoxNetSecGame
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6_8" id="__nav_6_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utils
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utils
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utils
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utils
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        utils
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="utils">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.generate_valid_actions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate_valid_actions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.get_file_hash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_file_hash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.get_logging_level" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_logging_level
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.get_str_hash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_str_hash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.observation_as_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        observation_as_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.observation_from_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        observation_from_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.observation_from_str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        observation_from_str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.observation_to_str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        observation_to_str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.parse_log_content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_log_content
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.read_replay_buffer_from_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read_replay_buffer_from_csv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.read_trajectories_from_jsonl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read_trajectories_from_jsonl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.state_as_ordered_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        state_as_ordered_string
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.store_replay_buffer_in_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_replay_buffer_in_csv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.store_trajectories_to_jsonl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_trajectories_to_jsonl
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../trajectory_recorder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trajectory Recorder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        utils
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="utils">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.generate_valid_actions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate_valid_actions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.get_file_hash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_file_hash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.get_logging_level" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_logging_level
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.get_str_hash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_str_hash
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.observation_as_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        observation_as_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.observation_from_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        observation_from_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.observation_from_str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        observation_from_str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.observation_to_str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        observation_to_str
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.parse_log_content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        parse_log_content
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.read_replay_buffer_from_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read_replay_buffer_from_csv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.read_trajectories_from_jsonl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        read_trajectories_from_jsonl
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.state_as_ordered_string" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        state_as_ordered_string
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.store_replay_buffer_in_csv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_replay_buffer_in_csv
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netsecgame.utils.utils.store_trajectories_to_jsonl" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        store_trajectories_to_jsonl
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="general-utilities">General Utilities</h1>
+<p>This module provides various utility functions used throughout the NetSecGame framework.</p>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="netsecgame.utils.utils" class="doc doc-heading">
+            <code>netsecgame.utils.utils</code>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.generate_valid_actions" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">generate_valid_actions</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Function that generates a list of all valid actions in a given GameState
+Args:
+    state (GameState): The current game state.
+    include_blocks (bool): Whether to include BlockIP actions. Defaults to False.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>set</code></td>            <td>
+                  <code><span title="typing.Set">Set</span>[<a class="autorefs autorefs-internal" title="Action
+
+  
+      dataclass
+   (netsecgame.game_components.Action)" href="../game_components/#netsecgame.game_components.Action">Action</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A set of valid Action objects.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_valid_actions</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">GameState</span><span class="p">,</span> <span class="n">include_blocks</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Set</span><span class="p">[</span><span class="n">Action</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function that generates a list of all valid actions in a given GameState</span>
+<span class="sd">    Args:</span>
+<span class="sd">        state (GameState): The current game state.</span>
+<span class="sd">        include_blocks (bool): Whether to include BlockIP actions. Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        set: A set of valid Action objects.    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_actions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">src_ip</span><span class="p">,</span> <span class="n">dst_ip</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
+        <span class="n">blocked</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">blocked</span> <span class="o">=</span> <span class="n">dst_ip</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_blocks</span><span class="p">[</span><span class="n">src_ip</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span> <span class="c1">#this src ip has no known blocks</span>
+        <span class="k">return</span> <span class="n">blocked</span> 
+
+    <span class="k">for</span> <span class="n">source_host</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">:</span>
+        <span class="c1">#Network Scans</span>
+        <span class="k">for</span> <span class="n">network</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_networks</span><span class="p">:</span>
+            <span class="c1"># TODO ADD neighbouring networks</span>
+            <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">ScanNetwork</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_network&quot;</span><span class="p">:</span> <span class="n">network</span><span class="p">,</span> <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,}))</span>
+
+        <span class="c1"># Service Scans</span>
+        <span class="k">for</span> <span class="n">blocked_host</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_hosts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source_host</span><span class="p">,</span> <span class="n">blocked_host</span><span class="p">):</span>
+                <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">FindServices</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">,</span> <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,}))</span>
+
+        <span class="c1"># Service Exploits</span>
+        <span class="k">for</span> <span class="n">blocked_host</span><span class="p">,</span> <span class="n">service_list</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_services</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source_host</span><span class="p">,</span><span class="n">blocked_host</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="n">service_list</span><span class="p">:</span>
+                    <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">ExploitService</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">,</span><span class="s2">&quot;target_service&quot;</span><span class="p">:</span> <span class="n">service</span><span class="p">,</span><span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,}))</span>
+        <span class="c1"># Data Scans</span>
+        <span class="k">for</span> <span class="n">blocked_host</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source_host</span><span class="p">,</span><span class="n">blocked_host</span><span class="p">):</span>
+                <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">FindData</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">,</span> <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">}))</span>
+
+        <span class="c1"># Data Exfiltration</span>
+        <span class="k">for</span> <span class="n">source_host</span><span class="p">,</span> <span class="n">data_list</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">data_list</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">trg_host</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">trg_host</span> <span class="o">!=</span> <span class="n">source_host</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source_host</span><span class="p">,</span><span class="n">trg_host</span><span class="p">):</span>
+                            <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">ExfiltrateData</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">trg_host</span><span class="p">,</span> <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">}))</span>
+
+        <span class="c1"># BlockIP</span>
+        <span class="k">if</span> <span class="n">include_blocks</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">source_host</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">target_host</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source_host</span><span class="p">,</span><span class="n">target_host</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">blocked_ip</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_hosts</span><span class="p">:</span>
+                            <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">BlockIP</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;target_host&quot;</span><span class="p">:</span><span class="n">target_host</span><span class="p">,</span> <span class="s2">&quot;source_host&quot;</span><span class="p">:</span><span class="n">source_host</span><span class="p">,</span> <span class="s2">&quot;blocked_host&quot;</span><span class="p">:</span><span class="n">blocked_ip</span><span class="p">}))</span>
+    <span class="k">return</span> <span class="n">valid_actions</span>  
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.get_file_hash" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_file_hash</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes hash of a given file.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filepath</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The path to the file to hash.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hash_func</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The hash function to use (default is 'sha256').</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;sha256&#39;</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>chunk_size</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The size of each chunk to read from the file (default is 4096 bytes).</p>
+              </div>
+            </td>
+            <td>
+                  <code>4096</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>str</code></td>            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The hexadecimal hash of the file.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_file_hash</span><span class="p">(</span><span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hash_func</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;sha256&#39;</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes hash of a given file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): The path to the file to hash.</span>
+<span class="sd">        hash_func (str): The hash function to use (default is &#39;sha256&#39;).</span>
+<span class="sd">        chunk_size (int): The size of each chunk to read from the file (default is 4096 bytes).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The hexadecimal hash of the file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hash_algorithm</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">hash_func</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">chunk</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">chunk</span><span class="p">:</span>
+            <span class="n">hash_algorithm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hash_algorithm</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.get_logging_level" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_logging_level</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Configures the logging level based on the provided debug_level string.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>debug_level</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The level name (e.g., 'DEBUG', 'INFO').</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>int</code></td>            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The corresponding logging level constant.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_logging_level</span><span class="p">(</span><span class="n">debug_level</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configures the logging level based on the provided debug_level string.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        debug_level (str): The level name (e.g., &#39;DEBUG&#39;, &#39;INFO&#39;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        int: The corresponding logging level constant.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">log_levels</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;DEBUG&quot;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+        <span class="s2">&quot;INFO&quot;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+        <span class="s2">&quot;WARNING&quot;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+        <span class="s2">&quot;ERROR&quot;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+        <span class="s2">&quot;CRITICAL&quot;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">CRITICAL</span>
+    <span class="p">}</span>
+
+    <span class="n">level</span> <span class="o">=</span> <span class="n">log_levels</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">debug_level</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">level</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.get_str_hash" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">get_str_hash</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Computes hash of a given string.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>string</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The input string to hash.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>hash_func</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The hash function to use (default is 'sha256').</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;sha256&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>str</code></td>            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The hexadecimal hash of the input string.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_str_hash</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hash_func</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;sha256&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes hash of a given string.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        string (str): The input string to hash.</span>
+<span class="sd">        hash_func (str): The hash function to use (default is &#39;sha256&#39;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The hexadecimal hash of the input string.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hash_algorithm</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">hash_func</span><span class="p">)</span>
+    <span class="n">hash_algorithm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">hash_algorithm</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.observation_as_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">observation_as_dict</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generates a dictionary representation of a given Observation object.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>observation</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="Observation (netsecgame.game_components.Observation)" href="../game_components/#netsecgame.game_components.Observation">Observation</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The observation object to convert.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Dict[str, Any]: The dictionary representation of the observation.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">observation_as_dict</span><span class="p">(</span><span class="n">observation</span><span class="p">:</span> <span class="n">Observation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a dictionary representation of a given Observation object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        observation (Observation): The observation object to convert.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict[str, Any]: The dictionary representation of the observation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;state&#39;</span><span class="p">:</span> <span class="n">observation</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">as_dict</span><span class="p">,</span>
+        <span class="s1">&#39;reward&#39;</span><span class="p">:</span> <span class="n">observation</span><span class="o">.</span><span class="n">reward</span><span class="p">,</span>
+        <span class="s1">&#39;end&#39;</span><span class="p">:</span> <span class="n">observation</span><span class="o">.</span><span class="n">end</span><span class="p">,</span>
+        <span class="c1"># Using dict() ensures safety if info is a namedtuple or other mapping</span>
+        <span class="s1">&#39;info&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">observation</span><span class="o">.</span><span class="n">info</span><span class="p">)</span> 
+    <span class="p">}</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.observation_from_dict" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">observation_from_dict</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Reconstructs an Observation object from a dictionary representation.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>data</code>
+            </td>
+            <td>
+                  <code><span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The dictionary containing observation data.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>Observation</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="Observation (netsecgame.game_components.Observation)" href="../game_components/#netsecgame.game_components.Observation">Observation</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The reconstructed Observation namedtuple.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">observation_from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Observation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reconstructs an Observation object from a dictionary representation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (Dict[str, Any]): The dictionary containing observation data.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Observation: The reconstructed Observation namedtuple.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Since we refactored serialization, &#39;state&#39; is now a dictionary</span>
+        <span class="n">state_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Robustness check: Ensure we have a dict before converting</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="n">GameState</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">state_data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected dictionary for &#39;state&#39;, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">state_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">Observation</span><span class="p">(</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
+            <span class="n">reward</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reward&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span>
+            <span class="n">end</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
+            <span class="n">info</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;info&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in creating Observation from dict: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">e</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.observation_from_str" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">observation_from_str</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Reconstructs an Observation object from a JSON string representation.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>json_str</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The JSON string representation of the observation.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>Observation</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="Observation (netsecgame.game_components.Observation)" href="../game_components/#netsecgame.game_components.Observation">Observation</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The reconstructed Observation namedtuple.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">observation_from_str</span><span class="p">(</span><span class="n">json_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Observation</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reconstructs an Observation object from a JSON string representation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        json_str (str): The JSON string representation of the observation.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Observation: The reconstructed Observation namedtuple.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># 1. Parse the main JSON string -&gt; returns a dict</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_str</span><span class="p">)</span>
+
+        <span class="c1"># 2. Pass that dict to our existing from_dict method</span>
+        <span class="c1"># This keeps the logic DRY (Don&#39;t Repeat Yourself)</span>
+        <span class="k">return</span> <span class="n">observation_from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in creating Observation from string: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">e</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.observation_to_str" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">observation_to_str</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Generates a JSON string representation of a given Observation object.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>observation</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="Observation (netsecgame.game_components.Observation)" href="../game_components/#netsecgame.game_components.Observation">Observation</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The observation object to convert.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>str</code></td>            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The JSON string representation.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">observation_to_str</span><span class="p">(</span><span class="n">observation</span><span class="p">:</span> <span class="n">Observation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a JSON string representation of a given Observation object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        observation (Observation): The observation object to convert.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The JSON string representation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Clean JSON structure: {&quot;state&quot;: {...}, &quot;reward&quot;: 0, ...}</span>
+        <span class="c1"># No more escaped JSON strings inside the JSON.</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">observation_as_dict</span><span class="p">(</span><span class="n">observation</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in encoding observation &#39;</span><span class="si">{</span><span class="n">observation</span><span class="si">}</span><span class="s2">&#39; to JSON string: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">e</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.parse_log_content" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">parse_log_content</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Parses a JSON string of log content into a list of log entries.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>log_content</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The raw JSON log content.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.List">List</span>[<span title="typing.Dict">Dict</span>[<span title="str">str</span>, <span title="typing.Any">Any</span>]]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional[List[Dict[str, Any]]]: A list of log entries if successful, None otherwise.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">parse_log_content</span><span class="p">(</span><span class="n">log_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parses a JSON string of log content into a list of log entries.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        log_content (str): The raw JSON log content.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Optional[List[Dict[str, Any]]]: A list of log entries if successful, None otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">log_content</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;source_host&quot;</span><span class="p">])</span>
+            <span class="n">action_type</span> <span class="o">=</span> <span class="n">ActionType</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;action_type&quot;</span><span class="p">])</span>
+            <span class="n">logs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;source_host&quot;</span><span class="p">:</span><span class="n">ip</span><span class="p">,</span> <span class="s2">&quot;action_type&quot;</span><span class="p">:</span><span class="n">action_type</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">logs</span>
+    <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error decoding JSON: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error decoding JSON: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.read_replay_buffer_from_csv" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">read_replay_buffer_from_csv</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Reads steps from a CSV file and restores objects for the replay buffer.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>csvfile</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to the CSV file.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="typing.Tuple">Tuple</span>[<a class="autorefs autorefs-internal" title="GameState
+
+  
+      dataclass
+   (netsecgame.game_components.GameState)" href="../game_components/#netsecgame.game_components.GameState">GameState</a>, <a class="autorefs autorefs-internal" title="Action
+
+  
+      dataclass
+   (netsecgame.game_components.Action)" href="../game_components/#netsecgame.game_components.Action">Action</a>, <span title="float">float</span>, <a class="autorefs autorefs-internal" title="GameState
+
+  
+      dataclass
+   (netsecgame.game_components.GameState)" href="../game_components/#netsecgame.game_components.GameState">GameState</a>, <span title="bool">bool</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List[Tuple[GameState, Action, float, GameState, bool]]: The restored replay buffer.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_replay_buffer_from_csv</span><span class="p">(</span><span class="n">csvfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">GameState</span><span class="p">,</span> <span class="n">Action</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">GameState</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads steps from a CSV file and restores objects for the replay buffer.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        csvfile (str): Path to the CSV file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[Tuple[GameState, Action, float, GameState, bool]]: The restored replay buffer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">DeprecationWarning</span><span class="p">(</span><span class="s2">&quot;This function is deprecated and will be removed in future versions.&quot;</span><span class="p">)</span>
+    <span class="n">buffer</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_object</span><span class="p">:</span>
+            <span class="n">csv_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f_object</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;;&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="p">[</span><span class="n">s_t</span><span class="p">,</span> <span class="n">a_t</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s_t1</span> <span class="p">,</span> <span class="n">done</span><span class="p">]</span> <span class="ow">in</span> <span class="n">csv_reader</span><span class="p">:</span>
+                <span class="n">buffer</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">GameState</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">s_t</span><span class="p">),</span> <span class="n">Action</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">a_t</span><span class="p">),</span> <span class="n">r</span><span class="p">,</span> <span class="n">GameState</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">s_t1</span><span class="p">),</span> <span class="n">done</span><span class="p">))</span>
+    <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+        <span class="c1"># There was no buffer</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">buffer</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.read_trajectories_from_jsonl" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">read_trajectories_from_jsonl</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Reads trajectories from a JSONL file.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filepath</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Path to the JSONL file.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="typing.Any">Any</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List[Any]: A list of trajectories read from the file.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_trajectories_from_jsonl</span><span class="p">(</span><span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads trajectories from a JSONL file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filepath (str): Path to the JSONL file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[Any]: A list of trajectories read from the file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;This function is not yet implemented.&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.state_as_ordered_string" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">state_as_ordered_string</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Converts a GameState into a deterministic ordered string representation.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>state</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="GameState
+
+  
+      dataclass
+   (netsecgame.game_components.GameState)" href="../game_components/#netsecgame.game_components.GameState">GameState</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The game state to convert.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>str</code></td>            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The ordered string representation of the state.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">state_as_ordered_string</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">GameState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a GameState into a deterministic ordered string representation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        state (GameState): The game state to convert.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The ordered string representation of the state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;nets:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_networks</span><span class="p">)])</span><span class="si">}</span><span class="s2">],&quot;</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;hosts:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_hosts</span><span class="p">)])</span><span class="si">}</span><span class="s2">],&quot;</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;controlled:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">)])</span><span class="si">}</span><span class="s2">],&quot;</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;services:{&quot;</span>
+    <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_services</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_services</span><span class="p">[</span><span class="n">host</span><span class="p">])])</span><span class="si">}</span><span class="s2">]&quot;</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;},data:{&quot;</span>
+    <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_data</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_data</span><span class="p">[</span><span class="n">host</span><span class="p">])])</span><span class="si">}</span><span class="s2">]&quot;</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;}, blocks:{&quot;</span>
+    <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_blocks</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_blocks</span><span class="p">[</span><span class="n">host</span><span class="p">])])</span><span class="si">}</span><span class="s2">]&quot;</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;}&quot;</span>
+    <span class="k">return</span> <span class="n">ret</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.store_replay_buffer_in_csv" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_replay_buffer_in_csv</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Stores steps from a replay buffer into a CSV file.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>replay_buffer</code>
+            </td>
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="typing.Tuple">Tuple</span>[<a class="autorefs autorefs-internal" title="GameState
+
+  
+      dataclass
+   (netsecgame.game_components.GameState)" href="../game_components/#netsecgame.game_components.GameState">GameState</a>, <a class="autorefs autorefs-internal" title="Action
+
+  
+      dataclass
+   (netsecgame.game_components.Action)" href="../game_components/#netsecgame.game_components.Action">Action</a>, <span title="float">float</span>, <a class="autorefs autorefs-internal" title="GameState
+
+  
+      dataclass
+   (netsecgame.game_components.GameState)" href="../game_components/#netsecgame.game_components.GameState">GameState</a>, <span title="bool">bool</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The buffer items to store.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The name of the output file.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>delimiter</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The delimiter to use in the CSV (default is ';').</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;;&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>None</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">store_replay_buffer_in_csv</span><span class="p">(</span><span class="n">replay_buffer</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">GameState</span><span class="p">,</span> <span class="n">Action</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">GameState</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]],</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">delimiter</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stores steps from a replay buffer into a CSV file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        replay_buffer (List[Tuple[GameState, Action, float, GameState, bool]]): The buffer items to store.</span>
+<span class="sd">        filename (str): The name of the output file.</span>
+<span class="sd">        delimiter (str): The delimiter to use in the CSV (default is &#39;;&#39;).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">DeprecationWarning</span><span class="p">(</span><span class="s2">&quot;This function is deprecated and will be removed in future versions.&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_object</span><span class="p">:</span>
+        <span class="n">writer_object</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f_object</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">)</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">s_t</span><span class="p">,</span> <span class="n">a_t</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s_t1</span><span class="p">,</span> <span class="n">done</span><span class="p">)</span> <span class="ow">in</span> <span class="n">replay_buffer</span><span class="p">:</span>
+            <span class="n">writer_object</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="n">s_t</span><span class="o">.</span><span class="n">as_json</span><span class="p">(),</span> <span class="n">a_t</span><span class="o">.</span><span class="n">as_json</span><span class="p">(),</span> <span class="n">r</span><span class="p">,</span> <span class="n">s_t1</span><span class="o">.</span><span class="n">as_json</span><span class="p">(),</span> <span class="n">done</span><span class="p">])</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="netsecgame.utils.utils.store_trajectories_to_jsonl" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">store_trajectories_to_jsonl</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Stores trajectories to a JSONL file.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>trajectories</code>
+            </td>
+            <td>
+                  <code><span title="typing.Any">Any</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The trajectory data to store (usually a dict or list).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>dir</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Directory where the file will be stored.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Name of the file (without extension).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>None</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>netsecgame/utils/utils.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">store_trajectories_to_jsonl</span><span class="p">(</span><span class="n">trajectories</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stores trajectories to a JSONL file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        trajectories (Any): The trajectory data to store (usually a dict or list).</span>
+<span class="sd">        dir (str): Directory where the file will be stored.</span>
+<span class="sd">        filename (str): Name of the file (without extension).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># make sure the directory exists</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="nb">dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+    <span class="c1"># construct the full file name</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;jsonl&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">.jsonl&quot;</span><span class="p">)</span>
+    <span class="c1"># store the trajectories</span>
+    <span class="k">with</span> <span class="n">jsonlines</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
