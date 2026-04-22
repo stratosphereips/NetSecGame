@@ -95,13 +95,14 @@ In the following table, we describe the effects of selected actions and their pr
 |ExfiltrateData| `source_host`,`target_host`, `data` |`source_host`, `target_host` ∈ `controlled_hosts` AND `data` ∈ `known_data`| extends `known_data[target_host]` with `data`|
 |BlockIP | `source_host`, `target_host`, `blocked_host`|`source_host` ∈ `controlled_hosts`| extends `known_blocks[target_host]` with `blocked_host`|
 
-#### Assumption and Conditions for Actions
+#### Assumptions and Conditions for Actions
 1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)
 2. The `FindData` action finds all the available data in the host if successful.
 3. The `FindData` action requires ownership of the target host.
 4. Playing `ExfiltrateData` requires controlling **BOTH** source and target hosts
-5. Playing `Find Services` can be used to discover hosts (if those have any active services)
+5. Playing `FindServices` can be used to discover hosts (if those have any active services)
 6. Parameters of `ScanNetwork` and `FindServices` can be chosen arbitrarily (they don't have to be listed in `known_networks`/`known_hosts`)
+7. The `BlockIP` action requires its `source_host` and `target_host` parameters to be in the controlled list of the Agent.
 
 ### Observations
 After submitting Action `a` to the environment, agents receive an `Observation` in return. Each observation consists of 4 parts:
@@ -109,3 +110,46 @@ After submitting Action `a` to the environment, agents receive an `Observation` 
 - `reward`: `int` - with the immediate reward agent gets for playing Action `a`
 - `end`:`bool` - indicating if the interaction can continue after playing Action `a`
 - `info`: `dict` - placeholder for any information given to the agent (e.g., the reason why `end is True` )
+
+## Project Structure
+
+```
+├── netsecgame/
+│   ├── agents/
+│   │   ├── base_agent.py          # Base agent class — API for agent-server communication
+│   ├── game/
+│   │   ├── scenarios/
+│   │   │   ├── one_net.py             # Single network scenario
+│   │   │   ├── two_nets_tiny.py       # Tiny two-network scenario
+│   │   │   ├── two_nets_small.py      # Small two-network scenario
+│   │   │   ├── two_nets.py            # Two-network scenario
+│   │   │   ├── three_net_scenario.py  # Three-network scenario
+│   │   ├── worlds/
+│   │   │   ├── NetSecGame.py          # Base simulation coordinator
+│   │   │   ├── RealWorldNetSecGame.py # Real-network coordinator
+│   │   │   ├── CYSTCoordinator.py     # CYST engine coordinator
+│   │   │   ├── WhiteBoxNetSecGame.py  # Whitebox coordinator (full action list)
+│   │   ├── agent_server.py        # Agent TCP server implementation
+│   │   ├── config_parser.py       # Task configuration parser
+│   │   ├── configuration_manager.py # Configuration query helper
+│   │   ├── coordinator.py         # Core game coordinator (extend via worlds/)
+│   │   ├── global_defender.py     # Stochastic SIEM defender
+│   ├── game_components.py         # Core building blocks (IP, Network, Action, GameState, etc.)
+│   ├── utils/
+│   │   ├── utils.py               # General-purpose utilities
+│   │   ├── trajectory_recorder.py # Episode trajectory recording
+│   │   ├── trajectory_analysis.py # Trajectory analysis tools
+│   │   ├── log_parser.py          # Game log parsing
+│   │   ├── gameplay_graphs.py     # Gameplay visualization
+│   │   ├── actions_parser.py      # Action parsing and analysis
+│   │   ├── aidojo_log_colorizer.py # Log colorization
+```
+
+### Key Components
+
+- **[`coordinator.py`](game_coordinator.md)** — Base coordinator class handling agent communication and coordination. Does not implement world dynamics — must be extended (see `worlds/`).
+- **[`game_components.py`](game_components.md)** — Library of core objects used throughout the environment.
+- **[`global_defender.py`](global_defender.md)** — Stochastic omnipresent defender simulating a SIEM system.
+- **[`base_agent.py`](base_agent.md)** — Base class for all agents. Implements the TCP communication protocol.
+
+The [scenarios](#) define the **topology** of a network (hosts, connections, networks, services, data, firewall rules) while the [task configuration](configuration.md) defines the exact task for agents within a given topology.

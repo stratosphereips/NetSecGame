@@ -10,7 +10,6 @@ from netsecgame.game_components import Action, GameState, Observation, ActionTyp
 
 class BaseAgent(ABC):
     """
-    Author: Ondrej Lukas, ondrej.lukas@aic.cvut.cz
     Basic agent for the network based NetSecGame environment. Implemenets communication with the game server.
     """
 
@@ -77,7 +76,7 @@ class BaseAgent(ABC):
             None: If no observation is received from the server.
 
         Raises:
-            Any exceptions raised by the `communicate` method are propagated.
+            Exception: Any exceptions raised by the `communicate` method are propagated.
         """
         _, observation_dict, _ = self.communicate(action)
         if observation_dict:

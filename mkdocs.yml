@@ -5,17 +5,23 @@ theme:
 
 nav:
   - Home: index.md
+  - Getting Started: getting_started.md
   - Architecture: architecture.md
   - Configuration: configuration.md
-  - Documentation: 
-    - game_components.md
-    - agent_server.md
-    - configuration_manager.md
-    - config_parser.md
-    - game_coordinator.md
-    - worlds:
-      - NetSecGame.md
-      - WhiteBoxNetSecGame.md
+  - Global Defender: global_defender.md
+  - API Reference:
+    - Game Components: game_components.md
+    - Base Agent: base_agent.md
+    - Agent Server: agent_server.md
+    - Game Coordinator: game_coordinator.md
+    - Configuration Manager: configuration_manager.md
+    - Config Parser: config_parser.md
+    - Worlds:
+      - NetSecGame: NetSecGame.md
+      - WhiteBoxNetSecGame: WhiteBoxNetSecGame.md
+    - Utils:
+      - Utils: utils.md
+      - Trajectory Recorder: trajectory_recorder.md
       
 
 plugins:
