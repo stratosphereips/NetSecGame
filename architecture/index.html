@@ -1270,8 +1270,20 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
 <ul>
 <li><strong>JoinGame</strong>, params={<code>agent_info</code>:AgentInfo(<code>&lt;name&gt;</code>, <code>&lt;role&gt;</code>)}: Used to register agent in a game with a given <code>&lt;role&gt;</code>.</li>
 <li><strong>QuitGame</strong>, params={}: Used for termination of agent's interaction.</li>
-<li><strong>ResetGame</strong>, params={<code>request_trajectory</code>:<code>bool</code> (default=<code>False</code>),  <code>randomize_topology</code>=<code>bool</code> (default=<code>True</code>)}: Used for requesting reset of the game to its initial position. If <code>request_trajectory = True</code>, the coordinator will send back the complete trajectory of the previous run in the next message. If <code>randomize_topology</code>=<code>True</code>, the agent request topology to be changed in the next episode. NOTE: the topology is changed only if (i) the <code>use_dynamic_addresses</code> is set to <code>True</code> in the task configuration AND all active agents ask for the change.</li>
-</ul>
+<li>
+<p><strong>ResetGame</strong>, params={<code>request_trajectory</code>:<code>bool</code> (default=<code>False</code>), <code>seed</code>:<code>int</code> (default=<code>None</code>), <code>randomize_topology</code>:<code>bool</code> (default=<code>False</code>)}: Used for requesting reset of the game to its initial position. If <code>request_trajectory = True</code>, the coordinator will send back the complete trajectory of the previous run in the next message. The <code>seed</code> parameter allows setting a specific random seed for reproducibility. If <code>randomize_topology=True</code>, the agent requests the topology to be randomized in the next episode.</p>
+<div class="admonition note">
+<p class="admonition-title">Topology Change &amp; Seed Dependency</p>
+<p>A topology change can only be requested if the agent also submits a specific <code>seed</code>. If <code>seed</code> is omitted or <code>None</code>, the <code>randomize_topology</code> flag is ignored.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Consensus Requirement</p>
+<p>In multi-agent games, all agents must agree on the <code>seed</code> and <code>randomize_topology</code> values. If agents request conflicting seeds or topology change flags, the game will shut down.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The topology is changed only if (i) the <code>use_dynamic_addresses</code> is set to <code>True</code> in the task configuration AND (ii) all active agents ask for the change.</p>
+</div>
 <hr />
 <ul>
 <li><strong>ScanNetwork</strong>, params{<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_network</code>:<code>&lt;Network&gt;</code>}: Scans the given <code>&lt;Network&gt;</code> from a specified source host. Discovers ALL hosts in a network that are accessible from <code>&lt;IP&gt;</code>. If successful, returns set of discovered <code>&lt;IP&gt;</code> objects.</li>
@@ -1280,6 +1292,8 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
 <li><strong>ExploitService</strong>, params={<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_host</code>:<code>&lt;IP&gt;</code>, <code>target_service</code>:<code>&lt;Service&gt;</code>}: Exploits <code>target_service</code> in a specified <code>target_host</code>. If successful, the attacker gains control of the <code>target_host</code>.</li>
 <li><strong>ExfiltrateData</strong>, params{<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_host</code>:<code>&lt;IP&gt;</code>, <code>data</code>:<code>&lt;Data&gt;</code>}: Copies <code>data</code> from the <code>source_host</code> to <code>target_host</code> IF both are controlled and <code>target_host</code> is accessible from <code>source_host</code>.</li>
 <li><strong>BlockIP</strong>, params{<code>source_host</code>:<code>&lt;IP&gt;</code>, <code>target_host</code>:<code>&lt;IP&gt;</code>, <code>blocked_host</code>:<code>&lt;IP&gt;</code>}: Blocks communication from/to <code>blocked_host</code> on <code>target_host</code>. Requires control of <code>target_host</code>.</li>
+</ul>
+</li>
 </ul>
 <h3 id="action-preconditions-and-effects">Action preconditions and effects</h3>
 <p>In the following table, we describe the effects of selected actions and their preconditions. Note that if the preconditions are not satisfied, the actions's effects are not applied.</p>
