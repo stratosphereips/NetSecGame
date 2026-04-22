@@ -77,16 +77,18 @@ class TrajectoryRecorder:
         """
         return self._data
 
-    def save_to_file(self, location: str = "./logs/trajectories") -> None:
+    def save_to_file(self, location: str = "./logs/trajectories", filename:str=None) -> None:
         """
         Saves the recorded trajectory to a JSONL file.
 
         Args:
             location (str): Directory to save the file. Defaults to "./logs/trajectories".
+            filename (str): Name of the file to save. If None, defaults to "{datetime.now():%Y-%m-%d}_{self.agent_name}_{self.agent_role}".
         """
-        filename = f"{datetime.now():%Y-%m-%d}_{self.agent_name}_{self.agent_role}"
+        if filename is None:
+            filename = f"{datetime.now():%Y-%m-%d}_{self.agent_name}_{self.agent_role}"
         try:
             store_trajectories_to_jsonl(self._data, location, filename)
-            self.logger.info(f"Trajectory stored in {os.path.join(location, filename)}.jsonl")
+            self.logger.debug(f"Trajectory stored in {os.path.join(location, filename)}.jsonl")
         except Exception as e:
             self.logger.error(f"Failed to store trajectory: {e}")
