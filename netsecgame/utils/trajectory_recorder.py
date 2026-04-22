@@ -50,8 +50,8 @@ class TrajectoryRecorder:
             end_reason (Optional[str]): Reason for episode end, if applicable.
         """
         self.logger.debug(f"Adding step to trajectory for {self.agent_name}")
-        # Assuming Action and GameState have .as_dict property or method as in original code
-        # In original code: action.as_dict, next_state.as_dict
+        if len(self._data["trajectory"]["states"]) == 0:
+            self.logger.warning("The current action (id:{action.id}) is being added as the first step, but the initial state has not been recorded yet. Please call add_initial_state() at the beginning of the episode.")
         self._data["trajectory"]["actions"].append(action.as_dict)
         self._data["trajectory"]["rewards"].append(reward)
         self._data["trajectory"]["states"].append(next_state.as_dict)
