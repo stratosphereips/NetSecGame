@@ -126,6 +126,7 @@ After submitting Action `a` to the environment, agents receive an `Observation` 
 ├── netsecgame/
 │   ├── agents/
 │   │   ├── base_agent.py          # Base agent class — API for agent-server communication
+│   │   ├── parallel_base_agent.py # Agent class for multi-environment parallel execution
 │   ├── game/
 │   │   ├── scenarios/
 │   │   │   ├── one_net.py             # Single network scenario
@@ -160,5 +161,6 @@ After submitting Action `a` to the environment, agents receive an `Observation` 
 - **[`game_components.py`](game_components.md)** — Library of core objects used throughout the environment.
 - **[`global_defender.py`](global_defender.md)** — Stochastic omnipresent defender simulating a SIEM system.
 - **[`base_agent.py`](base_agent.md)** — Base class for all agents. Implements the TCP communication protocol.
+- **`parallel_base_agent.py`** — Base class for parallel multi-environment agents. See `examples/agents/random_attacker.py` for a reference implementation.
 
 The [scenarios](#) define the **topology** of a network (hosts, connections, networks, services, data, firewall rules) while the [task configuration](configuration.md) defines the exact task for agents within a given topology.
