@@ -1365,6 +1365,7 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
 <div class="highlight"><pre><span></span><code>├── netsecgame/
 │   ├── agents/
 │   │   ├── base_agent.py          # Base agent class — API for agent-server communication
+│   │   ├── parallel_base_agent.py # Agent class for multi-environment parallel execution
 │   ├── game/
 │   │   ├── scenarios/
 │   │   │   ├── one_net.py             # Single network scenario
@@ -1398,6 +1399,7 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
 <li><strong><a href="../game_components/"><code>game_components.py</code></a></strong> — Library of core objects used throughout the environment.</li>
 <li><strong><a href="../global_defender/"><code>global_defender.py</code></a></strong> — Stochastic omnipresent defender simulating a SIEM system.</li>
 <li><strong><a href="../base_agent/"><code>base_agent.py</code></a></strong> — Base class for all agents. Implements the TCP communication protocol.</li>
+<li><strong><code>parallel_base_agent.py</code></strong> — Base class for parallel multi-environment agents. See <code>examples/agents/random_attacker.py</code> for a reference implementation.</li>
 </ul>
 <p>The <a href="#">scenarios</a> define the <strong>topology</strong> of a network (hosts, connections, networks, services, data, firewall rules) while the <a href="../configuration/">task configuration</a> defines the exact task for agents within a given topology.</p>
 
