@@ -13,7 +13,9 @@ nav:
   - Global Defender: global_defender.md
   - API Reference:
     - Game Components: game_components.md
-    - Base Agent: base_agent.md
+    - Agents:
+      - Base Agent: base_agent.md
+      - Parallel Base Agent: parallel_base_agent.md
     - Agent Server: agent_server.md
     - Game Coordinator: game_coordinator.md
     - Configuration Manager: configuration_manager.md
