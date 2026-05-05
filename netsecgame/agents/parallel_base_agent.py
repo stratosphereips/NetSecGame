@@ -380,7 +380,7 @@ class ParallelBaseAgent:
 
     def make_step(
         self, actions: "Action | List[Action]"
-    ) -> "Tuple[Observation | None, bool] | Tuple[List[Optional[Observation]], List[bool]]":
+    ) -> "Observation | None | List[Optional[Observation]]":
         """Execute one step in every **active** environment in parallel.
 
         Args:
@@ -390,10 +390,12 @@ class ParallelBaseAgent:
                 **ignored** (no message is sent to that env).
 
         Returns:
-            In single-env mode: ``(observation, done)`` — a single
-            ``Observation | None`` and a ``bool``.
-            In multi-env mode: ``(observations, done_mask)`` — lists
-            positionally aligned with ``game_ports``.
+            In single-env mode: a single ``Observation | None``.
+            In multi-env mode: list of observations positionally aligned
+            with ``game_ports``.
+
+            *Note: If you need to access the boolean done statuses across
+            all environments, you can use the `self.done_mask` property.*
 
         Raises:
             ValueError: If the number of actions doesn't match ``num_envs``.
@@ -424,8 +426,8 @@ class ParallelBaseAgent:
                 self._done_mask[i] = True
 
         if self._single_env:
-            return results[0]#, self._done_mask[0]
-        return results#, list(self._done_mask)
+            return results[0]
+        return results
 
     def request_game_reset(
         self,
