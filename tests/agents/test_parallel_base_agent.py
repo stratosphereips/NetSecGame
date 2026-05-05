@@ -1,8 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import socket
-import json
-
 from netsecgame.agents.parallel_base_agent import ParallelBaseAgent
 from netsecgame.game_components import (
     Action, Observation, ActionType, GameStatus, AgentRole

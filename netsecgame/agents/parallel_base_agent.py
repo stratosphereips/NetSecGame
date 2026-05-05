@@ -4,7 +4,7 @@ import logging
 import socket
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional, Tuple, Dict, Any, List, Union, overload
+from typing import Optional, Tuple, Dict, Any, List
 
 from netsecgame.game_components import (
     Action, GameState, Observation, ActionType,
