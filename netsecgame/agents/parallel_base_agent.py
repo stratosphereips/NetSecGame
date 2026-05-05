@@ -4,7 +4,7 @@ import logging
 import socket
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional, Tuple, Dict, Any, List
+from typing import Optional, Tuple, Dict, Any, List, Callable
 
 from netsecgame.game_components import (
     Action, GameState, Observation, ActionType,
@@ -21,6 +21,9 @@ class ParallelBaseAgent:
     one TCP socket per environment and exposes vectorized versions of
     ``register()``, ``make_step()``, and ``request_game_reset()`` that
     operate on lists of actions/observations.
+
+    For a concrete example of extending and using this class, 
+    see ``examples/agents/random_attacker.py``.
 
     Args:
         game_hosts: Host address(es). A single string is broadcast to all
@@ -304,7 +307,7 @@ class ParallelBaseAgent:
 
     def _run_parallel(
         self,
-        fn,
+        fn: Callable[[int, ...], Any],
         env_indices: Optional[List[int]] = None,
         *,
         args_per_env: Optional[Dict[int, tuple]] = None,
