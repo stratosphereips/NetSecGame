@@ -104,20 +104,22 @@ class ParallelBaseAgent:
 
     def terminate_connection(self) -> None:
         """Close all sockets and shut down the thread pool."""
-        for i, sock in enumerate(self._sockets):
-            if sock is not None:
-                try:
-                    sock.close()
-                    self._logger.info(f"Socket for env {i} ({self._envs[i]}) closed")
-                except socket.error as e:
-                    self._logger.error(
-                        f"Error closing socket for env {i} ({self._envs[i]}): {e}"
-                    )
-                self._sockets[i] = None
-        try:
-            self._executor.shutdown(wait=False)
-        except Exception:
-            pass
+        if hasattr(self, '_sockets'):
+            for i, sock in enumerate(self._sockets):
+                if sock is not None:
+                    try:
+                        sock.close()
+                        self._logger.info(f"Socket for env {i} ({self._envs[i]}) closed")
+                    except socket.error as e:
+                        self._logger.error(
+                            f"Error closing socket for env {i} ({self._envs[i]}): {e}"
+                        )
+                    self._sockets[i] = None
+        if hasattr(self, '_executor'):
+            try:
+                self._executor.shutdown(wait=False)
+            except Exception:
+                pass
 
     # ======================================================================
     # Properties
