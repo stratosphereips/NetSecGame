@@ -322,8 +322,7 @@ class ParallelBaseAgent:
             args_per_env: Optional extra positional args per env index.
 
         Returns:
-            List of results, one per ``self._num_envs``. Indices not included
-            in *env_indices* get ``None``.
+            List of results, one per ``self._num_envs``. Indices not included in *env_indices* get ``None``.
         """
         if env_indices is None:
             env_indices = [i for i in range(self._num_envs) if self._sockets[i] is not None]
@@ -367,9 +366,7 @@ class ParallelBaseAgent:
         """Register in all connected environments in parallel.
 
         Returns:
-            In single-env mode: the initial ``Observation`` (or ``None``).
-            In multi-env mode: list of initial observations, positionally
-            aligned with ``game_ports``.
+            The initial ``Observation`` (or ``None``) in single-env mode, or a list of initial observations positionally aligned with ``game_ports`` in multi-env mode.
         """
         results = self._run_parallel(self._register_single)
         # Re-initialise done mask: failed envs stay done
@@ -383,6 +380,9 @@ class ParallelBaseAgent:
     ) -> "Observation | None | List[Optional[Observation]]":
         """Execute one step in every **active** environment in parallel.
 
+        *Note: If you need to access the boolean done statuses across
+        all environments, you can use the `self.done_mask` property.*
+
         Args:
             actions: In single-env mode a single ``Action``; in multi-env
                 mode a list of ``Action`` objects (one per environment).
@@ -390,12 +390,7 @@ class ParallelBaseAgent:
                 **ignored** (no message is sent to that env).
 
         Returns:
-            In single-env mode: a single ``Observation | None``.
-            In multi-env mode: list of observations positionally aligned
-            with ``game_ports``.
-
-            *Note: If you need to access the boolean done statuses across
-            all environments, you can use the `self.done_mask` property.*
+            A single ``Observation | None`` in single-env mode, or a list of observations positionally aligned with ``game_ports`` in multi-env mode.
 
         Raises:
             ValueError: If the number of actions doesn't match ``num_envs``.
@@ -444,9 +439,7 @@ class ParallelBaseAgent:
             seed: RNG seed. Required when ``randomize_topology`` is True.
 
         Returns:
-            In single-env mode: the initial ``Observation`` (or ``None``).
-            In multi-env mode: list of initial observations, positionally
-            aligned with ``game_ports``.
+            The initial ``Observation`` (or ``None``) in single-env mode, or a list of initial observations positionally aligned with ``game_ports`` in multi-env mode.
         """
         if seed is None and randomize_topology:
             raise ValueError(
