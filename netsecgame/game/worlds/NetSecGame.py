@@ -701,25 +701,14 @@ class NetSecGame(GameCoordinator):
         Returns:
             Tuple[Dict[Network, Network], Dict[IP, IP]]: The network and IP mappings.
         """
-        #self.logger.info(f"Generating new network and IP address mapping with seed {seed} (max attempts: {max_attempts})")
-
-        # # setup random generators
-        # if seed is not None:
-        #     fake = Faker()
-        #     fake.seed_instance(seed)
-        #     rng = random.Random(seed)
-        # else:
-        #     fake = self._faker_object
-        #     rng = random
         fake = self._faker_object
         rng = random
         
-
         mapping_nets = {}
         mapping_ips = {}
         
         # sort networks for deterministic processing (order should be deterministic in Python 3.7+ but we enforce it)
-        sorted_networks = sorted(self._networks.keys(), key=str)
+        sorted_networks = sorted(self._networks.keys(), key=lambda x: netaddr.IPNetwork(str(x)).ip)
 
         # generate network mappings (Preserves distance between private networks)
         private_nets = []
@@ -730,7 +719,8 @@ class NetSecGame(GameCoordinator):
                 mapping_nets[net] = Network(fake.ipv4_public(), net.mask)
         
         # Private Network logic
-        valid_network_mapping = False
+        # if no private networks, we are done, otherwise generate new mapping
+        valid_network_mapping = len(private_nets) == 0
         counter_iter = 0
         
         while not valid_network_mapping:
@@ -757,6 +747,7 @@ class NetSecGame(GameCoordinator):
                     valid_network_mapping = True
             except IndexError:
                 counter_iter += 1
+                self.logger.warning(f"Invalid mapping created: {mapping_nets}. Remaining attempts: {max_attempts - counter_iter}")
                 if counter_iter > max_attempts:
                     self.logger.error(f"Failed to generate valid network mapping in {max_attempts} attempts - exiting.")
                     exit(-1)
