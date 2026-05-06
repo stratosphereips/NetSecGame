@@ -701,20 +701,9 @@ class NetSecGame(GameCoordinator):
         Returns:
             Tuple[Dict[Network, Network], Dict[IP, IP]]: The network and IP mappings.
         """
-        #self.logger.info(f"Generating new network and IP address mapping with seed {seed} (max attempts: {max_attempts})")
-
-        # # setup random generators
-        # if seed is not None:
-        #     fake = Faker()
-        #     fake.seed_instance(seed)
-        #     rng = random.Random(seed)
-        # else:
-        #     fake = self._faker_object
-        #     rng = random
         fake = self._faker_object
         rng = random
         
-
         mapping_nets = {}
         mapping_ips = {}
         
