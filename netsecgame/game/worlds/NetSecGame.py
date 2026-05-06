@@ -745,7 +745,7 @@ class NetSecGame(GameCoordinator):
                 
                 if all(checks): 
                     valid_network_mapping = True
-            except IndexError as e:
+            except IndexError:
                 counter_iter += 1
                 self.logger.warning(f"Invalid mapping created: {mapping_nets}. Remaining attempts: {max_attempts - counter_iter}")
                 if counter_iter > max_attempts:
