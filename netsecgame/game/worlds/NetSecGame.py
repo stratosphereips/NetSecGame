@@ -708,7 +708,7 @@ class NetSecGame(GameCoordinator):
         mapping_ips = {}
         
         # sort networks for deterministic processing (order should be deterministic in Python 3.7+ but we enforce it)
-        sorted_networks = sorted(self._networks.keys(), key=str)
+        sorted_networks = sorted(self._networks.keys(), key=lambda x: netaddr.IPNetwork(str(x)).ip)
 
         # generate network mappings (Preserves distance between private networks)
         private_nets = []
