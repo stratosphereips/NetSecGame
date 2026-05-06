@@ -719,7 +719,8 @@ class NetSecGame(GameCoordinator):
                 mapping_nets[net] = Network(fake.ipv4_public(), net.mask)
         
         # Private Network logic
-        valid_network_mapping = False
+        # if no private networks, we are done, otherwise generate new mapping
+        valid_network_mapping = len(private_nets) == 0
         counter_iter = 0
         
         while not valid_network_mapping:
