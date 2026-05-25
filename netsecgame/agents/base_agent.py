@@ -199,7 +199,7 @@ class BaseAgent(ABC):
 
 if __name__ == "__main__":
     # Example usage of BaseAgent
-    GAME_PORT = 5000 # Change to the appropriate port
+    GAME_PORT = 9000 # Change to the appropriate port
     agent = BaseAgent("localhost", GAME_PORT, AgentRole.Attacker)
     # Register the agent
     observation = agent.register()
