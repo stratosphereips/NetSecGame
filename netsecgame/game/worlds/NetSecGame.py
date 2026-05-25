@@ -319,6 +319,8 @@ class NetSecGame(GameCoordinator):
         # Add all controlled hosts to known_hosts
         known_hosts = known_hosts.union(controlled_hosts)
         if add_neighboring_nets:
+            self.logger.info("Adding neighboring networks to the state.")
+            self.logger.warning("Using 'add_neighboring_nets=True' is deprecated and will be removed in future.")
             # Extend the known networks with the neighbouring networks
             # This is to solve in the env (and not in the agent) the problem
             # of not knowing other networks appart from the one the agent is in
