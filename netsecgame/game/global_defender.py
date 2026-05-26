@@ -15,7 +15,8 @@ class GlobalDefender:
             ActionType.ExploitService: 0.1,
             ActionType.FindData: 0.025,
             ActionType.ExfiltrateData: 0.025,
-            ActionType.BlockIP: 0.01
+            ActionType.BlockIP: 0.01,
+            ActionType.CaptureTraffic: 0.05
         }
     
 
@@ -26,7 +27,8 @@ class GlobalDefender:
             ActionType.ExploitService: 0.25,
             ActionType.FindData: 0.5,
             ActionType.ExfiltrateData: 0.25,
-            ActionType.BlockIP: 1
+            ActionType.BlockIP: 1,
+            ActionType.CaptureTraffic: 0.25
         }
 
         # Thresholds for consecutive actions of the same type in the TW. Only if the threshold is crossed, the detection check is triggered
