@@ -159,3 +159,7 @@ figures/*
 trajectories/*
 *.tar.gz
 casts/*
+
+
+# coding agent related files
+.agents/
