@@ -320,7 +320,7 @@ class GameCoordinator:
             case ActionType.ResetGame:
                 self.logger.debug(f"[{agent_addr}] Start processing of ActionType.ResetGame")
                 self._spawn_task(self._process_reset_game_action, agent_addr, action)
-            case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService | ActionType.BlockIP:
+            case ActionType.ExfiltrateData | ActionType.FindData | ActionType.ScanNetwork | ActionType.FindServices | ActionType.ExploitService | ActionType.BlockIP | ActionType.CaptureTraffic:
                 self.logger.debug(f"[{agent_addr}] Start processing of {action.type}")
                 self._spawn_task(self._process_game_action, agent_addr, action)
             case _:
