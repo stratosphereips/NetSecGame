@@ -91,7 +91,12 @@ The Action consists of two parts
 - **ExploitService**, params={`source_host`:`<IP>`, `target_host`:`<IP>`, `target_service`:`<Service>`}: Exploits `target_service` in a specified `target_host`. If successful, the attacker gains control of the `target_host`.
 - **ExfiltrateData**, params{`source_host`:`<IP>`, `target_host`:`<IP>`, `data`:`<Data>`}: Copies `data` from the `source_host` to `target_host` IF both are controlled and `target_host` is accessible from `source_host`.
 - **BlockIP**, params{`source_host`:`<IP>`, `target_host`:`<IP>`, `blocked_host`:`<IP>`}: Blocks communication from/to `blocked_host` on `target_host`. Requires control of `target_host`.
-- **CaptureTraffic**, params{`source_host`:`<IP>`, `target_host`:`<IP>`}: Captures traffic on `target_host` to discover other hosts accessible via the firewall. Discovers hosts with a base probability that is boosted non-linearly if previous connections are present in the host logs.
+- **CaptureTraffic**, params{`source_host`:`<IP>`, `target_host`:`<IP>`}: Captures traffic on `target_host` to discover other hosts accessible via the firewall. Discovers a host $h_{\text{new}}$ with a discovery probability calculated as follows:
+  * **Base Probability**: Loaded from the configuration (`discovery_probability`, default `0.1`).
+  * **Same-Network Bonus**: If $h_{\text{new}}$ and `target_host` share the exact same network subnet in the topology, the base probability is multiplied by a configured bonus (default `2.0`, doubling the base probability).
+  * **Log Connection Boost**: If system log files on either `target_host` or $h_{\text{new}}$ contain previous connection records between them, a non-linear boost is applied to the remaining probability space:
+    $$\text{Boost} = 1 - 0.5^{\text{connection\_count}}$$
+    $$\text{Probability} = \text{BaseProb} + (1 - \text{BaseProb}) \times \text{Boost}$$
 
 ### Action preconditions and effects
 In the following table, we describe the effects of selected actions and their preconditions. Note that if the preconditions are not satisfied, the actions's effects are not applied.
