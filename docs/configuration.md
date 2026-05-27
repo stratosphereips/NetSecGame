@@ -96,7 +96,7 @@ The network topology and rules are defined using a [CYST](https://pypi.org/proje
 
 - Server hosts (are a NodeConf in CYST)
     - Interfaces, each with one IP address
-    - Users that can log in to the host
+    - Users that can log in to the host (extracted from passive services' `access_schemes` and `authorization_domain`, deduplicated and merged with their highest privilege `AccessLevel` and union of `AuthenticationToken`s, and populated in `self._users` on the `NetSecGame` environment)
     - Active and passive services
     - Data in the server
     - To which network is connected

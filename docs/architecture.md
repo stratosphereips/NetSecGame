@@ -48,6 +48,21 @@ d1 = Data("User1", "DatabaseData")
 d2 = Data("User1", "DatabaseData", size=42, type="txt", description="SecretUserDatabase")
 ```
 
+#### AccessLevel
+AccessLevel is an enum representing the security/privilege level of a user account or active session on a host.
+* `AccessLevel.ELEVATED` (value `0`) - Represents elevated/administrative/root privileges.
+* `AccessLevel.LIMITED` (value `1`) - Represents limited/regular user privileges.
+
+#### AuthenticationToken
+AuthenticationToken represents credentials (such as passwords, keys, or biometrics) that can be used to authenticate as a specific user.
+* `id`: str - The unique identifier or type of the authentication token (e.g., `"windows login"`, `"PASSWORD"`, `"openssh_login_db_server"`).
+
+#### User
+User represents an account registered on a host.
+* `id`: str - The username/identity of the user (e.g., `"User1"`, `"root"`, `"Administrator"`).
+* `access_level`: [AccessLevel](#accesslevel) - The privilege level of the user on the host.
+* `authentication_tokens`: Set of [AuthenticationToken](#authenticationtoken)s - The set of tokens that can authenticate this user.
+
 ### GameState
 GameState is an object that represents a view of the NetSecGame environment in a given state. It is constructed as a collection of 'assets' available to the agent. GameState has following parts:
 - `known_networks`: Set of [Network](#network) objects that the agent is aware of
