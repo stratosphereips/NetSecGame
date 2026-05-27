@@ -173,6 +173,7 @@ def barplot_action_efficiency(data:list, model_names:list, filename="action_effi
         ActionType.FindData:np.zeros(len(model_names)),
         ActionType.ExploitService:np.zeros(len(model_names)),
         ActionType.ExfiltrateData:np.zeros(len(model_names)),
+        ActionType.CaptureTraffic:np.zeros(len(model_names)),
         }
 
     for i,trajectories in enumerate(data):
@@ -238,6 +239,7 @@ def cluster_trajectory_steps(game_plays:list, filename, end_reason=None, y="time
         ActionType.FindData:2,
         ActionType.ExploitService:3,
         ActionType.ExfiltrateData:4,
+        ActionType.CaptureTraffic:5,
     }
 
     trajectory_steps = []
@@ -291,6 +293,7 @@ def cluster_combined_trajectories(game_plays, filename=None, end_reason=None, op
         ActionType.FindData:2,
         ActionType.ExploitService:3,
         ActionType.ExfiltrateData:4,
+        ActionType.CaptureTraffic:5,
     }
     def extract_features(game_plays, end_reason=None):
         trajectory_steps = []
@@ -394,7 +397,8 @@ def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=Non
         ActionType.FindData:3,
         ActionType.ExploitService:4,
         ActionType.ExfiltrateData:5,
-        "Invalid":6
+        ActionType.CaptureTraffic:6,
+        "Invalid":7
     }
     counts = {
         "Start":0,
@@ -403,6 +407,7 @@ def generate_mdp_from_trajecotries(game_plays:list, filename:str, end_reason=Non
         ActionType.FindData:0,
         ActionType.ExploitService:0,
         ActionType.ExfiltrateData:0,
+        ActionType.CaptureTraffic:0,
         "Invalid":0
     }
     transitions = np.zeros([len(counts), len(counts)])
@@ -447,7 +452,8 @@ def generate_sankey_from_trajecotries(game_plays:list, filename:str, end_reason=
         ActionType.FindData:3,
         ActionType.ExploitService:4,
         ActionType.ExfiltrateData:5,
-        "Invalid":6
+        ActionType.CaptureTraffic:6,
+        "Invalid":7
     }
     counts = {
         "Start":0,
@@ -456,6 +462,7 @@ def generate_sankey_from_trajecotries(game_plays:list, filename:str, end_reason=
         ActionType.FindData:0,
         ActionType.ExploitService:0,
         ActionType.ExfiltrateData:0,
+        ActionType.CaptureTraffic:0,
         "Invalid":0
     }
     transitions = np.zeros([len(counts), len(counts)])
