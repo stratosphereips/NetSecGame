@@ -23,6 +23,7 @@ Each action type has a base probability of being detected. However, detection on
 | FindData | 0.025 |
 | ExfiltrateData | 0.025 |
 | BlockIP | 0.01 |
+| CaptureTraffic | 0.05 |
 
 For example, a single `ScanNetwork` action has a 5% probability of being detected.
 
@@ -40,6 +41,7 @@ Defines how frequently an action must appear in the time window to be considered
 | FindData | 0.5 |
 | ExfiltrateData | 0.25 |
 | BlockIP | 1 |
+| CaptureTraffic | 0.25 |
 
 ### Consecutive Actions Threshold
 
