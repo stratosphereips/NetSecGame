@@ -1276,7 +1276,7 @@ class NetSecGame(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
-    def _execute_capture_traffic_action(self, current_state: GameState, action: Action, agent_id: Tuple[str, int]) -> GameState:
+    def _execute_capture_traffic_action(self, current_state: GameState, action: Action, agent_id: Tuple[str, int], same_net_prob_bonus: float = 2.0) -> GameState:
         """
         Executes the CaptureTraffic action in the environment.
 
@@ -1284,6 +1284,7 @@ class NetSecGame(GameCoordinator):
             current_state (GameState): The current game state.
             action (Action): The CaptureTraffic action to execute.
             agent_id (Tuple[str, int]): Identifier of the requesting agent.
+            same_net_prob_bonus (float): Multiplier for base probability if hosts are in the same network. Default is 2.0.
 
         Returns:
             GameState: The updated game state.
@@ -1296,17 +1297,16 @@ class NetSecGame(GameCoordinator):
 
         if source_host in current_state.controlled_hosts and target_host in current_state.controlled_hosts:
             # We are capturing traffic on target_host. Let's find h_new which FW allows connections to/from target_host.
-            try:
-                action_cfg = self.config_manager._parser.config['env']['actions']['capture_traffic']
-                base_prob = action_cfg.get('prob_discovery', action_cfg.get('prob_success', 0.1))
-            except (KeyError, AttributeError, TypeError):
-                base_prob = 0.1
-
+            prob_discovery = self.config_manager.get_capture_traffic_discovery_probability()
             new_hosts_discovered = set()
             for h_new in self._ip_to_hostname.keys():
-                if h_new not in current_state.known_hosts:
+                base_prob = prob_discovery
+                if h_new not in next_known_h:
+                    self.logger.debug(f"\t\t\t{h_new} is not known in {next_known_h}")
                     # check firewall allowed connection
+                    self.logger.debug(f"\t\t\tChecking firewall connection: {self._firewall_check(target_host, h_new)} or {self._firewall_check(h_new, target_host)}")
                     if self._firewall_check(target_host, h_new) or self._firewall_check(h_new, target_host):
+                        self.logger.debug(f"\t\t\tFirewall allows connection")
                         # check connections count in logs
                         connection_count = 0
                         
@@ -1333,6 +1333,18 @@ class NetSecGame(GameCoordinator):
                                                 connection_count += 1
                                     except Exception:
                                         pass
+                        # Increate discovery probabilyt for hosts in the same netwokr
+                        if h_new:
+                            trgt_host_nets = set()
+                            h_new_nets = set()
+                            for net, ips in self._networks.items():
+                                if h_new in ips:
+                                    h_new_nets.add(net)
+                                if target_host in ips:
+                                    trgt_host_nets.add(net)
+                            if h_new_nets == trgt_host_nets:
+                                self.logger.debug(f"\t\t\tDiscovered host {h_new} in the same network as {target_host}. Doubled base probability from {base_prob} to {base_prob * 2}.")
+                                base_prob *= same_net_prob_bonus
 
                         # Non-linear boosted probability
                         boost = 1 - (0.5 ** connection_count)
@@ -1340,9 +1352,9 @@ class NetSecGame(GameCoordinator):
 
                         # Roll the discovery check
                         if random.random() < prob:
-                            self.logger.info(f"\t\t\tDiscovered host {h_new} with probability {prob:.3f} (boost from {connection_count} logs)")
+                            self.logger.debug(f"\t\t\tDiscovered host {h_new} with probability {prob:.3f} (boost from {connection_count} logs)")
                             new_hosts_discovered.add(h_new)
-
+            self.logger.info(f"\t\tNew hosts discovered: {new_hosts_discovered}")
             next_known_h = next_known_h.union(new_hosts_discovered)
             # Update log file on target_host
             self.update_log_file(next_data, action, target_host)
