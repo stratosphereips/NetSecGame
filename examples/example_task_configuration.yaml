@@ -57,4 +57,4 @@ env:
     false_positive: -5 
   actions:
     capture_traffic:
-      prob_discovery: 0.1
+      discovery_probability: 0.1
