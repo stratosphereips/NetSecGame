@@ -3,6 +3,7 @@ from __future__ import annotations
 # Library of helpful functions and objects to play the net sec game
 from dataclasses import dataclass, field, asdict
 from typing import Dict, Any, List, Set, Tuple, NamedTuple
+from functools import total_ordering
 import dataclasses
 import json
 import enum
@@ -10,6 +11,7 @@ import sys
 import netaddr
 import ipaddress
 import ast
+
 
 @dataclass(frozen=True, eq=True, order=True, slots=True)
 class Service():
@@ -933,3 +935,104 @@ class ProtocolConfig:
     """
     END_OF_MESSAGE: bytes = b"EOF"
     BUFFER_SIZE: int = 8192
+
+@total_ordering
+@enum.unique
+class AccessLevel(enum.Enum):
+    Admin = 0
+    User = 1
+    ReadOnly = 2
+
+    def __repr__(self) -> str:
+        """
+        Return the string representation of the AccessLevel.
+
+        Returns:
+            str: The agent role as a string.
+        """
+        return self.value
+
+    def to_string(self) -> str:
+        """
+        Convert the AccessLevel enum to string.
+
+        Returns:
+            str: The string representation.
+        """
+        return self.value
+    
+    def __eq__(self, other: object) -> bool:
+        """
+        Compare AccessLevel with another AccessLevel or string.
+
+        Args:
+            other (object): The object to compare.
+
+        Returns:
+            bool: True if equal, False otherwise.
+        """
+        if isinstance(other, AccessLevel):
+             return self.value == other.value
+        elif isinstance(other, str):
+             return self.value.lower() == other.lower().replace("accesslevel.", "")
+        return False
+
+    def __lt__(self, other: object) -> bool:
+        """
+        Compare AccessLevel with another AccessLevel or string.
+
+        Args:
+            other (object): The object to compare.
+
+        Returns:
+            bool: True if less than, False otherwise.
+        """
+        if isinstance(other, AccessLevel):
+            return self.value < other.value
+        elif isinstance(other, str):
+            return self.value < AccessLevel.from_string(other).value
+        return False
+
+    def __hash__(self) -> int:
+        """
+        Compute the hash of the AccessLevel.
+
+        Returns:
+            int: The hash value.
+        """
+        return hash(self.value)
+        
+    @classmethod
+    def from_string(cls, name: str) -> AccessLevel:
+        """
+        Convert a string to an AccessLevel enum.
+
+        Args:
+            name (str): The string representation.
+
+        Returns:
+            AccessLevel: The corresponding AccessLevel.
+
+        Raises:
+            ValueError: If the string does not match any AccessLevel.
+        """
+        # Clean up input string
+        name = name.split(".")[-1] # Remove prefix if present
+        
+        # Try case-insensitive matching
+        for level in cls:
+            if level.value.lower() == name.lower():
+                return level
+        raise ValueError(f"Invalid AccessLevel: {name}")
+
+
+@dataclass(frozen=True, eq=True, order=True, slots=True)
+class AuthenticationToken:
+    id: str
+    
+
+@dataclass(frozen=True, eq=True, order=True, slots=True)
+class User:
+    id: str
+    access_level: AccessLevel
+    authentication_tokens: Set[AuthenticationToken]
