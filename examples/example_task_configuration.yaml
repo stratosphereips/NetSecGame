@@ -19,7 +19,7 @@ coordinator:
       start_position: # Defined starting position of the attacker
         known_networks: []
         known_hosts: []
-        controlled_hosts: [213.47.23.195, 192.168.1.1] #
+        controlled_hosts: [213.47.23.195, 192.168.2.2] #
         known_services: {}
         known_data: {}
         known_blocks: {}
@@ -44,7 +44,7 @@ coordinator:
         known_blocks: {}
 
 env:
-  scenario: 'two_networks_tiny' # use the smallest topology for this example
+  scenario: 'two_networks' # use the smallest topology for this example
   use_global_defender: False # Do not use global SIEM Defender
   use_dynamic_addresses: True # Do not randomize IP addresses
   use_firewall: True # Use firewall
@@ -55,3 +55,6 @@ env:
     step: -1
     fail: -10
     false_positive: -5 
+  actions:
+    capture_traffic:
+      prob_discovery: 0.1
