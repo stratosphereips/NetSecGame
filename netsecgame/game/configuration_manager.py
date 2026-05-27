@@ -307,3 +307,17 @@ class ConfigurationManager:
         if not self._parser:
             raise RuntimeError("Configuration not loaded.")
         return self._parser.get_store_trajectories(default_value)
+
+    def get_capture_traffic_discovery_probability(self, default_value:float=0.1)->float:
+        """
+        Retrieves the probability of discovering a host during capture traffic action.
+
+        Args:
+            default_value (float): Default probability if not found. Defaults to 0.1.
+
+        Returns:d
+            float: The probability of discovering a host.
+        """
+        if not self._parser:
+            raise RuntimeError("Configuration not loaded.")
+        return self._parser.get_capture_traffic_discovery_probability(default_value)

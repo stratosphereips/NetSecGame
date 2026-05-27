@@ -585,3 +585,23 @@ class ConfigParser():
         except ValueError:
             required_players = default_value
         return required_players
+    
+    def get_capture_traffic_discovery_probability(self, default_value:float=0.1)->float:
+        """
+        Retrieves the probability of discovering a host during capture traffic action.
+
+        Args:
+            default_value (float): Default probability if not found. Defaults to 0.1.
+
+        Returns:
+            float: The probability of discovering a host.
+        """
+        try:
+            capture_traffic_discovery_probability = float(self.config['env']['actions']['capture_traffic']['discovery_probability'])
+        except KeyError:
+            self.logger.warning(f"Discovery probability for action type 'CaptureTraffic' not found in config, setting to {default_value}")
+            capture_traffic_discovery_probability = default_value
+        except ValueError:
+            self.logger.warning(f"Discovery probability for action type 'CaptureTraffic' not found in config, setting to {default_value}")
+            capture_traffic_discovery_probability = default_value
+        return capture_traffic_discovery_probability
