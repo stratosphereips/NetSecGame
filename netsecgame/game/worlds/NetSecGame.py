@@ -502,12 +502,12 @@ class NetSecGame(GameCoordinator):
                 self._users[node_obj.id] = set()
                 for username, user_info in host_users.items():
                     user_obj = User(
-                        id=username,
+                        username=username,
                         access_level=user_info["access_level"],
                         authentication_tokens=frozenset(user_info["tokens"])
                     )
                     self._users[node_obj.id].add(user_obj)
-                    self.logger.info(f"\t\tAdded User '{username}' to host '{node_obj.id}' with access level {user_info['access_level']} and tokens {user_info['tokens']}")
+                    self.logger.info(f"\t\tAdded User '{username}' ({user_obj.id}) to host '{node_obj.id}' with access level {user_info['access_level']} and tokens {user_info['tokens']}")
 
 
 

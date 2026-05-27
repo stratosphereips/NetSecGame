@@ -2,6 +2,7 @@ from __future__ import annotations
 # Author Ondrej Lukas - ondrej.lukas@aic.fel.cvut.cz
 # Library of helpful functions and objects to play the net sec game
 from dataclasses import dataclass, field, asdict
+from uuid import UUID, uuid4
 from typing import Dict, Any, List, Set, Tuple, NamedTuple
 from functools import total_ordering
 import dataclasses
@@ -1033,6 +1034,8 @@ class AuthenticationToken:
 
 @dataclass(frozen=True, eq=True, order=True, slots=True)
 class User:
-    id: str
+    username: str
     access_level: AccessLevel
     authentication_tokens: Set[AuthenticationToken]
+    id: UUID = field(default_factory=uuid4)
+
