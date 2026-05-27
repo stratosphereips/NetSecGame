@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Iterable, Any, Set, Dict, Optional, Tuple, List
 from collections import defaultdict
 
-from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service, AgentRole
+from netsecgame.game_components import GameState, Action, ActionType, IP, Network, Data, Service, AgentRole, AccessLevel, User, AuthenticationToken
 from netsecgame.game.coordinator import GameCoordinator
 from cyst.api.configuration import NodeConfig, RouterConfig, ConnectionConfig, ExploitConfig, FirewallPolicy
 
@@ -55,6 +55,7 @@ class NetSecGame(GameCoordinator):
         self._ip_to_hostname = {} # Mapping of `IP`:`host_name`(str) of all nodes in the environment
         self._networks = {} # A `dict` of the networks present in the environment. Keys: `Network` objects, values `set` of `IP` objects.
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
+        self._users = {} # Dict of all users in the environment. Keys: hostname (`str`), values: `set` of `User` objects.
         self._data_content = {}
         self._data = {}
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
@@ -438,6 +439,77 @@ class NetSecGame(GameCoordinator):
                 except AttributeError:
                     # Service does not contain any data
                     pass
+
+            # Process users and credentials/tokens
+            node_providers = {}
+            for service in node_obj.passive_services:
+                try:
+                    for provider in getattr(service, "authentication_providers", []):
+                        provider_ref = getattr(provider, "ref", None) or getattr(provider, "name", None)
+                        if provider_ref:
+                            node_providers[provider_ref] = provider
+                except (AttributeError, TypeError):
+                    pass
+
+            host_users = {}
+            for service in node_obj.passive_services:
+                try:
+                    for scheme in getattr(service, "access_schemes", []):
+                        # Gather tokens for this access scheme
+                        tokens = set()
+                        for provider_ref in getattr(scheme, "authentication_providers", []):
+                            # Check if the provider exists in our gathered providers
+                            if provider_ref in node_providers:
+                                provider = node_providers[provider_ref]
+                                tokens.add(AuthenticationToken(id=provider_ref))
+                                if hasattr(provider, "token_type") and hasattr(provider.token_type, "name"):
+                                    tokens.add(AuthenticationToken(id=provider.token_type.name))
+                            else:
+                                # Fallback: add the provider_ref name directly as a token
+                                tokens.add(AuthenticationToken(id=provider_ref))
+
+                        # Gather authorizations/users
+                        auth_domain = getattr(scheme, "authorization_domain", None)
+                        if auth_domain:
+                            for auth in getattr(auth_domain, "authorizations", []):
+                                username = getattr(auth, "identity", None) or getattr(auth, "name", None)
+                                if not username:
+                                    continue
+                                
+                                access_level_cyst = getattr(auth, "access_level", None)
+                                if access_level_cyst is not None:
+                                    level_name = getattr(access_level_cyst, "name", str(access_level_cyst))
+                                    user_level = AccessLevel.from_string(level_name)
+                                else:
+                                    user_level = AccessLevel.LIMITED
+
+                                if username not in host_users:
+                                    host_users[username] = {
+                                        "access_level": user_level,
+                                        "tokens": set(tokens)
+                                    }
+                                else:
+                                    # Merge access level (take higher privilege, which is smaller enum value)
+                                    if user_level.value < host_users[username]["access_level"].value:
+                                        host_users[username]["access_level"] = user_level
+                                    # Merge tokens
+                                    host_users[username]["tokens"].update(tokens)
+                except (AttributeError, TypeError):
+                    pass
+
+            # Populate self._users[node_obj.id]
+            if host_users:
+                self._users[node_obj.id] = set()
+                for username, user_info in host_users.items():
+                    user_obj = User(
+                        id=username,
+                        access_level=user_info["access_level"],
+                        authentication_tokens=frozenset(user_info["tokens"])
+                    )
+                    self._users[node_obj.id].add(user_obj)
+                    self.logger.info(f"\t\tAdded User '{username}' to host '{node_obj.id}' with access level {user_info['access_level']} and tokens {user_info['tokens']}")
+
+
 
         def process_router_config(router_obj: RouterConfig) -> Optional[bool]:
             """
