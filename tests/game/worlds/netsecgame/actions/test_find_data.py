@@ -1,5 +1,4 @@
 import pytest
-import json
 from netsecgame.game_components import Action, ActionType, IP, Network, Data, GameState
 from netsecgame.game.worlds.NetSecGame import NetSecGame
 
@@ -125,5 +124,5 @@ def test_find_data_firewall_blocked_benign_agent(base_game):
         (IP("192.168.1.1"), IP("192.168.1.3")): {("Defender", 1)}
     }
     
-    new_state = base_game._execute_find_data_action(current_state, action, agent_id=agent_id)
+    base_game._execute_find_data_action(current_state, action, agent_id=agent_id)
     assert base_game._agent_false_positives.get(("Defender", 1), 0) == 1

@@ -1,6 +1,6 @@
 import pytest
 import json
-from netsecgame.game_components import Action, ActionType, IP, Network, Data, GameState
+from netsecgame.game_components import Action, ActionType, IP, Network, GameState
 from netsecgame.game.worlds.NetSecGame import NetSecGame
 
 @pytest.fixture
