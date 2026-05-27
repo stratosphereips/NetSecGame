@@ -91,6 +91,12 @@ The Action consists of two parts
 - **ExploitService**, params={`source_host`:`<IP>`, `target_host`:`<IP>`, `target_service`:`<Service>`}: Exploits `target_service` in a specified `target_host`. If successful, the attacker gains control of the `target_host`.
 - **ExfiltrateData**, params{`source_host`:`<IP>`, `target_host`:`<IP>`, `data`:`<Data>`}: Copies `data` from the `source_host` to `target_host` IF both are controlled and `target_host` is accessible from `source_host`.
 - **BlockIP**, params{`source_host`:`<IP>`, `target_host`:`<IP>`, `blocked_host`:`<IP>`}: Blocks communication from/to `blocked_host` on `target_host`. Requires control of `target_host`.
+- **CaptureTraffic**, params{`source_host`:`<IP>`, `target_host`:`<IP>`}: Captures traffic on `target_host` to discover other hosts accessible via the firewall. Discovers a host $h_{\text{new}}$ with a discovery probability calculated as follows:
+  * **Base Probability**: Loaded from the configuration (`discovery_probability`, default `0.1`).
+  * **Same-Network Bonus**: If $h_{\text{new}}$ and `target_host` share the exact same network subnet in the topology, the base probability is multiplied by a configured bonus (default `2.0`, doubling the base probability).
+  * **Log Connection Boost**: If system log files on either `target_host` or $h_{\text{new}}$ contain previous connection records between them, a non-linear boost is applied to the remaining probability space:
+    $$\text{Boost} = 1 - 0.5^{\text{connection\_count}}$$
+    $$\text{Probability} = \text{BaseProb} + (1 - \text{BaseProb}) \times \text{Boost}$$
 
 ### Action preconditions and effects
 In the following table, we describe the effects of selected actions and their preconditions. Note that if the preconditions are not satisfied, the actions's effects are not applied.
@@ -103,6 +109,7 @@ In the following table, we describe the effects of selected actions and their pr
 |Exploit Service | `source_host`, `target_host`, `target_service`|`source_host` ∈ `controlled_hosts`| extends `controlled_hosts` with `target_host`|
 |ExfiltrateData| `source_host`,`target_host`, `data` |`source_host`, `target_host` ∈ `controlled_hosts` AND `data` ∈ `known_data`| extends `known_data[target_host]` with `data`|
 |BlockIP | `source_host`, `target_host`, `blocked_host`|`source_host` ∈ `controlled_hosts`| extends `known_blocks[target_host]` with `blocked_host`|
+|CaptureTraffic | `source_host`, `target_host`|`source_host`, `target_host` ∈ `controlled_hosts`| extends `known_hosts`|
 
 #### Assumptions and Conditions for Actions
 1. When playing the `ExploitService` action, it is expected that the agent has discovered this service before (by playing `FindServices` in the `target_host` before this action)

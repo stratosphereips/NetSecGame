@@ -6,7 +6,7 @@ import json
 from abc import ABC
 from typing import Optional, Tuple, Dict, Any
 
-from netsecgame.game_components import Action, GameState, Observation, ActionType, GameStatus, AgentInfo, ProtocolConfig, AgentRole
+from netsecgame.game_components import Action, GameState, Observation, ActionType, GameStatus, AgentInfo, ProtocolConfig, AgentRole, IP
 
 class BaseAgent(ABC):
     """
@@ -205,5 +205,7 @@ if __name__ == "__main__":
     observation = agent.register()
     if observation:
         print("Initial Observation:", observation)
+    obs2 = agent.make_step(Action(ActionType.CaptureTraffic, parameters={"source_host": IP("192.168.2.2"), "target_host": IP("192.168.2.2")}))
+    print("Observation after CaptureTraffic:", obs2)
     # Gracefully terminate the connection
     agent.terminate_connection()

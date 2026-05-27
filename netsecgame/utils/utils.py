@@ -346,6 +346,12 @@ def generate_valid_actions(state: GameState, include_blocks=False)->Set[Action]:
                     if not is_fw_blocked(state, source_host,target_host):
                         for blocked_ip in state.known_hosts:
                             valid_actions.add(Action(ActionType.BlockIP, {"target_host":target_host, "source_host":source_host, "blocked_host":blocked_ip}))
+
+        # CaptureTraffic
+        for source_host in state.controlled_hosts:
+            for target_host in state.controlled_hosts:
+                valid_actions.add(Action(ActionType.CaptureTraffic, parameters={"source_host": source_host, "target_host": target_host}))
+
     return valid_actions  
 
 if __name__ == "__main__":

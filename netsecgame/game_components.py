@@ -277,6 +277,7 @@ class ActionType(enum.Enum):
     ExploitService = "ExploitService"
     ExfiltrateData = "ExfiltrateData"
     BlockIP = "BlockIP"
+    CaptureTraffic = "CaptureTraffic"
     JoinGame = "JoinGame"
     QuitGame = "QuitGame"
     ResetGame = "ResetGame"

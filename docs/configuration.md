@@ -70,7 +70,9 @@ In summary, the topology change (IP randomization) can't change without allowing
     - `fail` - sets the reward which agent gets when it does not reach its objective (default -10)
     - `step` - sets reward which agent gets for every step taken (default -1)
     - `false_positive` - sets reward for a false positive action (default -5)
-- `actions` - defines the probability of success for every ActionType
+- `actions` - defines the action-specific configurations. Currently, it allows configuring the base host discovery probability for the traffic capturing action:
+    - `capture_traffic`:
+        - `discovery_probability` - sets the base probability of discovering a new host via traffic capture (default 0.1)
 
 ```YAML
 env:
@@ -86,18 +88,8 @@ env:
         fail: -10
         false_positive: -5
     actions:
-        scan_network:
-         prob_success: 1.0
-        find_services:
-         prob_success: 1.0
-        exploit_service:
-         prob_success: 1.0
-        find_data:
-         prob_success: 1.0
-        exfiltrate_data:
-         prob_success: 1.0
-        block_ip:
-         prob_success: 1.0
+        capture_traffic:
+            discovery_probability: 0.1
 ```
 ### Definition of the network topology
 The network topology and rules are defined using a [CYST](https://pypi.org/project/cyst/) simulator configuration. Cyst defines a complex network configuration, and this environment does not use all Cyst features for now. CYST components currently used are:

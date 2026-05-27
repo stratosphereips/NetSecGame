@@ -298,7 +298,7 @@ class NetSecGame(GameCoordinator):
         self.logger.info(f"Generated Goal GameState:{goal_state}")
         return goal_state
 
-    def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=True)->GameState:
+    def _create_state_from_view(self, view:dict, add_neighboring_nets:bool=False)->GameState:
         """
         Builds a GameState from given view.
         If there is a keyword 'random' used, it is replaced by a valid option at random.
@@ -947,6 +947,8 @@ class NetSecGame(GameCoordinator):
                 next_state = self._execute_exfiltrate_data_action(current_state, action, agent_id)
             case ActionType.BlockIP:
                 next_state = self._execute_block_ip_action(current_state, action, agent_id)
+            case ActionType.CaptureTraffic:
+                next_state = self._execute_capture_traffic_action(current_state, action, agent_id)
             case _:
                 raise ValueError(f"Unknown Action type or other error: '{action.type}'")
         return next_state
@@ -1274,6 +1276,93 @@ class NetSecGame(GameCoordinator):
             self.logger.debug(f"\t\t\t Invalid source_host:'{action.parameters['source_host']}'")
         return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
 
+    def _execute_capture_traffic_action(self, current_state: GameState, action: Action, agent_id: Tuple[str, int], same_net_prob_bonus: float = 2.0) -> GameState:
+        """
+        Executes the CaptureTraffic action in the environment.
+
+        Args:
+            current_state (GameState): The current game state.
+            action (Action): The CaptureTraffic action to execute.
+            agent_id (Tuple[str, int]): Identifier of the requesting agent.
+            same_net_prob_bonus (float): Multiplier for base probability if hosts are in the same network. Default is 2.0.
+
+        Returns:
+            GameState: The updated game state.
+        """
+        next_nets, next_known_h, next_controlled_h, next_services, next_data, next_blocked = state_parts_deep_copy(current_state)
+        self.logger.info(f"\t\tAttempting CaptureTraffic from {action.parameters.get('source_host')} on {action.parameters.get('target_host')}")
+        
+        source_host = action.parameters.get("source_host")
+        target_host = action.parameters.get("target_host")
+
+        if source_host in current_state.controlled_hosts and target_host in current_state.controlled_hosts:
+            # We are capturing traffic on target_host. Let's find h_new which FW allows connections to/from target_host.
+            prob_discovery = self.config_manager.get_capture_traffic_discovery_probability()
+            new_hosts_discovered = set()
+            for h_new in self._ip_to_hostname.keys():
+                base_prob = prob_discovery
+                if h_new not in next_known_h:
+                    self.logger.debug(f"\t\t\t{h_new} is not known in {next_known_h}")
+                    # check firewall allowed connection
+                    self.logger.debug(f"\t\t\tChecking firewall connection: {self._firewall_check(target_host, h_new)} or {self._firewall_check(h_new, target_host)}")
+                    if self._firewall_check(target_host, h_new) or self._firewall_check(h_new, target_host):
+                        self.logger.debug(f"\t\t\tFirewall allows connection")
+                        # check connections count in logs
+                        connection_count = 0
+                        
+                        target_hostname = self._ip_to_hostname.get(target_host)
+                        if target_hostname and target_hostname in self._data:
+                            for datum in self._data[target_hostname]:
+                                if datum.owner == "system" and datum.type == "log":
+                                    try:
+                                        log_content = json.loads(datum.content)
+                                        for entry in log_content:
+                                            if entry.get("source_host") == str(h_new):
+                                                connection_count += 1
+                                    except Exception:
+                                        pass
+
+                        h_new_hostname = self._ip_to_hostname.get(h_new)
+                        if h_new_hostname and h_new_hostname in self._data:
+                            for datum in self._data[h_new_hostname]:
+                                if datum.owner == "system" and datum.type == "log":
+                                    try:
+                                        log_content = json.loads(datum.content)
+                                        for entry in log_content:
+                                            if entry.get("source_host") == str(target_host):
+                                                connection_count += 1
+                                    except Exception:
+                                        pass
+                        # Increate discovery probabilyt for hosts in the same netwokr
+                        if h_new:
+                            trgt_host_nets = set()
+                            h_new_nets = set()
+                            for net, ips in self._networks.items():
+                                if h_new in ips:
+                                    h_new_nets.add(net)
+                                if target_host in ips:
+                                    trgt_host_nets.add(net)
+                            if h_new_nets == trgt_host_nets:
+                                self.logger.debug(f"\t\t\tDiscovered host {h_new} in the same network as {target_host}. Doubled base probability from {base_prob} to {base_prob * 2}.")
+                                base_prob *= same_net_prob_bonus
+
+                        # Non-linear boosted probability
+                        boost = 1 - (0.5 ** connection_count)
+                        prob = base_prob + (1 - base_prob) * boost
+
+                        # Roll the discovery check
+                        if random.random() < prob:
+                            self.logger.debug(f"\t\t\tDiscovered host {h_new} with probability {prob:.3f} (boost from {connection_count} logs)")
+                            new_hosts_discovered.add(h_new)
+            self.logger.info(f"\t\tNew hosts discovered: {new_hosts_discovered}")
+            next_known_h = next_known_h.union(new_hosts_discovered)
+            # Update log file on target_host
+            self.update_log_file(next_data, action, target_host)
+        else:
+            self.logger.debug(f"\t\t\tInvalid source_host or target_host. They must be controlled.")
+            
+        return GameState(next_controlled_h, next_known_h, next_services, next_data, next_nets, next_blocked)
+
     def _get_all_local_ips(self) -> Set[IP]:
         """
         Returns all private IP addresses present in the environment.
@@ -1312,7 +1401,7 @@ class NetSecGame(GameCoordinator):
                 content = json.loads(current_log_file.content)
             content.append({'source_host': str(action.parameters["source_host"]), 'action_type': str(action.type)})
             new_content = json.dumps(content)
-        except KeyError:
+        except (KeyError, IndexError):
             self.logger.debug(f"\t\t\tLog not found in host {hostaname}. Creating new one.")
             new_content = [{'source_host': str(action.parameters["source_host"]), 'action_type': str(action.type)}]
             new_content = json.dumps(new_content)

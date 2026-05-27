@@ -17,6 +17,8 @@ class TestComponentActionType:
         assert str(ActionType.ScanNetwork) == "ActionType.ScanNetwork"
         assert str(ActionType.ExploitService) == "ActionType.ExploitService"
         assert str(ActionType.ExfiltrateData) == "ActionType.ExfiltrateData"
+        assert str(ActionType.BlockIP) == "ActionType.BlockIP"
+        assert str(ActionType.CaptureTraffic) == "ActionType.CaptureTraffic"
         assert str(ActionType.JoinGame) == "ActionType.JoinGame"
         assert str(ActionType.ResetGame) == "ActionType.ResetGame"
         assert str(ActionType.QuitGame) == "ActionType.QuitGame"
@@ -30,6 +32,8 @@ class TestComponentActionType:
         assert hash(ActionType.ScanNetwork) == hash("ScanNetwork")
         assert hash(ActionType.ExploitService) == hash("ExploitService")
         assert hash(ActionType.ExfiltrateData) == hash("ExfiltrateData")
+        assert hash(ActionType.BlockIP) == hash("BlockIP")
+        assert hash(ActionType.CaptureTraffic) == hash("CaptureTraffic")
         assert hash(ActionType.JoinGame) == hash("JoinGame")
         assert hash(ActionType.ResetGame) == hash("ResetGame")
         assert hash(ActionType.QuitGame) == hash("QuitGame")
@@ -508,3 +512,24 @@ class TestComponentAction:
         action = Action(ActionType.FindData, parameters={"simple_param": "simple_value"})
         d = action.as_dict
         assert d["parameters"]["simple_param"] == "simple_value"
+
+    def test_action_capture_traffic_serialization(self):
+        """Test CaptureTraffic serialization and dict conversions"""
+        action = Action(
+            action_type=ActionType.CaptureTraffic,
+            parameters={
+                "source_host": IP("192.168.1.1"),
+                "target_host": IP("192.168.1.2")
+            }
+        )
+        action_json = action.to_json()
+        new_action = Action.from_json(action_json)
+        assert action == new_action
+        assert new_action.parameters["source_host"] == IP("192.168.1.1")
+        assert new_action.parameters["target_host"] == IP("192.168.1.2")
+
+        action_dict = action.as_dict
+        new_action_from_dict = Action.from_dict(action_dict)
+        assert action == new_action_from_dict
+        assert action_dict["parameters"]["source_host"] == {"ip": "192.168.1.1"}
+        assert action_dict["parameters"]["target_host"] == {"ip": "192.168.1.2"}

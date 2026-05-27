@@ -118,3 +118,6 @@ env:
       prob_success: 1.0
     block_ip:
       prob_success: 1.0
+    capture_traffic:
+      prob_success: 1.0
+      prob_discovery: 0.1
