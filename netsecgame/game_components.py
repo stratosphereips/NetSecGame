@@ -939,9 +939,8 @@ class ProtocolConfig:
 @total_ordering
 @enum.unique
 class AccessLevel(enum.Enum):
-    Admin = 0
-    User = 1
-    ReadOnly = 2
+    ELEVATED = 0
+    LIMITED = 1
 
     def __repr__(self) -> str:
         """
@@ -1021,9 +1020,10 @@ class AccessLevel(enum.Enum):
         
         # Try case-insensitive matching
         for level in cls:
-            if level.value.lower() == name.lower():
+            if level.name.lower() == name.lower():
                 return level
         raise ValueError(f"Invalid AccessLevel: {name}")
+
 
 
 @dataclass(frozen=True, eq=True, order=True, slots=True)
