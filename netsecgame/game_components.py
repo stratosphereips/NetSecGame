@@ -254,7 +254,7 @@ class Data():
         Returns:
             int: The hash value.
         """
-        return hash((self.owner, self.id, self.type))
+        return hash((self.id, self.type))
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> Data:
