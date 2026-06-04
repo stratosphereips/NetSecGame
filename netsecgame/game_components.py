@@ -241,7 +241,7 @@ class Data():
         type (str): Type of the data. Default = ""
         content (str): Content of the data. Default = ""
     """
-    owner: str
+    owner: str = field(compare=False, hash=False)
     id: str
     size: int = field(compare=False, hash=False, default=0)
     type: str = ""
