@@ -235,13 +235,13 @@ class Data():
     Represents a data object in the NetSecGame.
 
     Attributes:
-        owner (str): Owner of the data. 
+        owner (User | str): Owner of the data. 
         id (str): Identifier of the data.
         size (int): Size of the data. Default = 0
         type (str): Type of the data. Default = ""
         content (str): Content of the data. Default = ""
     """
-    owner: str = field(compare=False, hash=False)
+    owner: User | str = field(compare=False, hash=False)
     id: str
     size: int = field(compare=False, hash=False, default=0)
     type: str = ""
@@ -1029,13 +1029,12 @@ class AccessLevel(enum.Enum):
 
 @dataclass(frozen=True, eq=True, order=True, slots=True)
 class AuthenticationToken:
-    id: str
-    
+    authenticator: str
+    type: str = "unknown"
 
 @dataclass(frozen=True, eq=True, order=True, slots=True)
 class User:
     username: str
     access_level: AccessLevel
-    authentication_tokens: Set[AuthenticationToken]
     id: UUID = field(default_factory=uuid4)
 

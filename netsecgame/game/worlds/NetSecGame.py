@@ -56,11 +56,12 @@ class NetSecGame(GameCoordinator):
         self._networks = {} # A `dict` of the networks present in the environment. Keys: `Network` objects, values `set` of `IP` objects.
         self._services = {} # Dict of all services in the environment. Keys: hostname (`str`), values: `set` of `Service` objetcs.
         self._users = {} # Dict of all users in the environment. Keys: hostname (`str`), values: `set` of `User` objects.
-        self._data_content = {}
-        self._data = {}
+        self._valid_credentials = {} # Dict of all valid credentials in the environment. 
+        self._data_content = {} # Dict of all data content in the environment. Keys: (hostname (`str`), data (`Data`)), values: `str`.
+        self._data = {} # Dict of all data in the environment. Keys: hostname (`str`), values: `set` of `Data` objects.
         self._firewall = {} # dict of all the allowed connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
-        self._fw_blocks = {}
-        self._agent_fw_rules = {}
+        self._fw_blocks = {} # dict of all the blocked connections in the environment. Keys `IP` ,values: `set` of `IP` objects.
+        self._agent_fw_rules = {} # dict of all the agent firewall rules in the environment. Keys `IP` ,values: `set` of `IP` objects.
         # All exploits in the environment
         self._exploits = {}
         # A list of all the hosts where the attacker can start in a random start
@@ -413,6 +414,88 @@ class NetSecGame(GameCoordinator):
                 self.logger.info(f'\t\tAdded network {str(interface.net)} to the list of available nets, with node {node_obj.id}.')
 
 
+            # Process users and credentials/tokens first, so we can use them for data points
+            node_providers = {}
+            for service in node_obj.passive_services:
+                try:
+                    for provider in getattr(service, "authentication_providers", []):
+                        provider_ref = getattr(provider, "ref", None) or getattr(provider, "name", None)
+                        if provider_ref:
+                            node_providers[provider_ref] = provider
+                except (AttributeError, TypeError):
+                    pass
+
+            host_users = {}
+            temp_valid_creds = set() # Store (Service, username, AuthToken) temporarily
+
+            for service_config in node_obj.passive_services:
+                if getattr(service_config, "name", "") == "can_attack_start_here":
+                    continue
+                
+                service_obj = Service(service_config.name, "passive", service_config.version, service_config.local)
+
+                try:
+                    for scheme in getattr(service_config, "access_schemes", []):
+                        # Gather tokens for this access scheme
+                        tokens = set()
+                        for provider_ref in getattr(scheme, "authentication_providers", []):
+                            # Check if the provider exists in our gathered providers
+                            if provider_ref in node_providers:
+                                provider_obj = node_providers[provider_ref]
+                                token_type = provider_obj.token_type.name if hasattr(provider_obj, "token_type") and hasattr(provider_obj.token_type, "name") else "unknown"
+                                tokens.add(AuthenticationToken(authenticator=provider_ref, type=token_type))
+                            else:
+                                # Fallback: add the provider_ref name directly as a token
+                                tokens.add(AuthenticationToken(authenticator=provider_ref, type="unknown"))
+
+                        # Gather authorizations/users
+                        auth_domain = getattr(scheme, "authorization_domain", None)
+                        if auth_domain:
+                            for auth in getattr(auth_domain, "authorizations", []):
+                                username = getattr(auth, "identity", None) or getattr(auth, "name", None)
+                                if not username:
+                                    continue
+                                
+                                access_level_cyst = getattr(auth, "access_level", None)
+                                if access_level_cyst is not None:
+                                    level_name = getattr(access_level_cyst, "name", str(access_level_cyst))
+                                    user_level = AccessLevel.from_string(level_name)
+                                else:
+                                    user_level = AccessLevel.LIMITED
+
+                                if username not in host_users:
+                                    host_users[username] = user_level
+                                else:
+                                    # Merge access level (take higher privilege, which is smaller enum value)
+                                    if user_level.value < host_users[username].value:
+                                        host_users[username] = user_level
+                                
+                                # Temporarily map the credentials to the username string
+                                for token in tokens:
+                                    temp_valid_creds.add((service_obj, username, token))
+                except (AttributeError, TypeError):
+                    pass
+
+            # Populate self._users[node_obj.id] and self._valid_credentials[node_obj.id]
+            final_users_by_name = {}
+            if host_users:
+                self._users[node_obj.id] = set()
+                for username, user_level in host_users.items():
+                    user_obj = User(
+                        username=username,
+                        access_level=user_level
+                    )
+                    self._users[node_obj.id].add(user_obj)
+                    final_users_by_name[username] = user_obj
+                    self.logger.info(f"\t\tAdded User '{username}' ({user_obj.id}) to host '{node_obj.id}' with access level {user_obj.access_level}")
+                
+                if temp_valid_creds:
+                    self._valid_credentials[node_obj.id] = set()
+                    for srv, uname, tok in temp_valid_creds:
+                        usr = final_users_by_name[uname]
+                        self._valid_credentials[node_obj.id].add((srv, usr, tok))
+                        self.logger.info(f"\t\t\tValid Credential: '{usr.username}' on {srv.name} using {tok}")
+
             #services
             self.logger.info(f"\t\tProcessing services & data in node '{node_obj.id}'")
             for service in node_obj.passive_services:
@@ -432,82 +515,14 @@ class NetSecGame(GameCoordinator):
                         self.logger.info(f"\t\t\t\tData: {data}")
                         if node_obj.id not in self._data:
                             self._data[node_obj.id] = set()
-                        datapoint = Data(data.owner, data.description)
+                        owner_val = final_users_by_name.get(data.owner, data.owner)
+                        datapoint = Data(owner=owner_val, id=data.description)
                         self._data[node_obj.id].add(datapoint)
                         # add content
                         self._data_content[node_obj.id, datapoint.id] = f"Content of {datapoint.id}"
                 except AttributeError:
                     # Service does not contain any data
                     pass
-
-            # Process users and credentials/tokens
-            node_providers = {}
-            for service in node_obj.passive_services:
-                try:
-                    for provider in getattr(service, "authentication_providers", []):
-                        provider_ref = getattr(provider, "ref", None) or getattr(provider, "name", None)
-                        if provider_ref:
-                            node_providers[provider_ref] = provider
-                except (AttributeError, TypeError):
-                    pass
-
-            host_users = {}
-            for service in node_obj.passive_services:
-                try:
-                    for scheme in getattr(service, "access_schemes", []):
-                        # Gather tokens for this access scheme
-                        tokens = set()
-                        for provider_ref in getattr(scheme, "authentication_providers", []):
-                            # Check if the provider exists in our gathered providers
-                            if provider_ref in node_providers:
-                                provider = node_providers[provider_ref]
-                                tokens.add(AuthenticationToken(id=provider_ref))
-                                if hasattr(provider, "token_type") and hasattr(provider.token_type, "name"):
-                                    tokens.add(AuthenticationToken(id=provider.token_type.name))
-                            else:
-                                # Fallback: add the provider_ref name directly as a token
-                                tokens.add(AuthenticationToken(id=provider_ref))
-
-                        # Gather authorizations/users
-                        auth_domain = getattr(scheme, "authorization_domain", None)
-                        if auth_domain:
-                            for auth in getattr(auth_domain, "authorizations", []):
-                                username = getattr(auth, "identity", None) or getattr(auth, "name", None)
-                                if not username:
-                                    continue
-                                
-                                access_level_cyst = getattr(auth, "access_level", None)
-                                if access_level_cyst is not None:
-                                    level_name = getattr(access_level_cyst, "name", str(access_level_cyst))
-                                    user_level = AccessLevel.from_string(level_name)
-                                else:
-                                    user_level = AccessLevel.LIMITED
-
-                                if username not in host_users:
-                                    host_users[username] = {
-                                        "access_level": user_level,
-                                        "tokens": set(tokens)
-                                    }
-                                else:
-                                    # Merge access level (take higher privilege, which is smaller enum value)
-                                    if user_level.value < host_users[username]["access_level"].value:
-                                        host_users[username]["access_level"] = user_level
-                                    # Merge tokens
-                                    host_users[username]["tokens"].update(tokens)
-                except (AttributeError, TypeError):
-                    pass
-
-            # Populate self._users[node_obj.id]
-            if host_users:
-                self._users[node_obj.id] = set()
-                for username, user_info in host_users.items():
-                    user_obj = User(
-                        username=username,
-                        access_level=user_info["access_level"],
-                        authentication_tokens=frozenset(user_info["tokens"])
-                    )
-                    self._users[node_obj.id].add(user_obj)
-                    self.logger.info(f"\t\tAdded User '{username}' ({user_obj.id}) to host '{node_obj.id}' with access level {user_info['access_level']} and tokens {user_info['tokens']}")
 
 
 
