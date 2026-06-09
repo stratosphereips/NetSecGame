@@ -250,8 +250,10 @@ class GameCoordinator:
         
         self.logger.debug(f"Timeouts set to:{self._steps_limit_per_role}")
         if self.config_manager.get_use_global_defender():
+            self.logger.info("Global SIEM defender is enabled")
             self._global_defender = GlobalDefender()
         else:
+            self.logger.info("Global SIEM defender is disabled")
             self._global_defender = None
         self._use_dynamic_addresses = self.config_manager.get_use_dynamic_addresses()
         self.logger.info(f"Change IP every episode set to: {self._use_dynamic_addresses}")
