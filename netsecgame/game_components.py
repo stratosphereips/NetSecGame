@@ -1032,9 +1032,27 @@ class AuthenticationToken:
     authenticator: str
     type: str = "unknown"
 
+    def __repr__(self) -> str:
+        """
+        Return the string representation of the AuthenticationToken.
+
+        Returns:
+            str: The authentication token as a string.
+        """
+        return f"{self.authenticator} ({self.type})"
+
 @dataclass(frozen=True, eq=True, order=True, slots=True)
 class User:
     username: str
     access_level: AccessLevel
     id: UUID = field(default_factory=uuid4)
+
+    def __repr__(self) -> str:
+        """
+        Return the string representation of the User.
+
+        Returns:
+            str: The user as a string.
+        """
+        return f"{self.username} ({self.access_level})"
 

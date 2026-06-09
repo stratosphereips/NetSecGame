@@ -59,7 +59,8 @@ AuthenticationToken represents credentials (such as passwords, keys, or biometri
 
 #### User
 User represents an account registered on a host.
-* `id`: str - The username/identity of the user (e.g., `"User1"`, `"root"`, `"Administrator"`).
+* `id`: UUID - Automatically generated secure UUID uniquely identifying the user.
+* `username`: str - The username/identity of the user (e.g., `"User1"`, `"root"`, `"Administrator"`).
 * `access_level`: [AccessLevel](#accesslevel) - The privilege level of the user on the host.
 * `authentication_tokens`: Set of [AuthenticationToken](#authenticationtoken)s - The set of tokens that can authenticate this user.
 
