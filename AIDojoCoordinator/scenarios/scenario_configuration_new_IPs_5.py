@@ -690,7 +690,7 @@ Internet
 '''
 internet = cyst_cfg.RouterConfig(
     interfaces=[
-        cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("68.32.1.1"), cyst_cfg.IPNetwork("68.32.1.1/26"), index=0)
+        cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("68.32.1.1"), cyst_cfg.IPNetwork("68.32.1.0/26"), index=0)
     ],
     routing_table=[
         RouteConfig(cyst_cfg.IPNetwork("192.168.0.0/16"), 0)
@@ -723,7 +723,7 @@ outside_node = cyst_cfg.NodeConfig(
         )
     ],
     traffic_processors=[],
-    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("68.32.1.34"), cyst_cfg.IPNetwork("68.32.1.35/26"))],
+    interfaces=[cyst_cfg.InterfaceConfig(cyst_cfg.IPAddress("68.32.1.34"), cyst_cfg.IPNetwork("68.32.1.0/26"))],
     shell="bash",
     id="outside_node"
 )
