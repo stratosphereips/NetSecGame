@@ -293,7 +293,7 @@ class NetSecGame(GameCoordinator):
         # parse known services
         known_services = self._get_services_from_view(view["known_services"])
         # parse known data
-        known_data = self._get_data_from_view(view["known_data"], keyword_scope="global", exclude_types=["logs"])
+        known_data = self._get_data_from_view(view["known_data"], keyword_scope="global", exclude_types=["log"])
         goal_state = GameState(controlled_hosts, known_hosts, known_services, known_data, known_networks)
         self.logger.info(f"Generated Goal GameState:{goal_state}")
         return goal_state
