@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/network_intel_node.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -2699,7 +2699,7 @@
 <span class="normal">526</span>
 <span class="normal">527</span>
 <span class="normal">528</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Check equality with another Action object.</span>
 
 <span class="sd">    Args:</span>
@@ -2707,7 +2707,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if equal, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">Action</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">NotImplemented</span>
     <span class="k">return</span> <span class="p">(</span>
@@ -2769,12 +2769,12 @@
 <span class="normal">537</span>
 <span class="normal">538</span>
 <span class="normal">539</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute the hash of the Action.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        int: The hash value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Convert parameters to a sorted tuple of key-value pairs for consistency</span>
     <span class="n">sorted_params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="nb">hash</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
     <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">action_type</span><span class="p">,</span> <span class="n">sorted_params</span><span class="p">))</span>
@@ -2831,13 +2831,13 @@
 <span class="normal">500</span>
 <span class="normal">501</span>
 <span class="normal">502</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the string representation of the Action.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The action as a string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Action &lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">action_type</span><span class="si">}</span><span class="s2">|</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="si">}</span><span class="s2">&gt;&quot;</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"Action &lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">action_type</span><span class="si">}</span><span class="s2">|</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="si">}</span><span class="s2">&gt;"</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2891,13 +2891,13 @@
 <span class="normal">509</span>
 <span class="normal">510</span>
 <span class="normal">511</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the string representation of the Action.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The action as a string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Action &lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">action_type</span><span class="si">}</span><span class="s2">|</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="si">}</span><span class="s2">&gt;&quot;</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"Action &lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">action_type</span><span class="si">}</span><span class="s2">|</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="si">}</span><span class="s2">&gt;"</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3049,7 +3049,7 @@
 <span class="normal">478</span>
 <span class="normal">479</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Action</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Create an Action from a dictionary.</span>
 
 <span class="sd">    Args:</span>
@@ -3060,35 +3060,35 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If an unsupported parameter is encountered.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">action_type</span> <span class="o">=</span> <span class="n">ActionType</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;action_type&quot;</span><span class="p">])</span>
+<span class="sd">    """</span>
+    <span class="n">action_type</span> <span class="o">=</span> <span class="n">ActionType</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">data_dict</span><span class="p">[</span><span class="s2">"action_type"</span><span class="p">])</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">"parameters"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">match</span> <span class="n">k</span><span class="p">:</span>
-            <span class="k">case</span> <span class="s2">&quot;source_host&quot;</span> <span class="o">|</span> <span class="s2">&quot;target_host&quot;</span> <span class="o">|</span> <span class="s2">&quot;blocked_host&quot;</span> <span class="o">|</span> <span class="s2">&quot;blocked_ip&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"source_host"</span> <span class="o">|</span> <span class="s2">"target_host"</span> <span class="o">|</span> <span class="s2">"blocked_host"</span> <span class="o">|</span> <span class="s2">"blocked_ip"</span><span class="p">:</span>
                 <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">IP</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-            <span class="k">case</span> <span class="s2">&quot;target_network&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"target_network"</span><span class="p">:</span>
                 <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">Network</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-            <span class="k">case</span> <span class="s2">&quot;target_service&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"target_service"</span><span class="p">:</span>
                 <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">Service</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-            <span class="k">case</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"data"</span><span class="p">:</span>
                 <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">Data</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-            <span class="k">case</span> <span class="s2">&quot;agent_info&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"agent_info"</span><span class="p">:</span>
                 <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">AgentInfo</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-            <span class="k">case</span> <span class="s2">&quot;request_trajectory&quot;</span> <span class="o">|</span> <span class="s2">&quot;randomize_topology&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"request_trajectory"</span> <span class="o">|</span> <span class="s2">"randomize_topology"</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
                     <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-            <span class="k">case</span> <span class="s2">&quot;seed&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"seed"</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
                     <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
-                <span class="k">elif</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">v</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span><span class="p">:</span>
+                <span class="k">elif</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">v</span> <span class="o">==</span> <span class="s2">"None"</span><span class="p">:</span>
                     <span class="n">params</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported value in </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported value in </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported value in </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported value in </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">action_type</span><span class="o">=</span><span class="n">action_type</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3188,7 +3188,7 @@
 <span class="normal">492</span>
 <span class="normal">493</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Action</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Create an Action from a JSON string.</span>
 
 <span class="sd">    Args:</span>
@@ -3196,7 +3196,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Action: The created Action object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">data_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -3252,12 +3252,12 @@
 <span class="normal">433</span>
 <span class="normal">434</span>
 <span class="normal">435</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Serialize the Action to a JSON string.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The JSON string representation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">as_dict</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3400,7 +3400,7 @@
 <span class="normal">307</span>
 <span class="normal">308</span>
 <span class="normal">309</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compare ActionType with another ActionType or string.</span>
 
 <span class="sd">    Args:</span>
@@ -3408,13 +3408,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if equal, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Compare with another ActionType</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">ActionType</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
     <span class="c1"># Compare with a string</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-       <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;ActionType.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+       <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"ActionType."</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">False</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3470,12 +3470,12 @@
 <span class="normal">317</span>
 <span class="normal">318</span>
 <span class="normal">319</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute the hash of the ActionType.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        int: The hash value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Use the hash of the value for consistent behavior</span>
     <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -3602,8 +3602,8 @@
 <span class="normal">339</span>
 <span class="normal">340</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ActionType</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Convert a string to an ActionType enum. Strips &#39;ActionType.&#39; if present.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Convert a string to an ActionType enum. Strips 'ActionType.' if present.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        name (str): The string representation.</span>
@@ -3613,13 +3613,13 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If the string does not match any ActionType.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;ActionType.&quot;</span><span class="p">):</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;ActionType.&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"ActionType."</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"ActionType."</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid ActionType: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid ActionType: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3673,12 +3673,12 @@
 <span class="normal">289</span>
 <span class="normal">290</span>
 <span class="normal">291</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Convert the ActionType enum to string.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The string representation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3818,13 +3818,13 @@
 <span class="normal">359</span>
 <span class="normal">360</span>
 <span class="normal">361</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the string representation of the AgentInfo.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The agent info as a string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">role</span><span class="si">}</span><span class="s2">)&quot;</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">role</span><span class="si">}</span><span class="s2">)"</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3925,7 +3925,7 @@
 <span class="normal">377</span>
 <span class="normal">378</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">AgentInfo</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Build the AgentInfo object from a dictionary.</span>
 
 <span class="sd">    Args:</span>
@@ -3933,10 +3933,10 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        AgentInfo: The created AgentInfo object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-    <span class="n">processed</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="n">AgentRole</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;role&quot;</span><span class="p">])}</span>
+    <span class="n">processed</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="s2">"role"</span><span class="p">:</span> <span class="n">AgentRole</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"role"</span><span class="p">])}</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">processed</span><span class="p">)</span>   
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4077,7 +4077,7 @@
 <span class="normal">887</span>
 <span class="normal">888</span>
 <span class="normal">889</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compare AgentRole with another AgentRole or string.</span>
 
 <span class="sd">    Args:</span>
@@ -4085,11 +4085,11 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if equal, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">AgentRole</span><span class="p">):</span>
          <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;agentrole.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"agentrole."</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">False</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4144,12 +4144,12 @@
 <span class="normal">896</span>
 <span class="normal">897</span>
 <span class="normal">898</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute the hash of the AgentRole.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        int: The hash value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4204,12 +4204,12 @@
 <span class="normal">862</span>
 <span class="normal">863</span>
 <span class="normal">864</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the string representation of the AgentRole.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The agent role as a string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4338,7 +4338,7 @@
 <span class="normal">921</span>
 <span class="normal">922</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AgentRole</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Convert a string to an AgentRole enum.</span>
 
 <span class="sd">    Args:</span>
@@ -4349,16 +4349,16 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If the string does not match any AgentRole.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Clean up input string</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># Remove prefix if present</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># Remove prefix if present</span>
 
     <span class="c1"># Try case-insensitive matching</span>
     <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="bp">cls</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">role</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
             <span class="k">return</span> <span class="n">role</span>
 
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid AgentRole: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid AgentRole: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4412,12 +4412,12 @@
 <span class="normal">871</span>
 <span class="normal">872</span>
 <span class="normal">873</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Convert the AgentRole enum to string.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The string representation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4560,7 +4560,7 @@
 <span class="normal">813</span>
 <span class="normal">814</span>
 <span class="normal">815</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compare AgentStatus with another AgentStatus or string.</span>
 
 <span class="sd">    Args:</span>
@@ -4568,13 +4568,13 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if equal, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Compare with another ActionType</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">AgentStatus</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
     <span class="c1"># Compare with a string</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-       <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;AgentStatus.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+       <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"AgentStatus."</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">False</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4630,12 +4630,12 @@
 <span class="normal">823</span>
 <span class="normal">824</span>
 <span class="normal">825</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute the hash of the AgentStatus.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        int: The hash value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Use the hash of the value for consistent behavior</span>
     <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -4762,7 +4762,7 @@
 <span class="normal">845</span>
 <span class="normal">846</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AgentStatus</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Convert a string to an AgentStatus enum.</span>
 
 <span class="sd">    Args:</span>
@@ -4773,13 +4773,13 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If the string does not match any AgentStatus.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;AgentStatus.&quot;</span><span class="p">):</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;AgentStatus.&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"AgentStatus."</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"AgentStatus."</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid AgentStatus: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid AgentStatus: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4833,12 +4833,12 @@
 <span class="normal">795</span>
 <span class="normal">796</span>
 <span class="normal">797</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">to_string</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Convert the AgentStatus enum to string.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The string representation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -5011,12 +5011,12 @@
 <span class="normal">252</span>
 <span class="normal">253</span>
 <span class="normal">254</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute the hash of the Data object.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        int: The hash value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">owner</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -5115,7 +5115,7 @@
 <span class="normal">266</span>
 <span class="normal">267</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Data</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Build the Data object from a dictionary.</span>
 
 <span class="sd">    Args:</span>
@@ -5123,7 +5123,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Data: The created Data object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -5443,13 +5443,13 @@
 <span class="normal">635</span>
 <span class="normal">636</span>
 <span class="normal">637</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the string representation of the GameState.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The game state as a string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;State&lt;nets:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">known_networks</span><span class="si">}</span><span class="s2">; known:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">known_hosts</span><span class="si">}</span><span class="s2">; owned:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="si">}</span><span class="s2">; services:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">known_services</span><span class="si">}</span><span class="s2">; data:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">known_data</span><span class="si">}</span><span class="s2">; blocks:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">known_blocks</span><span class="si">}</span><span class="s2">&gt;&quot;</span>    
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"State&lt;nets:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">known_networks</span><span class="si">}</span><span class="s2">; known:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">known_hosts</span><span class="si">}</span><span class="s2">; owned:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="si">}</span><span class="s2">; services:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">known_services</span><span class="si">}</span><span class="s2">; data:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">known_data</span><span class="si">}</span><span class="s2">; blocks:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">known_blocks</span><span class="si">}</span><span class="s2">&gt;"</span>    
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5504,12 +5504,12 @@
 <span class="normal">645</span>
 <span class="normal">646</span>
 <span class="normal">647</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_json</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the JSON representation of the GameState.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The JSON string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">ret_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_dict</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">ret_dict</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -5630,7 +5630,7 @@
 <span class="normal">698</span>
 <span class="normal">699</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">GameState</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Create a GameState from a dictionary.</span>
 
 <span class="sd">    Args:</span>
@@ -5638,26 +5638,26 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        GameState: The created GameState object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="s2">&quot;known_blocks&quot;</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="s2">"known_blocks"</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">:</span>
         <span class="n">known_blocks</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">target_host</span><span class="p">,</span> <span class="n">blocked_hosts</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;known_blocks&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">target_host</span><span class="p">,</span> <span class="n">blocked_hosts</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">"known_blocks"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">blocked_ips</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">blocked_host</span> <span class="ow">in</span> <span class="n">blocked_hosts</span><span class="p">:</span>
-                <span class="n">ip_val</span> <span class="o">=</span> <span class="n">blocked_host</span><span class="p">[</span><span class="s2">&quot;ip&quot;</span><span class="p">]</span>
+                <span class="n">ip_val</span> <span class="o">=</span> <span class="n">blocked_host</span><span class="p">[</span><span class="s2">"ip"</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ip_val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                     <span class="n">ip_val</span> <span class="o">=</span> <span class="n">ip_val</span><span class="p">[</span><span class="s2">&quot;ip&quot;</span><span class="p">]</span>
+                     <span class="n">ip_val</span> <span class="o">=</span> <span class="n">ip_val</span><span class="p">[</span><span class="s2">"ip"</span><span class="p">]</span>
                 <span class="n">blocked_ips</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">IP</span><span class="p">(</span><span class="n">ip_val</span><span class="p">))</span>
             <span class="n">known_blocks</span><span class="p">[</span><span class="n">IP</span><span class="p">(</span><span class="n">target_host</span><span class="p">)]</span> <span class="o">=</span> <span class="n">blocked_ips</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">known_blocks</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">state</span> <span class="o">=</span> <span class="n">GameState</span><span class="p">(</span>
-        <span class="n">known_networks</span> <span class="o">=</span> <span class="p">{</span><span class="n">Network</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;ip&quot;</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mask&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;known_networks&quot;</span><span class="p">]},</span>
-        <span class="n">known_hosts</span> <span class="o">=</span> <span class="p">{</span><span class="n">IP</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;ip&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;known_hosts&quot;</span><span class="p">]},</span>
-        <span class="n">controlled_hosts</span> <span class="o">=</span> <span class="p">{</span><span class="n">IP</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;ip&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;controlled_hosts&quot;</span><span class="p">]},</span>
-        <span class="n">known_services</span> <span class="o">=</span> <span class="p">{</span><span class="n">IP</span><span class="p">(</span><span class="n">k</span><span class="p">):{</span><span class="n">Service</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;version&quot;</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;is_local&quot;</span><span class="p">])</span>
-            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">services</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">services</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;known_services&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>  
-        <span class="n">known_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">IP</span><span class="p">(</span><span class="n">k</span><span class="p">):{</span><span class="n">Data</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s2">&quot;owner&quot;</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">])</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">values</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;known_data&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+        <span class="n">known_networks</span> <span class="o">=</span> <span class="p">{</span><span class="n">Network</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">"ip"</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="s2">"mask"</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">"known_networks"</span><span class="p">]},</span>
+        <span class="n">known_hosts</span> <span class="o">=</span> <span class="p">{</span><span class="n">IP</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">"ip"</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">"known_hosts"</span><span class="p">]},</span>
+        <span class="n">controlled_hosts</span> <span class="o">=</span> <span class="p">{</span><span class="n">IP</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">"ip"</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">"controlled_hosts"</span><span class="p">]},</span>
+        <span class="n">known_services</span> <span class="o">=</span> <span class="p">{</span><span class="n">IP</span><span class="p">(</span><span class="n">k</span><span class="p">):{</span><span class="n">Service</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="s2">"type"</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="s2">"version"</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="s2">"is_local"</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">services</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">services</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">"known_services"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>  
+        <span class="n">known_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">IP</span><span class="p">(</span><span class="n">k</span><span class="p">):{</span><span class="n">Data</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="s2">"owner"</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">"size"</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">"type"</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">"content"</span><span class="p">])</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">values</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">"known_data"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
         <span class="n">known_blocks</span> <span class="o">=</span> <span class="n">known_blocks</span>
             <span class="p">)</span>
     <span class="k">return</span> <span class="n">state</span>
@@ -5759,7 +5759,7 @@
 <span class="normal">712</span>
 <span class="normal">713</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_json</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GameState</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Create a GameState from a JSON string.</span>
 
 <span class="sd">    Args:</span>
@@ -5767,7 +5767,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        GameState: The created GameState object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">data_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -5871,12 +5871,12 @@
 <span class="normal">773</span>
 <span class="normal">774</span>
 <span class="normal">775</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the string representation of the GameStatus.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The game status as a string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -5983,7 +5983,7 @@
 <span class="normal">765</span>
 <span class="normal">766</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GameStatus</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Convert a string to a GameStatus enum.</span>
 
 <span class="sd">    Args:</span>
@@ -5991,20 +5991,20 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        GameStatus: The corresponding GameStatus.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">match</span> <span class="n">string</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;GameStatus.OK&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"GameStatus.OK"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">GameStatus</span><span class="o">.</span><span class="n">OK</span>
-        <span class="k">case</span> <span class="s2">&quot;GameStatus.CREATED&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"GameStatus.CREATED"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">GameStatus</span><span class="o">.</span><span class="n">CREATED</span>
-        <span class="k">case</span> <span class="s2">&quot;GameStatus.BAD_REQUEST&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"GameStatus.BAD_REQUEST"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">GameStatus</span><span class="o">.</span><span class="n">BAD_REQUEST</span>
-        <span class="k">case</span> <span class="s2">&quot;GameStatus.FORBIDDEN&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"GameStatus.FORBIDDEN"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">GameStatus</span><span class="o">.</span><span class="n">FORBIDDEN</span>
-        <span class="k">case</span> <span class="s2">&quot;GameStatus.RESET_DONE&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"GameStatus.RESET_DONE"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">GameStatus</span><span class="o">.</span><span class="n">RESET_DONE</span>
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid GameStatus string: </span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid GameStatus string: </span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6168,7 +6168,7 @@
 <span class="normal">85</span>
 <span class="normal">86</span>
 <span class="normal">87</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Check equality with another IP object.</span>
 
 <span class="sd">    Args:</span>
@@ -6176,7 +6176,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if equal, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">IP</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">NotImplemented</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">ip</span>
@@ -6233,12 +6233,12 @@
 <span class="normal">123</span>
 <span class="normal">124</span>
 <span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute the hash of the IP.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        int: The hash value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -6296,16 +6296,16 @@
 <span class="normal">62</span>
 <span class="normal">63</span>
 <span class="normal">64</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Verify if the provided IP is valid.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If the IP address is invalid.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">ipaddress</span><span class="o">.</span><span class="n">ip_address</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid IP address provided: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid IP address provided: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -6359,12 +6359,12 @@
 <span class="normal">71</span>
 <span class="normal">72</span>
 <span class="normal">73</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the string representation of the IP.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The IP address.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -6463,7 +6463,7 @@
 <span class="normal">115</span>
 <span class="normal">116</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">IP</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Build the IP object from a dictionary representation.</span>
 
 <span class="sd">    Args:</span>
@@ -6471,7 +6471,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        IP: The created IP object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -6533,18 +6533,18 @@
 <span class="normal">101</span>
 <span class="normal">102</span>
 <span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_private</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Check if the IP address is private. Uses ipaddress module.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if the IP is private, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">IPv4Network</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="p">)</span><span class="o">.</span><span class="n">is_private</span>
     <span class="k">except</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">AddressValueError</span><span class="p">:</span>
         <span class="c1"># The IP is a string </span>
-        <span class="c1"># In the concepts, &#39;external&#39; is the string used for external hosts.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">!=</span> <span class="s1">&#39;external&#39;</span><span class="p">:</span>
+        <span class="c1"># In the concepts, 'external' is the string used for external hosts.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ip</span> <span class="o">!=</span> <span class="s1">'external'</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span>
 </code></pre></div></td></tr></table></div>
@@ -6726,7 +6726,7 @@
 <span class="normal">198</span>
 <span class="normal">199</span>
 <span class="normal">200</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__gt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Network</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Greater-than comparison for networks.</span>
 
 <span class="sd">    Args:</span>
@@ -6734,7 +6734,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if self &gt; other, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPNetwork</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPNetwork</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
     <span class="k">except</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">:</span>
@@ -6833,7 +6833,7 @@
 <span class="normal">183</span>
 <span class="normal">184</span>
 <span class="normal">185</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__le__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Network</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Less-than-or-equal comparison for networks.</span>
 
 <span class="sd">    Args:</span>
@@ -6841,7 +6841,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if self &lt;= other, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPNetwork</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPNetwork</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
     <span class="k">except</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">:</span>
@@ -6940,7 +6940,7 @@
 <span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__lt__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Network</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Less-than comparison for networks.</span>
 
 <span class="sd">    Args:</span>
@@ -6948,7 +6948,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if self &lt; other, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPNetwork</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPNetwork</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">other</span><span class="p">))</span>
     <span class="k">except</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">:</span>
@@ -7006,13 +7006,13 @@
 <span class="normal">144</span>
 <span class="normal">145</span>
 <span class="normal">146</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the string representation of the network.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The network in CIDR notation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="si">}</span><span class="s2">"</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -7066,13 +7066,13 @@
 <span class="normal">153</span>
 <span class="normal">154</span>
 <span class="normal">155</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Return the string representation of the network.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The network in CIDR notation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="si">}</span><span class="s2">"</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -7170,7 +7170,7 @@
 <span class="normal">225</span>
 <span class="normal">226</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Network</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Build the Network object from a dictionary.</span>
 
 <span class="sd">    Args:</span>
@@ -7178,7 +7178,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Network: The created Network object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -7237,14 +7237,14 @@
 <span class="normal">211</span>
 <span class="normal">212</span>
 <span class="normal">213</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">is_private</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Check if the network is private. Uses ipaddress module.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if the network is private, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">IPv4Network</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">is_private</span>
+        <span class="k">return</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">IPv4Network</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ip</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span><span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">is_private</span>
     <span class="k">except</span> <span class="n">ipaddress</span><span class="o">.</span><span class="n">AddressValueError</span><span class="p">:</span>
         <span class="c1"># If we are dealing with strings, assume they are local networks</span>
         <span class="k">return</span> <span class="kc">True</span>
@@ -7647,7 +7647,7 @@
 <span class="normal">40</span>
 <span class="normal">41</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Service</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Create a Service object from a dictionary.</span>
 
 <span class="sd">    Args:</span>
@@ -7655,7 +7655,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Service: The created Service object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -7731,7 +7731,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

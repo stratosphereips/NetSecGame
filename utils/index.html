@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/network_intel_node.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -1384,14 +1384,14 @@ Args:
 <span class="normal">347</span>
 <span class="normal">348</span>
 <span class="normal">349</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">generate_valid_actions</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">GameState</span><span class="p">,</span> <span class="n">include_blocks</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Set</span><span class="p">[</span><span class="n">Action</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Function that generates a list of all valid actions in a given GameState</span>
+<span class="w">    </span><span class="sd">"""Function that generates a list of all valid actions in a given GameState</span>
 <span class="sd">    Args:</span>
 <span class="sd">        state (GameState): The current game state.</span>
 <span class="sd">        include_blocks (bool): Whether to include BlockIP actions. Defaults to False.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        set: A set of valid Action objects.    </span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">valid_actions</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">src_ip</span><span class="p">,</span> <span class="n">dst_ip</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
         <span class="n">blocked</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1405,22 +1405,22 @@ Args:
         <span class="c1">#Network Scans</span>
         <span class="k">for</span> <span class="n">network</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_networks</span><span class="p">:</span>
             <span class="c1"># TODO ADD neighbouring networks</span>
-            <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">ScanNetwork</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_network&quot;</span><span class="p">:</span> <span class="n">network</span><span class="p">,</span> <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,}))</span>
+            <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">ScanNetwork</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">"target_network"</span><span class="p">:</span> <span class="n">network</span><span class="p">,</span> <span class="s2">"source_host"</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,}))</span>
 
         <span class="c1"># Service Scans</span>
         <span class="k">for</span> <span class="n">blocked_host</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_hosts</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source_host</span><span class="p">,</span> <span class="n">blocked_host</span><span class="p">):</span>
-                <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">FindServices</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">,</span> <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,}))</span>
+                <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">FindServices</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">"target_host"</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">,</span> <span class="s2">"source_host"</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,}))</span>
 
         <span class="c1"># Service Exploits</span>
         <span class="k">for</span> <span class="n">blocked_host</span><span class="p">,</span> <span class="n">service_list</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_services</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source_host</span><span class="p">,</span><span class="n">blocked_host</span><span class="p">):</span>
                 <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="n">service_list</span><span class="p">:</span>
-                    <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">ExploitService</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">,</span><span class="s2">&quot;target_service&quot;</span><span class="p">:</span> <span class="n">service</span><span class="p">,</span><span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,}))</span>
+                    <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">ExploitService</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">"target_host"</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">,</span><span class="s2">"target_service"</span><span class="p">:</span> <span class="n">service</span><span class="p">,</span><span class="s2">"source_host"</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,}))</span>
         <span class="c1"># Data Scans</span>
         <span class="k">for</span> <span class="n">blocked_host</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source_host</span><span class="p">,</span><span class="n">blocked_host</span><span class="p">):</span>
-                <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">FindData</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">,</span> <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">}))</span>
+                <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">FindData</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">"target_host"</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">,</span> <span class="s2">"source_host"</span><span class="p">:</span> <span class="n">blocked_host</span><span class="p">}))</span>
 
         <span class="c1"># Data Exfiltration</span>
         <span class="k">for</span> <span class="n">source_host</span><span class="p">,</span> <span class="n">data_list</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -1428,7 +1428,7 @@ Args:
                 <span class="k">for</span> <span class="n">trg_host</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">trg_host</span> <span class="o">!=</span> <span class="n">source_host</span><span class="p">:</span>
                         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source_host</span><span class="p">,</span><span class="n">trg_host</span><span class="p">):</span>
-                            <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">ExfiltrateData</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">trg_host</span><span class="p">,</span> <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">data</span><span class="p">}))</span>
+                            <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">ExfiltrateData</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">"target_host"</span><span class="p">:</span> <span class="n">trg_host</span><span class="p">,</span> <span class="s2">"source_host"</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span> <span class="s2">"data"</span><span class="p">:</span> <span class="n">data</span><span class="p">}))</span>
 
         <span class="c1"># BlockIP</span>
         <span class="k">if</span> <span class="n">include_blocks</span><span class="p">:</span>
@@ -1436,7 +1436,7 @@ Args:
                 <span class="k">for</span> <span class="n">target_host</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">:</span>
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">is_fw_blocked</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">source_host</span><span class="p">,</span><span class="n">target_host</span><span class="p">):</span>
                         <span class="k">for</span> <span class="n">blocked_ip</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">known_hosts</span><span class="p">:</span>
-                            <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">BlockIP</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;target_host&quot;</span><span class="p">:</span><span class="n">target_host</span><span class="p">,</span> <span class="s2">&quot;source_host&quot;</span><span class="p">:</span><span class="n">source_host</span><span class="p">,</span> <span class="s2">&quot;blocked_host&quot;</span><span class="p">:</span><span class="n">blocked_ip</span><span class="p">}))</span>
+                            <span class="n">valid_actions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span><span class="n">ActionType</span><span class="o">.</span><span class="n">BlockIP</span><span class="p">,</span> <span class="p">{</span><span class="s2">"target_host"</span><span class="p">:</span><span class="n">target_host</span><span class="p">,</span> <span class="s2">"source_host"</span><span class="p">:</span><span class="n">source_host</span><span class="p">,</span> <span class="s2">"blocked_host"</span><span class="p">:</span><span class="n">blocked_ip</span><span class="p">}))</span>
     <span class="k">return</span> <span class="n">valid_actions</span>  
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1564,20 +1564,20 @@ Args:
 <span class="normal">42</span>
 <span class="normal">43</span>
 <span class="normal">44</span>
-<span class="normal">45</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_file_hash</span><span class="p">(</span><span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hash_func</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;sha256&#39;</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">45</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_file_hash</span><span class="p">(</span><span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hash_func</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'sha256'</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4096</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Computes hash of a given file.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        filepath (str): The path to the file to hash.</span>
-<span class="sd">        hash_func (str): The hash function to use (default is &#39;sha256&#39;).</span>
+<span class="sd">        hash_func (str): The hash function to use (default is 'sha256').</span>
 <span class="sd">        chunk_size (int): The size of each chunk to read from the file (default is 4096 bytes).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The hexadecimal hash of the file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">hash_algorithm</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">hash_func</span><span class="p">)</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
         <span class="n">chunk</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span>
         <span class="k">while</span> <span class="n">chunk</span><span class="p">:</span>
             <span class="n">hash_algorithm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
@@ -1679,21 +1679,21 @@ Args:
 <span class="normal">258</span>
 <span class="normal">259</span>
 <span class="normal">260</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_logging_level</span><span class="p">(</span><span class="n">debug_level</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Configures the logging level based on the provided debug_level string.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        debug_level (str): The level name (e.g., &#39;DEBUG&#39;, &#39;INFO&#39;).</span>
+<span class="sd">        debug_level (str): The level name (e.g., 'DEBUG', 'INFO').</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        int: The corresponding logging level constant.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">log_levels</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;DEBUG&quot;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
-        <span class="s2">&quot;INFO&quot;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
-        <span class="s2">&quot;WARNING&quot;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
-        <span class="s2">&quot;ERROR&quot;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
-        <span class="s2">&quot;CRITICAL&quot;</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">CRITICAL</span>
+        <span class="s2">"DEBUG"</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+        <span class="s2">"INFO"</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
+        <span class="s2">"WARNING"</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">,</span>
+        <span class="s2">"ERROR"</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">,</span>
+        <span class="s2">"CRITICAL"</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">CRITICAL</span>
     <span class="p">}</span>
 
     <span class="n">level</span> <span class="o">=</span> <span class="n">log_levels</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">debug_level</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
@@ -1803,19 +1803,19 @@ Args:
 <span class="normal">57</span>
 <span class="normal">58</span>
 <span class="normal">59</span>
-<span class="normal">60</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_str_hash</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hash_func</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;sha256&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">60</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_str_hash</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">hash_func</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'sha256'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Computes hash of a given string.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        string (str): The input string to hash.</span>
-<span class="sd">        hash_func (str): The hash function to use (default is &#39;sha256&#39;).</span>
+<span class="sd">        hash_func (str): The hash function to use (default is 'sha256').</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The hexadecimal hash of the input string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">hash_algorithm</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">hash_func</span><span class="p">)</span>
-    <span class="n">hash_algorithm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+    <span class="n">hash_algorithm</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">hash_algorithm</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1910,7 +1910,7 @@ Args:
 <span class="normal">142</span>
 <span class="normal">143</span>
 <span class="normal">144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">observation_as_dict</span><span class="p">(</span><span class="n">observation</span><span class="p">:</span> <span class="n">Observation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Generates a dictionary representation of a given Observation object.</span>
 
 <span class="sd">    Args:</span>
@@ -1918,13 +1918,13 @@ Args:
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: The dictionary representation of the observation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;state&#39;</span><span class="p">:</span> <span class="n">observation</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">as_dict</span><span class="p">,</span>
-        <span class="s1">&#39;reward&#39;</span><span class="p">:</span> <span class="n">observation</span><span class="o">.</span><span class="n">reward</span><span class="p">,</span>
-        <span class="s1">&#39;end&#39;</span><span class="p">:</span> <span class="n">observation</span><span class="o">.</span><span class="n">end</span><span class="p">,</span>
+        <span class="s1">'state'</span><span class="p">:</span> <span class="n">observation</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">as_dict</span><span class="p">,</span>
+        <span class="s1">'reward'</span><span class="p">:</span> <span class="n">observation</span><span class="o">.</span><span class="n">reward</span><span class="p">,</span>
+        <span class="s1">'end'</span><span class="p">:</span> <span class="n">observation</span><span class="o">.</span><span class="n">end</span><span class="p">,</span>
         <span class="c1"># Using dict() ensures safety if info is a namedtuple or other mapping</span>
-        <span class="s1">&#39;info&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">observation</span><span class="o">.</span><span class="n">info</span><span class="p">)</span> 
+        <span class="s1">'info'</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">observation</span><span class="o">.</span><span class="n">info</span><span class="p">)</span> 
     <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2031,7 +2031,7 @@ Args:
 <span class="normal">190</span>
 <span class="normal">191</span>
 <span class="normal">192</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">observation_from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Observation</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reconstructs an Observation object from a dictionary representation.</span>
 
 <span class="sd">    Args:</span>
@@ -2039,25 +2039,25 @@ Args:
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Observation: The reconstructed Observation namedtuple.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="c1"># Since we refactored serialization, &#39;state&#39; is now a dictionary</span>
-        <span class="n">state_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state&quot;</span><span class="p">)</span>
+        <span class="c1"># Since we refactored serialization, 'state' is now a dictionary</span>
+        <span class="n">state_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"state"</span><span class="p">)</span>
 
         <span class="c1"># Robustness check: Ensure we have a dict before converting</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">state</span> <span class="o">=</span> <span class="n">GameState</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">state_data</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected dictionary for &#39;state&#39;, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">state_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Expected dictionary for 'state', got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">state_data</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">Observation</span><span class="p">(</span>
             <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
-            <span class="n">reward</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reward&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span>
-            <span class="n">end</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
-            <span class="n">info</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;info&quot;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">reward</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reward"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)),</span>
+            <span class="n">end</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"end"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
+            <span class="n">info</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"info"</span><span class="p">,</span> <span class="p">{})</span>
         <span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in creating Observation from dict: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error in creating Observation from dict: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">raise</span> <span class="n">e</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2156,7 +2156,7 @@ Args:
 <span class="normal">212</span>
 <span class="normal">213</span>
 <span class="normal">214</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">observation_from_str</span><span class="p">(</span><span class="n">json_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Observation</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reconstructs an Observation object from a JSON string representation.</span>
 
 <span class="sd">    Args:</span>
@@ -2164,17 +2164,17 @@ Args:
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Observation: The reconstructed Observation namedtuple.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># 1. Parse the main JSON string -&gt; returns a dict</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_str</span><span class="p">)</span>
 
         <span class="c1"># 2. Pass that dict to our existing from_dict method</span>
-        <span class="c1"># This keeps the logic DRY (Don&#39;t Repeat Yourself)</span>
+        <span class="c1"># This keeps the logic DRY (Don't Repeat Yourself)</span>
         <span class="k">return</span> <span class="n">observation_from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in creating Observation from string: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error in creating Observation from string: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">raise</span> <span class="n">e</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2269,7 +2269,7 @@ Args:
 <span class="normal">160</span>
 <span class="normal">161</span>
 <span class="normal">162</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">observation_to_str</span><span class="p">(</span><span class="n">observation</span><span class="p">:</span> <span class="n">Observation</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Generates a JSON string representation of a given Observation object.</span>
 
 <span class="sd">    Args:</span>
@@ -2277,13 +2277,13 @@ Args:
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The JSON string representation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="c1"># Clean JSON structure: {&quot;state&quot;: {...}, &quot;reward&quot;: 0, ...}</span>
+        <span class="c1"># Clean JSON structure: {"state": {...}, "reward": 0, ...}</span>
         <span class="c1"># No more escaped JSON strings inside the JSON.</span>
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">observation_as_dict</span><span class="p">(</span><span class="n">observation</span><span class="p">))</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in encoding observation &#39;</span><span class="si">{</span><span class="n">observation</span><span class="si">}</span><span class="s2">&#39; to JSON string: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error in encoding observation '</span><span class="si">{</span><span class="n">observation</span><span class="si">}</span><span class="s2">' to JSON string: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">raise</span> <span class="n">e</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2385,7 +2385,7 @@ Args:
 <span class="normal">237</span>
 <span class="normal">238</span>
 <span class="normal">239</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">parse_log_content</span><span class="p">(</span><span class="n">log_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Parses a JSON string of log content into a list of log entries.</span>
 
 <span class="sd">    Args:</span>
@@ -2393,20 +2393,20 @@ Args:
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Optional[List[Dict[str, Any]]]: A list of log entries if successful, None otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">logs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">log_content</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-            <span class="n">ip</span> <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;source_host&quot;</span><span class="p">])</span>
-            <span class="n">action_type</span> <span class="o">=</span> <span class="n">ActionType</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;action_type&quot;</span><span class="p">])</span>
-            <span class="n">logs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;source_host&quot;</span><span class="p">:</span><span class="n">ip</span><span class="p">,</span> <span class="s2">&quot;action_type&quot;</span><span class="p">:</span><span class="n">action_type</span><span class="p">})</span>
+            <span class="n">ip</span> <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"source_host"</span><span class="p">])</span>
+            <span class="n">action_type</span> <span class="o">=</span> <span class="n">ActionType</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"action_type"</span><span class="p">])</span>
+            <span class="n">logs</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"source_host"</span><span class="p">:</span><span class="n">ip</span><span class="p">,</span> <span class="s2">"action_type"</span><span class="p">:</span><span class="n">action_type</span><span class="p">})</span>
         <span class="k">return</span> <span class="n">logs</span>
     <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error decoding JSON: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error decoding JSON: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error decoding JSON: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error decoding JSON: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2517,7 +2517,7 @@ Args:
 <span class="normal">80</span>
 <span class="normal">81</span>
 <span class="normal">82</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_replay_buffer_from_csv</span><span class="p">(</span><span class="n">csvfile</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">GameState</span><span class="p">,</span> <span class="n">Action</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">GameState</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads steps from a CSV file and restores objects for the replay buffer.</span>
 
 <span class="sd">    Args:</span>
@@ -2525,12 +2525,12 @@ Args:
 
 <span class="sd">    Returns:</span>
 <span class="sd">        List[Tuple[GameState, Action, float, GameState, bool]]: The restored replay buffer.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">DeprecationWarning</span><span class="p">(</span><span class="s2">&quot;This function is deprecated and will be removed in future versions.&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="k">raise</span> <span class="ne">DeprecationWarning</span><span class="p">(</span><span class="s2">"This function is deprecated and will be removed in future versions."</span><span class="p">)</span>
     <span class="n">buffer</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_object</span><span class="p">:</span>
-            <span class="n">csv_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f_object</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;;&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="s1">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_object</span><span class="p">:</span>
+            <span class="n">csv_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">f_object</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">';'</span><span class="p">)</span>
             <span class="k">for</span> <span class="p">[</span><span class="n">s_t</span><span class="p">,</span> <span class="n">a_t</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s_t1</span> <span class="p">,</span> <span class="n">done</span><span class="p">]</span> <span class="ow">in</span> <span class="n">csv_reader</span><span class="p">:</span>
                 <span class="n">buffer</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">GameState</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">s_t</span><span class="p">),</span> <span class="n">Action</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">a_t</span><span class="p">),</span> <span class="n">r</span><span class="p">,</span> <span class="n">GameState</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">s_t1</span><span class="p">),</span> <span class="n">done</span><span class="p">))</span>
     <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
@@ -2624,7 +2624,7 @@ Args:
 <span class="normal">291</span>
 <span class="normal">292</span>
 <span class="normal">293</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_trajectories_from_jsonl</span><span class="p">(</span><span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads trajectories from a JSONL file.</span>
 
 <span class="sd">    Args:</span>
@@ -2632,8 +2632,8 @@ Args:
 
 <span class="sd">    Returns:</span>
 <span class="sd">        List[Any]: A list of trajectories read from the file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;This function is not yet implemented.&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"This function is not yet implemented."</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2739,7 +2739,7 @@ Args:
 <span class="normal">124</span>
 <span class="normal">125</span>
 <span class="normal">126</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">state_as_ordered_string</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">GameState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Converts a GameState into a deterministic ordered string representation.</span>
 
 <span class="sd">    Args:</span>
@@ -2747,21 +2747,21 @@ Args:
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The ordered string representation of the state.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ret</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-    <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;nets:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_networks</span><span class="p">)])</span><span class="si">}</span><span class="s2">],&quot;</span>
-    <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;hosts:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_hosts</span><span class="p">)])</span><span class="si">}</span><span class="s2">],&quot;</span>
-    <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;controlled:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">)])</span><span class="si">}</span><span class="s2">],&quot;</span>
-    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;services:{&quot;</span>
+<span class="sd">    """</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"nets:[</span><span class="si">{</span><span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_networks</span><span class="p">)])</span><span class="si">}</span><span class="s2">],"</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"hosts:[</span><span class="si">{</span><span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_hosts</span><span class="p">)])</span><span class="si">}</span><span class="s2">],"</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"controlled:[</span><span class="si">{</span><span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">controlled_hosts</span><span class="p">)])</span><span class="si">}</span><span class="s2">],"</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">"services:{"</span>
     <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_services</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-        <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_services</span><span class="p">[</span><span class="n">host</span><span class="p">])])</span><span class="si">}</span><span class="s2">]&quot;</span>
-    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;},data:{&quot;</span>
+        <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:[</span><span class="si">{</span><span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_services</span><span class="p">[</span><span class="n">host</span><span class="p">])])</span><span class="si">}</span><span class="s2">]"</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">"},data:{"</span>
     <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_data</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-        <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_data</span><span class="p">[</span><span class="n">host</span><span class="p">])])</span><span class="si">}</span><span class="s2">]&quot;</span>
-    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;}, blocks:{&quot;</span>
+        <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:[</span><span class="si">{</span><span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_data</span><span class="p">[</span><span class="n">host</span><span class="p">])])</span><span class="si">}</span><span class="s2">]"</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">"}, blocks:{"</span>
     <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_blocks</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-        <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:[</span><span class="si">{</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_blocks</span><span class="p">[</span><span class="n">host</span><span class="p">])])</span><span class="si">}</span><span class="s2">]&quot;</span>
-    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">&quot;}&quot;</span>
+        <span class="n">ret</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:[</span><span class="si">{</span><span class="s1">','</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">known_blocks</span><span class="p">[</span><span class="n">host</span><span class="p">])])</span><span class="si">}</span><span class="s2">]"</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="s2">"}"</span>
     <span class="k">return</span> <span class="n">ret</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2899,20 +2899,20 @@ Args:
 <span class="normal"> 97</span>
 <span class="normal"> 98</span>
 <span class="normal"> 99</span>
-<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">store_replay_buffer_in_csv</span><span class="p">(</span><span class="n">replay_buffer</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">GameState</span><span class="p">,</span> <span class="n">Action</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">GameState</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]],</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">delimiter</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">100</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">store_replay_buffer_in_csv</span><span class="p">(</span><span class="n">replay_buffer</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">GameState</span><span class="p">,</span> <span class="n">Action</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">GameState</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]],</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">delimiter</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">";"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stores steps from a replay buffer into a CSV file.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        replay_buffer (List[Tuple[GameState, Action, float, GameState, bool]]): The buffer items to store.</span>
 <span class="sd">        filename (str): The name of the output file.</span>
-<span class="sd">        delimiter (str): The delimiter to use in the CSV (default is &#39;;&#39;).</span>
+<span class="sd">        delimiter (str): The delimiter to use in the CSV (default is ';').</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">raise</span> <span class="ne">DeprecationWarning</span><span class="p">(</span><span class="s2">&quot;This function is deprecated and will be removed in future versions.&quot;</span><span class="p">)</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_object</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="k">raise</span> <span class="ne">DeprecationWarning</span><span class="p">(</span><span class="s2">"This function is deprecated and will be removed in future versions."</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">'a'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_object</span><span class="p">:</span>
         <span class="n">writer_object</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f_object</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="n">delimiter</span><span class="p">)</span>
         <span class="k">for</span> <span class="p">(</span><span class="n">s_t</span><span class="p">,</span> <span class="n">a_t</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s_t1</span><span class="p">,</span> <span class="n">done</span><span class="p">)</span> <span class="ow">in</span> <span class="n">replay_buffer</span><span class="p">:</span>
             <span class="n">writer_object</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="n">s_t</span><span class="o">.</span><span class="n">as_json</span><span class="p">(),</span> <span class="n">a_t</span><span class="o">.</span><span class="n">as_json</span><span class="p">(),</span> <span class="n">r</span><span class="p">,</span> <span class="n">s_t1</span><span class="o">.</span><span class="n">as_json</span><span class="p">(),</span> <span class="n">done</span><span class="p">])</span>
@@ -3044,7 +3044,7 @@ Args:
 <span class="normal">279</span>
 <span class="normal">280</span>
 <span class="normal">281</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">store_trajectories_to_jsonl</span><span class="p">(</span><span class="n">trajectories</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="nb">dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Stores trajectories to a JSONL file.</span>
 
 <span class="sd">    Args:</span>
@@ -3054,14 +3054,14 @@ Args:
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># make sure the directory exists</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="nb">dir</span><span class="p">):</span>
         <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
     <span class="c1"># construct the full file name</span>
-    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filename</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;jsonl&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">.jsonl&quot;</span><span class="p">)</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">filename</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'jsonl'</span><span class="p">)</span><span class="si">}</span><span class="s2">.jsonl"</span><span class="p">)</span>
     <span class="c1"># store the trajectories</span>
-    <span class="k">with</span> <span class="n">jsonlines</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">jsonlines</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
         <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3128,7 +3128,7 @@ Args:
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

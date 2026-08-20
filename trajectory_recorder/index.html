@@ -17,7 +17,7 @@
       
       
       <link rel="icon" href="../assets/network_intel_node.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -25,7 +25,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -1203,16 +1203,16 @@
 <span class="normal">24</span>
 <span class="normal">25</span>
 <span class="normal">26</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">agent_role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initializes the TrajectoryRecorder.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        agent_name (str): The name of the agent.</span>
 <span class="sd">        agent_role (str): The role of the agent.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span> <span class="o">=</span> <span class="n">agent_name</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">agent_role</span> <span class="o">=</span> <span class="n">agent_role</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TrajectoryRecorder-</span><span class="si">{</span><span class="n">agent_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="sa">f</span><span class="s2">"TrajectoryRecorder-</span><span class="si">{</span><span class="n">agent_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
@@ -1290,13 +1290,13 @@
 <span class="normal">67</span>
 <span class="normal">68</span>
 <span class="normal">69</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_initial_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">GameState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Adds the initial state to the trajectory history.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        state (GameState): The initial game state.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;trajectory&quot;</span><span class="p">][</span><span class="s2">&quot;states&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">as_dict</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">"trajectory"</span><span class="p">][</span><span class="s2">"states"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">as_dict</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1425,7 +1425,7 @@
 <span class="normal">58</span>
 <span class="normal">59</span>
 <span class="normal">60</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">add_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">Action</span><span class="p">,</span> <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="n">GameState</span><span class="p">,</span> <span class="n">end_reason</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Adds a single step to the trajectory.</span>
 
 <span class="sd">    Args:</span>
@@ -1433,16 +1433,16 @@
 <span class="sd">        reward (float): The reward received.</span>
 <span class="sd">        next_state (GameState): The resulting state.</span>
 <span class="sd">        end_reason (Optional[str]): Reason for episode end, if applicable.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Adding step to trajectory for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;trajectory&quot;</span><span class="p">][</span><span class="s2">&quot;states&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;The current action (id:</span><span class="si">{action.id}</span><span class="s2">) is being added as the first step, but the initial state has not been recorded yet. Please call add_initial_state() at the beginning of the episode.&quot;</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;trajectory&quot;</span><span class="p">][</span><span class="s2">&quot;actions&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">as_dict</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;trajectory&quot;</span><span class="p">][</span><span class="s2">&quot;rewards&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reward</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;trajectory&quot;</span><span class="p">][</span><span class="s2">&quot;states&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_state</span><span class="o">.</span><span class="n">as_dict</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Adding step to trajectory for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">"trajectory"</span><span class="p">][</span><span class="s2">"states"</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"The current action (id:</span><span class="si">{action.id}</span><span class="s2">) is being added as the first step, but the initial state has not been recorded yet. Please call add_initial_state() at the beginning of the episode."</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">"trajectory"</span><span class="p">][</span><span class="s2">"actions"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">as_dict</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">"trajectory"</span><span class="p">][</span><span class="s2">"rewards"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reward</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">"trajectory"</span><span class="p">][</span><span class="s2">"states"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_state</span><span class="o">.</span><span class="n">as_dict</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">end_reason</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;end_reason&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">end_reason</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">"end_reason"</span><span class="p">]</span> <span class="o">=</span> <span class="n">end_reason</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1496,12 +1496,12 @@
 <span class="normal">76</span>
 <span class="normal">77</span>
 <span class="normal">78</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_trajectory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns the current trajectory data.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: The trajectory dictionary.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1538,17 +1538,17 @@
 <span class="normal">38</span>
 <span class="normal">39</span>
 <span class="normal">40</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resets the trajectory data for a new episode.&quot;&quot;&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resetting trajectory for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Resets the trajectory data for a new episode."""</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Resetting trajectory for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;trajectory&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;states&quot;</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">&quot;actions&quot;</span><span class="p">:</span> <span class="p">[],</span>
-            <span class="s2">&quot;rewards&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"trajectory"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"states"</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">"actions"</span><span class="p">:</span> <span class="p">[],</span>
+            <span class="s2">"rewards"</span><span class="p">:</span> <span class="p">[],</span>
         <span class="p">},</span>
-        <span class="s2">&quot;end_reason&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;agent_role&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent_role</span><span class="p">,</span>
-        <span class="s2">&quot;agent_name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span>
+        <span class="s2">"end_reason"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"agent_role"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent_role</span><span class="p">,</span>
+        <span class="s2">"agent_name"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span>
     <span class="p">}</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1633,21 +1633,21 @@
 <span class="normal">91</span>
 <span class="normal">92</span>
 <span class="normal">93</span>
-<span class="normal">94</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;./logs/trajectories&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="normal">94</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_to_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"./logs/trajectories"</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Saves the recorded trajectory to a JSONL file.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        location (str): Directory to save the file. Defaults to &quot;./logs/trajectories&quot;.</span>
-<span class="sd">        filename (str): Name of the file to save. If None, defaults to &quot;{datetime.now():%Y-%m-%d}_{self.agent_name}_{self.agent_role}&quot;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        location (str): Directory to save the file. Defaults to "./logs/trajectories".</span>
+<span class="sd">        filename (str): Name of the file to save. If None, defaults to "{datetime.now():%Y-%m-%d}_{self.agent_name}_{self.agent_role}".</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">:</span><span class="s2">%Y-%m-%d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">:</span><span class="s2">%Y-%m-%d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">"</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">store_trajectories_to_jsonl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Trajectory stored in </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">location</span><span class="p">,</span><span class="w"> </span><span class="n">filename</span><span class="p">)</span><span class="si">}</span><span class="s2">.jsonl&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Trajectory stored in </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">location</span><span class="p">,</span><span class="w"> </span><span class="n">filename</span><span class="p">)</span><span class="si">}</span><span class="s2">.jsonl"</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to store trajectory: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to store trajectory: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1722,7 +1722,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

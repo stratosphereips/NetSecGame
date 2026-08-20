@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/network_intel_node.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -1564,7 +1564,7 @@
 <span class="normal">57</span>
 <span class="normal">58</span>
 <span class="normal">59</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">stochastic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action_type</span><span class="p">:</span> <span class="n">ActionType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Performs a simple random detection based on predefined probability for an ActionType.</span>
 
 <span class="sd">    Args:</span>
@@ -1572,7 +1572,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if detected, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">roll</span> <span class="o">=</span> <span class="n">random</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">roll</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_DEFAULT_DETECTION_PROBS</span><span class="p">[</span><span class="n">action_type</span><span class="p">]:</span>
         <span class="k">return</span> <span class="kc">True</span>
@@ -1733,7 +1733,7 @@
 <span class="normal">101</span>
 <span class="normal">102</span>
 <span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">stochastic_with_threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">Action</span><span class="p">,</span> <span class="n">episode_actions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">tw_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Determines detection based on set probabilities, but only if pre-defined thresholds are crossed.</span>
 
 <span class="sd">    Args:</span>
@@ -1743,14 +1743,14 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if the action is detected, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># extend the episode with the latest action</span>
     <span class="c1"># We need to copy the list before the copying, so we avoid modifying it when it is returned. Modifycation of passed list is the default behavior in Python</span>
     <span class="n">temp_episode_actions</span> <span class="o">=</span> <span class="n">episode_actions</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">temp_episode_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">as_dict</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">temp_episode_actions</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">tw_size</span><span class="p">:</span>
         <span class="n">last_n_actions</span> <span class="o">=</span> <span class="n">temp_episode_actions</span><span class="p">[</span><span class="o">-</span><span class="n">tw_size</span><span class="p">:]</span>
-        <span class="n">last_n_action_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">action</span><span class="p">[</span><span class="s1">&#39;action_type&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">last_n_actions</span><span class="p">]</span>
+        <span class="n">last_n_action_types</span> <span class="o">=</span> <span class="p">[</span><span class="n">action</span><span class="p">[</span><span class="s1">'action_type'</span><span class="p">]</span> <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">last_n_actions</span><span class="p">]</span>
         <span class="c1"># compute ratio of action type in the TW</span>
         <span class="n">tw_ratio</span> <span class="o">=</span> <span class="n">last_n_action_types</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">type</span><span class="p">))</span><span class="o">/</span><span class="n">tw_size</span>
         <span class="c1"># Count how many times this exact (parametrized) action was played in episode</span>
@@ -1849,7 +1849,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/network_intel_node.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -1258,7 +1258,7 @@
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>-t<span class="w"> </span>netsecgame:local<span class="w"> </span>.
 </code></pre></div>
 <p>To build the experimental <strong>Whitebox</strong> variant (agents receive the full action list upon registration):</p>
-<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>--build-arg<span class="w"> </span><span class="nv">GAME_MODULE</span><span class="o">=</span><span class="s2">&quot;netsecgame.game.worlds.WhiteBoxNetSecGame&quot;</span><span class="w"> </span>-t<span class="w"> </span>netsecgame:local-whitebox<span class="w"> </span>.
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>--build-arg<span class="w"> </span><span class="nv">GAME_MODULE</span><span class="o">=</span><span class="s2">"netsecgame.game.worlds.WhiteBoxNetSecGame"</span><span class="w"> </span>-t<span class="w"> </span>netsecgame:local-whitebox<span class="w"> </span>.
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -1293,10 +1293,10 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 
 <span class="nt">coordinator</span><span class="p">:</span><span class="w"> </span>
 <span class="w">  </span><span class="nt">agents</span><span class="p">:</span><span class="w"> </span>
-<span class="w">    </span><span class="nt">Attacker</span><span class="p">:</span><span class="w"> </span><span class="c1"># Configuration of &#39;Attacker&#39; agents</span>
+<span class="w">    </span><span class="nt">Attacker</span><span class="p">:</span><span class="w"> </span><span class="c1"># Configuration of 'Attacker' agents</span>
 <span class="w">      </span><span class="nt">max_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">25</span><span class="w"> </span><span class="c1"># timeout set for the role `Attacker`</span>
 <span class="w">      </span><span class="nt">goal</span><span class="p">:</span><span class="w"> </span><span class="c1"># Definition of the goal state</span>
-<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Exfiltrate</span><span class="nv"> </span><span class="s">data</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">Samba</span><span class="nv"> </span><span class="s">server</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">remote</span><span class="nv"> </span><span class="s">C&amp;C</span><span class="nv"> </span><span class="s">server.&quot;</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Exfiltrate</span><span class="nv"> </span><span class="s">data</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">Samba</span><span class="nv"> </span><span class="s">server</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">remote</span><span class="nv"> </span><span class="s">C&amp;C</span><span class="nv"> </span><span class="s">server."</span>
 <span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
@@ -1306,20 +1306,20 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <span class="w">      </span><span class="nt">start_position</span><span class="p">:</span><span class="w"> </span><span class="c1"># Definition of the starting state</span>
 <span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
-<span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">213.47.23.195</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">random</span><span class="p p-Indicator">]</span><span class="w"> </span><span class="c1"># &#39;random&#39; is replaced during init</span>
+<span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">213.47.23.195</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">random</span><span class="p p-Indicator">]</span><span class="w"> </span><span class="c1"># 'random' is replaced during init</span>
 <span class="w">        </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 <span class="w">        </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 <span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 
 <span class="w">    </span><span class="nt">Defender</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">goal</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Block</span><span class="nv"> </span><span class="s">all</span><span class="nv"> </span><span class="s">attackers&quot;</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Block</span><span class="nv"> </span><span class="s">all</span><span class="nv"> </span><span class="s">attackers"</span>
 <span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 <span class="w">        </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
-<span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">213.47.23.195</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;all_attackers&#39;</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">213.47.23.195</span><span class="p">:</span><span class="w"> </span><span class="s">'all_attackers'</span><span class="p p-Indicator">}</span>
 
 <span class="w">      </span><span class="nt">start_position</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
@@ -1331,7 +1331,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <span class="w">        </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 
 <span class="nt">env</span><span class="p">:</span><span class="w"> </span><span class="c1"># Environment configuration</span>
-<span class="w">  </span><span class="nt">scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;two_networks_tiny&#39;</span><span class="w"> </span><span class="c1"># use the smallest topology</span>
+<span class="w">  </span><span class="nt">scenario</span><span class="p">:</span><span class="w"> </span><span class="s">'two_networks_tiny'</span><span class="w"> </span><span class="c1"># use the smallest topology</span>
 <span class="w">  </span><span class="nt">use_global_defender</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="w">  </span><span class="nt">use_dynamic_addresses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="w">  </span><span class="nt">use_firewall</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
@@ -1350,7 +1350,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/examples/example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/logs:/netsecgame/logs<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-p<span class="w"> </span><span class="m">9000</span>:9000<span class="w"> </span>stratosphereips/netsecgame<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--debug_level<span class="o">=</span><span class="s2">&quot;INFO&quot;</span>
+<span class="w">  </span>--debug_level<span class="o">=</span><span class="s2">"INFO"</span>
 </code></pre></div>
 <table>
 <thead>
@@ -1385,16 +1385,16 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <h4 id="running-on-windows-docker-desktop">Running on Windows (Docker Desktop)</h4>
 <div class="highlight"><pre><span></span><code>docker run -d --rm --name nsg-server ^
   -p 9000:9000 ^
-  -v &quot;%cd%\examples\example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml&quot; ^
-  -v &quot;%cd%\logs:/netsecgame/logs&quot; ^
+  -v "%cd%\examples\example_task_configuration.yaml:/netsecgame/netsecenv_conf.yaml" ^
+  -v "%cd%\logs:/netsecgame/logs" ^
   stratosphereips/netsecgame:latest ^
-  --debug_level=&quot;INFO&quot;
+  --debug_level="INFO"
 </code></pre></div>
 <h3 id="locally">Locally</h3>
 <div class="highlight"><pre><span></span><code>python3<span class="w"> </span>-m<span class="w"> </span>netsecgame.game.worlds.NetSecGame<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--task_config<span class="o">=</span>./examples/example_task_configuration.yaml<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--game_port<span class="o">=</span><span class="m">9000</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--debug_level<span class="o">=</span><span class="s2">&quot;INFO&quot;</span>
+<span class="w">  </span>--debug_level<span class="o">=</span><span class="s2">"INFO"</span>
 </code></pre></div>
 <p>The game server will start on <code>localhost:9000</code>.</p>
 <h2 id="creating-your-first-agent">Creating Your First Agent</h2>
@@ -1411,7 +1411,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
         <span class="k">pass</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-    <span class="n">agent</span> <span class="o">=</span> <span class="n">MyAgent</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">9000</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">AgentRole</span><span class="o">.</span><span class="n">Attacker</span><span class="p">)</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">MyAgent</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">"localhost"</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">9000</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">AgentRole</span><span class="o">.</span><span class="n">Attacker</span><span class="p">)</span>
     <span class="n">observation</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">register</span><span class="p">()</span>
 
     <span class="k">while</span> <span class="ow">not</span> <span class="n">observation</span><span class="o">.</span><span class="n">end</span><span class="p">:</span>
@@ -1491,7 +1491,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

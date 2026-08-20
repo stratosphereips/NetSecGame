@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/network_intel_node.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -1581,7 +1581,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">35</span>
 <span class="normal">36</span>
 <span class="normal">37</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_config_file</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">:</span><span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initializes the configuration parser. Required either path to a configuration file or a dict with configurations.</span>
 
 <span class="sd">    Args:</span>
@@ -1590,14 +1590,14 @@ from YAML files or dictionaries.</p>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;ConfigParser&#39;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">'ConfigParser'</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">task_config_file</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">read_config_file</span><span class="p">(</span><span class="n">task_config_file</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">config_dict</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config_dict</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;You must provide either the configuration file or a dictionary with the configuration!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"You must provide either the configuration file or a dictionary with the configuration!"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -1712,7 +1712,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">418</span>
 <span class="normal">419</span>
 <span class="normal">420</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_goal_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the textual goal description for a specific role.</span>
 
 <span class="sd">    Args:</span>
@@ -1720,24 +1720,24 @@ from YAML files or dictionaries.</p>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The goal description string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">match</span> <span class="n">agent_role</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;Attacker&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"Attacker"</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">agent_role</span><span class="p">][</span><span class="s2">&quot;goal&quot;</span><span class="p">][</span><span class="s2">&quot;description&quot;</span><span class="p">]</span>
+                <span class="n">description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'coordinator'</span><span class="p">][</span><span class="s1">'agents'</span><span class="p">][</span><span class="n">agent_role</span><span class="p">][</span><span class="s2">"goal"</span><span class="p">][</span><span class="s2">"description"</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">validate_goal_description</span><span class="p">(</span><span class="n">agent_role</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">case</span> <span class="s2">&quot;Defender&quot;</span><span class="p">:</span>
+                <span class="n">description</span> <span class="o">=</span> <span class="s2">""</span>
+        <span class="k">case</span> <span class="s2">"Defender"</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">agent_role</span><span class="p">][</span><span class="s2">&quot;goal&quot;</span><span class="p">][</span><span class="s2">&quot;description&quot;</span><span class="p">]</span>
+                <span class="n">description</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'coordinator'</span><span class="p">][</span><span class="s1">'agents'</span><span class="p">][</span><span class="n">agent_role</span><span class="p">][</span><span class="s2">"goal"</span><span class="p">][</span><span class="s2">"description"</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">validate_goal_description</span><span class="p">(</span><span class="n">agent_role</span><span class="p">,</span> <span class="n">description</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-                <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="k">case</span> <span class="s2">&quot;Benign&quot;</span><span class="p">:</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                <span class="n">description</span> <span class="o">=</span> <span class="s2">""</span>
+        <span class="k">case</span> <span class="s2">"Benign"</span><span class="p">:</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="s2">""</span>
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported agent role: </span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported agent role: </span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">description</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1834,7 +1834,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">389</span>
 <span class="normal">390</span>
 <span class="normal">391</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_max_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the maximum steps allowed for a specific role.</span>
 
 <span class="sd">    Args:</span>
@@ -1842,15 +1842,15 @@ from YAML files or dictionaries.</p>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Optional[int]: The maximum steps, or None if no limit is set.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">max_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">role</span><span class="p">][</span><span class="s2">&quot;max_steps&quot;</span><span class="p">])</span>
+        <span class="n">max_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'coordinator'</span><span class="p">][</span><span class="s1">'agents'</span><span class="p">][</span><span class="n">role</span><span class="p">][</span><span class="s2">"max_steps"</span><span class="p">])</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="n">max_steps</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Item &#39;max_steps&#39; not found in &#39;coordinator.agents.</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">&#39;!. Setting value to default=None (no step limit)&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Item 'max_steps' not found in 'coordinator.agents.</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">'!. Setting value to default=None (no step limit)"</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">max_steps</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported value in &#39;coordinator.agents.</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">.max_steps&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Setting value to default=None (no step limit)&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported value in 'coordinator.agents.</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">.max_steps': </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. Setting value to default=None (no step limit)"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">max_steps</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1961,36 +1961,36 @@ from YAML files or dictionaries.</p>
 <span class="normal">315</span>
 <span class="normal">316</span>
 <span class="normal">317</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_player_start_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_of_player</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Generates the starting position for a specific player type.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        type_of_player (str): The player type (e.g., &#39;attackers&#39;, &#39;defenders&#39;).</span>
+<span class="sd">        type_of_player (str): The player type (e.g., 'attackers', 'defenders').</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: A dictionary containing starting configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Read known nets</span>
-    <span class="n">known_networks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_networks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;start_position&#39;</span><span class="p">)</span>
+    <span class="n">known_networks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_networks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'start_position'</span><span class="p">)</span>
 
     <span class="c1"># Read known hosts</span>
-    <span class="n">known_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;start_position&#39;</span><span class="p">)</span>
+    <span class="n">known_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'start_position'</span><span class="p">)</span>
 
     <span class="c1"># Read controlled hosts</span>
-    <span class="n">controlled_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_controlled_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;start_position&#39;</span><span class="p">)</span>
+    <span class="n">controlled_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_controlled_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'start_position'</span><span class="p">)</span>
 
     <span class="c1"># Start services</span>
-    <span class="n">known_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_services</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;start_position&#39;</span><span class="p">)</span>
+    <span class="n">known_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_services</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'start_position'</span><span class="p">)</span>
 
     <span class="c1"># Start data</span>
-    <span class="n">known_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_data</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;start_position&#39;</span><span class="p">)</span>
+    <span class="n">known_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_data</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'start_position'</span><span class="p">)</span>
 
     <span class="n">player_start_position</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">&#39;known_networks&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_networks</span>
-    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">&#39;controlled_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">controlled_hosts</span>
-    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">&#39;known_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_hosts</span>
-    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">&#39;known_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_data</span>
-    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">&#39;known_services&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_services</span>
+    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">'known_networks'</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_networks</span>
+    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">'controlled_hosts'</span><span class="p">]</span> <span class="o">=</span> <span class="n">controlled_hosts</span>
+    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">'known_hosts'</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_hosts</span>
+    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">'known_data'</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_data</span>
+    <span class="n">player_start_position</span><span class="p">[</span><span class="s1">'known_services'</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_services</span>
 
     <span class="k">return</span> <span class="n">player_start_position</span>
 </code></pre></div></td></tr></table></div>
@@ -2109,43 +2109,43 @@ from YAML files or dictionaries.</p>
 <span class="normal">281</span>
 <span class="normal">282</span>
 <span class="normal">283</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_player_win_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_of_player</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the win conditions for a specific player type.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        type_of_player (str): The player type (e.g., &#39;attackers&#39;, &#39;defenders&#39;).</span>
+<span class="sd">        type_of_player (str): The player type (e.g., 'attackers', 'defenders').</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: A dictionary containing goal configurations (nets, hosts, etc.).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Read known nets</span>
-    <span class="n">known_networks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_networks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
+    <span class="n">known_networks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_networks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'goal'</span><span class="p">)</span>
 
     <span class="c1"># Read known hosts</span>
-    <span class="n">known_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
+    <span class="n">known_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'goal'</span><span class="p">)</span>
 
     <span class="c1"># Read controlled hosts</span>
-    <span class="n">controlled_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_controlled_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
+    <span class="n">controlled_hosts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_controlled_hosts</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'goal'</span><span class="p">)</span>
 
     <span class="c1"># Goal services</span>
-    <span class="n">known_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_services</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
+    <span class="n">known_services</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_services</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'goal'</span><span class="p">)</span>
 
     <span class="c1"># Read known blocks </span>
-    <span class="n">known_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_blocks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
+    <span class="n">known_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_blocks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'goal'</span><span class="p">)</span>
 
     <span class="c1"># Goal data</span>
-    <span class="n">known_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_data</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
+    <span class="n">known_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_data</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'goal'</span><span class="p">)</span>
 
     <span class="c1"># Blocks</span>
-    <span class="n">known_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_blocks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">&#39;goal&#39;</span><span class="p">)</span>
+    <span class="n">known_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_agents_known_blocks</span><span class="p">(</span><span class="n">type_of_player</span><span class="p">,</span> <span class="s1">'goal'</span><span class="p">)</span>
 
     <span class="n">player_goal</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;known_networks&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_networks</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;controlled_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">controlled_hosts</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;known_hosts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_hosts</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;known_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_data</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;known_services&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_services</span>
-    <span class="n">player_goal</span><span class="p">[</span><span class="s1">&#39;known_blocks&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_blocks</span>
+    <span class="n">player_goal</span><span class="p">[</span><span class="s1">'known_networks'</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_networks</span>
+    <span class="n">player_goal</span><span class="p">[</span><span class="s1">'controlled_hosts'</span><span class="p">]</span> <span class="o">=</span> <span class="n">controlled_hosts</span>
+    <span class="n">player_goal</span><span class="p">[</span><span class="s1">'known_hosts'</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_hosts</span>
+    <span class="n">player_goal</span><span class="p">[</span><span class="s1">'known_data'</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_data</span>
+    <span class="n">player_goal</span><span class="p">[</span><span class="s1">'known_services'</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_services</span>
+    <span class="n">player_goal</span><span class="p">[</span><span class="s1">'known_blocks'</span><span class="p">]</span> <span class="o">=</span> <span class="n">known_blocks</span>
 
     <span class="k">return</span> <span class="n">player_goal</span>
 </code></pre></div></td></tr></table></div>
@@ -2182,16 +2182,16 @@ from YAML files or dictionaries.</p>
 <span class="normal">535</span>
 <span class="normal">536</span>
 <span class="normal">537</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_randomize_goal_every_episode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Get if the randomization should be done only once or at the beginning of every episode</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># TODO Remove in future</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">randomize_goal_every_episode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;coordinator&quot;</span><span class="p">][</span><span class="s2">&quot;agents&quot;</span><span class="p">][</span><span class="s2">&quot;attackers&quot;</span><span class="p">][</span><span class="s2">&quot;goal&quot;</span><span class="p">][</span><span class="s2">&quot;is_any_part_of_goal_random&quot;</span><span class="p">]</span>
+        <span class="n">randomize_goal_every_episode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">"coordinator"</span><span class="p">][</span><span class="s2">"agents"</span><span class="p">][</span><span class="s2">"attackers"</span><span class="p">][</span><span class="s2">"goal"</span><span class="p">][</span><span class="s2">"is_any_part_of_goal_random"</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="c1"># Option is not in the configuration - default to FALSE</span>
         <span class="n">randomize_goal_every_episode</span> <span class="o">=</span> <span class="n">default_value</span>
-    <span class="k">raise</span> <span class="ne">DeprecationWarning</span><span class="p">(</span><span class="s2">&quot;This function is deprecated.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">DeprecationWarning</span><span class="p">(</span><span class="s2">"This function is deprecated."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">randomize_goal_every_episode</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2286,7 +2286,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">585</span>
 <span class="normal">586</span>
 <span class="normal">587</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_required_num_players</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the required number of players.</span>
 
 <span class="sd">    Args:</span>
@@ -2294,9 +2294,9 @@ from YAML files or dictionaries.</p>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        int: The required number of players.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">required_players</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;required_players&#39;</span><span class="p">])</span>
+        <span class="n">required_players</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'env'</span><span class="p">][</span><span class="s1">'required_players'</span><span class="p">])</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="n">required_players</span> <span class="o">=</span> <span class="n">default_value</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -2413,7 +2413,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">469</span>
 <span class="normal">470</span>
 <span class="normal">471</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_rewards</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reward_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads configuration for rewards for specific categories.</span>
 
 <span class="sd">    Args:</span>
@@ -2422,13 +2422,13 @@ from YAML files or dictionaries.</p>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: A mapping of reward names to their values.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">rewards</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">reward_names</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">rewards</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s2">&quot;rewards&quot;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">rewards</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'env'</span><span class="p">][</span><span class="s2">"rewards"</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No reward value found for &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;. Usinng default reward(</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">)=</span><span class="si">{</span><span class="n">default_value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No reward value found for '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'. Usinng default reward(</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">)=</span><span class="si">{</span><span class="n">default_value</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">rewards</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_value</span>
     <span class="k">return</span> <span class="n">rewards</span>
 </code></pre></div></td></tr></table></div>
@@ -2492,18 +2492,18 @@ from YAML files or dictionaries.</p>
 <span class="normal">507</span>
 <span class="normal">508</span>
 <span class="normal">509</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_scenario</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the scenario configuration objects.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Any: The scenario configuration (usually a list of NodeConfig, etc.).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">scenario_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;scenario&#39;</span><span class="p">]</span>
+<span class="sd">    """</span>
+    <span class="n">scenario_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'env'</span><span class="p">][</span><span class="s1">'scenario'</span><span class="p">]</span>
     <span class="c1"># make sure to validate the input</span>
     <span class="k">if</span> <span class="n">scenario_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">SCENARIO_REGISTRY</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Unsupported scenario: </span><span class="si">{</span><span class="n">scenario_name</span><span class="si">}</span><span class="s2">. &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Available scenarios: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">SCENARIO_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"Unsupported scenario: </span><span class="si">{</span><span class="n">scenario_name</span><span class="si">}</span><span class="s2">. "</span>
+            <span class="sa">f</span><span class="s2">"Available scenarios: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">SCENARIO_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">SCENARIO_REGISTRY</span><span class="p">[</span><span class="n">scenario_name</span><span class="p">]</span>
@@ -2597,17 +2597,17 @@ from YAML files or dictionaries.</p>
 <span class="normal">522</span>
 <span class="normal">523</span>
 <span class="normal">524</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">whom</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Retrieves the random seed for a specific component.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        whom (str): The component name (e.g., &#39;coordinator&#39;, &#39;env&#39;).</span>
+<span class="sd">        whom (str): The component name (e.g., 'coordinator', 'env').</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        int: The random seed.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">seed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">whom</span><span class="p">][</span><span class="s1">&#39;random_seed&#39;</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">seed</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">whom</span><span class="p">][</span><span class="s1">'random_seed'</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">seed</span> <span class="o">==</span> <span class="s1">'random'</span><span class="p">:</span>
         <span class="n">seed</span> <span class="o">=</span> <span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">seed</span>
 </code></pre></div></td></tr></table></div>
@@ -2711,30 +2711,30 @@ from YAML files or dictionaries.</p>
 <span class="normal">341</span>
 <span class="normal">342</span>
 <span class="normal">343</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_start_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Returns the starting position based on the agent&#39;s role.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Returns the starting position based on the agent's role.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        agent_role (str): The role of the agent (&#39;Attacker&#39;, &#39;Defender&#39;, &#39;Benign&#39;).</span>
+<span class="sd">        agent_role (str): The role of the agent ('Attacker', 'Defender', 'Benign').</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: The starting state configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">match</span> <span class="n">agent_role</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;Attacker&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"Attacker"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_player_start_position</span><span class="p">(</span><span class="n">agent_role</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;Defender&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"Defender"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_player_start_position</span><span class="p">(</span><span class="n">agent_role</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;Benign&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"Benign"</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">{</span>
-                <span class="s1">&#39;known_networks&#39;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span>
-                <span class="s1">&#39;controlled_hosts&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;random&quot;</span><span class="p">,</span> <span class="s2">&quot;random&quot;</span><span class="p">,</span> <span class="s2">&quot;random&quot;</span><span class="p">],</span>
-                <span class="s1">&#39;known_hosts&#39;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span>
-                <span class="s1">&#39;known_data&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                <span class="s1">&#39;known_services&#39;</span><span class="p">:</span> <span class="p">{}</span>
+                <span class="s1">'known_networks'</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span>
+                <span class="s1">'controlled_hosts'</span><span class="p">:</span> <span class="p">[</span><span class="s2">"random"</span><span class="p">,</span> <span class="s2">"random"</span><span class="p">,</span> <span class="s2">"random"</span><span class="p">],</span>
+                <span class="s1">'known_hosts'</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span>
+                <span class="s1">'known_data'</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="s1">'known_services'</span><span class="p">:</span> <span class="p">{}</span>
             <span class="p">}</span>
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported agent role: </span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported agent role: </span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2767,11 +2767,11 @@ from YAML files or dictionaries.</p>
 <span class="normal">490</span>
 <span class="normal">491</span>
 <span class="normal">492</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_store_trajectories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Read if the replay buffer should be stored in file</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">store_trajectories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;save_trajectories&#39;</span><span class="p">]</span>
+        <span class="n">store_trajectories</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'env'</span><span class="p">][</span><span class="s1">'save_trajectories'</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="c1"># Option is not in the configuration - default to FALSE</span>
         <span class="n">store_trajectories</span> <span class="o">=</span> <span class="n">default_value</span>
@@ -2807,11 +2807,11 @@ from YAML files or dictionaries.</p>
 <span class="normal">479</span>
 <span class="normal">480</span>
 <span class="normal">481</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_dynamic_addresses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads if the IP and Network addresses should be dynamically changed.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">use_dynamic_addresses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;use_dynamic_addresses&#39;</span><span class="p">]</span>
+        <span class="n">use_dynamic_addresses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'env'</span><span class="p">][</span><span class="s1">'use_dynamic_addresses'</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="n">use_dynamic_addresses</span> <span class="o">=</span> <span class="n">default_value</span>
     <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">use_dynamic_addresses</span><span class="p">)</span>
@@ -2906,7 +2906,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">551</span>
 <span class="normal">552</span>
 <span class="normal">553</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_firewall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks if firewall functionality is enabled.</span>
 
 <span class="sd">    Args:</span>
@@ -2914,9 +2914,9 @@ from YAML files or dictionaries.</p>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if firewalls should be used, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">use_firewall</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;use_firewall&#39;</span><span class="p">]</span>   
+        <span class="n">use_firewall</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'env'</span><span class="p">][</span><span class="s1">'use_firewall'</span><span class="p">]</span>   
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="n">use_firewall</span> <span class="o">=</span> <span class="n">default_value</span>
     <span class="k">return</span> <span class="n">use_firewall</span>
@@ -3011,7 +3011,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">567</span>
 <span class="normal">568</span>
 <span class="normal">569</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_global_defender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks if the global defender is enabled.</span>
 
 <span class="sd">    Args:</span>
@@ -3019,9 +3019,9 @@ from YAML files or dictionaries.</p>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if global defender should be used, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">use_global_defender</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;use_global_defender&#39;</span><span class="p">]</span>
+        <span class="n">use_global_defender</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'env'</span><span class="p">][</span><span class="s1">'use_global_defender'</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="n">use_global_defender</span> <span class="o">=</span> <span class="n">default_value</span>
     <span class="k">return</span> <span class="n">use_global_defender</span>
@@ -3128,32 +3128,32 @@ from YAML files or dictionaries.</p>
 <span class="normal">369</span>
 <span class="normal">370</span>
 <span class="normal">371</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_win_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Returns the win conditions based on the agent&#39;s role.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Returns the win conditions based on the agent's role.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        agent_role (str): The role of the agent.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: The win conditions configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">match</span> <span class="n">agent_role</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;Attacker&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"Attacker"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_player_win_conditions</span><span class="p">(</span><span class="n">agent_role</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;Defender&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"Defender"</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_player_win_conditions</span><span class="p">(</span><span class="n">agent_role</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;Benign&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"Benign"</span><span class="p">:</span>
             <span class="c1"># create goal that is unreachable so we have infinite play by the benign agent</span>
             <span class="k">return</span> <span class="p">{</span>
-                <span class="s1">&#39;known_networks&#39;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span>
-                <span class="s1">&#39;controlled_hosts&#39;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span>
-                <span class="s1">&#39;known_hosts&#39;</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span>
-                <span class="s1">&#39;known_data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">IP</span><span class="p">(</span><span class="s2">&quot;1.1.1.1&quot;</span><span class="p">):</span> <span class="p">{</span><span class="n">Data</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s1">&#39;User1&#39;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;DataFromInternet&#39;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)}},</span>
-                <span class="s1">&#39;known_services&#39;</span><span class="p">:</span> <span class="p">{},</span>
-                <span class="s1">&#39;known_blocks&#39;</span><span class="p">:</span> <span class="p">{}</span>
+                <span class="s1">'known_networks'</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span>
+                <span class="s1">'controlled_hosts'</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span>
+                <span class="s1">'known_hosts'</span><span class="p">:</span> <span class="nb">set</span><span class="p">(),</span>
+                <span class="s1">'known_data'</span><span class="p">:</span> <span class="p">{</span><span class="n">IP</span><span class="p">(</span><span class="s2">"1.1.1.1"</span><span class="p">):</span> <span class="p">{</span><span class="n">Data</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s1">'User1'</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s1">'DataFromInternet'</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">''</span><span class="p">)}},</span>
+                <span class="s1">'known_services'</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="s1">'known_blocks'</span><span class="p">:</span> <span class="p">{}</span>
             <span class="p">}</span>
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported agent role: </span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported agent role: </span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3276,7 +3276,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">240</span>
 <span class="normal">241</span>
 <span class="normal">242</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_controlled_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">IP</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads the controlled hosts for a specific agent and category.</span>
 
 <span class="sd">    Args:</span>
@@ -3284,22 +3284,22 @@ from YAML files or dictionaries.</p>
 <span class="sd">        type_data (str): The category of data.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Set[Union[IP, str]]: A set of controlled host IPs or keywords (&#39;random&#39;, &#39;all_local&#39;).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">controlled_hosts_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;controlled_hosts&#39;</span><span class="p">]</span>
+<span class="sd">        Set[Union[IP, str]]: A set of controlled host IPs or keywords ('random', 'all_local').</span>
+<span class="sd">    """</span>
+    <span class="n">controlled_hosts_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'coordinator'</span><span class="p">][</span><span class="s1">'agents'</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">'controlled_hosts'</span><span class="p">]</span>
     <span class="n">controlled_hosts</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">ip</span> <span class="ow">in</span> <span class="n">controlled_hosts_conf</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">_</span> <span class="o">=</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPAddress</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
             <span class="n">controlled_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">IP</span><span class="p">(</span><span class="n">ip</span><span class="p">))</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">'random'</span> <span class="p">:</span>
                 <span class="c1"># A random start ip was asked for</span>
-                <span class="n">controlled_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;random&#39;</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">&#39;all_local&#39;</span><span class="p">:</span>
-                <span class="n">controlled_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;all_local&#39;</span><span class="p">)</span>
+                <span class="n">controlled_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">'random'</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">'all_local'</span><span class="p">:</span>
+                <span class="n">controlled_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">'all_local'</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Configuration problem with the controlled hosts: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Configuration problem with the controlled hosts: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">controlled_hosts</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3426,7 +3426,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">126</span>
 <span class="normal">127</span>
 <span class="normal">128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_known_blocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">IP</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">IP</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads the known firewall blocks for a specific agent and category.</span>
 
 <span class="sd">    Args:</span>
@@ -3434,21 +3434,21 @@ from YAML files or dictionaries.</p>
 <span class="sd">        type_data (str): The category of data.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict[IP, Union[List[IP], str]]: A mapping of target IP addresses to blocked IPs or &#39;all_attackers&#39;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">known_blocks_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;coordinator&quot;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;known_blocks&#39;</span><span class="p">]</span>
+<span class="sd">        Dict[IP, Union[List[IP], str]]: A mapping of target IP addresses to blocked IPs or 'all_attackers'.</span>
+<span class="sd">    """</span>
+    <span class="n">known_blocks_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">"coordinator"</span><span class="p">][</span><span class="s1">'agents'</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">'known_blocks'</span><span class="p">]</span>
     <span class="n">known_blocks</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">target_host</span><span class="p">,</span> <span class="n">block_list</span> <span class="ow">in</span> <span class="n">known_blocks_conf</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">target_host</span>  <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="n">target_host</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error when converting </span><span class="si">{</span><span class="n">target_host</span><span class="si">}</span><span class="s2"> to IP address object&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error when converting </span><span class="si">{</span><span class="n">target_host</span><span class="si">}</span><span class="s2"> to IP address object"</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">block_list</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
             <span class="n">known_blocks</span><span class="p">[</span><span class="n">target_host</span><span class="p">]</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">IP</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">block_list</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">block_list</span> <span class="o">==</span> <span class="s2">&quot;all_attackers&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">block_list</span> <span class="o">==</span> <span class="s2">"all_attackers"</span><span class="p">:</span>
             <span class="n">known_blocks</span><span class="p">[</span><span class="n">target_host</span><span class="p">]</span> <span class="o">=</span> <span class="n">block_list</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported value in &#39;known_blocks&#39;: </span><span class="si">{</span><span class="n">known_blocks_conf</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported value in 'known_blocks': </span><span class="si">{</span><span class="n">known_blocks_conf</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">known_blocks</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3581,17 +3581,17 @@ from YAML files or dictionaries.</p>
 <span class="normal">100</span>
 <span class="normal">101</span>
 <span class="normal">102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_known_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">IP</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Data</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads the known data for a specific agent and category (goal/start_position).</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        type_agent (str): The role or type of the agent.</span>
-<span class="sd">        type_data (str): The category of data (e.g., &#39;goal&#39;, &#39;start_position&#39;).</span>
+<span class="sd">        type_data (str): The category of data (e.g., 'goal', 'start_position').</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict[IP, Set[Union[Data, str]]]: A mapping of IP addresses to sets of Data objects or &#39;random&#39; keywords.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">known_data_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;known_data&#39;</span><span class="p">]</span>
+<span class="sd">        Dict[IP, Set[Union[Data, str]]]: A mapping of IP addresses to sets of Data objects or 'random' keywords.</span>
+<span class="sd">    """</span>
+    <span class="n">known_data_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'coordinator'</span><span class="p">][</span><span class="s1">'agents'</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">'known_data'</span><span class="p">]</span>
     <span class="n">known_data</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">ip</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">known_data_conf</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">try</span><span class="p">:</span>
@@ -3600,8 +3600,8 @@ from YAML files or dictionaries.</p>
             <span class="n">known_data_host</span> <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
             <span class="n">known_data</span><span class="p">[</span><span class="n">known_data_host</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">datum</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datum</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">datum</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
-                    <span class="n">known_data</span><span class="p">[</span><span class="n">known_data_host</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;random&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">datum</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">datum</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"random"</span><span class="p">:</span>
+                    <span class="n">known_data</span><span class="p">[</span><span class="n">known_data_host</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"random"</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">known_data_content_str_user</span> <span class="o">=</span>  <span class="n">datum</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">known_data_content_str_data</span> <span class="o">=</span>  <span class="n">datum</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -3733,7 +3733,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">213</span>
 <span class="normal">214</span>
 <span class="normal">215</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_known_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">IP</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads the known hosts for a specific agent and category.</span>
 
 <span class="sd">    Args:</span>
@@ -3741,22 +3741,22 @@ from YAML files or dictionaries.</p>
 <span class="sd">        type_data (str): The category of data.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Set[Union[IP, str]]: A set of host IP objects or keywords (&#39;random&#39;, &#39;all_local&#39;).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">known_hosts_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;known_hosts&#39;</span><span class="p">]</span>
+<span class="sd">        Set[Union[IP, str]]: A set of host IP objects or keywords ('random', 'all_local').</span>
+<span class="sd">    """</span>
+    <span class="n">known_hosts_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'coordinator'</span><span class="p">][</span><span class="s1">'agents'</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">'known_hosts'</span><span class="p">]</span>
     <span class="n">known_hosts</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">ip</span> <span class="ow">in</span> <span class="n">known_hosts_conf</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">_</span> <span class="o">=</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPAddress</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>
             <span class="n">known_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">IP</span><span class="p">(</span><span class="n">ip</span><span class="p">))</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span> <span class="p">:</span>
-            <span class="k">if</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">'random'</span><span class="p">:</span>
                 <span class="c1"># A random start ip was asked for</span>
-                <span class="n">known_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;random&#39;</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">&#39;all_local&#39;</span><span class="p">:</span>
-                <span class="n">known_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;all_local&#39;</span><span class="p">)</span>
+                <span class="n">known_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">'random'</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">ip</span> <span class="o">==</span> <span class="s1">'all_local'</span><span class="p">:</span>
+                <span class="n">known_hosts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">'all_local'</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Configuration problem with the known hosts: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Configuration problem with the known hosts: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">known_hosts</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3876,7 +3876,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">186</span>
 <span class="normal">187</span>
 <span class="normal">188</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_known_networks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="n">Network</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads the known networks for a specific agent and category.</span>
 
 <span class="sd">    Args:</span>
@@ -3885,17 +3885,17 @@ from YAML files or dictionaries.</p>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Set[Network]: A set of known Network objects.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">known_networks_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;known_networks&#39;</span><span class="p">]</span>
+<span class="sd">    """</span>
+    <span class="n">known_networks_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'coordinator'</span><span class="p">][</span><span class="s1">'agents'</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">'known_networks'</span><span class="p">]</span>
     <span class="n">known_networks</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">net</span> <span class="ow">in</span> <span class="n">known_networks_conf</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">net</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">'/'</span> <span class="ow">in</span> <span class="n">net</span><span class="p">:</span>
                 <span class="n">_</span> <span class="o">=</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">IPNetwork</span><span class="p">(</span><span class="n">net</span><span class="p">)</span>
-                <span class="n">host_part</span><span class="p">,</span> <span class="n">net_part</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+                <span class="n">host_part</span><span class="p">,</span> <span class="n">net_part</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)</span>
                 <span class="n">known_networks</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Network</span><span class="p">(</span><span class="n">host_part</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">net_part</span><span class="p">)))</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Configuration problem with the known networks&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">'Configuration problem with the known networks'</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">known_networks</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4033,7 +4033,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">163</span>
 <span class="normal">164</span>
 <span class="normal">165</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_agents_known_services</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_agent</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">type_data</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">IP</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Service</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads the known services for a specific agent and category.</span>
 
 <span class="sd">    Args:</span>
@@ -4041,9 +4041,9 @@ from YAML files or dictionaries.</p>
 <span class="sd">        type_data (str): The category of data.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict[IP, List[Union[Service, str]]]: A mapping of IP addresses to lists of Service objects or &#39;random&#39; keywords.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">known_services_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;coordinator&quot;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">&#39;known_services&#39;</span><span class="p">]</span>
+<span class="sd">        Dict[IP, List[Union[Service, str]]]: A mapping of IP addresses to lists of Service objects or 'random' keywords.</span>
+<span class="sd">    """</span>
+    <span class="n">known_services_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">"coordinator"</span><span class="p">][</span><span class="s1">'agents'</span><span class="p">][</span><span class="n">type_agent</span><span class="p">][</span><span class="n">type_data</span><span class="p">][</span><span class="s1">'known_services'</span><span class="p">]</span>
     <span class="n">known_services</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">ip</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">known_services_conf</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">try</span><span class="p">:</span>
@@ -4059,12 +4059,12 @@ from YAML files or dictionaries.</p>
                     <span class="n">is_local</span> <span class="o">=</span> <span class="n">service</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
                     <span class="n">known_services</span><span class="p">[</span><span class="n">known_services_host</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Service</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">is_local</span><span class="p">))</span>
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span> <span class="c1"># keyword </span>
-                    <span class="k">if</span> <span class="n">service</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
-                        <span class="n">known_services</span><span class="p">[</span><span class="n">known_services_host</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;random&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">service</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"random"</span><span class="p">:</span>
+                        <span class="n">known_services</span><span class="p">[</span><span class="n">known_services_host</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"random"</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported values in agent known_services</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported values in agent known_services</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported values in agent known_services</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported values in agent known_services</span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">netaddr</span><span class="o">.</span><span class="n">AddrFormatError</span><span class="p">):</span>
             <span class="n">known_services</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">return</span> <span class="n">known_services</span>
@@ -4160,7 +4160,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">52</span>
 <span class="normal">53</span>
 <span class="normal">54</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_config_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conf_file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads the configuration from a YAML file.</span>
 
 <span class="sd">    Args:</span>
@@ -4168,12 +4168,12 @@ from YAML files or dictionaries.</p>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">conf_file_name</span><span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error loading the configuration file</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Error loading the configuration file</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
         <span class="k">pass</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4266,7 +4266,7 @@ from YAML files or dictionaries.</p>
 <span class="normal">68</span>
 <span class="normal">69</span>
 <span class="normal">70</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">read_env_action_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reads the success probability for a specific environment action.</span>
 
 <span class="sd">    Args:</span>
@@ -4274,9 +4274,9 @@ from YAML files or dictionaries.</p>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        float: The success probability (defaults to 1.0 if not found).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">action_success_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;env&#39;</span><span class="p">][</span><span class="s1">&#39;actions&#39;</span><span class="p">][</span><span class="n">action_name</span><span class="p">][</span><span class="s1">&#39;prob_success&#39;</span><span class="p">]</span>
+        <span class="n">action_success_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'env'</span><span class="p">][</span><span class="s1">'actions'</span><span class="p">][</span><span class="n">action_name</span><span class="p">][</span><span class="s1">'prob_success'</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="n">action_success_p</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">action_success_p</span>
@@ -4332,9 +4332,9 @@ from YAML files or dictionaries.</p>
 <span class="normal">449</span>
 <span class="normal">450</span>
 <span class="normal">451</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">validate_goal_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">agent_role</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Warns if the goal description misses key targets from the actual win conditions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">description</span><span class="p">:</span>
         <span class="k">return</span>  <span class="c1"># No description to validate</span>
 
@@ -4342,24 +4342,24 @@ from YAML files or dictionaries.</p>
     <span class="n">missing_elements</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">win_conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;coordinator&#39;</span><span class="p">][</span><span class="s1">&#39;agents&#39;</span><span class="p">][</span><span class="n">agent_role</span><span class="p">][</span><span class="s1">&#39;goal&#39;</span><span class="p">]</span>
+        <span class="n">win_conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">'coordinator'</span><span class="p">][</span><span class="s1">'agents'</span><span class="p">][</span><span class="n">agent_role</span><span class="p">][</span><span class="s1">'goal'</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="k">return</span>
 
     <span class="c1"># Check controlled hosts</span>
-    <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">win_conditions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;controlled_hosts&#39;</span><span class="p">,</span> <span class="p">[]):</span>
-        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">description_lower</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
-            <span class="n">missing_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Controlled Host: </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">host</span> <span class="ow">in</span> <span class="n">win_conditions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'controlled_hosts'</span><span class="p">,</span> <span class="p">[]):</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">description_lower</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">"random"</span><span class="p">:</span>
+            <span class="n">missing_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Controlled Host: </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Check known data targets</span>
-    <span class="k">for</span> <span class="n">host</span><span class="p">,</span> <span class="n">data_set</span> <span class="ow">in</span> <span class="n">win_conditions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;known_data&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">description_lower</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
-            <span class="c1"># Only require host IP if it isn&#39;t &quot;random&quot;</span>
-            <span class="n">missing_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Target Host IP defined for data: </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">host</span><span class="p">,</span> <span class="n">data_set</span> <span class="ow">in</span> <span class="n">win_conditions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'known_data'</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">description_lower</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">host</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">"random"</span><span class="p">:</span>
+            <span class="c1"># Only require host IP if it isn't "random"</span>
+            <span class="n">missing_elements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Target Host IP defined for data: </span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">missing_elements</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">] Goal description &#39;</span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2">&#39; might be missing some actual win condition targets: </span><span class="si">{</span><span class="n">missing_elements</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">] Goal description '</span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2">' might be missing some actual win condition targets: </span><span class="si">{</span><span class="n">missing_elements</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -4426,7 +4426,7 @@ from YAML files or dictionaries.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

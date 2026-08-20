@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/network_intel_node.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -1299,14 +1299,14 @@
 <h4 id="ip">IP</h4>
 <p>IP is immutable object that represents an IPv4 object in the NetSecGame. It has a single parameter of the address in a dot-decimal notation (4 octet represented as decimal value separated by dots).</p>
 <p>Example: 
-<div class="highlight"><pre><span></span><code> <span class="n">ip</span> <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="s2">&quot;192.168.1.1&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code> <span class="n">ip</span> <span class="o">=</span> <span class="n">IP</span><span class="p">(</span><span class="s2">"192.168.1.1"</span><span class="p">)</span>
 </code></pre></div></p>
 <h4 id="network">Network</h4>
 <p>Network is immutable object that represents an IPv4 network object in the NetSecGame. It has 2 parameters:
 - <code>network_ip:str</code> representing the IPv4 address of the network.
 - <code>mask:int</code> representing the mask in the CIDR notation.</p>
 <p>Example: 
-<div class="highlight"><pre><span></span><code><span class="n">net</span> <span class="o">=</span> <span class="n">Network</span><span class="p">(</span><span class="s2">&quot;192.168.1.0&quot;</span><span class="p">,</span> <span class="mi">24</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">net</span> <span class="o">=</span> <span class="n">Network</span><span class="p">(</span><span class="s2">"192.168.1.0"</span><span class="p">,</span> <span class="mi">24</span><span class="p">)</span>
 </code></pre></div></p>
 <h4 id="service">Service</h4>
 <p>Service class holds information about services running in hosts. Each Service has four parameters:
@@ -1315,7 +1315,7 @@
 - <code>version</code>:str - version of the service.
 - <code>is_local</code>:bool - flag specifying if the service is local only (default=True). (if <code>True</code>, service is NOT visible without controlling the host).</p>
 <p>Example: 
-<div class="highlight"><pre><span></span><code><span class="n">s</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="s1">&#39;postgresql&#39;</span><span class="p">,</span> <span class="s1">&#39;passive&#39;</span><span class="p">,</span> <span class="s1">&#39;14.3.0&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">s</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="s1">'postgresql'</span><span class="p">,</span> <span class="s1">'passive'</span><span class="p">,</span> <span class="s1">'14.3.0'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
 </code></pre></div></p>
 <h4 id="data">Data</h4>
 <p>Data class holds information about datapoints (files) present in the NetSecGame.
@@ -1326,8 +1326,8 @@ Each data instance has two parameters:
 - <code>type</code>: str - identification of a type of the file (optional, default="")
 - <code>content</code>: str - content of the data (optional, default="")</p>
 <p>Examples:
-<div class="highlight"><pre><span></span><code><span class="n">d1</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s2">&quot;User1&quot;</span><span class="p">,</span> <span class="s2">&quot;DatabaseData&quot;</span><span class="p">)</span>
-<span class="n">d2</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s2">&quot;User1&quot;</span><span class="p">,</span> <span class="s2">&quot;DatabaseData&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;txt&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;SecretUserDatabase&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">d1</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s2">"User1"</span><span class="p">,</span> <span class="s2">"DatabaseData"</span><span class="p">)</span>
+<span class="n">d2</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span><span class="s2">"User1"</span><span class="p">,</span> <span class="s2">"DatabaseData"</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s2">"txt"</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">"SecretUserDatabase"</span><span class="p">)</span>
 </code></pre></div></p>
 <h3 id="gamestate">GameState</h3>
 <p>GameState is an object that represents a view of the NetSecGame environment in a given state. It is constructed as a collection of 'assets' available to the agent. GameState has following parts:
@@ -1535,7 +1535,7 @@ The dictionary format: {<code>IP</code>: {<code>Service</code>}} where <a href="
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

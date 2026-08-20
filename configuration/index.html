@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/network_intel_node.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -1177,8 +1177,8 @@
 <li><code>actions</code> - defines the probability of success for every ActionType</li>
 </ul>
 <div class="highlight"><pre><span></span><code><span class="nt">env</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">random_seed</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;random&#39;</span>
-<span class="w">    </span><span class="nt">scenario</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;two_networks_tiny&#39;</span>
+<span class="w">    </span><span class="nt">random_seed</span><span class="p">:</span><span class="w"> </span><span class="s">'random'</span>
+<span class="w">    </span><span class="nt">scenario</span><span class="p">:</span><span class="w"> </span><span class="s">'two_networks_tiny'</span>
 <span class="w">    </span><span class="nt">use_global_defender</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="w">    </span><span class="nt">use_dynamic_addresses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
 <span class="w">    </span><span class="nt">use_firewall</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
@@ -1273,7 +1273,7 @@ Additionally,  if `random` keyword is used in the goal definition,
 <span class="w">        </span><span class="nt">Attacker</span><span class="p">:</span>
 <span class="w">            </span><span class="nt">max_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span>
 <span class="w">            </span><span class="nt">goal</span><span class="p">:</span>
-<span class="w">                </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Exfiltrate</span><span class="nv"> </span><span class="s">data</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">Samba</span><span class="nv"> </span><span class="s">server</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">remote</span><span class="nv"> </span><span class="s">C&amp;C</span><span class="nv"> </span><span class="s">server.&quot;</span>
+<span class="w">                </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Exfiltrate</span><span class="nv"> </span><span class="s">data</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">Samba</span><span class="nv"> </span><span class="s">server</span><span class="nv"> </span><span class="s">to</span><span class="nv"> </span><span class="s">remote</span><span class="nv"> </span><span class="s">C&amp;C</span><span class="nv"> </span><span class="s">server."</span>
 <span class="w">                </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">                </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">                </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
@@ -1287,7 +1287,7 @@ Additionally,  if `random` keyword is used in the goal definition,
 <span class="w">                </span><span class="c1"># The attacker must always at least control the CC if the goal is to exfiltrate there</span>
 <span class="w">                </span><span class="c1"># Example of fixing the starting point of the agent in a local host</span>
 <span class="w">                </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">213.47.23.195</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">random</span><span class="p p-Indicator">]</span>
-<span class="w">                </span><span class="c1"># Services are defined as a target host where the service must be, and then a description in the form &#39;name, type, version, is_local&#39;</span>
+<span class="w">                </span><span class="c1"># Services are defined as a target host where the service must be, and then a description in the form 'name, type, version, is_local'</span>
 <span class="w">                </span><span class="nt">known_services</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 <span class="w">                </span><span class="nt">known_data</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
 <span class="w">                </span><span class="nt">known_blocks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
@@ -1298,7 +1298,7 @@ Additionally,  if `random` keyword is used in the goal definition,
 <p>Example of defender configuration:
 <div class="highlight"><pre><span></span><code><span class="w">   </span><span class="nt">Defender</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">goal</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Block</span><span class="nv"> </span><span class="s">all</span><span class="nv"> </span><span class="s">attackers&quot;</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Block</span><span class="nv"> </span><span class="s">all</span><span class="nv"> </span><span class="s">attackers"</span>
 <span class="w">        </span><span class="nt">known_networks</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">known_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 <span class="w">        </span><span class="nt">controlled_hosts</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
@@ -1378,7 +1378,7 @@ As in other agents, the description is only a text for the agent, so it can know
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

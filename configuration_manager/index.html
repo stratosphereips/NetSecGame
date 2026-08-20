@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/network_intel_node.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -1396,7 +1396,7 @@ and provides structured access to configuration data.</p>
 <span class="normal">30</span>
 <span class="normal">31</span>
 <span class="normal">32</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_config_file</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">service_host</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">service_port</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;ConfigurationManager&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"ConfigurationManager"</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_task_config_file</span> <span class="o">=</span> <span class="n">task_config_file</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_service_host</span> <span class="o">=</span> <span class="n">service_host</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_service_port</span> <span class="o">=</span> <span class="n">service_port</span>
@@ -1489,45 +1489,45 @@ and provides structured access to configuration data.</p>
 <span class="normal">88</span>
 <span class="normal">89</span>
 <span class="normal">90</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_remote_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fetches initialization objects from the remote service.&quot;&quot;&quot;</span>
-    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;http://</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_port</span><span class="si">}</span><span class="s2">/cyst_init_objects&quot;</span>
+<span class="w">    </span><span class="sd">"""Fetches initialization objects from the remote service."""</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"http://</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_port</span><span class="si">}</span><span class="s2">/cyst_init_objects"</span>
     <span class="k">async</span> <span class="k">with</span> <span class="n">ClientSession</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">async</span> <span class="k">with</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
                     <span class="n">config_data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Received config data: </span><span class="si">{</span><span class="n">config_data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Received config data: </span><span class="si">{</span><span class="n">config_data</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                     <span class="c1"># Initialize CYST environment</span>
                     <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="o">.</span><span class="n">create</span><span class="p">()</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_config_file_hash</span> <span class="o">=</span> <span class="n">get_str_hash</span><span class="p">(</span><span class="n">config_data</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_cyst_objects</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">general</span><span class="o">.</span><span class="n">load_configuration</span><span class="p">(</span><span class="n">config_data</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialization objects received: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cyst_objects</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Initialization objects received: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_cyst_objects</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
                     <span class="c1"># Initialize parser with the fetched dict (assuming it contains task_configuration or similar structure)</span>
                     <span class="c1"># Note: The original coordinator code for remote fetch commented out creating ConfigParser:</span>
-                    <span class="c1"># #self.task_config = ConfigParser(config_dict=response[&quot;task_configuration&quot;])</span>
+                    <span class="c1"># #self.task_config = ConfigParser(config_dict=response["task_configuration"])</span>
                     <span class="c1"># usage of self.task_config in original code fell back to loading from file even if remote fetch happened?</span>
-                    <span class="c1"># &quot;Temporary fix&quot; comment in original code suggests fallback.</span>
+                    <span class="c1"># "Temporary fix" comment in original code suggests fallback.</span>
                     <span class="c1"># For this implementation, we should try to use the fetched config if possible.</span>
                     <span class="c1"># If the API returns the same structure as the YAML file, we can pass it to ConfigParser(config_dict=...)</span>
                     <span class="c1"># If not, we might need to rely on the file as the original code did for the parser part.</span>
 
-                    <span class="c1"># Let&#39;s assume for now we try to use the dictionary if available, otherwise fallback logic might be needed</span>
+                    <span class="c1"># Let's assume for now we try to use the dictionary if available, otherwise fallback logic might be needed</span>
                     <span class="c1"># derived from how the response is structured.</span>
                     <span class="c1"># Looking at original code: response seems to be the full config.</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span><span class="n">config_dict</span><span class="o">=</span><span class="n">config_data</span><span class="p">)</span>
 
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to fetch initialization objects. Status: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Remote configuration fetch failed with status </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to fetch initialization objects. Status: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Remote configuration fetch failed with status </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error fetching initialization objects: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Error fetching initialization objects: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="c1"># Fallback to local file if remote fails? The original code did:</span>
             <span class="c1"># self.task_config = ConfigParser(self._task_config_file)</span>
             <span class="c1"># We can implement similar fallback behavior here if desired, or just raise.</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task_config_file</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Falling back to local configuration file.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Falling back to local configuration file."</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_load_local_configuration</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">e</span>
@@ -1559,7 +1559,7 @@ and provides structured access to configuration data.</p>
 <span class="normal">95</span>
 <span class="normal">96</span>
 <span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_load_local_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads configuration from the local file.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Loads configuration from the local file."""</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span><span class="n">task_config_file</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_task_config_file</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_cyst_objects</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_scenario</span><span class="p">()</span>
     <span class="c1"># Original code does str(self._cyst_objects) for hash</span>
@@ -1623,18 +1623,18 @@ and provides structured access to configuration data.</p>
 <span class="normal">280</span>
 <span class="normal">281</span>
 <span class="normal">282</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_goal_descriptions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns goal descriptions for all roles.</span>
+<span class="w">    </span><span class="sd">"""Returns goal descriptions for all roles.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, str]: The goal descriptions for all roles.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">goal_descriptions</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">agent_role</span> <span class="ow">in</span> <span class="n">AgentRole</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">goal_descriptions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_goal_description</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">agent_role</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="n">goal_descriptions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Goal description for role &#39;</span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">goal_descriptions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">goal_descriptions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span> <span class="o">=</span> <span class="s2">""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Goal description for role '</span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">goal_descriptions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">goal_descriptions</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1694,12 +1694,12 @@ and provides structured access to configuration data.</p>
 <span class="normal">294</span>
 <span class="normal">295</span>
 <span class="normal">296</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_max_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns max steps for all roles.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Optional[int]]: A dictionary mapping roles to their maximum steps.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Using self.get_max_steps might raise RuntimeError if checks are there, </span>
     <span class="c1"># but simpler to just call parser directly or the single accessor since we are inside the class.</span>
     <span class="c1"># However, the single accessor has the check.</span>
@@ -1765,16 +1765,16 @@ and provides structured access to configuration data.</p>
 <span class="normal">250</span>
 <span class="normal">251</span>
 <span class="normal">252</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_starting_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns starting positions for all roles.</span>
+<span class="w">    </span><span class="sd">"""Returns starting positions for all roles.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: The starting positions for all roles.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">starting_positions</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">agent_role</span> <span class="ow">in</span> <span class="n">AgentRole</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">starting_positions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_starting_position</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">agent_role</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting position for role &#39;</span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">starting_positions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Starting position for role '</span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">starting_positions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="n">starting_positions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">return</span> <span class="n">starting_positions</span>
@@ -1837,18 +1837,18 @@ and provides structured access to configuration data.</p>
 <span class="normal">265</span>
 <span class="normal">266</span>
 <span class="normal">267</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_all_win_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns win conditions for all roles.</span>
+<span class="w">    </span><span class="sd">"""Returns win conditions for all roles.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict[str, Any]: The win conditions for all roles.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">win_conditions</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">agent_role</span> <span class="ow">in</span> <span class="n">AgentRole</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">win_conditions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_win_conditions</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">agent_role</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="n">win_conditions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Win condition for role &#39;</span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">win_conditions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Win condition for role '</span><span class="si">{</span><span class="n">agent_role</span><span class="si">}</span><span class="s2">': </span><span class="si">{</span><span class="n">win_conditions</span><span class="p">[</span><span class="n">agent_role</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">win_conditions</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1903,12 +1903,12 @@ and provides structured access to configuration data.</p>
 <span class="normal">117</span>
 <span class="normal">118</span>
 <span class="normal">119</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_config_hash</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns the hash of the loaded configuration.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Optional[str]: The hexadecimal hash of the configuration, or None if not loaded.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config_file_hash</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1963,12 +1963,12 @@ and provides structured access to configuration data.</p>
 <span class="normal">108</span>
 <span class="normal">109</span>
 <span class="normal">110</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_cyst_objects</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns the loaded CYST configuration objects.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Any: The CYST configuration objects (usually a list of NodeConfig, etc.).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cyst_objects</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2028,15 +2028,15 @@ Args:
 <span class="normal">153</span>
 <span class="normal">154</span>
 <span class="normal">155</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_goal_description</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the goal description for a specific role.</span>
+<span class="w">    </span><span class="sd">"""Returns the goal description for a specific role.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        role (str): The role of the agent.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        str: The goal description for the specified role.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Configuration not loaded."</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_goal_description</span><span class="p">(</span><span class="n">agent_role</span><span class="o">=</span><span class="n">role</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2096,15 +2096,15 @@ Args:
 <span class="normal">165</span>
 <span class="normal">166</span>
 <span class="normal">167</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_max_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the max steps for a specific role.</span>
+<span class="w">    </span><span class="sd">"""Returns the max steps for a specific role.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        role (str): The role of the agent.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Optional[int]: The max steps for the specified role.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Configuration not loaded."</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_max_steps</span><span class="p">(</span><span class="n">role</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2194,16 +2194,16 @@ Args:
 <span class="normal">222</span>
 <span class="normal">223</span>
 <span class="normal">224</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_required_num_players</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the required number of players configuration.</span>
+<span class="w">    </span><span class="sd">"""Returns the required number of players configuration.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        default_value (int): The default value for the required number of players.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        int: The required number of players configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Configuration not loaded."</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_required_num_players</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2271,24 +2271,24 @@ Args:
 <span class="normal">184</span>
 <span class="normal">185</span>
 <span class="normal">186</span>
-<span class="normal">187</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_rewards</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reward_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">,</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="s2">&quot;fail&quot;</span><span class="p">,</span> <span class="s2">&quot;false_positive&quot;</span><span class="p">],</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the rewards configuration.</span>
+<span class="normal">187</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_rewards</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reward_names</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"step"</span><span class="p">,</span> <span class="s2">"success"</span><span class="p">,</span> <span class="s2">"fail"</span><span class="p">,</span> <span class="s2">"false_positive"</span><span class="p">],</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Returns the rewards configuration.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        reward_names (List[str]): The names of the rewards.</span>
 <span class="sd">        default_value (int): The default value for the rewards.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: The rewards configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Configuration not loaded."</span><span class="p">)</span>
     <span class="n">rewards</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_rewards</span><span class="p">(</span><span class="n">reward_names</span><span class="p">,</span> <span class="n">default_value</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">rewards</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fail&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Fail reward is positive. This is not recommended.&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">rewards</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;false_positive&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;False positive reward is positive. This is not recommended.&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">rewards</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;success&quot;</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Success reward is negative. This is not recommended.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rewards</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fail"</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Fail reward is positive. This is not recommended."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rewards</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"false_positive"</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"False positive reward is positive. This is not recommended."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rewards</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"success"</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Success reward is negative. This is not recommended."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">rewards</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2348,15 +2348,15 @@ Args:
 <span class="normal">129</span>
 <span class="normal">130</span>
 <span class="normal">131</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_starting_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the starting position configuration for a specific role.</span>
+<span class="w">    </span><span class="sd">"""Returns the starting position configuration for a specific role.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        role (str): The role of the agent.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: The starting position configuration for the specified role.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Configuration not loaded."</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_start_position</span><span class="p">(</span><span class="n">agent_role</span><span class="o">=</span><span class="n">role</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2446,16 +2446,16 @@ Args:
 <span class="normal">307</span>
 <span class="normal">308</span>
 <span class="normal">309</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_store_trajectories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>  
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the store trajectories configuration.</span>
+<span class="w">    </span><span class="sd">"""Returns the store trajectories configuration.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        default_value (bool): The default value for the store trajectories.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: True if trajectories should be stored, False otherwise.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Configuration not loaded."</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_store_trajectories</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2515,15 +2515,15 @@ Args:
 <span class="normal">197</span>
 <span class="normal">198</span>
 <span class="normal">199</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_dynamic_addresses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the use dynamic addresses configuration.</span>
+<span class="w">    </span><span class="sd">"""Returns the use dynamic addresses configuration.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        default_value (bool): The default value for the use dynamic addresses.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: The use dynamic addresses configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Configuration not loaded."</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_use_dynamic_addresses</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2613,16 +2613,16 @@ Args:
 <span class="normal">235</span>
 <span class="normal">236</span>
 <span class="normal">237</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_firewall</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the use firewall configuration.</span>
+<span class="w">    </span><span class="sd">"""Returns the use firewall configuration.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        default_value (bool): The default value for the use firewall.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: The use firewall configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Configuration not loaded."</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_use_firewall</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2682,15 +2682,15 @@ Args:
 <span class="normal">209</span>
 <span class="normal">210</span>
 <span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_use_global_defender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the use global defender configuration.</span>
+<span class="w">    </span><span class="sd">"""Returns the use global defender configuration.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        default_value (bool): The default value for the use global defender.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        bool: The use global defender configuration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Configuration not loaded."</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_use_global_defender</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2750,15 +2750,15 @@ Args:
 <span class="normal">141</span>
 <span class="normal">142</span>
 <span class="normal">143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_win_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">role</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the win conditions for a specific role.</span>
+<span class="w">    </span><span class="sd">"""Returns the win conditions for a specific role.</span>
 <span class="sd">    Args:</span>
 <span class="sd">        role (str): The role of the agent.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        dict: The win conditions for the specified role.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Configuration not loaded.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Configuration not loaded."</span><span class="p">)</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">get_win_conditions</span><span class="p">(</span><span class="n">agent_role</span><span class="o">=</span><span class="n">role</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2800,18 +2800,18 @@ Prioritizes remote service if configured, otherwise falls back to local file.</p
 <span class="normal">44</span>
 <span class="normal">45</span>
 <span class="normal">46</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Determines the source and loads the configuration.</span>
 <span class="sd">    Prioritizes remote service if configured, otherwise falls back to local file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_host</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_service_port</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fetching task configuration from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_port</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fetching task configuration from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_service_port</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_remote_configuration</span><span class="p">()</span>
     <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_task_config_file</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading task configuration from file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_task_config_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loading task configuration from file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_task_config_file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_load_local_configuration</span><span class="p">()</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Task configuration source not specified (neither file nor service)&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Task configuration source not specified (neither file nor service)"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2877,7 +2877,7 @@ Prioritizes remote service if configured, otherwise falls back to local file.</p
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

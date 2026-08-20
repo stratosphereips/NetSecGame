@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../assets/network_intel_node.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -27,7 +27,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -1170,7 +1170,7 @@ that provides list of all possible actions to each agent that registers in the g
 <span class="normal">31</span>
 <span class="normal">32</span>
 <span class="normal">33</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">game_host</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">game_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">task_config</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">include_block_action</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initializes the WhiteBoxNetSecGame.</span>
 
 <span class="sd">    Args:</span>
@@ -1179,7 +1179,7 @@ that provides list of all possible actions to each agent that registers in the g
 <span class="sd">        task_config (str): Path to the task configuration file.</span>
 <span class="sd">        seed (Optional[int]): Random seed.</span>
 <span class="sd">        include_block_action (bool): Whether to include BlockIP actions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">game_host</span><span class="p">,</span> <span class="n">game_port</span><span class="p">,</span> <span class="n">task_config</span><span class="p">,</span> <span class="n">seed</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_all_actions</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_include_block_action</span> <span class="o">=</span> <span class="n">include_block_action</span>
@@ -1301,7 +1301,7 @@ that provides list of all possible actions to each agent that registers in the g
 <span class="normal">154</span>
 <span class="normal">155</span>
 <span class="normal">156</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_create_state_from_view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">view</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">add_neighboring_nets</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GameState</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Creates a GameState from a view.</span>
 
 <span class="sd">    Args:</span>
@@ -1310,7 +1310,7 @@ that provides list of all possible actions to each agent that registers in the g
 
 <span class="sd">    Returns:</span>
 <span class="sd">        GameState: The generated game state.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_create_state_from_view</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">add_neighboring_nets</span><span class="o">=</span><span class="n">add_neighboring_nets</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1401,7 +1401,7 @@ that provides list of all possible actions to each agent that registers in the g
 <span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_dynamic_ip_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_attempts</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Dynamic IP change is not supported for WhiteBoxNetSecGame.</span>
 
 <span class="sd">    Args:</span>
@@ -1409,9 +1409,9 @@ that provides list of all possible actions to each agent that registers in the g
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Dynamic IP change is not supported for WhiteBoxNetSecGame.&quot;</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Dynamic IP change is not supported for WhiteBoxNetSecGame.&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"Dynamic IP change is not supported for WhiteBoxNetSecGame."</span><span class="p">,</span> <span class="ne">UserWarning</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Dynamic IP change is not supported for WhiteBoxNetSecGame."</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">None</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1553,12 +1553,12 @@ that provides list of all possible actions to each agent that registers in the g
 <span class="normal">140</span>
 <span class="normal">141</span>
 <span class="normal">142</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_generate_all_actions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Action</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Generates a list of all possible actions for the game.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        List[Action]: List of all possible actions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">actions</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">all_ips</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_ip_mapping</span><span class="p">[</span><span class="n">ip</span><span class="p">]</span> <span class="k">for</span> <span class="n">ip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ip_to_hostname</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
     <span class="n">all_networks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_networks</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
@@ -1584,8 +1584,8 @@ that provides list of all possible actions to each agent that registers in the g
             <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span>
                 <span class="n">ActionType</span><span class="o">.</span><span class="n">ScanNetwork</span><span class="p">,</span>
                 <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
-                    <span class="s2">&quot;target_network&quot;</span><span class="p">:</span> <span class="n">target_network</span>
+                    <span class="s2">"source_host"</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
+                    <span class="s2">"target_network"</span><span class="p">:</span> <span class="n">target_network</span>
                 <span class="p">}</span>
             <span class="p">))</span>
 
@@ -1594,8 +1594,8 @@ that provides list of all possible actions to each agent that registers in the g
         <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span>
             <span class="n">ActionType</span><span class="o">.</span><span class="n">FindServices</span><span class="p">,</span>
             <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
-                <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
-                <span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">target_host</span>
+                <span class="s2">"source_host"</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
+                <span class="s2">"target_host"</span><span class="p">:</span> <span class="n">target_host</span>
             <span class="p">}</span>
         <span class="p">))</span>
     <span class="c1"># Service Exploits</span>
@@ -1604,9 +1604,9 @@ that provides list of all possible actions to each agent that registers in the g
             <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span>
                 <span class="n">ActionType</span><span class="o">.</span><span class="n">ExploitService</span><span class="p">,</span>
                 <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
-                    <span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">target_host</span><span class="p">,</span>
-                    <span class="s2">&quot;target_service&quot;</span><span class="p">:</span> <span class="n">service</span>
+                    <span class="s2">"source_host"</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
+                    <span class="s2">"target_host"</span><span class="p">:</span> <span class="n">target_host</span><span class="p">,</span>
+                    <span class="s2">"target_service"</span><span class="p">:</span> <span class="n">service</span>
                 <span class="p">}</span>
             <span class="p">))</span>
     <span class="c1"># Data Scans</span>
@@ -1614,8 +1614,8 @@ that provides list of all possible actions to each agent that registers in the g
         <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span>
             <span class="n">ActionType</span><span class="o">.</span><span class="n">FindData</span><span class="p">,</span>
             <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
-                <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
-                <span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">target_host</span>
+                <span class="s2">"source_host"</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
+                <span class="s2">"target_host"</span><span class="p">:</span> <span class="n">target_host</span>
             <span class="p">}</span>
         <span class="p">))</span>
     <span class="c1"># Data transfers</span>
@@ -1623,9 +1623,9 @@ that provides list of all possible actions to each agent that registers in the g
         <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span>
             <span class="n">ActionType</span><span class="o">.</span><span class="n">ExfiltrateData</span><span class="p">,</span>
             <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
-                <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
-                <span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">target_host</span><span class="p">,</span>
-                <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">datum</span>
+                <span class="s2">"source_host"</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
+                <span class="s2">"target_host"</span><span class="p">:</span> <span class="n">target_host</span><span class="p">,</span>
+                <span class="s2">"data"</span><span class="p">:</span> <span class="n">datum</span>
             <span class="p">}</span>
         <span class="p">))</span>
     <span class="c1"># Blocks</span>
@@ -1634,12 +1634,12 @@ that provides list of all possible actions to each agent that registers in the g
             <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Action</span><span class="p">(</span>
                 <span class="n">ActionType</span><span class="o">.</span><span class="n">BlockIP</span><span class="p">,</span>
                 <span class="n">parameters</span><span class="o">=</span><span class="p">{</span>
-                    <span class="s2">&quot;source_host&quot;</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
-                    <span class="s2">&quot;target_host&quot;</span><span class="p">:</span> <span class="n">target_host</span><span class="p">,</span>
-                    <span class="s2">&quot;blocked_ip&quot;</span><span class="p">:</span> <span class="n">blocked_ip</span>
+                    <span class="s2">"source_host"</span><span class="p">:</span> <span class="n">source_host</span><span class="p">,</span>
+                    <span class="s2">"target_host"</span><span class="p">:</span> <span class="n">target_host</span><span class="p">,</span>
+                    <span class="s2">"blocked_ip"</span><span class="p">:</span> <span class="n">blocked_ip</span>
                 <span class="p">}</span>
             <span class="p">))</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created action mapping with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span><span class="si">}</span><span class="s2"> actions.&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Created action mapping with </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">actions</span><span class="p">)</span><span class="si">}</span><span class="s2"> actions."</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">actions</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">actions</span>
@@ -1703,19 +1703,19 @@ that provides list of all possible actions to each agent that registers in the g
 <span class="normal">47</span>
 <span class="normal">48</span>
 <span class="normal">49</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Initializes the game state and generates all possible actions.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># First do the parent initialization</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_initialize</span><span class="p">()</span>
     <span class="c1"># All components are initialized, now we can set the action mapping</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating action mapping for the game.&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Creating action mapping for the game."</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_all_actions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_all_actions</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_registration_info</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;all_actions&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="n">v</span><span class="o">.</span><span class="n">as_dict</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_actions</span><span class="p">]),</span>
+        <span class="s2">"all_actions"</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="n">v</span><span class="o">.</span><span class="n">as_dict</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_actions</span><span class="p">]),</span>
     <span class="p">}</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_all_actions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1782,7 +1782,7 @@ that provides list of all possible actions to each agent that registers in the g
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       
