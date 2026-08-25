@@ -1,0 +1,123 @@
+# Configuration file for the NetSecGame environment
+
+coordinator:
+  # Define the conf for all the 'attacker' agents.
+  agents:
+    Attacker:
+      max_steps: 100
+      goal:
+        description: "Exfiltrate data to '101.32.5.23'"
+        is_any_part_of_goal_random: True
+        known_networks: []
+        #known_networks: [192.168.1.0/24, 192.168.3.0/24]
+        known_hosts: []
+        #known_hosts: [192.168.1.1, 192.168.1.2]
+        controlled_hosts: []
+        #controlled_hosts: [101.32.5.23, 192.168.1.3]
+        # Services are defined as a target host where the service must be, and then a description in the form 'name,type,version,is_local'
+        known_services: {}
+        #known_services: {192.168.1.3: [Local system, lanman server, 10.0.19041, False], 192.168.1.4: [Other system, SMB server, 21.2.39421, False]}
+        # In data, put the target host that must have the data and which data in format user,data
+        # Example to fix the data in one host
+        known_data: {101.32.5.23: [[User1,DataFromServer1]]}
+        # Example to fix two data in one host
+        #known_data: {101.32.5.23: [[User1,DataFromServer1], [User5,DataFromServer5]]}
+        # Example to fix the data in two host
+        #known_data: {101.32.5.23: [User1,DataFromServer1], 192.168.3.1: [User3,Data3FromServer3]}
+        # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the goal data is
+        # known_data: {101.32.5.23: [random]}
+        known_blocks: {}
+        # Example of known blocks. In the host 192.168.2.2, block all connections coming or going to 192.168.1.3
+        # known_blocks: {192.168.2.2: {192.168.1.3}}
+      start_position:
+        known_networks: []
+        known_hosts: []
+        # The attacker must always at least control the CC if the goal is to exfiltrate there
+        # Example of fixing the starting point of the agent in a local host
+        controlled_hosts: [101.32.5.23, random]
+        # Example of asking a random position to start the agent
+        # controlled_hosts: [101.32.5.23, random]
+        # Services are defined as a target host where the service must be, and then a description in the form 'name,type,version,is_local'
+        known_services: {}
+        # known_services: {192.168.1.3: [Local system, lanman server, 10.0.19041, False], 192.168.1.4: [Other system, SMB server, 21.2.39421, False]}
+        # Same format as before
+        known_data: {}
+        known_blocks: {}
+        # Example of known blocks to start with. In the host 192.168.2.2, block all connections coming or going to 192.168.1.3
+        # known_blocks: {192.168.2.2: {192.168.1.3}}
+
+    Defender:
+      goal:
+        description: "Block all attackers"
+        is_any_part_of_goal_random: False
+        known_networks: []
+        # Example
+        #known_networks: [192.168.1.0/24, 192.168.3.0/24]
+        known_hosts: []
+        # Example
+        #known_hosts: [192.168.1.1, 192.168.1.2]
+        controlled_hosts: []
+        # Example
+        #controlled_hosts: [101.32.5.23, 192.168.1.3]
+        # Services are defined as a target host where the service must be, and then a description in the form 'name,type,version,is_local'
+        known_services: {}
+        # Example
+        #known_services: {192.168.1.3: [Local system, lanman server, 10.0.19041, False], 192.168.1.4: [Other system, SMB server, 21.2.39421, False]}
+        # In data, put the target host that must have the data and which data in format user,data
+        # Example to fix the data in one host
+        known_data: {}
+        # Example to fix two data in one host
+        #known_data: {101.32.5.23: [[User1,DataFromServer1], [User5,DataFromServer5]]}
+        # Example to fix the data in two host
+        #known_data: {101.32.5.23: [User1,DataFromServer1], 192.168.3.1: [User3,Data3FromServer3]}
+        # Example to ask a random data in a specific server. Putting 'random' in the data, forces the env to randomly choose where the goal data is
+        # known_data: {101.32.5.23: [random]}
+        known_blocks: {101.32.5.23: 'all_attackers'}
+        # Example of known blocks. In the host 192.168.2.2, block all connections coming or going to 192.168.1.3
+        # known_blocks: {192.168.2.2: {192.168.1.3}}
+        # You can also use the wildcard string 'all_routers', and 'all_attackers', to mean that all the controlled hosts of all the attackers should be in this list in order to win
+
+      start_position:
+        # should be empty for defender - will be extracted from controlled hosts
+        known_networks: []
+        # should be empty for defender - will be extracted from controlled hosts
+        known_hosts: []
+        # list of controlled hosts, wildard "all_local" can be used to include all local IPs
+        controlled_hosts: [all_local]
+        known_services: {}
+        known_data: {}
+        # Blocked IPs
+        blocked_ips: {}
+        known_blocks: {}
+        # Example of known blocks to start with. In the host 192.168.2.2, block all connections coming or going to 192.168.1.3
+        # known_blocks: {192.168.2.2: {192.168.1.3}}
+
+env:
+  # random means to choose the seed in a random way, so it is not fixed
+  random_seed: 571
+  # Or you can fix the seed
+  # random_seed: 42
+  scenario: 'scenario1-4'
+  use_global_defender: False
+  use_dynamic_addresses: False
+  use_firewall: True
+  save_trajectories: False
+  required_players: 1
+  rewards:
+    success: 100
+    step: -1
+    fail: -10
+    false_positive: -5
+  actions:
+    scan_network:
+      prob_success: 1.0
+    find_services:
+      prob_success: 1.0
+    exploit_service:
+      prob_success: 1.0
+    find_data:
+      prob_success: 1.0
+    exfiltrate_data:
+      prob_success: 1.0
+    block_ip:
+      prob_success: 1.0

@@ -1,5 +1,10 @@
 from . import (
     scenario_configuration,
+    scenario_configuration_new_IPs_1,
+    scenario_configuration_new_IPs_2,
+    scenario_configuration_new_IPs_3,
+    scenario_configuration_new_IPs_4,
+    scenario_configuration_new_IPs_5,
     smaller_scenario_configuration,
     tiny_scenario_configuration,
     one_net,
@@ -12,6 +17,11 @@ from . import (
 # Static Registry
 SCENARIO_REGISTRY = {
     "scenario1": scenario_configuration.configuration_objects,
+    "scenario1-1": scenario_configuration_new_IPs_1.configuration_objects,
+    "scenario1-2": scenario_configuration_new_IPs_2.configuration_objects,
+    "scenario1-3": scenario_configuration_new_IPs_3.configuration_objects,
+    "scenario1-4": scenario_configuration_new_IPs_4.configuration_objects,
+    "scenario1-5": scenario_configuration_new_IPs_5.configuration_objects,
     "scenario1_small": smaller_scenario_configuration.configuration_objects,
     "scenario1_tiny": tiny_scenario_configuration.configuration_objects,
     "one_network": one_net.configuration_objects,
