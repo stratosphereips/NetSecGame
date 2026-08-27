@@ -159,3 +159,4 @@ figures/*
 trajectories/*
 *.tar.gz
 casts/*
+.agents/rules/venv.md
