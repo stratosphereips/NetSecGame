@@ -9,6 +9,7 @@ from .game_components import (
     ActionType,
     AgentInfo,
     AgentRole,
+    AgentStatus,
     Data,
     GameState,
     GameStatus,
@@ -31,7 +32,7 @@ from .utils.utils import (
     observation_to_str,
     observation_from_str,
     observation_from_dict,
-    generate_valid_actions
+    generate_valid_actions  
 )
 
 # Trajectory Recorder
@@ -46,6 +47,7 @@ __all__ = [
     "ActionType",
     "AgentInfo",
     "AgentRole",
+    "AgentStatus",
     "Data",
     "GameState",
     "GameStatus",
